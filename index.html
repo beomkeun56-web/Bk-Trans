@@ -5,17 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b0f14" />
   <title>BK Translator (OpenRouter)</title>
+
   <style>
+    /* =====================================
+       FIX#1) GitHub Pages 폰트(woff2) 기본 적용
+       - 리포지토리: /Bk-Trans/
+       - 폰트 경로:  ./assets/fonts/NEXONLv2Gothic.woff2
+       ===================================== */
     @font-face{
-  font-family: 'BKFont';
-  src: url('./assets/fonts/NEXONLv2Gothic.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+      font-family: 'BKFont';
+      src: url('./assets/fonts/NEXONLv2Gothic.woff2?v=2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
     :root{
       --bg:#0f0f10;
-      --fontMain: system-ui;
+      --fontMain: 'BKFont'; /* 기본은 GitHub woff2 */
       --panel:#0f1623;
       --panel2:#0c121d;
       --text:#e6edf3;
@@ -29,7 +36,7 @@
       --radius:16px;
     }
 
-    /* 폰트는 “폰에서 업로드(1회)” 방식만 지원: 설정에서 TTF/OTF 업로드 */
+    /* 폰트는 “폰에서 업로드(1회)”도 지원: 업로드 시 BKCustom로 오버라이드 */
 
     *{box-sizing:border-box}
     .hidden{display:none !important}
@@ -53,8 +60,16 @@
     }
     .topbar{display:flex; align-items:center; gap:10px}
     .title{font-weight:700; letter-spacing:.2px; font-size:14px}
-    .pill{
+
+    /* FIX#2) 헤더 우측 액션영역(연결테스트 버튼 + 상태 pill) */
+    .headerActions{
       margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .pill{
       display:flex; align-items:center; gap:8px;
       background:var(--panel);
       border:1px solid var(--border);
@@ -62,6 +77,7 @@
       border-radius:999px;
       box-shadow: var(--shadow);
       min-height:30px;
+      white-space:nowrap;
     }
     .dot{width:10px; height:10px; border-radius:999px; background:var(--warn)}
     .pill span{font-size:12px; color:var(--muted)}
@@ -96,6 +112,7 @@
       font-size:12px;
       cursor:pointer;
       transition: transform .05s ease, background .2s ease;
+      white-space:nowrap;
     }
     button:active{transform:scale(.98)}
     button.secondary{background:rgba(255,255,255,.04); border:1px solid var(--border)}
@@ -121,7 +138,6 @@
 
     /* Chat (ChatGPT-like) */
     .chat{display:flex; flex-direction:column; gap:18px; padding:16px}
-
     .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
     .msg.user{align-items:flex-end}
 
@@ -182,7 +198,7 @@
     .composer #input{height:44px; min-height:44px; max-height:44px; flex:1 1 auto; padding:0 12px; line-height:44px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
     .composerActions{display:flex; gap:8px; flex:0 0 auto}
 
-    #sendBtn{
+    #sendBtn, #sendBtn2{
       min-width: 78px;
       height: 44px;
       padding: 0 14px;
@@ -193,20 +209,7 @@
       justify-content:center;
       box-shadow: 0 10px 18px rgba(0,0,0,.35);
     }
-    #sendBtn svg{width:20px; height:20px; fill: currentColor}
-
-    #sendBtn2{
-      min-width: 78px;
-      height: 44px;
-      padding: 0 14px;
-      font-size: 14px;
-      border-radius: 14px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-shadow: 0 10px 18px rgba(0,0,0,.35);
-    }
-    #sendBtn2 svg{width:20px; height:20px; fill: currentColor}
+    #sendBtn svg, #sendBtn2 svg{width:20px; height:20px; fill: currentColor}
 
     .toast{position:fixed; left:50%; top:72px; transform:translateX(-50%);
       background:rgba(15,22,35,.95); border:1px solid var(--border);
@@ -268,8 +271,7 @@
 
       .composer{padding:10px 10px calc(10px + env(safe-area-inset-bottom));}
       .composerInner{max-width:100%;}
-      #sendBtn{min-width:74px; height:46px;}
-      #sendBtn2{min-width:74px; height:46px;}
+      #sendBtn, #sendBtn2{min-width:74px; height:46px;}
       .iconBtn{width:36px; height:36px}
     }
   </style>
@@ -280,9 +282,14 @@
       <div class="title">BK Translator</div>
       <button id="settingsToggleBtn" class="secondary" type="button">설정</button>
       <button id="installBtn" class="install" type="button">홈화면에 추가</button>
-      <div class="pill" title="API 연결 상태">
-        <div id="connDot" class="dot"></div>
-        <span id="connText">미연결</span>
+
+      <!-- FIX#2) 빨간 네모 위치: 헤더 연결테스트 버튼 -->
+      <div class="headerActions">
+        <button id="headerTestBtn" class="secondary" type="button">연결테스트</button>
+        <div class="pill" title="API 연결 상태">
+          <div id="connDot" class="dot"></div>
+          <span id="connText">미연결</span>
+        </div>
       </div>
     </div>
   </header>
@@ -362,7 +369,7 @@
               <input id="fontFile" type="file" accept=".ttf,.otf" />
               <button class="secondary" id="clearFontBtn" type="button">폰트 초기화</button>
             </div>
-            <div class="hint">TTF/OTF 업로드 시 이 기기에서 고정 적용됩니다(IndexedDB). <span class="mono" id="fontStatus">기본(시스템)</span></div>
+            <div class="hint">TTF/OTF 업로드 시 이 기기에서 고정 적용됩니다(IndexedDB). <span class="mono" id="fontStatus">기본(BKFont)</span></div>
           </div>
 
           <div class="row">
@@ -480,7 +487,10 @@
       copyBarBtn: document.getElementById('copyBarBtn'),
 
       // PWA
-      installBtn: document.getElementById('installBtn')
+      installBtn: document.getElementById('installBtn'),
+
+      // Header test button
+      headerTestBtn: document.getElementById('headerTestBtn')
     };
 
     // =====================================
@@ -553,6 +563,13 @@
       });
     }
 
+    function guessFontFormat(file){
+      const name = (file && file.name) ? file.name.toLowerCase() : '';
+      const type = (file && file.type) ? file.type.toLowerCase() : '';
+      if(type.includes('opentype') || name.endsWith('.otf')) return 'opentype';
+      return 'truetype';
+    }
+
     function applyFontRecord(rec){
       if(_fontBlobUrl){
         try{ URL.revokeObjectURL(_fontBlobUrl); } catch{}
@@ -566,16 +583,19 @@
         document.head.appendChild(st);
       }
 
+      // FIX#1-핵심: 업로드 폰트가 없을 때 system-ui로 덮어쓰지 말고 BKFont 유지
       if(!rec){
         st.textContent = '';
-        document.documentElement.style.setProperty('--fontMain', 'system-ui');
-        if(el.fontStatus) el.fontStatus.textContent = '기본(시스템)';
+        document.documentElement.style.setProperty('--fontMain', '"BKFont"');
+        if(el.fontStatus) el.fontStatus.textContent = '기본(BKFont)';
         return;
       }
 
       const blob = new Blob([rec.data], {type: rec.type || 'font/ttf'});
       _fontBlobUrl = URL.createObjectURL(blob);
-      st.textContent = `@font-face{font-family:"BKCustom"; src:url("${_fontBlobUrl}") format("truetype"); font-display:swap;}`;
+
+      const fmt = rec.format || 'truetype';
+      st.textContent = `@font-face{font-family:"BKCustom"; src:url("${_fontBlobUrl}") format("${fmt}"); font-display:swap;}`;
       document.documentElement.style.setProperty('--fontMain', '"BKCustom"');
       if(el.fontStatus) el.fontStatus.textContent = rec.name || 'BKCustom';
     }
@@ -592,7 +612,7 @@
     async function saveCustomFontFile(file){
       if(!file) return;
       const buf = await file.arrayBuffer();
-      const rec = {name: file.name, type: file.type, data: buf};
+      const rec = {name: file.name, type: file.type, data: buf, format: guessFontFormat(file)};
       await idbSet('font', rec);
       applyFontRecord(rec);
       toast('폰트 적용 완료');
@@ -615,22 +635,18 @@
       toast._t = setTimeout(() => el.toast.classList.remove('show'), 2200);
     }
 
-    // Clipboard helper (Chrome mobile friendly)
+    // Clipboard helper
     async function copyToClipboard(text, silent){
       const t = String(text ?? '');
 
-      // 1) Modern API (secure context)
       try{
         if(navigator.clipboard && window.isSecureContext){
           await navigator.clipboard.writeText(t);
           if(!silent) toast('복사 완료');
           return true;
         }
-      } catch(e){
-        // fallback
-      }
+      } catch(e){}
 
-      // 2) Fallback: execCommand
       try{
         const ta = document.createElement('textarea');
         ta.value = t;
@@ -649,9 +665,7 @@
           if(!silent) toast('복사 완료');
           return true;
         }
-      } catch(e){
-        // ignore
-      }
+      } catch(e){}
 
       if(!silent) toast('복사 실패(보안 정책)');
       return false;
@@ -670,18 +684,17 @@
 
     // =====================================
     // Chat state
-    // msg = {role:'user'|'assistant', text:'', ts:number}
     // =====================================
     let chat = [];
 
     function defaultSystemPrompt(){
       return [
-        'You are a translation engine. Translate the user\'s input according to the rules below.',
+        'You are a translation engine. Translate the user\\'s input according to the rules below.',
         '- Output ONLY the translated text. No explanations.',
         '- If input starts with "#", remove it and translate Korean -> Simplified Chinese.',
         '- Otherwise translate Simplified Chinese -> Korean.',
         '- Keep line breaks as-is.'
-      ].join('\n');
+      ].join('\\n');
     }
 
     function loadSettings(){
@@ -730,7 +743,6 @@
             scroller.scrollTop = scroller.scrollHeight;
           }
         };
-        // 레이아웃/키보드(visualViewport) 반영 지연 대응
         requestAnimationFrame(() => {
           doScroll();
           requestAnimationFrame(() => {
@@ -738,9 +750,7 @@
             setTimeout(doScroll, 80);
           });
         });
-      } catch(e){
-        // ignore
-      }
+      } catch(e){}
     }
 
     function renderChat(){
@@ -773,9 +783,7 @@
           copyBtn.title = '복사';
           copyBtn.setAttribute('aria-label','복사');
           copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
-          copyBtn.addEventListener('click', async () => {
-            await copyToClipboard(m.text, false);
-          });
+          copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
 
           actions.appendChild(copyBtn);
           row.appendChild(actions);
@@ -784,7 +792,6 @@
         el.chat.appendChild(row);
       }
 
-      // 렌더 직후 하단으로(부드럽게)
       scrollToBottom('smooth');
     }
 
@@ -872,15 +879,14 @@
     }
 
     function normalizeNewlines(s){
-      return String(s).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      return String(s).replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');
     }
 
     function countMeaningfulLines(s){
       const norm = normalizeNewlines(s);
-      // 사용자가 의도치 않게 끝에 Enter를 친 케이스를 1줄로 간주
-      const trimmed = norm.replace(/\n+$/g, '');
+      const trimmed = norm.replace(/\\n+$/g, '');
       if(trimmed.length === 0) return 1;
-      return trimmed.split('\n').length;
+      return trimmed.split('\\n').length;
     }
 
     function normalizeOutput(src, out){
@@ -889,31 +895,26 @@
       const norm = normalizeNewlines(out).trimEnd();
       if(norm.length === 0) return '';
 
-      const lines = norm.split('\n');
+      const lines = norm.split('\\n');
       const nonEmpty = lines.filter(l => l.trim().length > 0);
       const uniq = [...new Set(nonEmpty.map(l => l.trim()))];
 
-      // 원문이 1줄인데, 응답이 "동일 문장 반복"으로 2줄 이상일 때만 1줄로 축약
       if(srcLineCount === 1 && uniq.length === 1 && nonEmpty.length > 1){
         return uniq[0];
       }
       return norm;
     }
 
-    // 간단 자가 테스트(콘솔)
-    // 주의: 테스트 실패는 앱 실행을 중단하지 않음(throw 금지)
     function runSelfTests(){
       const tests = [
-        { name: 'single-line + duplicated output -> collapse', src: 'A', out: 'B\nB', expect: 'B' },
-        { name: 'single-line + distinct two lines -> keep', src: 'A', out: 'B\nC', expect: 'B\nC' },
-        { name: 'two-line input + duplicated output lines -> keep', src: 'A\nA', out: 'B\nB', expect: 'B\nB' },
-        { name: 'CRLF normalized + duplicated -> collapse', src: 'A', out: 'B\r\nB\r\n', expect: 'B' },
-        // 기존 테스트 기대값이 잘못되어 수정: CR(\r)은 줄바꿈으로 정규화되며, 단일 원문 + 중복이면 collapse가 맞음
-        { name: 'CR between duplicated lines -> collapse', src: 'A', out: 'B\rB', expect: 'B' },
-        { name: 'trimEnd keeps inner newlines', src: 'A', out: 'B\n\n', expect: 'B' },
-        // 추가 테스트
-        { name: 'single-line with trailing newline treated as 1 line', src: 'A\n', out: 'B\nB', expect: 'B' },
-        { name: 'empty output returns empty', src: 'A', out: '   \n  ', expect: '' }
+        { name: 'single-line + duplicated output -> collapse', src: 'A', out: 'B\\nB', expect: 'B' },
+        { name: 'single-line + distinct two lines -> keep', src: 'A', out: 'B\\nC', expect: 'B\\nC' },
+        { name: 'two-line input + duplicated output lines -> keep', src: 'A\\nA', out: 'B\\nB', expect: 'B\\nB' },
+        { name: 'CRLF normalized + duplicated -> collapse', src: 'A', out: 'B\\r\\nB\\r\\n', expect: 'B' },
+        { name: 'CR between duplicated lines -> collapse', src: 'A', out: 'B\\rB', expect: 'B' },
+        { name: 'trimEnd keeps inner newlines', src: 'A', out: 'B\\n\\n', expect: 'B' },
+        { name: 'single-line with trailing newline treated as 1 line', src: 'A\\n', out: 'B\\nB', expect: 'B' },
+        { name: 'empty output returns empty', src: 'A', out: '   \\n  ', expect: '' }
       ];
 
       let ok = 0;
@@ -927,7 +928,6 @@
       }
 
       if(ok !== tests.length){
-        // 앱을 죽이지 않고 알림만
         toast('자가테스트 실패: ' + ok + '/' + tests.length);
         console.warn('SelfTests failed:', ok + '/' + tests.length);
       }
@@ -945,7 +945,6 @@
       scrollToBottom('smooth');
 
       el.input.value = '';
-
       setConnState('busy', '요청중');
 
       try{
@@ -1006,19 +1005,12 @@
       chat = [];
       hideCopyBar();
 
-      // 저장소를 먼저 비운 뒤 렌더
       try{ localStorage.setItem(LS.chat, '[]'); } catch{}
       try{ localStorage.removeItem(LS.chat); } catch{}
 
       renderChat();
       scrollToBottom('smooth');
       toast('대화 삭제 완료');
-    }
-
-    function autosizeTextarea(t){
-      t.style.height = 'auto';
-      const h = Math.min(t.scrollHeight, 180);
-      t.style.height = h + 'px';
     }
 
     function exportChat(){
@@ -1065,7 +1057,7 @@
     // Init
     // =====================================
     loadSettings();
-    loadCustomFont();
+    loadCustomFont();  // 업로드 폰트가 없으면 BKFont 유지
     renderChat();
     setSettingsVisible(false);
     setConnState('off', '미연결');
@@ -1076,6 +1068,11 @@
     el.testBtn.addEventListener('click', testConnection);
     el.resetBtn.addEventListener('click', resetAll);
     el.clearChatBtn.addEventListener('click', clearChatOnly);
+
+    // FIX#2) 헤더 연결테스트 버튼 이벤트
+    if(el.headerTestBtn){
+      el.headerTestBtn.addEventListener('click', testConnection);
+    }
 
     // Font events
     el.fontFile.addEventListener('change', async (e) => {
@@ -1103,15 +1100,11 @@
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
     el.closeSettingsBtn.addEventListener('click', () => setSettingsVisible(false));
 
-    // 입력창은 1줄 고정(input) - autosize 불필요
-    el.input.addEventListener('input', () => { /* no-op */ });
     el.input.addEventListener('keydown', (e) => {
-      // Enter: 전송 (모바일 UX)
       if(e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
         send();
       }
-      // Ctrl/Meta + Enter도 전송
       if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
         e.preventDefault();
         send();
@@ -1121,12 +1114,10 @@
       }
     });
 
-    // Auto-save settings on change (best-effort)
     [el.apiKey, el.model, el.temperature, el.top_p, el.maxTokens, el.systemPrompt, el.note, el.autoCopy].forEach(x => {
       x.addEventListener('change', () => { try{ saveSettings(); } catch{} });
     });
 
-    // Export / import
     el.exportBtn.addEventListener('click', exportChat);
     el.importBtn.addEventListener('click', () => el.importFile.click());
     el.importFile.addEventListener('change', (e) => {
@@ -1135,21 +1126,19 @@
       el.importFile.value = '';
     });
 
-    // First-run hint
     if(!localStorage.getItem(LS.system)){
       toast('프롬프트/설정은 자동 저장됩니다');
     }
 
-    // 입력 포커스/키보드 표시 시 하단 유지
     el.input.addEventListener('focus', () => scrollToBottom('smooth'));
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
     }
 
-    // Security note (soft)
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
       toast('권장: HTTPS에서 사용하세요(키 보안)');
     }
   </script>
 </body>
 </html>
+
