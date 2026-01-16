@@ -186,14 +186,16 @@
       font-size: 15px;
     }
 
-    /* ✅ 변경(디자인): 입력 말풍선 파랑→진한회색, 글씨 흰색 */
-    .msg.user .bubble{
-      background: linear-gradient(180deg, rgba(34,110,255,.88), rgba(22,22,24,.94));
-      color: rgba(255,255,255,.95);
-      box-shadow: 0 10px 22px rgba(0,0,0,.35);
-      border-bottom-right-radius: 10px;
-      max-width: 80%;
-    }
+    
+ /* 입력 말풍선 */
+.msg.user .bubble{
+  background: linear-gradient(180deg, rgba(34,110,255,.88), rgba(22,22,24,.94));
+  color: rgba(255,255,255,.95);
+  box-shadow: 0 10px 22px rgba(0,0,0,.35);
+  border-bottom-right-radius: 10px;
+  max-width: 80%;
+}
+
 
     /* 출력 말풍선: 배경 없음(투명) + 그림자 제거 */
     .msg.assistant .bubble{
