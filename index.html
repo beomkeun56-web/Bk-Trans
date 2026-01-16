@@ -7,22 +7,16 @@
   <title>BK Translator (OpenRouter)</title>
 
   <style>
-    /* =====================================
-       FIX#1) GitHub Pages 폰트(woff2) 기본 적용
-       - 리포지토리: /Bk-Trans/
-       - 폰트 경로:  ./assets/fonts/NEXONLv2Gothic.woff2
-       ===================================== */
+    /* ✅ GitHub에 올린 폰트 고정 적용 (woff2) */
     @font-face{
-      font-family: 'BKFont';
-      src: url('./assets/fonts/NEXONLv2Gothic.woff2?v=2') format('woff2');
-      font-weight: 400;
-      font-style: normal;
+      font-family: "NEXONLv2Gothic";
+      src: url("assets/fonts/NEXONLv2Gothic.woff2") format("woff2");
       font-display: swap;
     }
 
     :root{
       --bg:#0f0f10;
-      --fontMain: 'BKFont'; /* 기본은 GitHub woff2 */
+      --fontMain: "NEXONLv2Gothic";
       --panel:#0f1623;
       --panel2:#0c121d;
       --text:#e6edf3;
@@ -35,8 +29,6 @@
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --radius:16px;
     }
-
-    /* 폰트는 “폰에서 업로드(1회)”도 지원: 업로드 시 BKCustom로 오버라이드 */
 
     *{box-sizing:border-box}
     .hidden{display:none !important}
@@ -61,15 +53,8 @@
     .topbar{display:flex; align-items:center; gap:10px}
     .title{font-weight:700; letter-spacing:.2px; font-size:14px}
 
-    /* FIX#2) 헤더 우측 액션영역(연결테스트 버튼 + 상태 pill) */
-    .headerActions{
-      margin-left:auto;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-
     .pill{
+      margin-left:auto;
       display:flex; align-items:center; gap:8px;
       background:var(--panel);
       border:1px solid var(--border);
@@ -77,7 +62,6 @@
       border-radius:999px;
       box-shadow: var(--shadow);
       min-height:30px;
-      white-space:nowrap;
     }
     .dot{width:10px; height:10px; border-radius:999px; background:var(--warn)}
     .pill span{font-size:12px; color:var(--muted)}
@@ -112,7 +96,6 @@
       font-size:12px;
       cursor:pointer;
       transition: transform .05s ease, background .2s ease;
-      white-space:nowrap;
     }
     button:active{transform:scale(.98)}
     button.secondary{background:rgba(255,255,255,.04); border:1px solid var(--border)}
@@ -136,7 +119,7 @@
     .hint{font-size:12px; color:var(--muted); line-height:1.5}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
 
-    /* Chat (ChatGPT-like) */
+    /* Chat */
     .chat{display:flex; flex-direction:column; gap:18px; padding:16px}
     .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
     .msg.user{align-items:flex-end}
@@ -196,8 +179,6 @@
     }
     .composerInner{max-width:760px; margin:0 auto; display:flex; gap:10px; align-items:center}
     .composer #input{height:44px; min-height:44px; max-height:44px; flex:1 1 auto; padding:0 12px; line-height:44px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-    .composerActions{display:flex; gap:8px; flex:0 0 auto}
-
     #sendBtn, #sendBtn2{
       min-width: 78px;
       height: 44px;
@@ -238,7 +219,6 @@
     }
     .copyBarText{flex:1; font-size:12px; color: var(--muted)}
     .copyBarBtn{min-width:92px}
-
     .kbd{font-size:11px; border:1px solid var(--border); padding:2px 6px; border-radius:8px; color:var(--muted)}
 
     .install{
@@ -260,36 +240,34 @@
       .title{font-size:13px}
       .pill span{font-size:11px}
       button{font-size:13px; padding:10px 12px; border-radius:14px}
-
       input[type="password"], input[type="text"], select, textarea{font-size:14px; padding:12px 12px}
       .cardHead{padding:10px 10px}
       .grid{padding:10px}
-
       .chat{padding:14px}
       .bubble{font-size:16px}
       .msg.user .bubble{max-width:86%}
-
       .composer{padding:10px 10px calc(10px + env(safe-area-inset-bottom));}
       .composerInner{max-width:100%;}
-      #sendBtn, #sendBtn2{min-width:74px; height:46px;}
+      #sendBtn,#sendBtn2{min-width:74px; height:46px;}
       .iconBtn{width:36px; height:36px}
     }
   </style>
 </head>
+
 <body>
   <header>
     <div class="topbar">
       <div class="title">BK Translator</div>
       <button id="settingsToggleBtn" class="secondary" type="button">설정</button>
+
+      <!-- ✅ 빨간 네모 위치: 상단에 연결 테스트 버튼 추가 -->
+      <button id="headerTestBtn" class="secondary" type="button">연결 테스트</button>
+
       <button id="installBtn" class="install" type="button">홈화면에 추가</button>
 
-      <!-- FIX#2) 빨간 네모 위치: 헤더 연결테스트 버튼 -->
-      <div class="headerActions">
-        <button id="headerTestBtn" class="secondary" type="button">연결테스트</button>
-        <div class="pill" title="API 연결 상태">
-          <div id="connDot" class="dot"></div>
-          <span id="connText">미연결</span>
-        </div>
+      <div class="pill" title="API 연결 상태">
+        <div id="connDot" class="dot"></div>
+        <span id="connText">미연결</span>
       </div>
     </div>
   </header>
@@ -363,20 +341,8 @@
             <div class="hint">주의: 네트워크 응답 후 자동 복사는 차단될 수 있습니다. 실패 시 아래 ‘복사 바’ 또는 말풍선 복사 버튼을 누르세요.</div>
           </div>
 
-          <div>
-            <label>폰트(폰에서 업로드)</label>
-            <div class="row" style="align-items:center; gap:10px; margin:0;">
-              <input id="fontFile" type="file" accept=".ttf,.otf" />
-              <button class="secondary" id="clearFontBtn" type="button">폰트 초기화</button>
-            </div>
-            <div class="hint">TTF/OTF 업로드 시 이 기기에서 고정 적용됩니다(IndexedDB). <span class="mono" id="fontStatus">기본(BKFont)</span></div>
-          </div>
-
           <div class="row">
             <button id="saveBtn" type="button">설정 저장</button>
-            <button class="secondary" id="exportBtn" type="button">채팅 내보내기(JSON)</button>
-            <button class="secondary" id="importBtn" type="button">채팅 가져오기(JSON)</button>
-            <input id="importFile" type="file" accept="application/json" hidden />
           </div>
 
           <div class="hint">
@@ -396,7 +362,6 @@
           </div>
         </div>
         <div id="chat" class="chat"></div>
-        <div id="bottomAnchor" style="height:1px;"></div>
       </section>
 
     </div>
@@ -422,9 +387,6 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // =====================================
-    // Storage keys
-    // =====================================
     const LS = {
       apiKey: 'bk_tr_apiKey',
       model: 'bk_tr_model',
@@ -437,14 +399,11 @@
       chat: 'bk_tr_chat'
     };
 
-    // =====================================
-    // DOM
-    // =====================================
     const el = {
-      // Settings
       settingsCard: document.getElementById('settingsCard'),
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+      headerTestBtn: document.getElementById('headerTestBtn'),
 
       apiKey: document.getElementById('apiKey'),
       model: document.getElementById('model'),
@@ -459,194 +418,38 @@
       testBtn: document.getElementById('testBtn'),
       resetBtn: document.getElementById('resetBtn'),
 
-      exportBtn: document.getElementById('exportBtn'),
-      importBtn: document.getElementById('importBtn'),
-      importFile: document.getElementById('importFile'),
-
-      // Font
-      fontFile: document.getElementById('fontFile'),
-      clearFontBtn: document.getElementById('clearFontBtn'),
-      fontStatus: document.getElementById('fontStatus'),
-
-      // Chat
       clearChatBtn: document.getElementById('clearChatBtn'),
       chat: document.getElementById('chat'),
-      bottomAnchor: document.getElementById('bottomAnchor'),
       main: document.querySelector('main'),
 
-      // Composer
       input: document.getElementById('input'),
       sendBtn: document.getElementById('sendBtn'),
       sendBtn2: document.getElementById('sendBtn2'),
 
-      // UI
       toast: document.getElementById('toast'),
       connDot: document.getElementById('connDot'),
       connText: document.getElementById('connText'),
+
       copyBar: document.getElementById('copyBar'),
-      copyBarBtn: document.getElementById('copyBarBtn'),
-
-      // PWA
-      installBtn: document.getElementById('installBtn'),
-
-      // Header test button
-      headerTestBtn: document.getElementById('headerTestBtn')
+      copyBarBtn: document.getElementById('copyBarBtn')
     };
 
-    // =====================================
-    // PWA install prompt (optional)
-    // =====================================
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      if(el.installBtn) el.installBtn.style.display = 'inline-block';
-    });
-    if(el.installBtn){
-      el.installBtn.addEventListener('click', async () => {
-        if(!deferredPrompt) return;
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        el.installBtn.style.display = 'none';
-      });
-    }
-
-    // =====================================
-    // IndexedDB (for custom font)
-    // =====================================
-    const DB_NAME = 'bk_tr_db';
-    const DB_STORE = 'kv';
-    let _fontBlobUrl = null;
-
-    function openDB(){
-      return new Promise((resolve, reject) => {
-        if(!('indexedDB' in window)) return reject(new Error('IndexedDB 미지원'));
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = () => {
-          const db = req.result;
-          if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
-        };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function idbGet(key){
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(DB_STORE, 'readonly');
-        const os = tx.objectStore(DB_STORE);
-        const r = os.get(key);
-        r.onsuccess = () => resolve(r.result);
-        r.onerror = () => reject(r.error);
-      });
-    }
-
-    async function idbSet(key, val){
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(DB_STORE, 'readwrite');
-        tx.objectStore(DB_STORE).put(val, key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-    }
-
-    async function idbDel(key){
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(DB_STORE, 'readwrite');
-        tx.objectStore(DB_STORE).delete(key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-    }
-
-    function guessFontFormat(file){
-      const name = (file && file.name) ? file.name.toLowerCase() : '';
-      const type = (file && file.type) ? file.type.toLowerCase() : '';
-      if(type.includes('opentype') || name.endsWith('.otf')) return 'opentype';
-      return 'truetype';
-    }
-
-    function applyFontRecord(rec){
-      if(_fontBlobUrl){
-        try{ URL.revokeObjectURL(_fontBlobUrl); } catch{}
-        _fontBlobUrl = null;
-      }
-      const styleId = 'customFontStyle';
-      let st = document.getElementById(styleId);
-      if(!st){
-        st = document.createElement('style');
-        st.id = styleId;
-        document.head.appendChild(st);
-      }
-
-      // FIX#1-핵심: 업로드 폰트가 없을 때 system-ui로 덮어쓰지 말고 BKFont 유지
-      if(!rec){
-        st.textContent = '';
-        document.documentElement.style.setProperty('--fontMain', '"BKFont"');
-        if(el.fontStatus) el.fontStatus.textContent = '기본(BKFont)';
-        return;
-      }
-
-      const blob = new Blob([rec.data], {type: rec.type || 'font/ttf'});
-      _fontBlobUrl = URL.createObjectURL(blob);
-
-      const fmt = rec.format || 'truetype';
-      st.textContent = `@font-face{font-family:"BKCustom"; src:url("${_fontBlobUrl}") format("${fmt}"); font-display:swap;}`;
-      document.documentElement.style.setProperty('--fontMain', '"BKCustom"');
-      if(el.fontStatus) el.fontStatus.textContent = rec.name || 'BKCustom';
-    }
-
-    async function loadCustomFont(){
-      try{
-        const rec = await idbGet('font');
-        applyFontRecord(rec || null);
-      } catch(e){
-        applyFontRecord(null);
-      }
-    }
-
-    async function saveCustomFontFile(file){
-      if(!file) return;
-      const buf = await file.arrayBuffer();
-      const rec = {name: file.name, type: file.type, data: buf, format: guessFontFormat(file)};
-      await idbSet('font', rec);
-      applyFontRecord(rec);
-      toast('폰트 적용 완료');
-    }
-
-    async function clearCustomFont(){
-      try{ await idbDel('font'); } catch{}
-      applyFontRecord(null);
-      toast('폰트 초기화 완료');
-    }
-
-    // =====================================
-    // Toast
-    // =====================================
     function toast(msg){
-      if(!el.toast) return;
       el.toast.textContent = String(msg ?? '');
       el.toast.classList.add('show');
       clearTimeout(toast._t);
       toast._t = setTimeout(() => el.toast.classList.remove('show'), 2200);
     }
 
-    // Clipboard helper
     async function copyToClipboard(text, silent){
       const t = String(text ?? '');
-
       try{
         if(navigator.clipboard && window.isSecureContext){
           await navigator.clipboard.writeText(t);
           if(!silent) toast('복사 완료');
           return true;
         }
-      } catch(e){}
-
+      } catch {}
       try{
         const ta = document.createElement('textarea');
         ta.value = t;
@@ -665,36 +468,32 @@
           if(!silent) toast('복사 완료');
           return true;
         }
-      } catch(e){}
-
+      } catch {}
       if(!silent) toast('복사 실패(보안 정책)');
       return false;
     }
 
-    // One-tap copy bar
     let _pendingCopyText = '';
     function showCopyBar(text){
       _pendingCopyText = String(text ?? '');
-      if(el.copyBar) el.copyBar.classList.remove('hidden');
+      el.copyBar.classList.remove('hidden');
     }
     function hideCopyBar(){
       _pendingCopyText = '';
-      if(el.copyBar) el.copyBar.classList.add('hidden');
+      el.copyBar.classList.add('hidden');
     }
 
-    // =====================================
-    // Chat state
-    // =====================================
     let chat = [];
 
+    /* ✅ 핵심: SyntaxError 방지(작은따옴표 깨짐 제거) */
     function defaultSystemPrompt(){
       return [
-        'You are a translation engine. Translate the user\\'s input according to the rules below.',
-        '- Output ONLY the translated text. No explanations.',
-        '- If input starts with "#", remove it and translate Korean -> Simplified Chinese.',
-        '- Otherwise translate Simplified Chinese -> Korean.',
-        '- Keep line breaks as-is.'
-      ].join('\\n');
+        "You are a translation engine. Translate the user's input according to the rules below.",
+        "- Output ONLY the translated text. No explanations.",
+        "- If input starts with \"#\", remove it and translate Korean -> Simplified Chinese.",
+        "- Otherwise translate Simplified Chinese -> Korean.",
+        "- Keep line breaks as-is."
+      ].join("\n");
     }
 
     function loadSettings(){
@@ -710,9 +509,7 @@
       const savedChat = localStorage.getItem(LS.chat);
       if(savedChat){
         try{ chat = JSON.parse(savedChat) || []; } catch { chat = []; }
-      } else {
-        chat = [];
-      }
+      } else chat = [];
     }
 
     function saveSettings(){
@@ -734,23 +531,18 @@
 
     function scrollToBottom(behavior){
       const b = behavior || 'smooth';
-      try{
-        const scroller = el.main || document.scrollingElement || document.documentElement;
-        const doScroll = () => {
-          try{
-            scroller.scrollTo({ top: scroller.scrollHeight, behavior: b });
-          } catch{
-            scroller.scrollTop = scroller.scrollHeight;
-          }
-        };
+      const scroller = el.main || document.scrollingElement || document.documentElement;
+      const doScroll = () => {
+        try{ scroller.scrollTo({ top: scroller.scrollHeight, behavior: b }); }
+        catch{ scroller.scrollTop = scroller.scrollHeight; }
+      };
+      requestAnimationFrame(() => {
+        doScroll();
         requestAnimationFrame(() => {
           doScroll();
-          requestAnimationFrame(() => {
-            doScroll();
-            setTimeout(doScroll, 80);
-          });
+          setTimeout(doScroll, 80);
         });
-      } catch(e){}
+      });
     }
 
     function renderChat(){
@@ -791,12 +583,10 @@
 
         el.chat.appendChild(row);
       }
-
       scrollToBottom('smooth');
     }
 
     function setConnState(state, detail){
-      if(!el.connDot || !el.connText) return;
       if(state === 'ok'){
         el.connDot.style.background = 'var(--ok)';
         el.connText.textContent = detail || '연결됨';
@@ -831,7 +621,6 @@
       const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
 
       const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
-
       const messages = [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userText }
@@ -865,72 +654,34 @@
     }
 
     function setSettingsVisible(v){
-      if(!el.settingsCard) return;
       el.settingsCard.classList.toggle('hidden', !v);
-      if(el.settingsToggleBtn) el.settingsToggleBtn.textContent = v ? '설정 닫기' : '설정';
-      if(v){
-        requestAnimationFrame(() => el.settingsCard.scrollIntoView({behavior:'smooth', block:'start'}));
-      }
+      el.settingsToggleBtn.textContent = v ? '설정 닫기' : '설정';
+      if(v) requestAnimationFrame(() => el.settingsCard.scrollIntoView({behavior:'smooth', block:'start'}));
     }
-
     function toggleSettings(){
-      const hidden = el.settingsCard.classList.contains('hidden');
-      setSettingsVisible(hidden);
+      setSettingsVisible(el.settingsCard.classList.contains('hidden'));
     }
 
     function normalizeNewlines(s){
-      return String(s).replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');
+      return String(s).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     }
-
     function countMeaningfulLines(s){
       const norm = normalizeNewlines(s);
-      const trimmed = norm.replace(/\\n+$/g, '');
+      const trimmed = norm.replace(/\n+$/g, '');
       if(trimmed.length === 0) return 1;
-      return trimmed.split('\\n').length;
+      return trimmed.split('\n').length;
     }
-
     function normalizeOutput(src, out){
       const srcLineCount = countMeaningfulLines(src);
-
       const norm = normalizeNewlines(out).trimEnd();
       if(norm.length === 0) return '';
-
-      const lines = norm.split('\\n');
+      const lines = norm.split('\n');
       const nonEmpty = lines.filter(l => l.trim().length > 0);
       const uniq = [...new Set(nonEmpty.map(l => l.trim()))];
-
       if(srcLineCount === 1 && uniq.length === 1 && nonEmpty.length > 1){
         return uniq[0];
       }
       return norm;
-    }
-
-    function runSelfTests(){
-      const tests = [
-        { name: 'single-line + duplicated output -> collapse', src: 'A', out: 'B\\nB', expect: 'B' },
-        { name: 'single-line + distinct two lines -> keep', src: 'A', out: 'B\\nC', expect: 'B\\nC' },
-        { name: 'two-line input + duplicated output lines -> keep', src: 'A\\nA', out: 'B\\nB', expect: 'B\\nB' },
-        { name: 'CRLF normalized + duplicated -> collapse', src: 'A', out: 'B\\r\\nB\\r\\n', expect: 'B' },
-        { name: 'CR between duplicated lines -> collapse', src: 'A', out: 'B\\rB', expect: 'B' },
-        { name: 'trimEnd keeps inner newlines', src: 'A', out: 'B\\n\\n', expect: 'B' },
-        { name: 'single-line with trailing newline treated as 1 line', src: 'A\\n', out: 'B\\nB', expect: 'B' },
-        { name: 'empty output returns empty', src: 'A', out: '   \\n  ', expect: '' }
-      ];
-
-      let ok = 0;
-      for(const t of tests){
-        const got = normalizeOutput(t.src, t.out);
-        if(got === t.expect){
-          ok++;
-        } else {
-          console.error('[TEST FAIL]', t.name, { got, expect: t.expect });
-        }
-      }
-
-      if(ok !== tests.length){
-        toast('자가테스트 실패: ' + ok + '/' + tests.length);
-        console.warn('SelfTests failed:', ok + '/' + tests.length);
-      }
     }
 
     async function send(){
@@ -950,16 +701,13 @@
       try{
         const translatedRaw = await callOpenRouter(userText);
         const translated = normalizeOutput(userText, translatedRaw);
+
         chat.push({ role:'assistant', text: translated, ts: Date.now() });
 
-        if(el.autoCopy && el.autoCopy.checked){
+        if(el.autoCopy.checked){
           const ok = await copyToClipboard(translated, true);
-          if(ok){
-            toast('자동 복사 완료');
-          } else {
-            showCopyBar(translated);
-            toast('자동 복사 제한 → 아래 바를 탭해 복사');
-          }
+          if(ok) toast('자동 복사 완료');
+          else { showCopyBar(translated); toast('자동 복사 제한 → 아래 바를 탭해 복사'); }
         }
 
         saveChat();
@@ -989,111 +737,27 @@
       }
     }
 
-    function resetAll(){
-      if(!confirm('설정+대화 전체를 삭제합니다. 계속할까요?')) return;
-      Object.values(LS).forEach(k => localStorage.removeItem(k));
-      clearCustomFont();
-      loadSettings();
-      renderChat();
-      setConnState('off', '미연결');
-      toast('전체 초기화 완료');
-    }
-
     function clearChatOnly(){
       if(!confirm('대화만 삭제합니다. 계속할까요?')) return;
-
       chat = [];
       hideCopyBar();
-
-      try{ localStorage.setItem(LS.chat, '[]'); } catch{}
-      try{ localStorage.removeItem(LS.chat); } catch{}
-
+      try{ localStorage.removeItem(LS.chat); } catch {}
       renderChat();
       scrollToBottom('smooth');
       toast('대화 삭제 완료');
     }
 
-    function exportChat(){
-      const payload = {
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        settings: {
-          model: el.model.value.trim(),
-          temperature: el.temperature.value.trim(),
-          top_p: el.top_p.value.trim(),
-          maxTokens: el.maxTokens.value.trim(),
-          systemPrompt: el.systemPrompt.value,
-          note: el.note.value,
-          autoCopy: el.autoCopy.checked
-        },
-        chat
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'bk-translator-export.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
-
-    function importChatFromFile(file){
-      const reader = new FileReader();
-      reader.onload = () => {
-        try{
-          const json = JSON.parse(reader.result);
-          if(!json || !Array.isArray(json.chat)) throw new Error('형식 오류');
-          chat = json.chat;
-          saveChat();
-          renderChat();
-          toast('가져오기 완료');
-        } catch(e){
-          toast('가져오기 실패: ' + (e?.message || e));
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    // =====================================
     // Init
-    // =====================================
     loadSettings();
-    loadCustomFont();  // 업로드 폰트가 없으면 BKFont 유지
     renderChat();
     setSettingsVisible(false);
     setConnState('off', '미연결');
-    runSelfTests();
 
     // Events
     el.saveBtn.addEventListener('click', saveSettings);
     el.testBtn.addEventListener('click', testConnection);
-    el.resetBtn.addEventListener('click', resetAll);
+    el.headerTestBtn.addEventListener('click', testConnection);
     el.clearChatBtn.addEventListener('click', clearChatOnly);
-
-    // FIX#2) 헤더 연결테스트 버튼 이벤트
-    if(el.headerTestBtn){
-      el.headerTestBtn.addEventListener('click', testConnection);
-    }
-
-    // Font events
-    el.fontFile.addEventListener('change', async (e) => {
-      const file = e.target.files && e.target.files[0];
-      if(file) await saveCustomFontFile(file);
-      e.target.value = '';
-    });
-    el.clearFontBtn.addEventListener('click', clearCustomFont);
-
-    // Copy bar events
-    el.copyBar.addEventListener('click', async () => {
-      if(!_pendingCopyText) return;
-      const ok = await copyToClipboard(_pendingCopyText, false);
-      if(ok) hideCopyBar();
-    });
-    el.copyBarBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if(!_pendingCopyText) return;
-      const ok = await copyToClipboard(_pendingCopyText, false);
-      if(ok) hideCopyBar();
-    });
 
     el.sendBtn.addEventListener('click', send);
     el.sendBtn2.addEventListener('click', send);
@@ -1114,26 +778,17 @@
       }
     });
 
-    [el.apiKey, el.model, el.temperature, el.top_p, el.maxTokens, el.systemPrompt, el.note, el.autoCopy].forEach(x => {
-      x.addEventListener('change', () => { try{ saveSettings(); } catch{} });
+    el.copyBar.addEventListener('click', async () => {
+      if(!_pendingCopyText) return;
+      const ok = await copyToClipboard(_pendingCopyText, false);
+      if(ok) hideCopyBar();
     });
-
-    el.exportBtn.addEventListener('click', exportChat);
-    el.importBtn.addEventListener('click', () => el.importFile.click());
-    el.importFile.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if(file) importChatFromFile(file);
-      el.importFile.value = '';
+    el.copyBarBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if(!_pendingCopyText) return;
+      const ok = await copyToClipboard(_pendingCopyText, false);
+      if(ok) hideCopyBar();
     });
-
-    if(!localStorage.getItem(LS.system)){
-      toast('프롬프트/설정은 자동 저장됩니다');
-    }
-
-    el.input.addEventListener('focus', () => scrollToBottom('smooth'));
-    if(window.visualViewport){
-      window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
-    }
 
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
       toast('권장: HTTPS에서 사용하세요(키 보안)');
@@ -1141,4 +796,5 @@
   </script>
 </body>
 </html>
+
 
