@@ -186,16 +186,14 @@
       font-size: 15px;
     }
 
-    
- /* 입력 말풍선 */
-.msg.user .bubble{
-  background: linear-gradient(180deg, rgba(34,110,255,.88), rgba(22,22,24,.94));
-  color: rgba(255,255,255,.95);
-  box-shadow: 0 10px 22px rgba(0,0,0,.35);
-  border-bottom-right-radius: 10px;
-  max-width: 80%;
-}
-
+    /* ✅ 입력 말풍선: 단색 진한 회색(그라데이션 제거) */
+    .msg.user .bubble{
+      background: rgba(46, 52, 64, .92); /* 진한 회색 */
+      color: rgba(255,255,255,.95);
+      box-shadow: 0 10px 22px rgba(0,0,0,.35);
+      border-bottom-right-radius: 10px;
+      max-width: 80%;
+    }
 
     /* 출력 말풍선: 배경 없음(투명) + 그림자 제거 */
     .msg.assistant .bubble{
@@ -239,7 +237,6 @@
       align-items:center;
     }
 
-    /* ✅ 변경(디자인): 입력창 진한회색 + 흰색 글씨 */
     #input{
       height:44px;
       line-height:44px;
@@ -249,8 +246,8 @@
       padding: 0 12px;
       border-radius: 16px;
       border:none;
-      background: rgba(255,255,255,.10); /* 진한 회색 계열 */
-      color: #ffffff;
+      background: rgba(255,255,255,.06);
+      color: var(--text);
       outline:none;
       font-size: 15px;
     }
@@ -576,12 +573,6 @@
       el.copyBar.classList.add('hidden');
     }
 
-    /* ✅ 추가: 중국어(한자) 1글자라도 포함 여부 */
-    function hasChineseChar(s){
-      // CJK Unified Ideographs + Extension A + Compatibility Ideographs
-      return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s ?? ''));
-    }
-
     // ===== Font: IndexedDB =====
     const DB_NAME = 'bk_tr_db';
     const DB_STORE = 'kv';
@@ -896,9 +887,7 @@
         renderChat();
         scrollToBottom('smooth');
 
-        /* ✅ 변경(기능): 중국어(한자) 1글자라도 있으면 자동복사, 한글만이면 복사 안함 */
-        const shouldAutoCopy = el.autoCopy.checked && hasChineseChar(translated);
-        if(shouldAutoCopy){
+        if(el.autoCopy.checked){
           const ok = await copyToClipboard(translated, true);
           if(ok) toast('자동 복사 완료');
           else{
