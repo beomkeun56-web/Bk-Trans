@@ -237,6 +237,7 @@
       align-items:center;
     }
 
+    /* ✅ (1) 입력창만 단색 진한 회색으로 변경 */
     #input{
       height:44px;
       line-height:44px;
@@ -246,8 +247,10 @@
       padding: 0 12px;
       border-radius: 16px;
       border:none;
-      background: rgba(255,255,255,.06);
-      color: var(--text);
+
+      background: #2e3440;  /* 단색 진한 회색 */
+      color: #ffffff;       /* 가독성 */
+
       outline:none;
       font-size: 15px;
     }
@@ -573,6 +576,11 @@
       el.copyBar.classList.add('hidden');
     }
 
+    // ✅ (2) 중국어(한자) 1글자라도 포함 여부
+    function hasChinese(s){
+      return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s || ''));
+    }
+
     // ===== Font: IndexedDB =====
     const DB_NAME = 'bk_tr_db';
     const DB_STORE = 'kv';
@@ -887,13 +895,17 @@
         renderChat();
         scrollToBottom('smooth');
 
-        if(el.autoCopy.checked){
+        // ✅ (2) 중국어(한자) 1글자라도 포함될 때만 자동복사
+        if(el.autoCopy.checked && hasChinese(translated)){
           const ok = await copyToClipboard(translated, true);
-          if(ok) toast('자동 복사 완료');
+          if(ok) toast('중국어 자동 복사 완료');
           else{
             showCopyBar(translated);
             toast('자동 복사 제한 → 아래 바 탭');
           }
+        } else {
+          // 한국어만이면 자동복사/복사바 없음
+          hideCopyBar();
         }
 
         setConnState('ok');
