@@ -18,14 +18,9 @@
       --text:#e6edf3;
       --muted:#9fb0c0;
 
-      --userBubble:#101820;     /* 연한 말풍선(입력) */
-      --userText:#cfe3ff;
-
-      --asstBubble:#0a1020;     /* 진한 말풍선(번역) */
-      --asstText:#e6edf3;
-
-      --blue:#2d6bff;           /* 버튼/아이콘 파란계열 */
+      --blue:#2d6bff;
       --blue2:#1d4ed8;
+
       --ok:#33d17a;
       --warn:#f7c948;
       --danger:#ff6b6b;
@@ -33,7 +28,7 @@
       --radius:18px;
       --shadow: 0 10px 28px rgba(0,0,0,.45);
 
-      --fontMain: system-ui;    /* 기본: 시스템 */
+      --fontMain: system-ui;
     }
 
     /* GitHub Pages에 올린 woff2가 있으면 자동 적용 (업로드폰트가 있으면 그게 우선) */
@@ -107,7 +102,7 @@
       flex:1;
       overflow:auto;
       padding: 10px;
-      padding-bottom: 92px; /* composer space */
+      padding-bottom: 92px;
     }
     .wrap{
       max-width: 860px;
@@ -133,7 +128,7 @@
     .panelHead .h{font-weight:800; font-size:13px}
     .panelHead .s{font-size:12px; color:var(--muted); line-height:1.35}
 
-    /* ===== Settings (숨김/표시) ===== */
+    /* ===== Settings ===== */
     .settings{
       margin-bottom:10px;
       padding: 12px 14px 14px;
@@ -147,7 +142,7 @@
       width:100%;
       background: rgba(0,0,0,.35);
       color: var(--text);
-      border:none;               /* 테두리 제거 */
+      border:none;
       outline:none;
       border-radius: 14px;
       padding: 12px 12px;
@@ -157,7 +152,7 @@
     .hint{font-size:12px; color:var(--muted); line-height:1.45}
 
     .btn{
-      border:none;               /* 테두리 제거 */
+      border:none;
       background: rgba(45,107,255,.14);
       color: var(--text);
       border-radius: 14px;
@@ -182,25 +177,32 @@
 
     .bubble{
       max-width: 92%;
-      border:none;               /* 테두리 제거 */
+      border:none;
       border-radius: 18px;
       padding: 12px 14px;
       white-space: pre-wrap;
       word-break: break-word;
       line-height: 1.6;
       font-size: 15px;
-      box-shadow: 0 10px 22px rgba(0,0,0,.35);
     }
 
+    /* (1) 입력 말풍선: 이전 파란색으로 복원 */
     .msg.user .bubble{
-      background: rgba(16,24,32,.95);   /* 연한 */
-      color: var(--userText);
+      background: linear-gradient(180deg, rgba(34,110,255,.88), rgba(30,92,216,.92));
+      color: rgba(255,255,255,.95);
+      box-shadow: 0 10px 22px rgba(0,0,0,.35);
       border-bottom-right-radius: 10px;
+      max-width: 80%;
     }
+
+    /* (1) 출력 말풍선: 배경 없음(투명) + 그림자 제거 */
     .msg.assistant .bubble{
-      background: rgba(10,16,32,.95);   /* 진한 */
-      color: var(--asstText);
-      border-bottom-left-radius: 10px;
+      background: transparent;
+      color: rgba(230,237,243,.92);
+      box-shadow: none;
+      padding: 0;
+      border-radius: 0;
+      max-width: 92%;
     }
 
     .actionsRow{
@@ -235,30 +237,29 @@
       align-items:center;
     }
 
-    /* 입력창: 가로 길이 더 작게 / 한줄 / 높이 통일 */
     #input{
       height:44px;
       line-height:44px;
-      flex: 0 1 440px;     /* 너무 길지 않게 제한 */
+      flex: 0 1 440px;
       min-width: 160px;
       max-width: 520px;
       padding: 0 12px;
       border-radius: 16px;
-      border:none;         /* 테두리 제거 */
+      border:none;
       background: rgba(255,255,255,.06);
       color: var(--text);
       outline:none;
       font-size: 15px;
     }
 
-    /* 전송 버튼: 입력창과 세로 길이 동일 / 아이콘 파란계열 / ↑ */
+    /* (2) 전송 버튼: 배경 그대로 + 화살표 흰색(첨부 모양) */
     .sendBtn{
       height:44px;
       min-width: 54px;
       border-radius: 16px;
       border:none;
       background: rgba(45,107,255,.18);
-      color: #dbe7ff;
+      color: #ffffff;
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       cursor:pointer;
       display:inline-flex;
@@ -267,8 +268,14 @@
       padding:0 14px;
     }
     .sendBtn:active{transform:scale(.98)}
-    .sendBtn svg{width:18px; height:18px; fill: var(--blue)}
-    .sendBtn:hover svg{fill: var(--blue2)}
+    .sendBtn svg{
+      width:20px; height:20px;
+      fill:none;
+      stroke:#ffffff;
+      stroke-width:2.8;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
 
     /* 토스트 */
     .toast{
@@ -350,7 +357,7 @@
 
       <div style="flex:1"></div>
 
-      <!-- 연결 TEST + Clear (요청: 대화만 삭제를 헤더로 이동/명칭 Clear) -->
+      <!-- 연결 TEST + Clear -->
       <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7v3h1a2 2 0 0 1 2 2v6h-2v-6h-2v-5a6 6 0 1 0-12 0v5H2v6H0v-6a2 2 0 0 1 2-2h1V9a7 7 0 0 1 7-7z"/></svg>
       </button>
@@ -359,7 +366,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
       </button>
 
-      <!-- 연결 상태 (동일 크기) -->
+      <!-- 연결 상태 -->
       <button id="connBtn" class="iconBtn connBtn" type="button" aria-label="연결 상태">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l-1.5 1.5a4 4 0 0 1-5.7-5.6L5 10.7a4 4 0 0 1 5.6 0l.8.8-1.4 1.4-.8-.8a2 2 0 0 0-2.8 0L4.2 14.3a2 2 0 1 0 2.8 2.8L8.6 15.5 10 17zm4-10l1.5-1.5a4 4 0 1 1 5.7 5.6L19 13.3a4 4 0 0 1-5.6 0l-.8-.8 1.4-1.4.8.8a2 2 0 0 0 2.8 0l2.2-2.2a2 2 0 1 0-2.8-2.8L15.4 8.5 14 7zM8 14l6-6 1.4 1.4-6 6L8 14z"/></svg>
         <span id="connDot" class="connDot"></span>
@@ -421,8 +428,8 @@
       <section class="panel">
         <div class="panelHead">
           <div class="left">
-            <div class="h">대화</div>
-            <div class="s">입력 → 번역 출력 (로컬 저장으로 재방문해도 유지)</div>
+            <!-- (3) 대화 -> Chat / 설명문 삭제 -->
+            <div class="h">Chat</div>
           </div>
         </div>
         <div id="chat" class="chat"></div>
@@ -432,18 +439,24 @@
     </div>
   </main>
 
-  <!-- Composer: 전송 / 입력 / 전송 -->
+  <!-- Composer -->
   <div class="composer">
     <div class="composerInner">
       <button id="sendBtnL" class="sendBtn" type="button" aria-label="전송(좌)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l6 6h-4v10h-4V10H6l6-6z"/></svg>
+        <!-- (2) 첨부 이미지 형태: 선 화살표 -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 19V5"></path>
+          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
+        </svg>
       </button>
 
-      <!-- 요청: placeholder 삭제 -->
       <input id="input" type="text" placeholder="" autocomplete="off" />
 
       <button id="sendBtnR" class="sendBtn" type="button" aria-label="전송(우)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l6 6h-4v10h-4V10H6l6-6z"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 19V5"></path>
+          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
+        </svg>
       </button>
     </div>
   </div>
@@ -457,9 +470,6 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // =========================
-    // Storage keys
-    // =========================
     const LS = {
       apiKey: 'bk_tr_apiKey',
       model: 'bk_tr_model',
@@ -471,9 +481,6 @@
       chat: 'bk_tr_chat'
     };
 
-    // =========================
-    // DOM
-    // =========================
     const el = {
       main: document.getElementById('main'),
 
@@ -505,15 +512,11 @@
       copyBarBtn: document.getElementById('copyBarBtn'),
       toast: document.getElementById('toast'),
 
-      // font
       fontFile: document.getElementById('fontFile'),
       clearFontBtn: document.getElementById('clearFontBtn'),
       fontStatus: document.getElementById('fontStatus')
     };
 
-    // =========================
-    // Toast
-    // =========================
     function toast(msg){
       el.toast.textContent = String(msg ?? '');
       el.toast.classList.add('show');
@@ -521,28 +524,16 @@
       toast._t = setTimeout(() => el.toast.classList.remove('show'), 2200);
     }
 
-    // =========================
-    // Scroll
-    // =========================
     function scrollToBottom(behavior){
       const b = behavior || 'smooth';
       const scroller = el.main;
       const doScroll = () => {
-        try{
-          scroller.scrollTo({ top: scroller.scrollHeight, behavior: b });
-        } catch {
-          scroller.scrollTop = scroller.scrollHeight;
-        }
+        try{ scroller.scrollTo({ top: scroller.scrollHeight, behavior: b }); }
+        catch { scroller.scrollTop = scroller.scrollHeight; }
       };
-      requestAnimationFrame(() => {
-        doScroll();
-        requestAnimationFrame(() => doScroll());
-      });
+      requestAnimationFrame(() => { doScroll(); requestAnimationFrame(doScroll); });
     }
 
-    // =========================
-    // Clipboard
-    // =========================
     async function copyToClipboard(text, silent){
       const t = String(text ?? '');
       try{
@@ -574,7 +565,6 @@
       return false;
     }
 
-    // Copy bar
     let _pendingCopyText = '';
     function showCopyBar(text){
       _pendingCopyText = String(text ?? '');
@@ -585,9 +575,7 @@
       el.copyBar.classList.add('hidden');
     }
 
-    // =========================
-    // Font: IndexedDB (phone upload)
-    // =========================
+    // ===== Font: IndexedDB =====
     const DB_NAME = 'bk_tr_db';
     const DB_STORE = 'kv';
     let _fontBlobUrl = null;
@@ -638,7 +626,7 @@
 
     function applyFontRecord(rec){
       if(_fontBlobUrl){
-        try{ URL.revokeObjectURL(_fontBlobUrl); } catch{}
+        try{ URL.revokeObjectURL(_fontBlobUrl); } catch {}
         _fontBlobUrl = null;
       }
       const styleId = 'customFontStyle';
@@ -695,9 +683,7 @@
       toast('폰트 초기화 완료');
     }
 
-    // =========================
-    // Chat state
-    // =========================
+    // ===== Chat =====
     let chat = [];
 
     function defaultSystemPrompt(){
@@ -745,9 +731,7 @@
     function setSettingsVisible(v){
       el.settingsPanel.classList.toggle('hidden', !v);
       if(v){
-        requestAnimationFrame(() => {
-          el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'});
-        });
+        requestAnimationFrame(() => el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'}));
       }
     }
 
@@ -757,7 +741,6 @@
     }
 
     function setConnState(state){
-      // dot 색만 변경 (버튼 크기는 동일 유지)
       if(state === 'ok') el.connDot.style.background = 'var(--ok)';
       else if(state === 'busy') el.connDot.style.background = 'var(--warn)';
       else if(state === 'err') el.connDot.style.background = 'var(--danger)';
@@ -843,9 +826,6 @@
       return out;
     }
 
-    // =========================
-    // Render
-    // =========================
     function renderChat(){
       el.chat.innerHTML = '';
       if(chat.length === 0){
@@ -866,34 +846,32 @@
         bubble.textContent = m.text;
         row.appendChild(bubble);
 
-        // 번역문: 복사 버튼
         if(m.role === 'assistant'){
           const actions = document.createElement('div');
           actions.className = 'actionsRow';
+
           const copyBtn = document.createElement('button');
           copyBtn.className = 'miniIconBtn';
           copyBtn.type = 'button';
           copyBtn.setAttribute('aria-label', '복사');
           copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
           copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
+
           actions.appendChild(copyBtn);
           row.appendChild(actions);
         }
 
         el.chat.appendChild(row);
       }
-
       scrollToBottom('smooth');
     }
 
-    // =========================
-    // Actions
-    // =========================
     async function send(){
       const userText = el.input.value.trim();
       if(!userText) return;
 
       hideCopyBar();
+
       chat.push({ role:'user', text:userText, ts:Date.now() });
       saveChat();
       renderChat();
@@ -911,7 +889,6 @@
         renderChat();
         scrollToBottom('smooth');
 
-        // 자동 복사
         if(el.autoCopy.checked){
           const ok = await copyToClipboard(translated, true);
           if(ok) toast('자동 복사 완료');
@@ -955,9 +932,7 @@
       toast('Clear 완료');
     }
 
-    // =========================
     // Init
-    // =========================
     loadSettings();
     loadCustomFont();
     renderChat();
@@ -996,7 +971,7 @@
       if(ok) hideCopyBar();
     });
 
-    // Font upload (phone)
+    // Font upload
     el.fontFile.addEventListener('change', async (e) => {
       const file = e.target.files && e.target.files[0];
       if(file) await saveCustomFontFile(file);
@@ -1004,16 +979,16 @@
     });
     el.clearFontBtn.addEventListener('click', clearCustomFont);
 
-    // 키보드/viewport 변화 시 하단 유지
+    // viewport 변화 시 하단 유지
     el.input.addEventListener('focus', () => scrollToBottom('smooth'));
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
     }
 
-    // HTTPS 권장
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
       toast('권장: HTTPS에서 사용하세요(키 보안)');
     }
   </script>
 </body>
 </html>
+
