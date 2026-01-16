@@ -3,253 +3,337 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0f14" />
+  <meta name="theme-color" content="#050505" />
   <title>BK Translator (OpenRouter)</title>
 
-  <style>
-    /* ✅ GitHub에 올린 폰트 고정 적용 (woff2) */
-    @font-face{
-      font-family: "NEXONLv2Gothic";
-      src: url("assets/fonts/NEXONLv2Gothic.woff2") format("woff2");
-      font-display: swap;
-    }
+  <!-- 404 favicon 방지 -->
+  <link rel="icon" href="data:," />
 
+  <style>
     :root{
-      --bg:#0f0f10;
-      --fontMain: "NEXONLv2Gothic";
-      --panel:#0f1623;
-      --panel2:#0c121d;
+      --bg:#050505;
+      --panel1:#0b0f14;
+      --panel2:#0e1420;
+
       --text:#e6edf3;
       --muted:#9fb0c0;
-      --border:#223047;
-      --accent:#7aa2ff;
-      --danger:#ff6b6b;
+
+      --userBubble:#101820;     /* 연한 말풍선(입력) */
+      --userText:#cfe3ff;
+
+      --asstBubble:#0a1020;     /* 진한 말풍선(번역) */
+      --asstText:#e6edf3;
+
+      --blue:#2d6bff;           /* 버튼/아이콘 파란계열 */
+      --blue2:#1d4ed8;
       --ok:#33d17a;
       --warn:#f7c948;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --radius:16px;
+      --danger:#ff6b6b;
+
+      --radius:18px;
+      --shadow: 0 10px 28px rgba(0,0,0,.45);
+
+      --fontMain: system-ui;    /* 기본: 시스템 */
+    }
+
+    /* GitHub Pages에 올린 woff2가 있으면 자동 적용 (업로드폰트가 있으면 그게 우선) */
+    @font-face{
+      font-family:"BKRepoFont";
+      src:url("./assets/fonts/NEXONLv2Gothic.woff2") format("woff2");
+      font-display:swap;
     }
 
     *{box-sizing:border-box}
-    .hidden{display:none !important}
     html,body{height:100%}
     body{
       margin:0;
       background:var(--bg);
       color:var(--text);
-      font-family: var(--fontMain), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial;
+      font-family: var(--fontMain), "BKRepoFont", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial;
       -webkit-font-smoothing:antialiased;
       display:flex;
       flex-direction:column;
+      overflow:hidden;
     }
 
+    /* ===== Header ===== */
     header{
-      position:sticky; top:0; z-index:20;
-      background:rgba(0,0,0,.92);
+      position:sticky; top:0; z-index:30;
+      padding: 10px 10px calc(10px + env(safe-area-inset-top));
+      background: rgba(5,5,5,.92);
       backdrop-filter: blur(10px);
-      border-bottom:1px solid var(--border);
-      padding: 12px 12px calc(12px + env(safe-area-inset-top));
     }
-    .topbar{display:flex; align-items:center; gap:10px}
-    .title{font-weight:700; letter-spacing:.2px; font-size:14px}
-
-    .pill{
-      margin-left:auto;
-      display:flex; align-items:center; gap:8px;
-      background:var(--panel);
-      border:1px solid var(--border);
-      padding:6px 10px;
-      border-radius:999px;
-      box-shadow: var(--shadow);
-      min-height:30px;
+    .topbar{
+      max-width: 860px;
+      margin:0 auto;
+      display:flex; align-items:center; gap:10px;
     }
-    .dot{width:10px; height:10px; border-radius:999px; background:var(--warn)}
-    .pill span{font-size:12px; color:var(--muted)}
+    .title{
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:14px;
+      margin-right:4px;
+    }
 
-    main{flex:1; overflow:auto; padding:12px; padding-bottom: 96px;}
-    .wrap{max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:10px}
+    /* 아이콘 버튼: 크기 통일 / 진한 검은색 / 테두리 없음 */
+    .iconBtn{
+      width:36px; height:36px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:12px;
+      border:none;
+      background: #070707;
+      box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      cursor:pointer;
+      color: rgba(230,237,243,.88);
+      padding:0;
+    }
+    .iconBtn:active{transform:scale(.98)}
+    .iconBtn svg{width:18px; height:18px; fill: currentColor}
 
-    .card{
-      background:rgba(15,22,35,.7);
-      border:1px solid var(--border);
+    /* 연결 상태 버튼도 동일 크기 */
+    .connBtn{ position:relative; }
+    .connDot{
+      position:absolute;
+      right:8px; bottom:8px;
+      width:8px; height:8px; border-radius:999px;
+      background: var(--warn);
+      box-shadow: 0 0 0 2px rgba(5,5,5,.95);
+    }
+
+    /* ===== Main ===== */
+    main{
+      flex:1;
+      overflow:auto;
+      padding: 10px;
+      padding-bottom: 92px; /* composer space */
+    }
+    .wrap{
+      max-width: 860px;
+      margin:0 auto;
+    }
+
+    /* 카드/테두리 제거: 배경색으로만 구분 */
+    .panel{
+      background: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
+      border:none;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
     }
-    .cardHead{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:10px 12px;
-      background:linear-gradient(180deg, rgba(12,18,29,.9), rgba(15,22,35,.55));
-      border-bottom:1px solid rgba(34,48,71,.7);
+    .panelHead{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      padding: 12px 14px;
+      gap: 10px;
     }
-    .cardHead .left{display:flex; flex-direction:column; gap:2px}
-    .cardHead .left .h{font-weight:700; font-size:13px}
-    .cardHead .left .s{font-size:12px; color:var(--muted)}
-    .cardHead .right{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+    .panelHead .left{display:flex; flex-direction:column; gap:3px}
+    .panelHead .h{font-weight:800; font-size:13px}
+    .panelHead .s{font-size:12px; color:var(--muted); line-height:1.35}
 
-    button{
-      background: linear-gradient(180deg, rgba(122,162,255,.18), rgba(122,162,255,.10));
-      border:1px solid rgba(122,162,255,.35);
-      color:var(--text);
-      padding:8px 10px;
-      border-radius:12px;
-      font-size:12px;
-      cursor:pointer;
-      transition: transform .05s ease, background .2s ease;
+    /* ===== Settings (숨김/표시) ===== */
+    .settings{
+      margin-bottom:10px;
+      padding: 12px 14px 14px;
+      background: rgba(10,14,20,.92);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
     }
-    button:active{transform:scale(.98)}
-    button.secondary{background:rgba(255,255,255,.04); border:1px solid var(--border)}
-    button.danger{background:rgba(255,107,107,.10); border:1px solid rgba(255,107,107,.35)}
-
-    .grid{display:grid; gap:10px; padding:12px}
-    .row{display:flex; gap:10px; flex-wrap:wrap}
-
-    label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
-    input[type="password"], input[type="text"], select, textarea{
+    .settings .row{display:flex; gap:10px; flex-wrap:wrap}
+    label{font-size:12px; color:var(--muted); display:block; margin:10px 0 6px}
+    input[type="password"], input[type="text"], textarea{
       width:100%;
-      background:rgba(10,14,20,.9);
-      color:var(--text);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:10px 10px;
+      background: rgba(0,0,0,.35);
+      color: var(--text);
+      border:none;               /* 테두리 제거 */
       outline:none;
-      font-size:13px;
+      border-radius: 14px;
+      padding: 12px 12px;
+      font-size:14px;
     }
     textarea{min-height:120px; resize:vertical; line-height:1.5}
-    .hint{font-size:12px; color:var(--muted); line-height:1.5}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    .hint{font-size:12px; color:var(--muted); line-height:1.45}
 
-    /* Chat */
-    .chat{display:flex; flex-direction:column; gap:18px; padding:16px}
+    .btn{
+      border:none;               /* 테두리 제거 */
+      background: rgba(45,107,255,.14);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size:13px;
+      cursor:pointer;
+      box-shadow: 0 8px 18px rgba(0,0,0,.35);
+    }
+    .btn:active{transform:scale(.98)}
+    .btn.secondary{background: rgba(255,255,255,.06)}
+    .btn.danger{background: rgba(255,107,107,.14)}
+
+    /* ===== Chat ===== */
+    .chat{
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      gap: 16px;
+    }
     .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
     .msg.user{align-items:flex-end}
 
     .bubble{
       max-width: 92%;
-      padding:12px 14px;
+      border:none;               /* 테두리 제거 */
       border-radius: 18px;
+      padding: 12px 14px;
       white-space: pre-wrap;
       word-break: break-word;
-      line-height:1.55;
-      font-size:14px;
+      line-height: 1.6;
+      font-size: 15px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.35);
     }
 
     .msg.user .bubble{
-      background: linear-gradient(180deg, rgba(34,110,255,.88), rgba(30,92,216,.92));
-      color: rgba(255,255,255,.95);
-      border: 1px solid rgba(255,255,255,.08);
-      box-shadow: 0 10px 22px rgba(0,0,0,.35);
+      background: rgba(16,24,32,.95);   /* 연한 */
+      color: var(--userText);
       border-bottom-right-radius: 10px;
-      max-width: 80%;
     }
-
     .msg.assistant .bubble{
-      background: transparent;
-      border: 0;
-      padding: 0;
-      box-shadow: none;
-      color: rgba(230,237,243,.92);
-      max-width: 92%;
+      background: rgba(10,16,32,.95);   /* 진한 */
+      color: var(--asstText);
+      border-bottom-left-radius: 10px;
     }
 
-    .actionsRow{display:flex; gap:10px; align-items:center; opacity:.85}
-    .msg.assistant .actionsRow{align-self:flex-start}
-
-    .iconBtn{
-      width:34px; height:34px;
-      display:inline-flex; align-items:center; justify-content:center;
-      border-radius:10px;
-      background: rgba(255,255,255,.02);
-      border: 1px solid rgba(255,255,255,.06);
+    .actionsRow{
+      display:flex; gap:8px; align-items:center;
+      opacity:.9;
+    }
+    .miniIconBtn{
+      width:32px; height:32px;
+      border:none;
+      background: rgba(255,255,255,.06);
+      border-radius: 12px;
+      box-shadow: 0 8px 18px rgba(0,0,0,.25);
       cursor:pointer;
-      color: rgba(230,237,243,.85);
+      color: rgba(230,237,243,.9);
+      display:inline-flex; align-items:center; justify-content:center;
       padding:0;
     }
-    .iconBtn:active{transform:scale(.98)}
-    .iconBtn:hover{background: rgba(255,255,255,.05)}
-    .iconBtn svg{width:18px; height:18px; fill: currentColor}
+    .miniIconBtn svg{width:18px; height:18px; fill: currentColor}
 
-    /* Composer */
+    /* ===== Composer ===== */
     .composer{
-      position:fixed; left:0; right:0; bottom:0; z-index:30;
-      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-      background:rgba(0,0,0,.92);
-      border-top:1px solid var(--border);
+      position:fixed; left:0; right:0; bottom:0; z-index:40;
+      padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(5,5,5,.92);
       backdrop-filter: blur(10px);
     }
-    .composerInner{max-width:760px; margin:0 auto; display:flex; gap:10px; align-items:center}
-    .composer #input{height:44px; min-height:44px; max-height:44px; flex:1 1 auto; padding:0 12px; line-height:44px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-    #sendBtn, #sendBtn2{
-      min-width: 78px;
-      height: 44px;
-      padding: 0 14px;
-      font-size: 14px;
-      border-radius: 14px;
+    .composerInner{
+      max-width: 860px;
+      margin:0 auto;
       display:flex;
+      gap:10px;
+      align-items:center;
+    }
+
+    /* 입력창: 가로 길이 더 작게 / 한줄 / 높이 통일 */
+    #input{
+      height:44px;
+      line-height:44px;
+      flex: 0 1 440px;     /* 너무 길지 않게 제한 */
+      min-width: 160px;
+      max-width: 520px;
+      padding: 0 12px;
+      border-radius: 16px;
+      border:none;         /* 테두리 제거 */
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      outline:none;
+      font-size: 15px;
+    }
+
+    /* 전송 버튼: 입력창과 세로 길이 동일 / 아이콘 파란계열 / ↑ */
+    .sendBtn{
+      height:44px;
+      min-width: 54px;
+      border-radius: 16px;
+      border:none;
+      background: rgba(45,107,255,.18);
+      color: #dbe7ff;
+      box-shadow: 0 10px 22px rgba(0,0,0,.35);
+      cursor:pointer;
+      display:inline-flex;
       align-items:center;
       justify-content:center;
-      box-shadow: 0 10px 18px rgba(0,0,0,.35);
+      padding:0 14px;
     }
-    #sendBtn svg, #sendBtn2 svg{width:20px; height:20px; fill: currentColor}
+    .sendBtn:active{transform:scale(.98)}
+    .sendBtn svg{width:18px; height:18px; fill: var(--blue)}
+    .sendBtn:hover svg{fill: var(--blue2)}
 
-    .toast{position:fixed; left:50%; top:72px; transform:translateX(-50%);
-      background:rgba(15,22,35,.95); border:1px solid var(--border);
-      padding:10px 12px; border-radius:14px; box-shadow:var(--shadow);
-      font-size:12px; color:var(--text); opacity:0; pointer-events:none;
-      transition:opacity .25s ease;
+    /* 토스트 */
+    .toast{
+      position:fixed;
+      left:50%;
+      top:70px;
+      transform:translateX(-50%);
+      background: rgba(10,16,32,.92);
+      border:none;
+      padding: 10px 12px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      font-size: 12px;
+      color: var(--text);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .25s ease;
       max-width: 90vw;
+      z-index: 999;
     }
     .toast.show{opacity:1}
 
+    /* 복사 바 */
     .copyBar{
       position:fixed;
       left:50%;
       transform:translateX(-50%);
       bottom: calc(74px + env(safe-area-inset-bottom));
-      z-index: 40;
-      width: min(760px, 92vw);
+      z-index: 60;
+      width: min(860px, 92vw);
       display:flex;
       align-items:center;
       gap:10px;
-      padding:10px 12px;
-      border-radius:16px;
-      border:1px solid rgba(122,162,255,.28);
-      background: rgba(12,18,29,.92);
+      padding: 10px 12px;
+      border-radius: 16px;
+      border:none;
+      background: rgba(10,16,32,.92);
       box-shadow: var(--shadow);
     }
     .copyBarText{flex:1; font-size:12px; color: var(--muted)}
-    .copyBarBtn{min-width:92px}
-    .kbd{font-size:11px; border:1px solid var(--border); padding:2px 6px; border-radius:8px; color:var(--muted)}
-
-    .install{
-      margin-left:10px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px dashed rgba(122,162,255,.45);
-      background:rgba(122,162,255,.08);
-      color:var(--text);
-      font-size:12px;
+    .copyBarBtn{
+      border:none;
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 10px 12px;
       cursor:pointer;
-      display:none;
     }
+    .hidden{display:none !important}
 
     @media (max-width: 520px){
-      header{padding:10px 10px calc(10px + env(safe-area-inset-top));}
-      main{padding:10px; padding-bottom: 104px;}
-      .wrap{max-width:100%;}
       .title{font-size:13px}
-      .pill span{font-size:11px}
-      button{font-size:13px; padding:10px 12px; border-radius:14px}
-      input[type="password"], input[type="text"], select, textarea{font-size:14px; padding:12px 12px}
-      .cardHead{padding:10px 10px}
-      .grid{padding:10px}
-      .chat{padding:14px}
-      .bubble{font-size:16px}
-      .msg.user .bubble{max-width:86%}
-      .composer{padding:10px 10px calc(10px + env(safe-area-inset-bottom));}
-      .composerInner{max-width:100%;}
-      #sendBtn,#sendBtn2{min-width:74px; height:46px;}
       .iconBtn{width:36px; height:36px}
+      main{padding:10px; padding-bottom: 96px;}
+      .bubble{font-size:16px}
+      #input{
+        flex: 1 1 auto;
+        max-width: none;
+        height:46px;
+        line-height:46px;
+      }
+      .sendBtn{
+        height:46px;
+        min-width: 56px;
+      }
     }
   </style>
 </head>
@@ -258,135 +342,124 @@
   <header>
     <div class="topbar">
       <div class="title">BK Translator</div>
-      <button id="settingsToggleBtn" class="secondary" type="button">설정</button>
 
-      <!-- ✅ 빨간 네모 위치: 상단에 연결 테스트 버튼 추가 -->
-      <button id="headerTestBtn" class="secondary" type="button">연결 테스트</button>
+      <!-- 설정(메뉴) -->
+      <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+      </button>
 
-      <button id="installBtn" class="install" type="button">홈화면에 추가</button>
+      <div style="flex:1"></div>
 
-      <div class="pill" title="API 연결 상태">
-        <div id="connDot" class="dot"></div>
-        <span id="connText">미연결</span>
-      </div>
+      <!-- 연결 TEST + Clear (요청: 대화만 삭제를 헤더로 이동/명칭 Clear) -->
+      <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7v3h1a2 2 0 0 1 2 2v6h-2v-6h-2v-5a6 6 0 1 0-12 0v5H2v6H0v-6a2 2 0 0 1 2-2h1V9a7 7 0 0 1 7-7z"/></svg>
+      </button>
+
+      <button id="topClearBtn" class="iconBtn" type="button" aria-label="Clear(대화 삭제)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
+      </button>
+
+      <!-- 연결 상태 (동일 크기) -->
+      <button id="connBtn" class="iconBtn connBtn" type="button" aria-label="연결 상태">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l-1.5 1.5a4 4 0 0 1-5.7-5.6L5 10.7a4 4 0 0 1 5.6 0l.8.8-1.4 1.4-.8-.8a2 2 0 0 0-2.8 0L4.2 14.3a2 2 0 1 0 2.8 2.8L8.6 15.5 10 17zm4-10l1.5-1.5a4 4 0 1 1 5.7 5.6L19 13.3a4 4 0 0 1-5.6 0l-.8-.8 1.4-1.4.8.8a2 2 0 0 0 2.8 0l2.2-2.2a2 2 0 1 0-2.8-2.8L15.4 8.5 14 7zM8 14l6-6 1.4 1.4-6 6L8 14z"/></svg>
+        <span id="connDot" class="connDot"></span>
+      </button>
     </div>
   </header>
 
-  <main>
+  <main id="main">
     <div class="wrap">
 
-      <section class="card hidden" id="settingsCard">
-        <div class="cardHead">
-          <div class="left">
-            <div class="h">설정</div>
-            <div class="s">OpenRouter(Gemini) 연동 · 프롬프트 편집 · 로컬저장</div>
+      <!-- 설정 패널 -->
+      <section id="settingsPanel" class="settings hidden">
+        <div class="hint" style="margin-bottom:8px;">
+          OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
+        </div>
+
+        <label for="apiKey">OpenRouter API Key</label>
+        <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
+
+        <div class="row">
+          <div style="flex:1 1 240px;">
+            <label for="model">모델</label>
+            <input id="model" type="text" value="google/gemini-2.0-flash" />
           </div>
-          <div class="right">
-            <button class="secondary" id="closeSettingsBtn" type="button">닫기</button>
-            <button class="secondary" id="testBtn" type="button">연결 테스트</button>
-            <button class="danger" id="resetBtn" type="button">전체 초기화</button>
+          <div style="flex:1 1 140px;">
+            <label for="temperature">temperature</label>
+            <input id="temperature" type="text" value="0.2" />
+          </div>
+          <div style="flex:1 1 140px;">
+            <label for="top_p">top_p</label>
+            <input id="top_p" type="text" value="1" />
+          </div>
+          <div style="flex:1 1 140px;">
+            <label for="maxTokens">max_tokens</label>
+            <input id="maxTokens" type="text" value="800" />
           </div>
         </div>
-        <div class="grid">
-          <div class="row">
-            <div style="flex: 1 1 260px;">
-              <label for="apiKey">OpenRouter API Key</label>
-              <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
-              <div class="hint">※ 개인용: 키는 로컬 저장됩니다(이 기기 브라우저). 공유/공용 PC 사용 금지.</div>
-            </div>
-            <div style="flex: 1 1 220px;">
-              <label for="model">모델</label>
-              <input id="model" type="text" value="google/gemini-2.0-flash" />
-              <div class="hint">예: <span class="mono">google/gemini-3-flash</span></div>
-            </div>
-          </div>
 
-          <div class="row">
-            <div style="flex: 1 1 220px;">
-              <label for="temperature">temperature</label>
-              <input id="temperature" type="text" value="0.2" class="mono" />
-              <div class="hint">0~2 권장. 숫자만.</div>
-            </div>
-            <div style="flex: 1 1 220px;">
-              <label for="top_p">top_p</label>
-              <input id="top_p" type="text" value="1" class="mono" />
-              <div class="hint">0~1 권장. 숫자만.</div>
-            </div>
-            <div style="flex: 1 1 220px;">
-              <label for="maxTokens">max_tokens</label>
-              <input id="maxTokens" type="text" value="800" class="mono" />
-              <div class="hint">응답 길이 제한.</div>
-            </div>
-          </div>
+        <label for="systemPrompt">프롬프트(시스템/규칙)</label>
+        <textarea id="systemPrompt" placeholder="여기에 본인 프롬프트를 붙여넣으세요."></textarea>
 
-          <div>
-            <label for="systemPrompt">프롬프트(시스템/규칙)</label>
-            <textarea id="systemPrompt" placeholder="여기에 본인 프롬프트를 붙여넣으세요."></textarea>
-            <div class="hint">번역 엔진처럼 쓰려면 시스템 프롬프트에 규칙을 넣고 사용자 입력을 번역하도록 지시하세요.</div>
-          </div>
-
-          <div>
-            <label for="note">메모(선택)</label>
-            <input id="note" type="text" placeholder="예: # 있으면 KO→ZH, 없으면 ZH→KO" />
-          </div>
-
-          <div>
-            <label>클립보드</label>
-            <div class="row" style="align-items:center; gap:10px; margin:0;">
-              <label style="margin:0; display:flex; align-items:center; gap:8px; color:var(--text);">
-                <input id="autoCopy" type="checkbox" style="width:18px; height:18px; accent-color: var(--accent);" />
-                번역 완료 시 자동 복사(Chrome 모바일)
-              </label>
-            </div>
-            <div class="hint">주의: 네트워크 응답 후 자동 복사는 차단될 수 있습니다. 실패 시 아래 ‘복사 바’ 또는 말풍선 복사 버튼을 누르세요.</div>
-          </div>
-
-          <div class="row">
-            <button id="saveBtn" type="button">설정 저장</button>
-          </div>
-
-          <div class="hint">
-            단축키: <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> 전송 · <span class="kbd">Esc</span> 입력창 비우기
-          </div>
+        <div class="row" style="align-items:center; margin-top:10px;">
+          <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text);">
+            <input id="autoCopy" type="checkbox" style="width:18px; height:18px; accent-color: var(--blue);" />
+            번역 완료 시 자동 복사(Chrome 모바일)
+          </label>
         </div>
+
+        <label>폰트(폰에서 업로드)</label>
+        <div class="row" style="align-items:center;">
+          <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" />
+          <button id="clearFontBtn" class="btn secondary" type="button">폰트 초기화</button>
+          <button id="saveBtn" class="btn" type="button">저장</button>
+        </div>
+        <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
       </section>
 
-      <section class="card">
-        <div class="cardHead">
+      <!-- 대화 -->
+      <section class="panel">
+        <div class="panelHead">
           <div class="left">
             <div class="h">대화</div>
             <div class="s">입력 → 번역 출력 (로컬 저장으로 재방문해도 유지)</div>
           </div>
-          <div class="right">
-            <button class="secondary" id="clearChatBtn" type="button">대화만 삭제</button>
-          </div>
         </div>
         <div id="chat" class="chat"></div>
+        <div id="bottomAnchor" style="height:1px;"></div>
       </section>
 
     </div>
   </main>
 
+  <!-- Composer: 전송 / 입력 / 전송 -->
   <div class="composer">
     <div class="composerInner">
-      <button id="sendBtn" type="button" aria-label="전송(좌)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      <button id="sendBtnL" class="sendBtn" type="button" aria-label="전송(좌)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l6 6h-4v10h-4V10H6l6-6z"/></svg>
       </button>
-      <input id="input" type="text" placeholder="여기에 문장을 입력하세요…" autocomplete="off" />
-      <button id="sendBtn2" type="button" aria-label="전송(우)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+
+      <!-- 요청: placeholder 삭제 -->
+      <input id="input" type="text" placeholder="" autocomplete="off" />
+
+      <button id="sendBtnR" class="sendBtn" type="button" aria-label="전송(우)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l6 6h-4v10h-4V10H6l6-6z"/></svg>
       </button>
     </div>
   </div>
 
+  <!-- Copy bar -->
   <div id="copyBar" class="copyBar hidden" role="button" aria-label="복사 바">
     <div class="copyBarText">번역 완료 · 탭하면 복사</div>
-    <button id="copyBarBtn" class="secondary copyBarBtn" type="button">복사</button>
+    <button id="copyBarBtn" class="copyBarBtn" type="button">복사</button>
   </div>
 
   <div id="toast" class="toast"></div>
 
   <script>
+    // =========================
+    // Storage keys
+    // =========================
     const LS = {
       apiKey: 'bk_tr_apiKey',
       model: 'bk_tr_model',
@@ -394,16 +467,23 @@
       top_p: 'bk_tr_top_p',
       maxTokens: 'bk_tr_maxTokens',
       system: 'bk_tr_systemPrompt',
-      note: 'bk_tr_note',
       autoCopy: 'bk_tr_autoCopy',
       chat: 'bk_tr_chat'
     };
 
+    // =========================
+    // DOM
+    // =========================
     const el = {
-      settingsCard: document.getElementById('settingsCard'),
+      main: document.getElementById('main'),
+
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
-      closeSettingsBtn: document.getElementById('closeSettingsBtn'),
-      headerTestBtn: document.getElementById('headerTestBtn'),
+      settingsPanel: document.getElementById('settingsPanel'),
+
+      topTestBtn: document.getElementById('topTestBtn'),
+      topClearBtn: document.getElementById('topClearBtn'),
+      connBtn: document.getElementById('connBtn'),
+      connDot: document.getElementById('connDot'),
 
       apiKey: document.getElementById('apiKey'),
       model: document.getElementById('model'),
@@ -411,29 +491,29 @@
       top_p: document.getElementById('top_p'),
       maxTokens: document.getElementById('maxTokens'),
       systemPrompt: document.getElementById('systemPrompt'),
-      note: document.getElementById('note'),
       autoCopy: document.getElementById('autoCopy'),
-
       saveBtn: document.getElementById('saveBtn'),
-      testBtn: document.getElementById('testBtn'),
-      resetBtn: document.getElementById('resetBtn'),
 
-      clearChatBtn: document.getElementById('clearChatBtn'),
       chat: document.getElementById('chat'),
-      main: document.querySelector('main'),
+      bottomAnchor: document.getElementById('bottomAnchor'),
 
       input: document.getElementById('input'),
-      sendBtn: document.getElementById('sendBtn'),
-      sendBtn2: document.getElementById('sendBtn2'),
-
-      toast: document.getElementById('toast'),
-      connDot: document.getElementById('connDot'),
-      connText: document.getElementById('connText'),
+      sendBtnL: document.getElementById('sendBtnL'),
+      sendBtnR: document.getElementById('sendBtnR'),
 
       copyBar: document.getElementById('copyBar'),
-      copyBarBtn: document.getElementById('copyBarBtn')
+      copyBarBtn: document.getElementById('copyBarBtn'),
+      toast: document.getElementById('toast'),
+
+      // font
+      fontFile: document.getElementById('fontFile'),
+      clearFontBtn: document.getElementById('clearFontBtn'),
+      fontStatus: document.getElementById('fontStatus')
     };
 
+    // =========================
+    // Toast
+    // =========================
     function toast(msg){
       el.toast.textContent = String(msg ?? '');
       el.toast.classList.add('show');
@@ -441,6 +521,28 @@
       toast._t = setTimeout(() => el.toast.classList.remove('show'), 2200);
     }
 
+    // =========================
+    // Scroll
+    // =========================
+    function scrollToBottom(behavior){
+      const b = behavior || 'smooth';
+      const scroller = el.main;
+      const doScroll = () => {
+        try{
+          scroller.scrollTo({ top: scroller.scrollHeight, behavior: b });
+        } catch {
+          scroller.scrollTop = scroller.scrollHeight;
+        }
+      };
+      requestAnimationFrame(() => {
+        doScroll();
+        requestAnimationFrame(() => doScroll());
+      });
+    }
+
+    // =========================
+    // Clipboard
+    // =========================
     async function copyToClipboard(text, silent){
       const t = String(text ?? '');
       try{
@@ -457,7 +559,6 @@
         ta.style.position = 'fixed';
         ta.style.opacity = '0';
         ta.style.left = '-9999px';
-        ta.style.top = '0';
         document.body.appendChild(ta);
         ta.focus();
         ta.select();
@@ -473,6 +574,7 @@
       return false;
     }
 
+    // Copy bar
     let _pendingCopyText = '';
     function showCopyBar(text){
       _pendingCopyText = String(text ?? '');
@@ -483,17 +585,130 @@
       el.copyBar.classList.add('hidden');
     }
 
+    // =========================
+    // Font: IndexedDB (phone upload)
+    // =========================
+    const DB_NAME = 'bk_tr_db';
+    const DB_STORE = 'kv';
+    let _fontBlobUrl = null;
+
+    function openDB(){
+      return new Promise((resolve, reject) => {
+        if(!('indexedDB' in window)) return reject(new Error('IndexedDB 미지원'));
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function idbGet(key){
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readonly');
+        const os = tx.objectStore(DB_STORE);
+        const r = os.get(key);
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      });
+    }
+
+    async function idbSet(key, val){
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).put(val, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function idbDel(key){
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function applyFontRecord(rec){
+      if(_fontBlobUrl){
+        try{ URL.revokeObjectURL(_fontBlobUrl); } catch{}
+        _fontBlobUrl = null;
+      }
+      const styleId = 'customFontStyle';
+      let st = document.getElementById(styleId);
+      if(!st){
+        st = document.createElement('style');
+        st.id = styleId;
+        document.head.appendChild(st);
+      }
+
+      if(!rec){
+        st.textContent = '';
+        document.documentElement.style.setProperty('--fontMain', 'system-ui');
+        el.fontStatus.textContent = '기본(레포 woff2 우선)';
+        return;
+      }
+
+      const blob = new Blob([rec.data], {type: rec.type || 'font/ttf'});
+      _fontBlobUrl = URL.createObjectURL(blob);
+
+      const format = (rec.type && rec.type.includes('woff2')) ? 'woff2' : 'truetype';
+      st.textContent =
+        '@font-face{' +
+          'font-family:"BKCustom";' +
+          'src:url("' + _fontBlobUrl + '") format("' + format + '");' +
+          'font-display:swap;' +
+        '}';
+
+      document.documentElement.style.setProperty('--fontMain', '"BKCustom"');
+      el.fontStatus.textContent = rec.name || 'BKCustom';
+    }
+
+    async function loadCustomFont(){
+      try{
+        const rec = await idbGet('font');
+        applyFontRecord(rec || null);
+      } catch {
+        applyFontRecord(null);
+      }
+    }
+
+    async function saveCustomFontFile(file){
+      if(!file) return;
+      const buf = await file.arrayBuffer();
+      const rec = {name: file.name, type: file.type, data: buf};
+      await idbSet('font', rec);
+      applyFontRecord(rec);
+      toast('폰트 적용 완료');
+    }
+
+    async function clearCustomFont(){
+      try{ await idbDel('font'); } catch {}
+      applyFontRecord(null);
+      toast('폰트 초기화 완료');
+    }
+
+    // =========================
+    // Chat state
+    // =========================
     let chat = [];
 
-    /* ✅ 핵심: SyntaxError 방지(작은따옴표 깨짐 제거) */
     function defaultSystemPrompt(){
       return [
-        "You are a translation engine. Translate the user's input according to the rules below.",
+        "You are a translation engine.",
+        "Translate the user's input according to the rules below.",
         "- Output ONLY the translated text. No explanations.",
-        "- If input starts with \"#\", remove it and translate Korean -> Simplified Chinese.",
+        "- If input starts with '#', remove it and translate Korean -> Simplified Chinese.",
         "- Otherwise translate Simplified Chinese -> Korean.",
         "- Keep line breaks as-is."
-      ].join("\n");
+      ].join("\\n");
     }
 
     function loadSettings(){
@@ -503,13 +718,12 @@
       el.top_p.value = localStorage.getItem(LS.top_p) || el.top_p.value;
       el.maxTokens.value = localStorage.getItem(LS.maxTokens) || el.maxTokens.value;
       el.systemPrompt.value = localStorage.getItem(LS.system) || defaultSystemPrompt();
-      el.note.value = localStorage.getItem(LS.note) || '';
       el.autoCopy.checked = (localStorage.getItem(LS.autoCopy) || '0') === '1';
 
       const savedChat = localStorage.getItem(LS.chat);
       if(savedChat){
         try{ chat = JSON.parse(savedChat) || []; } catch { chat = []; }
-      } else chat = [];
+      }
     }
 
     function saveSettings(){
@@ -518,88 +732,60 @@
       localStorage.setItem(LS.temp, el.temperature.value.trim());
       localStorage.setItem(LS.top_p, el.top_p.value.trim());
       localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
-      localStorage.setItem(LS.system, el.systemPrompt.value);
-      localStorage.setItem(LS.note, el.note.value);
+      localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
       localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
+      toast('저장 완료');
       setSettingsVisible(false);
-      toast('설정 저장 완료');
     }
 
     function saveChat(){
       localStorage.setItem(LS.chat, JSON.stringify(chat));
     }
 
-    function scrollToBottom(behavior){
-      const b = behavior || 'smooth';
-      const scroller = el.main || document.scrollingElement || document.documentElement;
-      const doScroll = () => {
-        try{ scroller.scrollTo({ top: scroller.scrollHeight, behavior: b }); }
-        catch{ scroller.scrollTop = scroller.scrollHeight; }
-      };
-      requestAnimationFrame(() => {
-        doScroll();
+    function setSettingsVisible(v){
+      el.settingsPanel.classList.toggle('hidden', !v);
+      if(v){
         requestAnimationFrame(() => {
-          doScroll();
-          setTimeout(doScroll, 80);
+          el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'});
         });
-      });
+      }
     }
 
-    function renderChat(){
-      el.chat.innerHTML = '';
-      if(chat.length === 0){
-        const empty = document.createElement('div');
-        empty.className = 'hint';
-        empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
-        el.chat.appendChild(empty);
-        requestAnimationFrame(() => scrollToBottom('auto'));
-        return;
-      }
-
-      for(const m of chat){
-        const row = document.createElement('div');
-        row.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
-
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.textContent = m.text;
-        row.appendChild(bubble);
-
-        if(m.role === 'assistant'){
-          const actions = document.createElement('div');
-          actions.className = 'actionsRow';
-
-          const copyBtn = document.createElement('button');
-          copyBtn.className = 'iconBtn';
-          copyBtn.type = 'button';
-          copyBtn.title = '복사';
-          copyBtn.setAttribute('aria-label','복사');
-          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
-          copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
-
-          actions.appendChild(copyBtn);
-          row.appendChild(actions);
-        }
-
-        el.chat.appendChild(row);
-      }
-      scrollToBottom('smooth');
+    function toggleSettings(){
+      const isHidden = el.settingsPanel.classList.contains('hidden');
+      setSettingsVisible(isHidden);
     }
 
-    function setConnState(state, detail){
-      if(state === 'ok'){
-        el.connDot.style.background = 'var(--ok)';
-        el.connText.textContent = detail || '연결됨';
-      } else if(state === 'busy'){
-        el.connDot.style.background = 'var(--warn)';
-        el.connText.textContent = detail || '요청중';
-      } else if(state === 'err'){
-        el.connDot.style.background = 'var(--danger)';
-        el.connText.textContent = detail || '오류';
-      } else {
-        el.connDot.style.background = 'var(--warn)';
-        el.connText.textContent = detail || '미연결';
+    function setConnState(state){
+      // dot 색만 변경 (버튼 크기는 동일 유지)
+      if(state === 'ok') el.connDot.style.background = 'var(--ok)';
+      else if(state === 'busy') el.connDot.style.background = 'var(--warn)';
+      else if(state === 'err') el.connDot.style.background = 'var(--danger)';
+      else el.connDot.style.background = 'var(--warn)';
+    }
+
+    function normalizeNewlines(s){
+      return String(s).replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');
+    }
+
+    function countMeaningfulLines(s){
+      const norm = normalizeNewlines(s);
+      const trimmed = norm.replace(/\\n+$/g, '');
+      if(trimmed.length === 0) return 1;
+      return trimmed.split('\\n').length;
+    }
+
+    function normalizeOutput(src, out){
+      const srcLineCount = countMeaningfulLines(src);
+      const norm = normalizeNewlines(out).trimEnd();
+      if(norm.length === 0) return '';
+      const lines = norm.split('\\n');
+      const nonEmpty = lines.filter(l => l.trim().length > 0);
+      const uniq = [...new Set(nonEmpty.map(l => l.trim()))];
+      if(srcLineCount === 1 && uniq.length === 1 && nonEmpty.length > 1){
+        return uniq[0];
       }
+      return norm;
     }
 
     function validateNumber(x, min, max, name){
@@ -619,14 +805,18 @@
       const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
       const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
       const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
-
       const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
-      const messages = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userText }
-      ];
 
-      const payload = { model, messages, temperature, top_p, max_tokens };
+      const payload = {
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userText }
+        ],
+        temperature,
+        top_p,
+        max_tokens
+      };
 
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -648,128 +838,143 @@
         throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
       }
 
-      const out = json?.choices?.[0]?.message?.content;
+      const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
       if(typeof out !== 'string') throw new Error('응답 파싱 실패');
       return out;
     }
 
-    function setSettingsVisible(v){
-      el.settingsCard.classList.toggle('hidden', !v);
-      el.settingsToggleBtn.textContent = v ? '설정 닫기' : '설정';
-      if(v) requestAnimationFrame(() => el.settingsCard.scrollIntoView({behavior:'smooth', block:'start'}));
-    }
-    function toggleSettings(){
-      setSettingsVisible(el.settingsCard.classList.contains('hidden'));
-    }
-
-    function normalizeNewlines(s){
-      return String(s).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    }
-    function countMeaningfulLines(s){
-      const norm = normalizeNewlines(s);
-      const trimmed = norm.replace(/\n+$/g, '');
-      if(trimmed.length === 0) return 1;
-      return trimmed.split('\n').length;
-    }
-    function normalizeOutput(src, out){
-      const srcLineCount = countMeaningfulLines(src);
-      const norm = normalizeNewlines(out).trimEnd();
-      if(norm.length === 0) return '';
-      const lines = norm.split('\n');
-      const nonEmpty = lines.filter(l => l.trim().length > 0);
-      const uniq = [...new Set(nonEmpty.map(l => l.trim()))];
-      if(srcLineCount === 1 && uniq.length === 1 && nonEmpty.length > 1){
-        return uniq[0];
+    // =========================
+    // Render
+    // =========================
+    function renderChat(){
+      el.chat.innerHTML = '';
+      if(chat.length === 0){
+        const empty = document.createElement('div');
+        empty.className = 'hint';
+        empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
+        el.chat.appendChild(empty);
+        requestAnimationFrame(() => scrollToBottom('auto'));
+        return;
       }
-      return norm;
+
+      for(const m of chat){
+        const row = document.createElement('div');
+        row.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = m.text;
+        row.appendChild(bubble);
+
+        // 번역문: 복사 버튼
+        if(m.role === 'assistant'){
+          const actions = document.createElement('div');
+          actions.className = 'actionsRow';
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'miniIconBtn';
+          copyBtn.type = 'button';
+          copyBtn.setAttribute('aria-label', '복사');
+          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
+          copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
+          actions.appendChild(copyBtn);
+          row.appendChild(actions);
+        }
+
+        el.chat.appendChild(row);
+      }
+
+      scrollToBottom('smooth');
     }
 
+    // =========================
+    // Actions
+    // =========================
     async function send(){
       const userText = el.input.value.trim();
       if(!userText) return;
 
       hideCopyBar();
-
       chat.push({ role:'user', text:userText, ts:Date.now() });
       saveChat();
       renderChat();
       scrollToBottom('smooth');
 
       el.input.value = '';
-      setConnState('busy', '요청중');
+      setConnState('busy');
 
       try{
         const translatedRaw = await callOpenRouter(userText);
         const translated = normalizeOutput(userText, translatedRaw);
 
         chat.push({ role:'assistant', text: translated, ts: Date.now() });
-
-        if(el.autoCopy.checked){
-          const ok = await copyToClipboard(translated, true);
-          if(ok) toast('자동 복사 완료');
-          else { showCopyBar(translated); toast('자동 복사 제한 → 아래 바를 탭해 복사'); }
-        }
-
         saveChat();
         renderChat();
         scrollToBottom('smooth');
-        setConnState('ok', '연결됨');
+
+        // 자동 복사
+        if(el.autoCopy.checked){
+          const ok = await copyToClipboard(translated, true);
+          if(ok) toast('자동 복사 완료');
+          else{
+            showCopyBar(translated);
+            toast('자동 복사 제한 → 아래 바 탭');
+          }
+        }
+
+        setConnState('ok');
       } catch(err){
         const msg = (err && err.message) ? err.message : String(err);
         chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
         saveChat();
         renderChat();
-        setConnState('err', '오류');
+        setConnState('err');
         toast('요청 실패: ' + msg);
       }
     }
 
     async function testConnection(){
-      const probe = 'ping';
-      setConnState('busy', '테스트');
+      setConnState('busy');
       try{
-        await callOpenRouter(probe);
-        setConnState('ok', '연결됨');
+        await callOpenRouter('ping');
+        setConnState('ok');
         toast('연결 테스트 성공');
       } catch(err){
-        setConnState('err', '오류');
-        toast('연결 테스트 실패: ' + (err?.message || err));
+        setConnState('err');
+        toast('연결 테스트 실패: ' + (err && err.message ? err.message : err));
       }
     }
 
     function clearChatOnly(){
-      if(!confirm('대화만 삭제합니다. 계속할까요?')) return;
+      if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
       hideCopyBar();
+      try{ localStorage.setItem(LS.chat, '[]'); } catch {}
       try{ localStorage.removeItem(LS.chat); } catch {}
       renderChat();
       scrollToBottom('smooth');
-      toast('대화 삭제 완료');
+      toast('Clear 완료');
     }
 
+    // =========================
     // Init
+    // =========================
     loadSettings();
+    loadCustomFont();
     renderChat();
     setSettingsVisible(false);
-    setConnState('off', '미연결');
+    setConnState('warn');
 
     // Events
-    el.saveBtn.addEventListener('click', saveSettings);
-    el.testBtn.addEventListener('click', testConnection);
-    el.headerTestBtn.addEventListener('click', testConnection);
-    el.clearChatBtn.addEventListener('click', clearChatOnly);
-
-    el.sendBtn.addEventListener('click', send);
-    el.sendBtn2.addEventListener('click', send);
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
-    el.closeSettingsBtn.addEventListener('click', () => setSettingsVisible(false));
+    el.topTestBtn.addEventListener('click', testConnection);
+    el.topClearBtn.addEventListener('click', clearChatOnly);
+    el.saveBtn.addEventListener('click', saveSettings);
+
+    el.sendBtnL.addEventListener('click', send);
+    el.sendBtnR.addEventListener('click', send);
 
     el.input.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter' && !e.shiftKey){
-        e.preventDefault();
-        send();
-      }
-      if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+      if(e.key === 'Enter'){
         e.preventDefault();
         send();
       }
@@ -778,6 +983,7 @@
       }
     });
 
+    // Copy bar
     el.copyBar.addEventListener('click', async () => {
       if(!_pendingCopyText) return;
       const ok = await copyToClipboard(_pendingCopyText, false);
@@ -790,11 +996,24 @@
       if(ok) hideCopyBar();
     });
 
+    // Font upload (phone)
+    el.fontFile.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if(file) await saveCustomFontFile(file);
+      e.target.value = '';
+    });
+    el.clearFontBtn.addEventListener('click', clearCustomFont);
+
+    // 키보드/viewport 변화 시 하단 유지
+    el.input.addEventListener('focus', () => scrollToBottom('smooth'));
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
+    }
+
+    // HTTPS 권장
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
       toast('권장: HTTPS에서 사용하세요(키 보안)');
     }
   </script>
 </body>
 </html>
-
-
