@@ -949,6 +949,20 @@
     setSettingsVisible(false);
     setConnState('warn');
 
+    // 클립보드 자동 감지 및 번역 실행
+    (async function autoClipboardTranslate(){
+      try{
+        if(!navigator.clipboard || !navigator.clipboard.readText) return;
+        const clipText = await navigator.clipboard.readText();
+        const trimmed = String(clipText || '').trim();
+        if(!trimmed) return;
+        el.input.value = trimmed;
+        setTimeout(() => send(), 100);
+      } catch(err){
+        console.log('클립보드 읽기 실패:', err.message);
+      }
+    })();
+
     // Events
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
     el.topTestBtn.addEventListener('click', testConnection);
