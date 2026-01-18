@@ -1012,7 +1012,9 @@
     setConnState('warn');
 
     // 클립보드 상시 감시 및 자동 번역
-    let _lastClipboardText = '';
+    const LS_LAST_CLIP = 'bk_tr_lastClip';
+    let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
+    
     async function checkClipboard(){
       try{
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
@@ -1041,6 +1043,7 @@
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
         
         _lastClipboardText = trimmed;
+        localStorage.setItem(LS_LAST_CLIP, trimmed);
         
         // 한국어인 경우 앞에 # 추가
         if(hasKorean(trimmed) && !hasChinese(trimmed)){
