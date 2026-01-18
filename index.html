@@ -949,24 +949,33 @@
     setSettingsVisible(false);
     setConnState('warn');
 
-    // 클립보드 자동 감지 및 번역 실행
-    (async function autoClipboardTranslate(){
+    // 클립보드 상시 감시 및 자동 번역
+    let _lastClipboardText = '';
+    async function checkClipboard(){
       try{
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
         if(!trimmed) return;
         
+        // 이전 클립보드 내용과 동일하면 무시
+        if(_lastClipboardText === trimmed) return;
+        
         // 이전 입력 내용과 동일하면 무시
         const lastUserMsg = chat.filter(m => m.role === 'user').slice(-1)[0];
         if(lastUserMsg && lastUserMsg.text === trimmed) return;
         
+        _lastClipboardText = trimmed;
         el.input.value = trimmed;
         setTimeout(() => send(), 100);
       } catch(err){
-        console.log('클립보드 읽기 실패:', err.message);
+        // 권한 거부 등은 조용히 무시
       }
-    })();
+    }
+    
+    // 초기 실행 및 1초마다 클립보드 감시
+    checkClipboard();
+    setInterval(checkClipboard, 1000);
 
     // Events
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
