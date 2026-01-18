@@ -1035,7 +1035,14 @@
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
         
         _lastClipboardText = trimmed;
-        el.input.value = trimmed;
+        
+        // 한국어인 경우 앞에 # 추가
+        if(hasKorean(trimmed) && !hasChinese(trimmed)){
+          el.input.value = '#' + trimmed;
+        } else {
+          el.input.value = trimmed;
+        }
+        
         setTimeout(() => send(), 100);
       } catch(err){
         // 권한 거부 등은 조용히 무시
