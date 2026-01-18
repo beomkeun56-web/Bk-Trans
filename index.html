@@ -587,23 +587,42 @@
         toast('TTS 미지원 브라우저');
         return;
       }
+      
       // 이미 재생 중이면 중지
       window.speechSynthesis.cancel();
       
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'zh-CN';
-      utterance.rate = 0.9;
-      utterance.pitch = 1.1;
+      const speak = () => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.9;
+        utterance.pitch = 1.1;
+        
+        // 여성 목소리 찾기
+        const voices = window.speechSynthesis.getVoices();
+        const zhVoice = voices.find(v => 
+          (v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh')) && 
+          (v.name.toLowerCase().includes('female') || v.name.includes('Ting') || v.name.includes('Xiaoxiao') || v.name.includes('Huihui'))
+        ) || voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh'));
+        
+        if(zhVoice) utterance.voice = zhVoice;
+        
+        window.speechSynthesis.speak(utterance);
+      };
       
-      // 여성 목소리 찾기
+      // voices가 로드되지 않았을 수 있으므로 대기 후 실행
       const voices = window.speechSynthesis.getVoices();
-      const femaleVoice = voices.find(v => 
-        v.lang.startsWith('zh') && (v.name.toLowerCase().includes('female') || v.name.includes('여') || v.name.includes('Ting') || v.name.includes('Xiaoxiao'))
-      ) || voices.find(v => v.lang.startsWith('zh'));
-      
-      if(femaleVoice) utterance.voice = femaleVoice;
-      
-      window.speechSynthesis.speak(utterance);
+      if(voices.length > 0){
+        speak();
+      } else {
+        window.speechSynthesis.onvoiceschanged = () => {
+          speak();
+          window.speechSynthesis.onvoiceschanged = null;
+        };
+        // 펴백으로 100ms 후 다시 시도
+        setTimeout(() => {
+          if(window.speechSynthesis.getVoices().length > 0) speak();
+        }, 100);
+      }
     }
 
     // ===== Font: IndexedDB =====
@@ -999,9 +1018,13 @@
         // 이전 클립보드 내용과 동일하면 무시
         if(_lastClipboardText === trimmed) return;
         
-        // 이전 입력 내용과 동일하면 무시
+        // 이전 입력 내용(user)과 동일하면 무시
         const lastUserMsg = chat.filter(m => m.role === 'user').slice(-1)[0];
         if(lastUserMsg && lastUserMsg.text === trimmed) return;
+        
+        // 이전 번역 결과(assistant)와 동일하면 무시
+        const lastAssistantMsg = chat.filter(m => m.role === 'assistant').slice(-1)[0];
+        if(lastAssistantMsg && lastAssistantMsg.text === trimmed) return;
         
         _lastClipboardText = trimmed;
         el.input.value = trimmed;
