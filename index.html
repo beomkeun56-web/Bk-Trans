@@ -956,6 +956,11 @@
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
         if(!trimmed) return;
+        
+        // 이전 입력 내용과 동일하면 무시
+        const lastUserMsg = chat.filter(m => m.role === 'user').slice(-1)[0];
+        if(lastUserMsg && lastUserMsg.text === trimmed) return;
+        
         el.input.value = trimmed;
         setTimeout(() => send(), 100);
       } catch(err){
