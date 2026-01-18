@@ -1023,9 +1023,15 @@
         // 이전 클립보드 내용과 동일하면 무시
         if(_lastClipboardText === trimmed) return;
         
-        // 이전 입력 내용(user)과 동일하면 무시
+        // 이전 입력 내용(user)과 동일하면 무시 (# 추가된 경우도 체크)
         const lastUserMsg = chat.filter(m => m.role === 'user').slice(-1)[0];
-        if(lastUserMsg && lastUserMsg.text === trimmed) return;
+        if(lastUserMsg){
+          const lastUserText = lastUserMsg.text;
+          // 원본 또는 #제거한 것과 비교
+          if(lastUserText === trimmed) return;
+          if(lastUserText === '#' + trimmed) return;
+          if(lastUserText.startsWith('#') && lastUserText.slice(1) === trimmed) return;
+        }
         
         // 이전 번역 결과(assistant)와 동일하면 무시
         const lastAssistantMsg = chat.filter(m => m.role === 'assistant').slice(-1)[0];
