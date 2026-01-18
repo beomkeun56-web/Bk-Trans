@@ -581,6 +581,31 @@
       return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s || ''));
     }
 
+    // 중국어 TTS 재생 (여성 목소리)
+    function speakChinese(text){
+      if(!('speechSynthesis' in window)) {
+        toast('TTS 미지원 브라우저');
+        return;
+      }
+      // 이미 재생 중이면 중지
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.rate = 0.9;
+      utterance.pitch = 1.1;
+      
+      // 여성 목소리 찾기
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoice = voices.find(v => 
+        v.lang.startsWith('zh') && (v.name.toLowerCase().includes('female') || v.name.includes('여') || v.name.includes('Ting') || v.name.includes('Xiaoxiao'))
+      ) || voices.find(v => v.lang.startsWith('zh'));
+      
+      if(femaleVoice) utterance.voice = femaleVoice;
+      
+      window.speechSynthesis.speak(utterance);
+    }
+
     // ===== Font: IndexedDB =====
     const DB_NAME = 'bk_tr_db';
     const DB_STORE = 'kv';
@@ -852,18 +877,31 @@
         bubble.textContent = m.text;
         row.appendChild(bubble);
 
-        if(m.role === 'assistant'){
-          const actions = document.createElement('div');
-          actions.className = 'actionsRow';
+        const actions = document.createElement('div');
+        actions.className = 'actionsRow';
 
+        // 중국어일 때 스피커 아이콘 추가
+        if(hasChinese(m.text)){
+          const speakBtn = document.createElement('button');
+          speakBtn.className = 'miniIconBtn';
+          speakBtn.type = 'button';
+          speakBtn.setAttribute('aria-label', '읍성 재생');
+          speakBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
+          speakBtn.addEventListener('click', () => { speakChinese(m.text); });
+          actions.appendChild(speakBtn);
+        }
+
+        if(m.role === 'assistant'){
           const copyBtn = document.createElement('button');
           copyBtn.className = 'miniIconBtn';
           copyBtn.type = 'button';
           copyBtn.setAttribute('aria-label', '복사');
           copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
           copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
-
           actions.appendChild(copyBtn);
+        }
+
+        if(actions.children.length > 0){
           row.appendChild(actions);
         }
 
@@ -976,6 +1014,12 @@
     // 초기 실행 및 1초마다 클립보드 감시
     checkClipboard();
     setInterval(checkClipboard, 1000);
+
+    // TTS voices 미리 로드
+    if('speechSynthesis' in window){
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
 
     // Events
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
