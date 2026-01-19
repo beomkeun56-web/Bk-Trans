@@ -529,10 +529,18 @@
       const b = behavior || 'smooth';
       const scroller = el.main;
       const doScroll = () => {
-        try{ scroller.scrollTo({ top: scroller.scrollHeight, behavior: b }); }
-        catch { scroller.scrollTop = scroller.scrollHeight; }
+        if(b === 'instant'){
+          scroller.scrollTop = scroller.scrollHeight;
+        } else {
+          try{ scroller.scrollTo({ top: scroller.scrollHeight, behavior: b }); }
+          catch { scroller.scrollTop = scroller.scrollHeight; }
+        }
       };
-      requestAnimationFrame(() => { doScroll(); requestAnimationFrame(doScroll); });
+      if(b === 'instant'){
+        doScroll();
+      } else {
+        requestAnimationFrame(() => { doScroll(); requestAnimationFrame(doScroll); });
+      }
     }
 
     async function copyToClipboard(text, silent){
@@ -888,7 +896,7 @@
         empty.className = 'hint';
         empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
         el.chat.appendChild(empty);
-        requestAnimationFrame(() => scrollToBottom('auto'));
+        scrollToBottom('instant');
         return;
       }
 
@@ -931,7 +939,7 @@
 
         el.chat.appendChild(row);
       }
-      scrollToBottom('smooth');
+      scrollToBottom('instant');
     }
 
     async function send(){
