@@ -968,7 +968,11 @@
         // ✅ (2) 중국어(한자) 1글자라도 포함될 때만 자동복사
         if(el.autoCopy.checked && hasChinese(translated)){
           const ok = await copyToClipboard(translated, true);
-          if(ok) toast('중국어 자동 복사 완료');
+          if(ok){
+            toast('중국어 자동 복사 완료');
+            // 클립보드 상태 업데이트 - 자동 입력 방지
+            updateLastClipboard(translated);
+          }
           else{
             showCopyBar(translated);
             toast('자동 복사 제한 → 아래 바 탭');
@@ -1023,6 +1027,12 @@
     const LS_LAST_CLIP = 'bk_tr_lastClip';
     let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
     
+    // 클립보드 상태 업데이트 함수 (자동 복사 시 호출)
+    function updateLastClipboard(text){
+      _lastClipboardText = text;
+      localStorage.setItem(LS_LAST_CLIP, text);
+    }
+    
     async function checkClipboard(){
       try{
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
@@ -1051,8 +1061,7 @@
         // 한국어 또는 중국어가 포함된 경우에만 자동 입력 (영어만 있으면 무시)
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
         
-        _lastClipboardText = trimmed;
-        localStorage.setItem(LS_LAST_CLIP, trimmed);
+        updateLastClipboard(trimmed);
         
         // 한국어인 경우 앞에 # 추가
         if(hasKorean(trimmed) && !hasChinese(trimmed)){
