@@ -1049,13 +1049,10 @@
           if(msg.text === trimmed) return;
         }
         
-        // 모든 입력 내용(user)과 동일하면 무시 (# 제거 후 비교 포함)
+        // 모든 입력 내용(user)과 동일하면 무시
         const allUserMsgs = chat.filter(m => m.role === 'user');
         for(const msg of allUserMsgs){
-          const userText = msg.text;
-          if(userText === trimmed) return;
-          if(userText === '#' + trimmed) return;
-          if(userText.startsWith('#') && userText.slice(1) === trimmed) return;
+          if(msg.text === trimmed) return;
         }
         
         // 한국어 또는 중국어가 포함된 경우에만 자동 입력 (영어만 있으면 무시)
@@ -1063,12 +1060,7 @@
         
         updateLastClipboard(trimmed);
         
-        // 한국어인 경우 앞에 # 추가
-        if(hasKorean(trimmed) && !hasChinese(trimmed)){
-          el.input.value = '#' + trimmed;
-        } else {
-          el.input.value = trimmed;
-        }
+        el.input.value = trimmed;
         
         setTimeout(() => send(), 100);
       } catch(err){
