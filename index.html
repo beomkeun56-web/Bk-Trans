@@ -1025,19 +1025,20 @@
         // 이전 클립보드 내용과 동일하면 무시
         if(_lastClipboardText === trimmed) return;
         
-        // 이전 입력 내용(user)과 동일하면 무시 (# 추가된 경우도 체크)
-        const lastUserMsg = chat.filter(m => m.role === 'user').slice(-1)[0];
-        if(lastUserMsg){
-          const lastUserText = lastUserMsg.text;
-          // 원본 또는 #제거한 것과 비교
-          if(lastUserText === trimmed) return;
-          if(lastUserText === '#' + trimmed) return;
-          if(lastUserText.startsWith('#') && lastUserText.slice(1) === trimmed) return;
+        // 모든 번역 결과(assistant)와 동일하면 무시
+        const allAssistantMsgs = chat.filter(m => m.role === 'assistant');
+        for(const msg of allAssistantMsgs){
+          if(msg.text === trimmed) return;
         }
         
-        // 이전 번역 결과(assistant)와 동일하면 무시
-        const lastAssistantMsg = chat.filter(m => m.role === 'assistant').slice(-1)[0];
-        if(lastAssistantMsg && lastAssistantMsg.text === trimmed) return;
+        // 모든 입력 내용(user)과 동일하면 무시 (# 제거 후 비교 포함)
+        const allUserMsgs = chat.filter(m => m.role === 'user');
+        for(const msg of allUserMsgs){
+          const userText = msg.text;
+          if(userText === trimmed) return;
+          if(userText === '#' + trimmed) return;
+          if(userText.startsWith('#') && userText.slice(1) === trimmed) return;
+        }
         
         // 한국어 또는 중국어가 포함된 경우에만 자동 입력 (영어만 있으면 무시)
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
