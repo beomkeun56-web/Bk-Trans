@@ -4,9 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#050505" />
-  <title>BK Translator (OpenRouter)</title>
+  <title>BK Translator (Self-Learning)</title>
 
-  <!-- 404 favicon 방지 -->
   <link rel="icon" href="data:," />
 
   <style>
@@ -31,7 +30,6 @@
       --fontMain: system-ui;
     }
 
-    /* GitHub Pages에 올린 woff2가 있으면 자동 적용 (업로드폰트가 있으면 그게 우선) */
     @font-face{
       font-family:"BKRepoFont";
       src:url("./assets/fonts/NEXONLv2Gothic.woff2") format("woff2");
@@ -70,7 +68,6 @@
       margin-right:4px;
     }
 
-    /* 아이콘 버튼: 크기 통일 / 진한 검은색 / 테두리 없음 */
     .iconBtn{
       width:36px; height:36px;
       display:inline-flex;
@@ -87,7 +84,6 @@
     .iconBtn:active{transform:scale(.98)}
     .iconBtn svg{width:18px; height:18px; fill: currentColor}
 
-    /* 연결 상태 버튼도 동일 크기 */
     .connBtn{ position:relative; }
     .connDot{
       position:absolute;
@@ -109,7 +105,6 @@
       margin:0 auto;
     }
 
-    /* 카드/테두리 제거: 배경색으로만 구분 */
     .panel{
       background: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
       border:none;
@@ -128,17 +123,23 @@
     .panelHead .h{font-weight:800; font-size:13px}
     .panelHead .s{font-size:12px; color:var(--muted); line-height:1.35}
 
-    /* ===== Settings ===== */
-    .settings{
+    /* ===== Settings & Learning ===== */
+    .settings, .learningPanel{
       margin-bottom:10px;
       padding: 12px 14px 14px;
       background: rgba(10,14,20,.92);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
     }
-    .settings .row{display:flex; gap:10px; flex-wrap:wrap}
+    .settings .row, .learningPanel .row{display:flex; gap:10px; flex-wrap:wrap}
+    
     label{font-size:12px; color:var(--muted); display:block; margin:10px 0 6px}
-    input[type="password"], input[type="text"], textarea{
+    .sectionTitle {
+        font-size: 13px; font-weight: 700; color: var(--blue); margin: 15px 0 5px; 
+        border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;
+    }
+
+    input[type="password"], input[type="text"], textarea, select {
       width:100%;
       background: rgba(0,0,0,.35);
       color: var(--text);
@@ -160,10 +161,27 @@
       font-size:13px;
       cursor:pointer;
       box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      flex: 1; /* 버튼 균등 분할 */
+      min-width: 80px;
     }
     .btn:active{transform:scale(.98)}
     .btn.secondary{background: rgba(255,255,255,.06)}
     .btn.danger{background: rgba(255,107,107,.14)}
+    .btn.full{width: 100%;}
+
+    /* 라디오 버튼 그룹 */
+    .radio-group {
+        display: flex; gap: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px;
+    }
+    .radio-label {
+        flex: 1; text-align: center; padding: 10px; cursor: pointer; border-radius: 10px; font-size: 13px; color: var(--muted); margin: 0;
+        transition: all 0.2s;
+    }
+    .radio-label:hover { background: rgba(255,255,255,0.05); }
+    input[type="radio"] { display: none; }
+    input[type="radio"]:checked + .radio-label {
+        background: var(--blue); color: white; font-weight: bold;
+    }
 
     /* ===== Chat ===== */
     .chat{
@@ -186,16 +204,14 @@
       font-size: 15px;
     }
 
-    /* ✅ 입력 말풍선: 단색 진한 회색(그라데이션 제거) */
     .msg.user .bubble{
-      background: rgba(46, 52, 64, .92); /* 진한 회색 */
+      background: rgba(46, 52, 64, .92);
       color: rgba(255,255,255,.95);
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       border-bottom-right-radius: 10px;
       max-width: 80%;
     }
 
-    /* 출력 말풍선: 배경 없음(투명) + 그림자 제거 */
     .msg.assistant .bubble{
       background: transparent;
       color: rgba(230,237,243,.92);
@@ -237,7 +253,6 @@
       align-items:center;
     }
 
-    /* ✅ (1) 입력창만 단색 진한 회색으로 변경 */
     #input{
       height:44px;
       line-height:44px;
@@ -247,15 +262,12 @@
       padding: 0 12px;
       border-radius: 16px;
       border:none;
-
-      background: #2e3440;  /* 단색 진한 회색 */
-      color: #ffffff;       /* 가독성 */
-
+      background: #2e3440;
+      color: #ffffff;
       outline:none;
       font-size: 15px;
     }
 
-    /* 전송 버튼: 배경 그대로 + 화살표 흰색 */
     .sendBtn{
       height:44px;
       min-width: 54px;
@@ -353,19 +365,20 @@
     <div class="topbar">
       <div class="title">BK Translator</div>
 
-      <!-- 설정(메뉴) -->
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
       </button>
 
-      <!-- 번역 기록 다운로드 -->
+      <button id="learningToggleBtn" class="iconBtn" type="button" aria-label="학습 메뉴">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+      </button>
+
       <button id="downloadBtn" class="iconBtn" type="button" aria-label="번역 기록 다운로드">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zm7-18v12l4-4 1.4 1.4L12 16.8l-5.4-5.4L8 10l4 4V2z"/></svg>
       </button>
 
       <div style="flex:1"></div>
 
-      <!-- 연결 TEST + Clear -->
       <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7v3h1a2 2 0 0 1 2 2v6h-2v-6h-2v-5a6 6 0 1 0-12 0v5H2v6H0v-6a2 2 0 0 1 2-2h1V9a7 7 0 0 1 7-7z"/></svg>
       </button>
@@ -374,7 +387,6 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
       </button>
 
-      <!-- 연결 상태 -->
       <button id="connBtn" class="iconBtn connBtn" type="button" aria-label="연결 상태">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l-1.5 1.5a4 4 0 0 1-5.7-5.6L5 10.7a4 4 0 0 1 5.6 0l.8.8-1.4 1.4-.8-.8a2 2 0 0 0-2.8 0L4.2 14.3a2 2 0 1 0 2.8 2.8L8.6 15.5 10 17zm4-10l1.5-1.5a4 4 0 1 1 5.7 5.6L19 13.3a4 4 0 0 1-5.6 0l-.8-.8 1.4-1.4.8.8a2 2 0 0 0 2.8 0l2.2-2.2a2 2 0 1 0-2.8-2.8L15.4 8.5 14 7zM8 14l6-6 1.4 1.4-6 6L8 14z"/></svg>
         <span id="connDot" class="connDot"></span>
@@ -385,10 +397,9 @@
   <main id="main">
     <div class="wrap">
 
-      <!-- 설정 패널 -->
       <section id="settingsPanel" class="settings hidden">
         <div class="hint" style="margin-bottom:8px;">
-          OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
+          OpenRouter(Gemini) 설정 · 기존 프롬프트
         </div>
 
         <label for="apiKey">OpenRouter API Key</label>
@@ -413,8 +424,8 @@
           </div>
         </div>
 
-        <label for="systemPrompt">프롬프트(시스템/규칙)</label>
-        <textarea id="systemPrompt" placeholder="여기에 본인 프롬프트를 붙여넣으세요."></textarea>
+        <label for="systemPrompt">기존 번역 프롬프트</label>
+        <textarea id="systemPrompt" placeholder="기존 시스템 프롬프트 내용"></textarea>
 
         <div class="row" style="align-items:center; margin-top:10px;">
           <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text);">
@@ -432,7 +443,42 @@
         <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
       </section>
 
-      <!-- 대화 -->
+      <section id="learningPanel" class="learningPanel hidden">
+        <div class="hint" style="margin-bottom:8px; color:var(--blue);">
+          자동 학습 및 프롬프트 개선 (Self-Learning)
+        </div>
+
+        <div class="sectionTitle">1. 학습용 질문 (Prompt 1)</div>
+        <div class="hint">이 내용을 토대로 기존 프롬프트와 대화기록을 분석하여 개선안을 만듭니다.</div>
+        <textarea id="analysisPromptInput">
+당신은 'AI 번역 품질 분석가'이자 '프롬프트 엔지니어'입니다.
+아래 제공되는 [기존 프롬프트]와 [대화 기록]을 정밀 분석하십시오.
+사용자가 AI의 번역을 수정했거나, 특정 패턴으로 재요청한 내용을 찾아내세요.
+이를 바탕으로 오역, 오타, 문맥 오류를 줄이고 사용자의 말투를 반영하도록 [기존 프롬프트]를 개선하십시오.
+출력은 설명 없이 오직 [개선된 시스템 프롬프트 전체 전문]만 출력해야 합니다.
+        </textarea>
+        
+        <button id="runLearnBtn" class="btn full" type="button" style="background:var(--blue2); margin-top:8px;">
+           지금 학습 시작 (API 호출)
+        </button>
+
+        <div class="sectionTitle" style="margin-top:20px;">2. 학습된 프롬프트 (Prompt 2)</div>
+        <textarea id="learnedPromptInput" placeholder="학습 결과가 여기에 표시됩니다."></textarea>
+
+        <div class="sectionTitle">프롬프트 선택</div>
+        <div class="radio-group">
+            <input type="radio" id="useOriginal" name="promptMode" value="original" checked>
+            <label class="radio-label" for="useOriginal">기존 프롬프트 사용</label>
+
+            <input type="radio" id="useLearned" name="promptMode" value="learned">
+            <label class="radio-label" for="useLearned">학습된(Prompt 2) 사용</label>
+        </div>
+
+        <div class="row">
+             <button id="mergePromptBtn" class="btn secondary" type="button">합치기 (학습2 → 기존 덮어쓰기)</button>
+        </div>
+      </section>
+
       <section class="panel">
         <div class="panelHead">
           <div class="left">
@@ -446,7 +492,6 @@
     </div>
   </main>
 
-  <!-- Composer -->
   <div class="composer">
     <div class="composerInner">
       <button id="sendBtnL" class="sendBtn" type="button" aria-label="전송(좌)">
@@ -467,7 +512,6 @@
     </div>
   </div>
 
-  <!-- Copy bar -->
   <div id="copyBar" class="copyBar hidden" role="button" aria-label="복사 바">
     <div class="copyBarText">번역 완료 · 탭하면 복사</div>
     <button id="copyBarBtn" class="copyBarBtn" type="button">복사</button>
@@ -484,7 +528,11 @@
       maxTokens: 'bk_tr_maxTokens',
       system: 'bk_tr_systemPrompt',
       autoCopy: 'bk_tr_autoCopy',
-      chat: 'bk_tr_chat'
+      chat: 'bk_tr_chat',
+      // 학습 관련 저장 키
+      analysisPrompt: 'bk_tr_analysisPrompt',
+      learnedPrompt: 'bk_tr_learnedPrompt',
+      activeMode: 'bk_tr_activeMode'
     };
 
     const el = {
@@ -492,6 +540,10 @@
 
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
+      
+      learningToggleBtn: document.getElementById('learningToggleBtn'),
+      learningPanel: document.getElementById('learningPanel'),
+
       downloadBtn: document.getElementById('downloadBtn'),
 
       topTestBtn: document.getElementById('topTestBtn'),
@@ -507,6 +559,14 @@
       systemPrompt: document.getElementById('systemPrompt'),
       autoCopy: document.getElementById('autoCopy'),
       saveBtn: document.getElementById('saveBtn'),
+
+      // 학습 패널 엘리먼트
+      analysisPromptInput: document.getElementById('analysisPromptInput'),
+      runLearnBtn: document.getElementById('runLearnBtn'),
+      learnedPromptInput: document.getElementById('learnedPromptInput'),
+      useOriginal: document.getElementById('useOriginal'),
+      useLearned: document.getElementById('useLearned'),
+      mergePromptBtn: document.getElementById('mergePromptBtn'),
 
       chat: document.getElementById('chat'),
       bottomAnchor: document.getElementById('bottomAnchor'),
@@ -590,55 +650,40 @@
       el.copyBar.classList.add('hidden');
     }
 
-    // ✅ (2) 중국어(한자) 1글자라도 포함 여부
     function hasChinese(s){
       return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s || ''));
     }
 
-    // 한국어 포함 여부
     function hasKorean(s){
       return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(String(s || ''));
     }
 
-    // 영어 장문 여부 (40자 이상 영어만 있으면 장문으로 판단)
     function isEnglishLongText(s){
       const str = String(s || '');
-      // 한국어나 중국어가 있으면 영어 장문 아님
       if(hasKorean(str) || hasChinese(str)) return false;
-      // 영어 문자가 40자 이상이면 장문
       const englishChars = str.match(/[a-zA-Z]/g);
       return englishChars && englishChars.length >= 40;
     }
 
-    // 중국어 TTS 재생 (여성 목소리)
     function speakChinese(text){
       if(!('speechSynthesis' in window)) {
         toast('TTS 미지원 브라우저');
         return;
       }
-      
-      // 이미 재생 중이면 중지
       window.speechSynthesis.cancel();
-      
       const speak = () => {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'zh-CN';
         utterance.rate = 0.9;
         utterance.pitch = 1.1;
-        
-        // 여성 목소리 찾기
         const voices = window.speechSynthesis.getVoices();
         const zhVoice = voices.find(v => 
           (v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh')) && 
           (v.name.toLowerCase().includes('female') || v.name.includes('Ting') || v.name.includes('Xiaoxiao') || v.name.includes('Huihui'))
         ) || voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh'));
-        
         if(zhVoice) utterance.voice = zhVoice;
-        
         window.speechSynthesis.speak(utterance);
       };
-      
-      // voices가 로드되지 않았을 수 있으므로 대기 후 실행
       const voices = window.speechSynthesis.getVoices();
       if(voices.length > 0){
         speak();
@@ -647,7 +692,6 @@
           speak();
           window.speechSynthesis.onvoiceschanged = null;
         };
-        // 펴백으로 100ms 후 다시 시도
         setTimeout(() => {
           if(window.speechSynthesis.getVoices().length > 0) speak();
         }, 100);
@@ -762,7 +806,7 @@
       toast('폰트 초기화 완료');
     }
 
-    // ===== Chat =====
+    // ===== Chat & Settings =====
     let chat = [];
 
     function defaultSystemPrompt(){
@@ -785,6 +829,13 @@
       el.systemPrompt.value = localStorage.getItem(LS.system) || defaultSystemPrompt();
       el.autoCopy.checked = (localStorage.getItem(LS.autoCopy) || '0') === '1';
 
+      // 학습 관련 로드
+      el.analysisPromptInput.value = localStorage.getItem(LS.analysisPrompt) || el.analysisPromptInput.value;
+      el.learnedPromptInput.value = localStorage.getItem(LS.learnedPrompt) || '';
+      const savedMode = localStorage.getItem(LS.activeMode) || 'original';
+      if(savedMode === 'learned') el.useLearned.checked = true;
+      else el.useOriginal.checked = true;
+
       const savedChat = localStorage.getItem(LS.chat);
       if(savedChat){
         try{ chat = JSON.parse(savedChat) || []; } catch { chat = []; }
@@ -799,24 +850,29 @@
       localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
       localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
       localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
+      
+      // 학습 관련 저장
+      localStorage.setItem(LS.analysisPrompt, el.analysisPromptInput.value);
+      localStorage.setItem(LS.learnedPrompt, el.learnedPromptInput.value);
+      localStorage.setItem(LS.activeMode, el.useLearned.checked ? 'learned' : 'original');
+
       toast('저장 완료');
-      setSettingsVisible(false);
+      el.settingsPanel.classList.add('hidden');
+      el.learningPanel.classList.add('hidden');
     }
 
     function saveChat(){
       localStorage.setItem(LS.chat, JSON.stringify(chat));
     }
 
-    function setSettingsVisible(v){
-      el.settingsPanel.classList.toggle('hidden', !v);
-      if(v){
-        requestAnimationFrame(() => el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'}));
-      }
-    }
-
     function toggleSettings(){
-      const isHidden = el.settingsPanel.classList.contains('hidden');
-      setSettingsVisible(isHidden);
+      el.learningPanel.classList.add('hidden'); // 학습 패널 닫기
+      el.settingsPanel.classList.toggle('hidden');
+    }
+    
+    function toggleLearning(){
+      el.settingsPanel.classList.add('hidden'); // 설정 패널 닫기
+      el.learningPanel.classList.toggle('hidden');
     }
 
     let _isBusy = false;
@@ -859,7 +915,8 @@
       return v;
     }
 
-    async function callOpenRouter(userText){
+    // API 호출 함수 (systemMessage 인자 추가)
+    async function callOpenRouter(userText, overrideSystemPrompt){
       const apiKey = el.apiKey.value.trim();
       if(!apiKey) throw new Error('API Key가 비어 있습니다.');
 
@@ -869,7 +926,16 @@
       const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
       const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
       const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
-      const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
+      
+      // 전달받은 프롬프트가 없으면 현재 설정(모드)에 따라 선택
+      let systemPrompt = overrideSystemPrompt;
+      if (!systemPrompt) {
+          if (el.useLearned.checked && el.learnedPromptInput.value.trim()) {
+              systemPrompt = el.learnedPromptInput.value;
+          } else {
+              systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
+          }
+      }
 
       const payload = {
         model,
@@ -907,6 +973,75 @@
       return out;
     }
 
+    // ===== 학습(Learning) 함수 =====
+    async function runLearning(){
+        if(chat.length === 0){
+            toast('학습할 대화 기록이 없습니다.');
+            return;
+        }
+
+        const analysisPrompt = el.analysisPromptInput.value.trim();
+        const currentSystemPrompt = el.systemPrompt.value.trim();
+        
+        // 대화 기록 문자열로 변환
+        let chatHistoryStr = "";
+        chat.forEach(m => {
+            const role = m.role === 'user' ? 'User' : 'AI';
+            chatHistoryStr += `${role}: ${m.text}\n`;
+        });
+
+        // Prompt 1: 질문 + 기존프롬프트 + 대화기록
+        const finalPrompt = `
+${analysisPrompt}
+
+[기존 시스템 프롬프트]
+${currentSystemPrompt}
+
+[최근 대화 기록]
+${chatHistoryStr}
+        `.trim();
+
+        setConnState('busy');
+        el.runLearnBtn.textContent = "학습 중...";
+        el.runLearnBtn.disabled = true;
+
+        try {
+            // 학습은 "분석가" 페르소나를 수행하므로 별도의 시스템 메시지 없이 User 메시지로 전체 맥락 전송하거나, 
+            // 분석가용 시스템 메시지를 간략히 넣을 수 있습니다. 
+            // 여기서는 callOpenRouter의 systemPrompt를 비우고(혹은 기본값), userText에 전체를 넣어 요청합니다.
+            // *단, callOpenRouter 로직상 systemPrompt가 필수이므로, "You are a helpful assistant." 정도만 넣어서 호출*
+            
+            const learnedResult = await callOpenRouter(finalPrompt, "You are an expert Prompt Engineer.");
+            
+            // 결과 저장 (Prompt 2)
+            el.learnedPromptInput.value = learnedResult;
+            
+            // 자동 저장
+            localStorage.setItem(LS.learnedPrompt, learnedResult);
+            
+            toast('학습 완료! 결과가 Prompt 2에 저장됨');
+            setConnState('ok');
+        } catch(err) {
+            toast('학습 실패: ' + err.message);
+            setConnState('err');
+        } finally {
+            el.runLearnBtn.textContent = "지금 학습 시작 (API 호출)";
+            el.runLearnBtn.disabled = false;
+        }
+    }
+
+    function mergePrompt() {
+        if(!el.learnedPromptInput.value.trim()){
+            toast('학습된 내용이 없습니다.');
+            return;
+        }
+        if(!confirm('학습된 프롬프트로 기존 프롬프트를 덮어쓰시겠습니까?')) return;
+        
+        el.systemPrompt.value = el.learnedPromptInput.value;
+        saveSettings(); // 저장
+        toast('기존 프롬프트 업데이트 완료');
+    }
+
     function renderChat(){
       el.chat.innerHTML = '';
       if(chat.length === 0){
@@ -930,12 +1065,11 @@
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
 
-        // 중국어일 때 스피커 아이콘 추가
         if(hasChinese(m.text)){
           const speakBtn = document.createElement('button');
           speakBtn.className = 'miniIconBtn';
           speakBtn.type = 'button';
-          speakBtn.setAttribute('aria-label', '읍성 재생');
+          speakBtn.setAttribute('aria-label', '음성 재생');
           speakBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
           speakBtn.addEventListener('click', () => { speakChinese(m.text); });
           actions.appendChild(speakBtn);
@@ -975,6 +1109,7 @@
       setConnState('busy');
 
       try{
+        // callOpenRouter 호출 시 두 번째 인자 없음 -> 내부 로직으로 프롬프트 선택
         const translatedRaw = await callOpenRouter(userText);
         const translated = normalizeOutput(userText, translatedRaw);
 
@@ -983,12 +1118,10 @@
         renderChat();
         scrollToBottom('smooth');
 
-        // ✅ (2) 중국어(한자) 1글자라도 포함될 때만 자동복사
         if(el.autoCopy.checked && hasChinese(translated)){
           const ok = await copyToClipboard(translated, true);
           if(ok){
             toast('중국어 자동 복사 완료');
-            // 클립보드 상태 업데이트 - 자동 입력 방지
             updateLastClipboard(translated);
           }
           else{
@@ -996,7 +1129,6 @@
             toast('자동 복사 제한 → 아래 바 탭');
           }
         } else {
-          // 한국어만이면 자동복사/복사바 없음
           hideCopyBar();
         }
 
@@ -1061,14 +1193,14 @@
     loadSettings();
     loadCustomFont();
     renderChat();
-    setSettingsVisible(false);
+    el.settingsPanel.classList.add('hidden');
+    el.learningPanel.classList.add('hidden');
     setConnState('warn');
 
-    // 클립보드 상시 감시 및 자동 번역
+    // 클립보드 상시 감시
     const LS_LAST_CLIP = 'bk_tr_lastClip';
     let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
     
-    // 클립보드 상태 업데이트 함수 (자동 복사 시 호출)
     function updateLastClipboard(text){
       _lastClipboardText = text;
       localStorage.setItem(LS_LAST_CLIP, text);
@@ -1076,50 +1208,36 @@
     
     async function checkClipboard(){
       try{
-        // 번역 중이면 클립보드 감시 중지
         if(_isBusy) return;
-        
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
         if(!trimmed) return;
-        
-        // 이전 클립보드 내용과 동일하면 무시
         if(_lastClipboardText === trimmed) return;
         
-        // 모든 번역 결과(assistant)와 동일하면 무시
         const allAssistantMsgs = chat.filter(m => m.role === 'assistant');
         for(const msg of allAssistantMsgs){
           if(msg.text === trimmed) return;
         }
         
-        // 모든 입력 내용(user)과 동일하면 무시
         const allUserMsgs = chat.filter(m => m.role === 'user');
         for(const msg of allUserMsgs){
           if(msg.text === trimmed) return;
         }
         
-        // 한국어 또는 중국어가 포함된 경우에만 자동 입력 (영어만 있으면 무시)
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
-        
-        // 영어 장문이면 무시
         if(isEnglishLongText(trimmed)) return;
         
         updateLastClipboard(trimmed);
-        
         el.input.value = trimmed;
-        
         setTimeout(() => send(), 100);
       } catch(err){
-        // 권한 거부 등은 조용히 무시
       }
     }
     
-    // 초기 실행 및 1초마다 클립보드 감시
     checkClipboard();
     setInterval(checkClipboard, 1000);
 
-    // TTS voices 미리 로드
     if('speechSynthesis' in window){
       window.speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
@@ -1127,10 +1245,19 @@
 
     // Events
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
+    el.learningToggleBtn.addEventListener('click', toggleLearning);
     el.downloadBtn.addEventListener('click', downloadChatAsTxt);
     el.topTestBtn.addEventListener('click', testConnection);
     el.topClearBtn.addEventListener('click', clearChatOnly);
     el.saveBtn.addEventListener('click', saveSettings);
+    
+    // 학습 관련 이벤트
+    el.runLearnBtn.addEventListener('click', runLearning);
+    el.mergePromptBtn.addEventListener('click', mergePrompt);
+    
+    // 라디오 버튼 변경 시 자동 저장
+    el.useOriginal.addEventListener('change', saveSettings);
+    el.useLearned.addEventListener('change', saveSettings);
 
     el.sendBtnL.addEventListener('click', send);
     el.sendBtnR.addEventListener('click', send);
@@ -1145,7 +1272,6 @@
       }
     });
 
-    // Copy bar
     el.copyBar.addEventListener('click', async () => {
       if(!_pendingCopyText) return;
       const ok = await copyToClipboard(_pendingCopyText, false);
@@ -1158,7 +1284,6 @@
       if(ok) hideCopyBar();
     });
 
-    // Font upload
     el.fontFile.addEventListener('change', async (e) => {
       const file = e.target.files && e.target.files[0];
       if(file) await saveCustomFontFile(file);
@@ -1166,7 +1291,6 @@
     });
     el.clearFontBtn.addEventListener('click', clearCustomFont);
 
-    // viewport 변화 시 하단 유지
     el.input.addEventListener('focus', () => scrollToBottom('smooth'));
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
