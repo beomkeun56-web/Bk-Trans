@@ -358,6 +358,11 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
       </button>
 
+      <!-- 번역 기록 다운로드 -->
+      <button id="downloadBtn" class="iconBtn" type="button" aria-label="번역 기록 다운로드">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zm7-18v12l4-4 1.4 1.4L12 16.8l-5.4-5.4L8 10l4 4V2z"/></svg>
+      </button>
+
       <div style="flex:1"></div>
 
       <!-- 연결 TEST + Clear -->
@@ -487,6 +492,7 @@
 
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
+      downloadBtn: document.getElementById('downloadBtn'),
 
       topTestBtn: document.getElementById('topTestBtn'),
       topClearBtn: document.getElementById('topClearBtn'),
@@ -594,14 +600,14 @@
       return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(String(s || ''));
     }
 
-    // 영어 장문 여부 (50자 이상 영어만 있으면 장문으로 판단)
+    // 영어 장문 여부 (40자 이상 영어만 있으면 장문으로 판단)
     function isEnglishLongText(s){
       const str = String(s || '');
       // 한국어나 중국어가 있으면 영어 장문 아님
       if(hasKorean(str) || hasChinese(str)) return false;
-      // 영어 문자가 50자 이상이면 장문
+      // 영어 문자가 40자 이상이면 장문
       const englishChars = str.match(/[a-zA-Z]/g);
-      return englishChars && englishChars.length >= 50;
+      return englishChars && englishChars.length >= 40;
     }
 
     // 중국어 TTS 재생 (여성 목소리)
@@ -1028,6 +1034,29 @@
       toast('Clear 완료');
     }
 
+    function downloadChatAsTxt(){
+      if(chat.length === 0){
+        toast('다운로드할 번역 기록이 없습니다.');
+        return;
+      }
+      let content = '';
+      for(const m of chat){
+        const role = m.role === 'user' ? '[입력]' : '[번역]';
+        const time = m.ts ? new Date(m.ts).toLocaleString('ko-KR') : '';
+        content += role + ' ' + time + '\n' + m.text + '\n\n';
+      }
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'BK_Translator_' + new Date().toISOString().slice(0,10) + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('번역 기록 다운로드 완료');
+    }
+
     // Init
     loadSettings();
     loadCustomFont();
@@ -1098,6 +1127,7 @@
 
     // Events
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
+    el.downloadBtn.addEventListener('click', downloadChatAsTxt);
     el.topTestBtn.addEventListener('click', testConnection);
     el.topClearBtn.addEventListener('click', clearChatOnly);
     el.saveBtn.addEventListener('click', saveSettings);
