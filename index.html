@@ -594,6 +594,16 @@
       return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(String(s || ''));
     }
 
+    // 영어 장문 여부 (50자 이상 영어만 있으면 장문으로 판단)
+    function isEnglishLongText(s){
+      const str = String(s || '');
+      // 한국어나 중국어가 있으면 영어 장문 아님
+      if(hasKorean(str) || hasChinese(str)) return false;
+      // 영어 문자가 50자 이상이면 장문
+      const englishChars = str.match(/[a-zA-Z]/g);
+      return englishChars && englishChars.length >= 50;
+    }
+
     // 중국어 TTS 재생 (여성 목소리)
     function speakChinese(text){
       if(!('speechSynthesis' in window)) {
@@ -803,7 +813,9 @@
       setSettingsVisible(isHidden);
     }
 
+    let _isBusy = false;
     function setConnState(state){
+      _isBusy = (state === 'busy');
       if(state === 'ok') el.connDot.style.background = 'var(--ok)';
       else if(state === 'busy') el.connDot.style.background = 'var(--warn)';
       else if(state === 'err') el.connDot.style.background = 'var(--danger)';
@@ -1035,6 +1047,9 @@
     
     async function checkClipboard(){
       try{
+        // 번역 중이면 클립보드 감시 중지
+        if(_isBusy) return;
+        
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
@@ -1057,6 +1072,9 @@
         
         // 한국어 또는 중국어가 포함된 경우에만 자동 입력 (영어만 있으면 무시)
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
+        
+        // 영어 장문이면 무시
+        if(isEnglishLongText(trimmed)) return;
         
         updateLastClipboard(trimmed);
         
