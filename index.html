@@ -626,4 +626,614 @@
         ta.style.left = '-9999px';
         document.body.appendChild(ta);
         ta.focus();
-  
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if(ok){
+          if(!silent) toast('복사 완료');
+          return true;
+        }
+      } catch {}
+      if(!silent) toast('복사 실패(보안 정책)');
+      return false;
+    }
+
+    let _pendingCopyText = '';
+    function showCopyBar(text){
+      _pendingCopyText = String(text ?? '');
+      el.copyBar.classList.remove('hidden');
+    }
+    function hideCopyBar(){
+      _pendingCopyText = '';
+      el.copyBar.classList.add('hidden');
+    }
+
+    // ✅ (2) 중국어(한자) 1글자라도 포함 여부
+    function hasChinese(s){
+      return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s || ''));
+    }
+
+    // 한국어 포함 여부
+    function hasKorean(s){
+      return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(String(s || ''));
+    }
+
+    // 영어 장문 여부 (40자 이상 영어만 있으면 장문으로 판단)
+    function isEnglishLongText(s){
+      const str = String(s || '');
+      // 한국어나 중국어가 있으면 영어 장문 아님
+      if(hasKorean(str) || hasChinese(str)) return false;
+      // 영어 문자가 40자 이상이면 장문
+      const englishChars = str.match(/[a-zA-Z]/g);
+      return englishChars && englishChars.length >= 40;
+    }
+
+    // 중국어 TTS 재생 (여성 목소리)
+    function speakChinese(text){
+      if(!('speechSynthesis' in window)) {
+        toast('TTS 미지원 브라우저');
+        return;
+      }
+      
+      // 이미 재생 중이면 중지
+      window.speechSynthesis.cancel();
+      
+      const speak = () => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.9;
+        utterance.pitch = 1.1;
+        
+        // 여성 목소리 찾기
+        const voices = window.speechSynthesis.getVoices();
+        const zhVoice = voices.find(v => 
+          (v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh')) && 
+          (v.name.toLowerCase().includes('female') || v.name.includes('Ting') || v.name.includes('Xiaoxiao') || v.name.includes('Huihui'))
+        ) || voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh'));
+        
+        if(zhVoice) utterance.voice = zhVoice;
+        
+        window.speechSynthesis.speak(utterance);
+      };
+      
+      // voices가 로드되지 않았을 수 있으므로 대기 후 실행
+      const voices = window.speechSynthesis.getVoices();
+      if(voices.length > 0){
+        speak();
+      } else {
+        window.speechSynthesis.onvoiceschanged = () => {
+          speak();
+          window.speechSynthesis.onvoiceschanged = null;
+        };
+        // 펴백으로 100ms 후 다시 시도
+        setTimeout(() => {
+          if(window.speechSynthesis.getVoices().length > 0) speak();
+        }, 100);
+      }
+    }
+
+    // ===== Font: IndexedDB =====
+    const DB_NAME = 'bk_tr_db';
+    const DB_STORE = 'kv';
+    let _fontBlobUrl = null;
+
+    function openDB(){
+      return new Promise((resolve, reject) => {
+        if(!('indexedDB' in window)) return reject(new Error('IndexedDB 미지원'));
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function idbGet(key){
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readonly');
+        const os = tx.objectStore(DB_STORE);
+        const r = os.get(key);
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      });
+    }
+
+    async function idbSet(key, val){
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).put(val, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function idbDel(key){
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function applyFontRecord(rec){
+      if(_fontBlobUrl){
+        try{ URL.revokeObjectURL(_fontBlobUrl); } catch {}
+        _fontBlobUrl = null;
+      }
+      const styleId = 'customFontStyle';
+      let st = document.getElementById(styleId);
+      if(!st){
+        st = document.createElement('style');
+        st.id = styleId;
+        document.head.appendChild(st);
+      }
+
+      if(!rec){
+        st.textContent = '';
+        document.documentElement.style.setProperty('--fontMain', 'system-ui');
+        el.fontStatus.textContent = '기본(레포 woff2 우선)';
+        return;
+      }
+
+      const blob = new Blob([rec.data], {type: rec.type || 'font/ttf'});
+      _fontBlobUrl = URL.createObjectURL(blob);
+
+      const format = (rec.type && rec.type.includes('woff2')) ? 'woff2' : 'truetype';
+      st.textContent =
+        '@font-face{' +
+          'font-family:"BKCustom";' +
+          'src:url("' + _fontBlobUrl + '") format("' + format + '");' +
+          'font-display:swap;' +
+        '}';
+
+      document.documentElement.style.setProperty('--fontMain', '"BKCustom"');
+      el.fontStatus.textContent = rec.name || 'BKCustom';
+    }
+
+    async function loadCustomFont(){
+      try{
+        const rec = await idbGet('font');
+        applyFontRecord(rec || null);
+      } catch {
+        applyFontRecord(null);
+      }
+    }
+
+    async function saveCustomFontFile(file){
+      if(!file) return;
+      const buf = await file.arrayBuffer();
+      const rec = {name: file.name, type: file.type, data: buf};
+      await idbSet('font', rec);
+      applyFontRecord(rec);
+      toast('폰트 적용 완료');
+    }
+
+    async function clearCustomFont(){
+      try{ await idbDel('font'); } catch {}
+      applyFontRecord(null);
+      toast('폰트 초기화 완료');
+    }
+
+    // ===== Chat =====
+    let chat = [];
+
+    function defaultSystemPrompt(){
+      return [
+        "You are a translation engine.",
+        "Translate the user's input according to the rules below.",
+        "- Output ONLY the translated text. No explanations.",
+        "- If input starts with '#', remove it and translate Korean -> Simplified Chinese.",
+        "- Otherwise translate Simplified Chinese -> Korean.",
+        "- Keep line breaks as-is."
+      ].join("\\n");
+    }
+
+    function loadSettings(){
+      el.apiKey.value = localStorage.getItem(LS.apiKey) || '';
+      el.model.value = localStorage.getItem(LS.model) || el.model.value;
+      el.temperature.value = localStorage.getItem(LS.temp) || el.temperature.value;
+      el.top_p.value = localStorage.getItem(LS.top_p) || el.top_p.value;
+      el.maxTokens.value = localStorage.getItem(LS.maxTokens) || el.maxTokens.value;
+      el.systemPrompt.value = localStorage.getItem(LS.system) || defaultSystemPrompt();
+      el.autoCopy.checked = (localStorage.getItem(LS.autoCopy) || '0') === '1';
+
+      const savedChat = localStorage.getItem(LS.chat);
+      if(savedChat){
+        try{ chat = JSON.parse(savedChat) || []; } catch { chat = []; }
+      }
+    }
+
+    function saveSettings(){
+      localStorage.setItem(LS.apiKey, el.apiKey.value.trim());
+      localStorage.setItem(LS.model, el.model.value.trim());
+      localStorage.setItem(LS.temp, el.temperature.value.trim());
+      localStorage.setItem(LS.top_p, el.top_p.value.trim());
+      localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
+      localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
+      localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
+      toast('저장 완료');
+      setSettingsVisible(false);
+    }
+
+    function saveChat(){
+      localStorage.setItem(LS.chat, JSON.stringify(chat));
+    }
+
+    function setSettingsVisible(v){
+      el.settingsPanel.classList.toggle('hidden', !v);
+      if(v){
+        requestAnimationFrame(() => el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'}));
+      }
+    }
+
+    function toggleSettings(){
+      const isHidden = el.settingsPanel.classList.contains('hidden');
+      setSettingsVisible(isHidden);
+    }
+
+    let _isBusy = false;
+    function setConnState(state){
+      _isBusy = (state === 'busy');
+      if(state === 'ok') el.connDot.style.background = 'var(--ok)';
+      else if(state === 'busy') el.connDot.style.background = 'var(--warn)';
+      else if(state === 'err') el.connDot.style.background = 'var(--danger)';
+      else el.connDot.style.background = 'var(--warn)';
+    }
+
+    function normalizeNewlines(s){
+      return String(s).replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');
+    }
+
+    function countMeaningfulLines(s){
+      const norm = normalizeNewlines(s);
+      const trimmed = norm.replace(/\\n+$/g, '');
+      if(trimmed.length === 0) return 1;
+      return trimmed.split('\\n').length;
+    }
+
+    function normalizeOutput(src, out){
+      const srcLineCount = countMeaningfulLines(src);
+      const norm = normalizeNewlines(out).trimEnd();
+      if(norm.length === 0) return '';
+      const lines = norm.split('\\n');
+      const nonEmpty = lines.filter(l => l.trim().length > 0);
+      const uniq = [...new Set(nonEmpty.map(l => l.trim()))];
+      if(srcLineCount === 1 && uniq.length === 1 && nonEmpty.length > 1){
+        return uniq[0];
+      }
+      return norm;
+    }
+
+    function validateNumber(x, min, max, name){
+      const v = Number(x);
+      if(!Number.isFinite(v)) throw new Error(name + ' 값이 숫자가 아닙니다.');
+      if(v < min || v > max) throw new Error(name + ' 범위 오류(' + min + '~' + max + ')');
+      return v;
+    }
+
+    async function callOpenRouter(userText){
+      const apiKey = el.apiKey.value.trim();
+      if(!apiKey) throw new Error('API Key가 비어 있습니다.');
+
+      const model = el.model.value.trim();
+      if(!model) throw new Error('모델이 비어 있습니다.');
+
+      const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
+      const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
+      const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
+      const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
+
+      const payload = {
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userText }
+        ],
+        temperature,
+        top_p,
+        max_tokens
+      };
+
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey,
+          'HTTP-Referer': location.origin,
+          'X-Title': 'BK Translator (Personal)'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await res.text();
+      let json = null;
+      try{ json = JSON.parse(text); } catch {}
+
+      if(!res.ok){
+        const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
+        throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
+      }
+
+      const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+      if(typeof out !== 'string') throw new Error('응답 파싱 실패');
+      return out;
+    }
+
+    function renderChat(){
+      el.chat.innerHTML = '';
+      if(chat.length === 0){
+        const empty = document.createElement('div');
+        empty.className = 'hint';
+        empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
+        el.chat.appendChild(empty);
+        scrollToBottom('instant');
+        return;
+      }
+
+      for(const m of chat){
+        const row = document.createElement('div');
+        row.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = m.text;
+        row.appendChild(bubble);
+
+        const actions = document.createElement('div');
+        actions.className = 'actionsRow';
+
+        // 중국어일 때 스피커 아이콘 추가
+        if(hasChinese(m.text)){
+          const speakBtn = document.createElement('button');
+          speakBtn.className = 'miniIconBtn';
+          speakBtn.type = 'button';
+          speakBtn.setAttribute('aria-label', '읍성 재생');
+          speakBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
+          speakBtn.addEventListener('click', () => { speakChinese(m.text); });
+          actions.appendChild(speakBtn);
+        }
+
+        if(m.role === 'assistant'){
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'miniIconBtn';
+          copyBtn.type = 'button';
+          copyBtn.setAttribute('aria-label', '복사');
+          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
+          copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
+          actions.appendChild(copyBtn);
+        }
+
+        if(actions.children.length > 0){
+          row.appendChild(actions);
+        }
+
+        el.chat.appendChild(row);
+      }
+      scrollToBottom('instant');
+    }
+
+    async function send(){
+      const userText = el.input.value.trim();
+      if(!userText) return;
+
+      hideCopyBar();
+
+      chat.push({ role:'user', text:userText, ts:Date.now() });
+      saveChat();
+      renderChat();
+      scrollToBottom('smooth');
+
+      el.input.value = '';
+      setConnState('busy');
+
+      try{
+        const translatedRaw = await callOpenRouter(userText);
+        const translated = normalizeOutput(userText, translatedRaw);
+
+        chat.push({ role:'assistant', text: translated, ts: Date.now() });
+        saveChat();
+        renderChat();
+        scrollToBottom('smooth');
+
+        // ✅ (2) 중국어(한자) 1글자라도 포함될 때만 자동복사
+        if(el.autoCopy.checked && hasChinese(translated)){
+          const ok = await copyToClipboard(translated, true);
+          if(ok){
+            toast('중국어 자동 복사 완료');
+            // 클립보드 상태 업데이트 - 자동 입력 방지
+            updateLastClipboard(translated);
+          }
+          else{
+            showCopyBar(translated);
+            toast('자동 복사 제한 → 아래 바 탭');
+          }
+        } else {
+          // 한국어만이면 자동복사/복사바 없음
+          hideCopyBar();
+        }
+
+        setConnState('ok');
+      } catch(err){
+        const msg = (err && err.message) ? err.message : String(err);
+        chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
+        saveChat();
+        renderChat();
+        setConnState('err');
+        toast('요청 실패: ' + msg);
+      }
+    }
+
+    async function testConnection(){
+      setConnState('busy');
+      try{
+        await callOpenRouter('ping');
+        setConnState('ok');
+        toast('연결 테스트 성공');
+      } catch(err){
+        setConnState('err');
+        toast('연결 테스트 실패: ' + (err && err.message ? err.message : err));
+      }
+    }
+
+    function clearChatOnly(){
+      if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
+      chat = [];
+      hideCopyBar();
+      try{ localStorage.setItem(LS.chat, '[]'); } catch {}
+      try{ localStorage.removeItem(LS.chat); } catch {}
+      renderChat();
+      scrollToBottom('smooth');
+      toast('Clear 완료');
+    }
+
+    function downloadChatAsTxt(){
+      if(chat.length === 0){
+        toast('다운로드할 번역 기록이 없습니다.');
+        return;
+      }
+      let content = '';
+      for(const m of chat){
+        const role = m.role === 'user' ? '[입력]' : '[번역]';
+        const time = m.ts ? new Date(m.ts).toLocaleString('ko-KR') : '';
+        content += role + ' ' + time + '\n' + m.text + '\n\n';
+      }
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'BK_Translator_' + new Date().toISOString().slice(0,10) + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('번역 기록 다운로드 완료');
+    }
+
+    // Init
+    loadSettings();
+    loadCustomFont();
+    renderChat();
+    setSettingsVisible(false);
+    setConnState('warn');
+
+    // 클립보드 상시 감시 및 자동 번역
+    const LS_LAST_CLIP = 'bk_tr_lastClip';
+    let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
+    
+    // 클립보드 상태 업데이트 함수 (자동 복사 시 호출)
+    function updateLastClipboard(text){
+      _lastClipboardText = text;
+      localStorage.setItem(LS_LAST_CLIP, text);
+    }
+    
+    async function checkClipboard(){
+      try{
+        // 번역 중이면 클립보드 감시 중지
+        if(_isBusy) return;
+        
+        if(!navigator.clipboard || !navigator.clipboard.readText) return;
+        const clipText = await navigator.clipboard.readText();
+        const trimmed = String(clipText || '').trim();
+        if(!trimmed) return;
+        
+        // 이전 클립보드 내용과 동일하면 무시
+        if(_lastClipboardText === trimmed) return;
+        
+        // 모든 번역 결과(assistant)와 동일하면 무시
+        const allAssistantMsgs = chat.filter(m => m.role === 'assistant');
+        for(const msg of allAssistantMsgs){
+          if(msg.text === trimmed) return;
+        }
+        
+        // 모든 입력 내용(user)과 동일하면 무시
+        const allUserMsgs = chat.filter(m => m.role === 'user');
+        for(const msg of allUserMsgs){
+          if(msg.text === trimmed) return;
+        }
+        
+        // 한국어 또는 중국어가 포함된 경우에만 자동 입력 (영어만 있으면 무시)
+        if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
+        
+        // 영어 장문이면 무시
+        if(isEnglishLongText(trimmed)) return;
+        
+        updateLastClipboard(trimmed);
+        
+        el.input.value = trimmed;
+        
+        setTimeout(() => send(), 100);
+      } catch(err){
+        // 권한 거부 등은 조용히 무시
+      }
+    }
+    
+    // 초기 실행 및 1초마다 클립보드 감시
+    checkClipboard();
+    setInterval(checkClipboard, 1000);
+
+    // TTS voices 미리 로드
+    if('speechSynthesis' in window){
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    // Events
+    el.settingsToggleBtn.addEventListener('click', toggleSettings);
+    el.downloadBtn.addEventListener('click', downloadChatAsTxt);
+    el.topTestBtn.addEventListener('click', testConnection);
+    el.topClearBtn.addEventListener('click', clearChatOnly);
+    el.saveBtn.addEventListener('click', saveSettings);
+
+    el.sendBtnL.addEventListener('click', send);
+    el.sendBtnR.addEventListener('click', send);
+
+    el.input.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        send();
+      }
+      if(e.key === 'Escape'){
+        el.input.value = '';
+      }
+    });
+
+    // Copy bar
+    el.copyBar.addEventListener('click', async () => {
+      if(!_pendingCopyText) return;
+      const ok = await copyToClipboard(_pendingCopyText, false);
+      if(ok) hideCopyBar();
+    });
+    el.copyBarBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if(!_pendingCopyText) return;
+      const ok = await copyToClipboard(_pendingCopyText, false);
+      if(ok) hideCopyBar();
+    });
+
+    // Font upload
+    el.fontFile.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if(file) await saveCustomFontFile(file);
+      e.target.value = '';
+    });
+    el.clearFontBtn.addEventListener('click', clearCustomFont);
+
+    // viewport 변화 시 하단 유지
+    el.input.addEventListener('focus', () => scrollToBottom('smooth'));
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
+    }
+
+    if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
+      toast('권장: HTTPS에서 사용하세요(키 보안)');
+    }
+  </script>
+</body>
+</html>
