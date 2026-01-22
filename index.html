@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#050505" />
-  <title>BK Translator (Loop Fixed)</title>
+  <title>BK Translator (Loop Fixed v2)</title>
 
   <link rel="icon" href="data:," />
 
@@ -161,7 +161,7 @@
       font-size:13px;
       cursor:pointer;
       box-shadow: 0 8px 18px rgba(0,0,0,.35);
-      flex: 1; /* 버튼 균등 분할 */
+      flex: 1; 
       min-width: 80px;
     }
     .btn:active{transform:scale(.98)}
@@ -520,7 +520,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // [중요] 마지막 처리된 텍스트 저장 (무한 루프/중복 방지)
+    // [중요] 마지막 처리된 텍스트 저장 (무한 루프/중복 방지용)
     let lastProcessedText = "";
 
     const LS = {
