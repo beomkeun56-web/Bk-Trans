@@ -132,7 +132,7 @@
       box-shadow: var(--shadow);
     }
     .settings .row, .learningPanel .row{display:flex; gap:10px; flex-wrap:wrap}
-     
+      
     label{font-size:12px; color:var(--muted); display:block; margin:10px 0 6px}
     .sectionTitle {
         font-size: 13px; font-weight: 700; color: var(--blue); margin: 15px 0 5px; 
@@ -869,7 +869,7 @@
       el.learningPanel.classList.add('hidden'); 
       el.settingsPanel.classList.toggle('hidden');
     }
-    
+     
     function toggleLearning(){
       el.settingsPanel.classList.add('hidden');
       el.learningPanel.classList.toggle('hidden');
@@ -1083,7 +1083,7 @@ ${chatHistoryStr}
       const userText = el.input.value.trim();
       if(!userText) return;
 
-      // [무한 루프 차단 핵심] 동일 텍스트 재입력 방지
+      // [무한 루프 차단 1차] 방금 전송한 내용과 완벽히 동일하면 무시
       if(userText === lastProcessedText) {
           console.log("중복 내용 감지: 자동 번역 실행 중단");
           return;
@@ -1116,7 +1116,8 @@ ${chatHistoryStr}
           const ok = await copyToClipboard(translated, true);
           if(ok){
             toast('중국어 자동 복사 완료');
-            updateLastClipboard(translated); // 복사된 내용이 인풋으로 재진입 방지
+            // [무한 루프 차단 2차] 자동 복사한 내용은 클립보드 감지에서 무시하도록 즉시 업데이트
+            updateLastClipboard(translated); 
           }
           else{
             showCopyBar(translated);
@@ -1241,28 +1242,33 @@ ${chatHistoryStr}
         
         if(!trimmed) return;
         
-        // [수정] 방금 번역했던 내용과 동일하면 무시 (무한 루프 방지 2차 방어선)
+        // 1. 방금 처리한 텍스트와 같으면 패스 (1차 방어)
         if(trimmed === lastProcessedText) return;
 
+        // 2. 내부적으로 알고 있는 마지막 클립보드 내용과 같으면 패스 (2차 방어)
         if(_lastClipboardText === trimmed) return;
-        
-        // 이미 대화창에 있는 내용이면 무시 (화면상 중복 방지)
-        const allAssistantMsgs = chat.filter(m => m.role === 'assistant');
-        for(const msg of allAssistantMsgs){
-          if(msg.text === trimmed) return;
+
+        // 3. [핵심 수정] 대화 기록 전체(User + Assistant) 중 동일한 내용이 있으면 패스
+        // 단순 === 비교가 아니라 trim() 후 비교하여 미세한 공백 차이로 인한 루프 방지
+        const isExistInHistory = chat.some(msg => msg.text.trim() === trimmed);
+
+        if(isExistInHistory) {
+            // 이미 기록에 존재함 → 클립보드 상태만 갱신하고 자동 입력은 하지 않음
+            updateLastClipboard(trimmed);
+            return;
         }
         
-        const allUserMsgs = chat.filter(m => m.role === 'user');
-        for(const msg of allUserMsgs){
-          if(msg.text === trimmed) return;
-        }
-        
+        // 언어 감지 필터
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
         if(isEnglishLongText(trimmed)) return;
         
+        // 통과 시 실행
         updateLastClipboard(trimmed);
         el.input.value = trimmed;
-        setTimeout(() => send(), 100);
+        toast('클립보드 감지 → 자동 번역');
+
+        setTimeout(() => send(), 200);
+
       } catch(err){
       }
     }
