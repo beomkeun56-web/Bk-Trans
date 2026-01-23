@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#050505" />
-  <title>BK Translator v1.1</title>
+  <title>BK Translator v1.2</title>
 
   <link rel="icon" href="data:," />
 
@@ -91,8 +91,9 @@
       padding:0;
     }
     .iconBtn:active{transform:scale(.98)}
-    /* SVG 크기 및 채우기 설정 */
-    .iconBtn svg{width:20px; height:20px; fill: currentColor}
+    
+    /* [수정] 아이콘 크기 최적화 */
+    .iconBtn svg{width:22px; height:22px; fill: currentColor}
 
     /* 연결 상태 표시등 스타일 */
     .status-indicator-box {
@@ -382,7 +383,7 @@
   <header>
     <div class="topbar">
       <div class="title">
-        BK Translator <span class="version-tag">v1.1</span>
+        BK Translator <span class="version-tag">v1.2</span>
       </div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -401,7 +402,7 @@
 
       <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트" style="color:#ffffff;">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>
+           <path d="M12.01 21.49L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7l11.63 14.49.01.01.01-.01z"/>
         </svg>
       </button>
 
@@ -572,7 +573,6 @@
 
       topTestBtn: document.getElementById('topTestBtn'),
       topClearBtn: document.getElementById('topClearBtn'),
-      // connBtn 제거됨, connDot만 사용
       connDot: document.getElementById('connDot'),
 
       apiKey: document.getElementById('apiKey'),
@@ -967,29 +967,47 @@
         max_tokens
       };
 
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey,
-          'HTTP-Referer': location.origin || 'http://localhost', 
-          'X-Title': 'BK Translator (Personal)'
-        },
-        body: JSON.stringify(payload)
-      });
+      // [수정] 429 오류 발생 시 자동 재시도 로직 추가
+      let retries = 0;
+      const maxRetries = 3;
 
-      const text = await res.text();
-      let json = null;
-      try{ json = JSON.parse(text); } catch {}
+      while(true){
+          const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + apiKey,
+              'HTTP-Referer': location.origin || 'http://localhost', 
+              'X-Title': 'BK Translator (Personal)'
+            },
+            body: JSON.stringify(payload)
+          });
 
-      if(!res.ok){
-        const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
-        throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
+          if(res.status === 429){
+              if(retries < maxRetries){
+                  retries++;
+                  const delay = 1000 * retries; // 1초, 2초, 3초 대기
+                  toast(`서버 혼잡 (429). ${retries}차 재시도 중...`);
+                  await new Promise(r => setTimeout(r, delay));
+                  continue; // 루프 다시 실행
+              } else {
+                   throw new Error('HTTP 429: 서버가 너무 바쁩니다. 잠시 후 다시 시도하세요.');
+              }
+          }
+
+          const text = await res.text();
+          let json = null;
+          try{ json = JSON.parse(text); } catch {}
+
+          if(!res.ok){
+            const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
+            throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
+          }
+
+          const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+          if(typeof out !== 'string') throw new Error('응답 파싱 실패');
+          return out;
       }
-
-      const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
-      if(typeof out !== 'string') throw new Error('응답 파싱 실패');
-      return out;
     }
 
     async function runLearning(){
