@@ -4,8 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#050505" />
-  <title>BK Translator v1.3</title>
+  <title>BK Translator (OpenRouter)</title>
 
+  <!-- 404 favicon 방지 -->
   <link rel="icon" href="data:," />
 
   <style>
@@ -30,6 +31,7 @@
       --fontMain: system-ui;
     }
 
+    /* GitHub Pages에 올린 woff2가 있으면 자동 적용 (업로드폰트가 있으면 그게 우선) */
     @font-face{
       font-family:"BKRepoFont";
       src:url("./assets/fonts/NEXONLv2Gothic.woff2") format("woff2");
@@ -66,17 +68,9 @@
       letter-spacing:.2px;
       font-size:14px;
       margin-right:4px;
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-    }
-    .version-tag {
-        font-size: 11px;
-        font-weight: 400;
-        color: var(--muted);
-        opacity: 0.8;
     }
 
+    /* 아이콘 버튼: 크기 통일 / 진한 검은색 / 테두리 없음 */
     .iconBtn{
       width:36px; height:36px;
       display:inline-flex;
@@ -91,24 +85,16 @@
       padding:0;
     }
     .iconBtn:active{transform:scale(.98)}
-    
-    .iconBtn svg{width:22px; height:22px; fill: currentColor}
+    .iconBtn svg{width:18px; height:18px; fill: currentColor}
 
-    /* 연결 상태 표시등 스타일 */
-    .status-indicator-box {
-      width:36px; height:36px;
-      display:flex; align-items:center; justify-content:center;
-      background: transparent;
-      box-shadow: none;
-      cursor: default;
-    }
+    /* 연결 상태 버튼도 동일 크기 */
+    .connBtn{ position:relative; }
     .connDot{
-      width: 14px; height: 14px;
-      border-radius: 50%;
+      position:absolute;
+      right:8px; bottom:8px;
+      width:8px; height:8px; border-radius:999px;
       background: var(--warn);
-      box-shadow: 0 0 8px rgba(0,0,0,0.5);
-      border: 2px solid rgba(255,255,255,0.1);
-      transition: background 0.3s ease;
+      box-shadow: 0 0 0 2px rgba(5,5,5,.95);
     }
 
     /* ===== Main ===== */
@@ -123,6 +109,7 @@
       margin:0 auto;
     }
 
+    /* 카드/테두리 제거: 배경색으로만 구분 */
     .panel{
       background: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
       border:none;
@@ -150,10 +137,8 @@
       box-shadow: var(--shadow);
     }
     .settings .row{display:flex; gap:10px; flex-wrap:wrap}
-      
     label{font-size:12px; color:var(--muted); display:block; margin:10px 0 6px}
-    
-    input[type="password"], input[type="text"], textarea, select {
+    input[type="password"], input[type="text"], textarea{
       width:100%;
       background: rgba(0,0,0,.35);
       color: var(--text);
@@ -175,12 +160,11 @@
       font-size:13px;
       cursor:pointer;
       box-shadow: 0 8px 18px rgba(0,0,0,.35);
-      flex: 1; 
-      min-width: 80px;
     }
     .btn:active{transform:scale(.98)}
     .btn.secondary{background: rgba(255,255,255,.06)}
-    
+    .btn.danger{background: rgba(255,107,107,.14)}
+
     /* ===== Chat ===== */
     .chat{
       padding: 14px;
@@ -202,14 +186,16 @@
       font-size: 15px;
     }
 
+    /* ✅ 입력 말풍선: 단색 진한 회색(그라데이션 제거) */
     .msg.user .bubble{
-      background: rgba(46, 52, 64, .92);
+      background: rgba(46, 52, 64, .92); /* 진한 회색 */
       color: rgba(255,255,255,.95);
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       border-bottom-right-radius: 10px;
       max-width: 80%;
     }
 
+    /* 출력 말풍선: 배경 없음(투명) + 그림자 제거 */
     .msg.assistant .bubble{
       background: transparent;
       color: rgba(230,237,243,.92);
@@ -251,6 +237,7 @@
       align-items:center;
     }
 
+    /* ✅ (1) 입력창만 단색 진한 회색으로 변경 */
     #input{
       height:44px;
       line-height:44px;
@@ -260,12 +247,15 @@
       padding: 0 12px;
       border-radius: 16px;
       border:none;
-      background: #2e3440;
-      color: #ffffff;
+
+      background: #2e3440;  /* 단색 진한 회색 */
+      color: #ffffff;       /* 가독성 */
+
       outline:none;
       font-size: 15px;
     }
 
+    /* 전송 버튼: 배경 그대로 + 화살표 흰색 */
     .sendBtn{
       height:44px;
       min-width: 54px;
@@ -361,42 +351,39 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title">
-        BK Translator <span class="version-tag">v1.3</span>
-      </div>
+      <div class="title">BK Translator</div>
 
+      <!-- 설정(메뉴) -->
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
       </button>
 
-      <button id="downloadBtn" class="iconBtn" type="button" aria-label="번역 기록 다운로드">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zm7-18v12l4-4 1.4 1.4L12 16.8l-5.4-5.4L8 10l4 4V2z"/></svg>
-      </button>
-
       <div style="flex:1"></div>
 
-      <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트" style="color:#ffffff;">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-           <path d="M12.01 21.49L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7l11.63 14.49.01.01.01-.01z"/>
-        </svg>
+      <!-- 연결 TEST + Clear -->
+      <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7v3h1a2 2 0 0 1 2 2v6h-2v-6h-2v-5a6 6 0 1 0-12 0v5H2v6H0v-6a2 2 0 0 1 2-2h1V9a7 7 0 0 1 7-7z"/></svg>
       </button>
 
       <button id="topClearBtn" class="iconBtn" type="button" aria-label="Clear(대화 삭제)">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
       </button>
 
-      <div class="iconBtn status-indicator-box" aria-label="연결 상태">
+      <!-- 연결 상태 -->
+      <button id="connBtn" class="iconBtn connBtn" type="button" aria-label="연결 상태">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l-1.5 1.5a4 4 0 0 1-5.7-5.6L5 10.7a4 4 0 0 1 5.6 0l.8.8-1.4 1.4-.8-.8a2 2 0 0 0-2.8 0L4.2 14.3a2 2 0 1 0 2.8 2.8L8.6 15.5 10 17zm4-10l1.5-1.5a4 4 0 1 1 5.7 5.6L19 13.3a4 4 0 0 1-5.6 0l-.8-.8 1.4-1.4.8.8a2 2 0 0 0 2.8 0l2.2-2.2a2 2 0 1 0-2.8-2.8L15.4 8.5 14 7zM8 14l6-6 1.4 1.4-6 6L8 14z"/></svg>
         <span id="connDot" class="connDot"></span>
-      </div>
+      </button>
     </div>
   </header>
 
   <main id="main">
     <div class="wrap">
 
+      <!-- 설정 패널 -->
       <section id="settingsPanel" class="settings hidden">
         <div class="hint" style="margin-bottom:8px;">
-          OpenRouter(Gemini) 설정
+          OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
         </div>
 
         <label for="apiKey">OpenRouter API Key</label>
@@ -421,8 +408,8 @@
           </div>
         </div>
 
-        <label for="systemPrompt">시스템 프롬프트</label>
-        <textarea id="systemPrompt" placeholder="시스템 프롬프트 내용"></textarea>
+        <label for="systemPrompt">프롬프트(시스템/규칙)</label>
+        <textarea id="systemPrompt" placeholder="여기에 본인 프롬프트를 붙여넣으세요."></textarea>
 
         <div class="row" style="align-items:center; margin-top:10px;">
           <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text);">
@@ -440,6 +427,7 @@
         <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
       </section>
 
+      <!-- 대화 -->
       <section class="panel">
         <div class="panelHead">
           <div class="left">
@@ -453,6 +441,7 @@
     </div>
   </main>
 
+  <!-- Composer -->
   <div class="composer">
     <div class="composerInner">
       <button id="sendBtnL" class="sendBtn" type="button" aria-label="전송(좌)">
@@ -473,6 +462,7 @@
     </div>
   </div>
 
+  <!-- Copy bar -->
   <div id="copyBar" class="copyBar hidden" role="button" aria-label="복사 바">
     <div class="copyBarText">번역 완료 · 탭하면 복사</div>
     <button id="copyBarBtn" class="copyBarBtn" type="button">복사</button>
@@ -481,9 +471,6 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // [중요] 마지막 처리된 텍스트 저장 (무한 루프/중복 방지용)
-    let lastProcessedText = "";
-
     const LS = {
       apiKey: 'bk_tr_apiKey',
       model: 'bk_tr_model',
@@ -492,9 +479,7 @@
       maxTokens: 'bk_tr_maxTokens',
       system: 'bk_tr_systemPrompt',
       autoCopy: 'bk_tr_autoCopy',
-      chat: 'bk_tr_chat',
-      draft: 'bk_tr_draft' 
-      // [삭제] 학습 관련 키 제거
+      chat: 'bk_tr_chat'
     };
 
     const el = {
@@ -502,13 +487,10 @@
 
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
-      
-      // [삭제] learningToggleBtn, learningPanel 제거
-
-      downloadBtn: document.getElementById('downloadBtn'),
 
       topTestBtn: document.getElementById('topTestBtn'),
       topClearBtn: document.getElementById('topClearBtn'),
+      connBtn: document.getElementById('connBtn'),
       connDot: document.getElementById('connDot'),
 
       apiKey: document.getElementById('apiKey'),
@@ -519,8 +501,6 @@
       systemPrompt: document.getElementById('systemPrompt'),
       autoCopy: document.getElementById('autoCopy'),
       saveBtn: document.getElementById('saveBtn'),
-
-      // [삭제] 학습 관련 Element 참조 제거
 
       chat: document.getElementById('chat'),
       bottomAnchor: document.getElementById('bottomAnchor'),
@@ -604,40 +584,45 @@
       el.copyBar.classList.add('hidden');
     }
 
+    // ✅ (2) 중국어(한자) 1글자라도 포함 여부
     function hasChinese(s){
       return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s || ''));
     }
 
+    // 한국어 포함 여부
     function hasKorean(s){
       return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(String(s || ''));
     }
 
-    function isEnglishLongText(s){
-      const str = String(s || '');
-      if(hasKorean(str) || hasChinese(str)) return false;
-      const englishChars = str.match(/[a-zA-Z]/g);
-      return englishChars && englishChars.length >= 40;
-    }
-
+    // 중국어 TTS 재생 (여성 목소리)
     function speakChinese(text){
       if(!('speechSynthesis' in window)) {
         toast('TTS 미지원 브라우저');
         return;
       }
+      
+      // 이미 재생 중이면 중지
       window.speechSynthesis.cancel();
+      
       const speak = () => {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'zh-CN';
         utterance.rate = 0.9;
         utterance.pitch = 1.1;
+        
+        // 여성 목소리 찾기
         const voices = window.speechSynthesis.getVoices();
         const zhVoice = voices.find(v => 
           (v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh')) && 
           (v.name.toLowerCase().includes('female') || v.name.includes('Ting') || v.name.includes('Xiaoxiao') || v.name.includes('Huihui'))
         ) || voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh'));
+        
         if(zhVoice) utterance.voice = zhVoice;
+        
         window.speechSynthesis.speak(utterance);
       };
+      
+      // voices가 로드되지 않았을 수 있으므로 대기 후 실행
       const voices = window.speechSynthesis.getVoices();
       if(voices.length > 0){
         speak();
@@ -646,6 +631,7 @@
           speak();
           window.speechSynthesis.onvoiceschanged = null;
         };
+        // 펴백으로 100ms 후 다시 시도
         setTimeout(() => {
           if(window.speechSynthesis.getVoices().length > 0) speak();
         }, 100);
@@ -760,7 +746,7 @@
       toast('폰트 초기화 완료');
     }
 
-    // ===== Chat & Settings =====
+    // ===== Chat =====
     let chat = [];
 
     function defaultSystemPrompt(){
@@ -797,19 +783,26 @@
       localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
       localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
       localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
-      
       toast('저장 완료');
-      el.settingsPanel.classList.add('hidden');
+      setSettingsVisible(false);
     }
 
     function saveChat(){
       localStorage.setItem(LS.chat, JSON.stringify(chat));
     }
 
-    function toggleSettings(){
-      el.settingsPanel.classList.toggle('hidden');
+    function setSettingsVisible(v){
+      el.settingsPanel.classList.toggle('hidden', !v);
+      if(v){
+        requestAnimationFrame(() => el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'}));
+      }
     }
-     
+
+    function toggleSettings(){
+      const isHidden = el.settingsPanel.classList.contains('hidden');
+      setSettingsVisible(isHidden);
+    }
+
     let _isBusy = false;
     function setConnState(state){
       _isBusy = (state === 'busy');
@@ -860,7 +853,6 @@
       const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
       const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
       const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
-      
       const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
 
       const payload = {
@@ -874,47 +866,29 @@
         max_tokens
       };
 
-      // 429 오류 발생 시 자동 재시도 (Lite 버전에서도 유지)
-      let retries = 0;
-      const maxRetries = 3;
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey,
+          'HTTP-Referer': location.origin,
+          'X-Title': 'BK Translator (Personal)'
+        },
+        body: JSON.stringify(payload)
+      });
 
-      while(true){
-          const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + apiKey,
-              'HTTP-Referer': location.origin || 'http://localhost', 
-              'X-Title': 'BK Translator (Personal)'
-            },
-            body: JSON.stringify(payload)
-          });
+      const text = await res.text();
+      let json = null;
+      try{ json = JSON.parse(text); } catch {}
 
-          if(res.status === 429){
-              if(retries < maxRetries){
-                  retries++;
-                  const delay = 1000 * retries;
-                  toast(`서버 혼잡 (429). ${retries}차 재시도 중...`);
-                  await new Promise(r => setTimeout(r, delay));
-                  continue; 
-              } else {
-                   throw new Error('HTTP 429: 서버가 너무 바쁩니다. 잠시 후 다시 시도하세요.');
-              }
-          }
-
-          const text = await res.text();
-          let json = null;
-          try{ json = JSON.parse(text); } catch {}
-
-          if(!res.ok){
-            const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
-            throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
-          }
-
-          const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
-          if(typeof out !== 'string') throw new Error('응답 파싱 실패');
-          return out;
+      if(!res.ok){
+        const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
+        throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
       }
+
+      const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+      if(typeof out !== 'string') throw new Error('응답 파싱 실패');
+      return out;
     }
 
     function renderChat(){
@@ -940,11 +914,12 @@
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
 
+        // 중국어일 때 스피커 아이콘 추가
         if(hasChinese(m.text)){
           const speakBtn = document.createElement('button');
           speakBtn.className = 'miniIconBtn';
           speakBtn.type = 'button';
-          speakBtn.setAttribute('aria-label', '음성 재생');
+          speakBtn.setAttribute('aria-label', '읍성 재생');
           speakBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
           speakBtn.addEventListener('click', () => { speakChinese(m.text); });
           actions.appendChild(speakBtn);
@@ -973,16 +948,7 @@
       const userText = el.input.value.trim();
       if(!userText) return;
 
-      // [무한 루프 차단 1차]
-      if(userText === lastProcessedText) {
-          console.log("중복 내용 감지: 자동 번역 실행 중단");
-          return;
-      }
-      lastProcessedText = userText;
-
       hideCopyBar();
-      
-      localStorage.setItem(LS.draft, '');
 
       chat.push({ role:'user', text:userText, ts:Date.now() });
       saveChat();
@@ -1001,18 +967,20 @@
         renderChat();
         scrollToBottom('smooth');
 
+        // ✅ (2) 중국어(한자) 1글자라도 포함될 때만 자동복사
         if(el.autoCopy.checked && hasChinese(translated)){
           const ok = await copyToClipboard(translated, true);
           if(ok){
             toast('중국어 자동 복사 완료');
-            // [무한 루프 차단 2차]
-            updateLastClipboard(translated); 
+            // 클립보드 상태 업데이트 - 자동 입력 방지
+            updateLastClipboard(translated);
           }
           else{
             showCopyBar(translated);
             toast('자동 복사 제한 → 아래 바 탭');
           }
         } else {
+          // 한국어만이면 자동복사/복사바 없음
           hideCopyBar();
         }
 
@@ -1030,7 +998,7 @@
     async function testConnection(){
       setConnState('busy');
       try{
-        await callOpenRouter('ping'); // 간단 호출
+        await callOpenRouter('ping');
         setConnState('ok');
         toast('연결 테스트 성공');
       } catch(err){
@@ -1039,74 +1007,29 @@
       }
     }
 
-    async function clearChatOnly(){
-      if(!confirm('모든 기록과 클립보드를 삭제합니다. 계속할까요?')) return;
-      
+    function clearChatOnly(){
+      if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
-      lastProcessedText = "";
-      updateLastClipboard("");
-
       hideCopyBar();
-      renderChat();
-      el.input.value = "";
-      scrollToBottom('smooth');
-
+      try{ localStorage.setItem(LS.chat, '[]'); } catch {}
       try{ localStorage.removeItem(LS.chat); } catch {}
-      try{ localStorage.removeItem(LS.draft); } catch {}
-
-      try {
-        await navigator.clipboard.writeText("");
-        toast('기록 및 클립보드 완전 삭제');
-      } catch (e) {
-        toast('기록 삭제 완료 (클립보드 접근 불가)');
-      }
-    }
-
-    function downloadChatAsTxt(){
-      if(chat.length === 0){
-        toast('다운로드할 번역 기록이 없습니다.');
-        return;
-      }
-      let content = '';
-      for(const m of chat){
-        const role = m.role === 'user' ? '[입력]' : '[번역]';
-        const time = m.ts ? new Date(m.ts).toLocaleString('ko-KR') : '';
-        content += role + ' ' + time + '\n' + m.text + '\n\n';
-      }
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'BK_Translator_' + new Date().toISOString().slice(0,10) + '.txt';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast('번역 기록 다운로드 완료');
+      renderChat();
+      scrollToBottom('smooth');
+      toast('Clear 완료');
     }
 
     // Init
     loadSettings();
     loadCustomFont();
     renderChat();
-    el.settingsPanel.classList.add('hidden');
+    setSettingsVisible(false);
     setConnState('warn');
 
-    el.input.addEventListener('input', () => {
-        localStorage.setItem(LS.draft, el.input.value);
-    });
-
-    const savedDraft = localStorage.getItem(LS.draft);
-    if(savedDraft){
-        el.input.value = savedDraft;
-        if(el.apiKey.value.trim()){
-            setTimeout(() => send(), 500); 
-        }
-    }
-
+    // 클립보드 상시 감시 및 자동 번역
     const LS_LAST_CLIP = 'bk_tr_lastClip';
     let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
     
+    // 클립보드 상태 업데이트 함수 (자동 복사 시 호출)
     function updateLastClipboard(text){
       _lastClipboardText = text;
       localStorage.setItem(LS_LAST_CLIP, text);
@@ -1114,44 +1037,47 @@
     
     async function checkClipboard(){
       try{
+        // 번역 중이면 클립보드 감시 중지
         if(_isBusy) return;
-        if(!navigator.clipboard || !navigator.clipboard.readText) return;
         
+        if(!navigator.clipboard || !navigator.clipboard.readText) return;
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
-        
         if(!trimmed) return;
         
-        // 1. 방금 처리한 텍스트와 같으면 패스
-        if(trimmed === lastProcessedText) return;
-
-        // 2. 내부적으로 알고 있는 마지막 클립보드 내용과 같으면 패스
+        // 이전 클립보드 내용과 동일하면 무시
         if(_lastClipboardText === trimmed) return;
-
-        // 3. 대화 기록 전체 중 동일한 내용이 있으면 패스
-        const isExistInHistory = chat.some(msg => msg.text.trim() === trimmed);
-
-        if(isExistInHistory) {
-            updateLastClipboard(trimmed);
-            return;
+        
+        // 모든 번역 결과(assistant)와 동일하면 무시
+        const allAssistantMsgs = chat.filter(m => m.role === 'assistant');
+        for(const msg of allAssistantMsgs){
+          if(msg.text === trimmed) return;
         }
         
+        // 모든 입력 내용(user)과 동일하면 무시
+        const allUserMsgs = chat.filter(m => m.role === 'user');
+        for(const msg of allUserMsgs){
+          if(msg.text === trimmed) return;
+        }
+        
+        // 한국어 또는 중국어가 포함된 경우에만 자동 입력 (영어만 있으면 무시)
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
-        if(isEnglishLongText(trimmed)) return;
         
         updateLastClipboard(trimmed);
+        
         el.input.value = trimmed;
-        toast('클립보드 감지 → 자동 번역');
-
-        setTimeout(() => send(), 200);
-
+        
+        setTimeout(() => send(), 100);
       } catch(err){
+        // 권한 거부 등은 조용히 무시
       }
     }
     
+    // 초기 실행 및 1초마다 클립보드 감시
     checkClipboard();
     setInterval(checkClipboard, 1000);
 
+    // TTS voices 미리 로드
     if('speechSynthesis' in window){
       window.speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
@@ -1159,11 +1085,10 @@
 
     // Events
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
-    el.downloadBtn.addEventListener('click', downloadChatAsTxt);
     el.topTestBtn.addEventListener('click', testConnection);
     el.topClearBtn.addEventListener('click', clearChatOnly);
     el.saveBtn.addEventListener('click', saveSettings);
-    
+
     el.sendBtnL.addEventListener('click', send);
     el.sendBtnR.addEventListener('click', send);
 
@@ -1177,6 +1102,7 @@
       }
     });
 
+    // Copy bar
     el.copyBar.addEventListener('click', async () => {
       if(!_pendingCopyText) return;
       const ok = await copyToClipboard(_pendingCopyText, false);
@@ -1189,6 +1115,7 @@
       if(ok) hideCopyBar();
     });
 
+    // Font upload
     el.fontFile.addEventListener('change', async (e) => {
       const file = e.target.files && e.target.files[0];
       if(file) await saveCustomFontFile(file);
@@ -1196,6 +1123,7 @@
     });
     el.clearFontBtn.addEventListener('click', clearCustomFont);
 
+    // viewport 변화 시 하단 유지
     el.input.addEventListener('focus', () => scrollToBottom('smooth'));
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
