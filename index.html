@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#050505" />
-  <title>BK Translator v1.2</title>
+  <title>BK Translator v1.3</title>
 
   <link rel="icon" href="data:," />
 
@@ -92,7 +92,6 @@
     }
     .iconBtn:active{transform:scale(.98)}
     
-    /* [수정] 아이콘 크기 최적화 */
     .iconBtn svg{width:22px; height:22px; fill: currentColor}
 
     /* 연결 상태 표시등 스타일 */
@@ -142,22 +141,18 @@
     .panelHead .h{font-weight:800; font-size:13px}
     .panelHead .s{font-size:12px; color:var(--muted); line-height:1.35}
 
-    /* ===== Settings & Learning ===== */
-    .settings, .learningPanel{
+    /* ===== Settings ===== */
+    .settings{
       margin-bottom:10px;
       padding: 12px 14px 14px;
       background: rgba(10,14,20,.92);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
     }
-    .settings .row, .learningPanel .row{display:flex; gap:10px; flex-wrap:wrap}
+    .settings .row{display:flex; gap:10px; flex-wrap:wrap}
       
     label{font-size:12px; color:var(--muted); display:block; margin:10px 0 6px}
-    .sectionTitle {
-        font-size: 13px; font-weight: 700; color: var(--blue); margin: 15px 0 5px; 
-        border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;
-    }
-
+    
     input[type="password"], input[type="text"], textarea, select {
       width:100%;
       background: rgba(0,0,0,.35);
@@ -185,23 +180,7 @@
     }
     .btn:active{transform:scale(.98)}
     .btn.secondary{background: rgba(255,255,255,.06)}
-    .btn.danger{background: rgba(255,107,107,.14)}
-    .btn.full{width: 100%;}
-
-    /* 라디오 버튼 그룹 */
-    .radio-group {
-        display: flex; gap: 10px; margin-bottom: 10px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px;
-    }
-    .radio-label {
-        flex: 1; text-align: center; padding: 10px; cursor: pointer; border-radius: 10px; font-size: 13px; color: var(--muted); margin: 0;
-        transition: all 0.2s;
-    }
-    .radio-label:hover { background: rgba(255,255,255,0.05); }
-    input[type="radio"] { display: none; }
-    input[type="radio"]:checked + .radio-label {
-        background: var(--blue); color: white; font-weight: bold;
-    }
-
+    
     /* ===== Chat ===== */
     .chat{
       padding: 14px;
@@ -383,15 +362,11 @@
   <header>
     <div class="topbar">
       <div class="title">
-        BK Translator <span class="version-tag">v1.2</span>
+        BK Translator <span class="version-tag">v1.3</span>
       </div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-      </button>
-
-      <button id="learningToggleBtn" class="iconBtn" type="button" aria-label="학습 메뉴">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
       </button>
 
       <button id="downloadBtn" class="iconBtn" type="button" aria-label="번역 기록 다운로드">
@@ -421,7 +396,7 @@
 
       <section id="settingsPanel" class="settings hidden">
         <div class="hint" style="margin-bottom:8px;">
-          OpenRouter(Gemini) 설정 · 기존 프롬프트
+          OpenRouter(Gemini) 설정
         </div>
 
         <label for="apiKey">OpenRouter API Key</label>
@@ -446,8 +421,8 @@
           </div>
         </div>
 
-        <label for="systemPrompt">기존 번역 프롬프트</label>
-        <textarea id="systemPrompt" placeholder="기존 시스템 프롬프트 내용"></textarea>
+        <label for="systemPrompt">시스템 프롬프트</label>
+        <textarea id="systemPrompt" placeholder="시스템 프롬프트 내용"></textarea>
 
         <div class="row" style="align-items:center; margin-top:10px;">
           <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text);">
@@ -463,42 +438,6 @@
           <button id="saveBtn" class="btn" type="button">저장</button>
         </div>
         <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
-      </section>
-
-      <section id="learningPanel" class="learningPanel hidden">
-        <div class="hint" style="margin-bottom:8px; color:var(--blue);">
-          자동 학습 및 프롬프트 개선 (Self-Learning)
-        </div>
-
-        <div class="sectionTitle">1. 학습용 질문 (Prompt 1)</div>
-        <div class="hint">이 내용을 토대로 기존 프롬프트와 대화기록을 분석하여 개선안을 만듭니다.</div>
-        <textarea id="analysisPromptInput">
-당신은 'AI 번역 품질 분석가'이자 '프롬프트 엔지니어'입니다.
-아래 제공되는 [기존 프롬프트]와 [대화 기록]을 정밀 분석하십시오.
-사용자가 AI의 번역을 수정했거나, 특정 패턴으로 재요청한 내용을 찾아내세요.
-이를 바탕으로 오역, 오타, 문맥 오류를 줄이고 사용자의 말투를 반영하도록 [기존 프롬프트]를 개선하십시오.
-출력은 설명 없이 오직 [개선된 시스템 프롬프트 전체 전문]만 출력해야 합니다.
-        </textarea>
-        
-        <button id="runLearnBtn" class="btn full" type="button" style="background:var(--blue2); margin-top:8px;">
-           지금 학습 시작 (API 호출)
-        </button>
-
-        <div class="sectionTitle" style="margin-top:20px;">2. 학습된 프롬프트 (Prompt 2)</div>
-        <textarea id="learnedPromptInput" placeholder="학습 결과가 여기에 표시됩니다."></textarea>
-
-        <div class="sectionTitle">프롬프트 선택</div>
-        <div class="radio-group">
-            <input type="radio" id="useOriginal" name="promptMode" value="original" checked>
-            <label class="radio-label" for="useOriginal">기존 프롬프트 사용</label>
-
-            <input type="radio" id="useLearned" name="promptMode" value="learned">
-            <label class="radio-label" for="useLearned">학습된(Prompt 2) 사용</label>
-        </div>
-
-        <div class="row">
-             <button id="mergePromptBtn" class="btn secondary" type="button">합치기 (학습2 → 기존 덮어쓰기)</button>
-        </div>
       </section>
 
       <section class="panel">
@@ -554,10 +493,8 @@
       system: 'bk_tr_systemPrompt',
       autoCopy: 'bk_tr_autoCopy',
       chat: 'bk_tr_chat',
-      analysisPrompt: 'bk_tr_analysisPrompt',
-      learnedPrompt: 'bk_tr_learnedPrompt',
-      activeMode: 'bk_tr_activeMode',
       draft: 'bk_tr_draft' 
+      // [삭제] 학습 관련 키 제거
     };
 
     const el = {
@@ -566,8 +503,7 @@
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
       
-      learningToggleBtn: document.getElementById('learningToggleBtn'),
-      learningPanel: document.getElementById('learningPanel'),
+      // [삭제] learningToggleBtn, learningPanel 제거
 
       downloadBtn: document.getElementById('downloadBtn'),
 
@@ -584,12 +520,7 @@
       autoCopy: document.getElementById('autoCopy'),
       saveBtn: document.getElementById('saveBtn'),
 
-      analysisPromptInput: document.getElementById('analysisPromptInput'),
-      runLearnBtn: document.getElementById('runLearnBtn'),
-      learnedPromptInput: document.getElementById('learnedPromptInput'),
-      useOriginal: document.getElementById('useOriginal'),
-      useLearned: document.getElementById('useLearned'),
-      mergePromptBtn: document.getElementById('mergePromptBtn'),
+      // [삭제] 학습 관련 Element 참조 제거
 
       chat: document.getElementById('chat'),
       bottomAnchor: document.getElementById('bottomAnchor'),
@@ -852,12 +783,6 @@
       el.systemPrompt.value = localStorage.getItem(LS.system) || defaultSystemPrompt();
       el.autoCopy.checked = (localStorage.getItem(LS.autoCopy) || '0') === '1';
 
-      el.analysisPromptInput.value = localStorage.getItem(LS.analysisPrompt) || el.analysisPromptInput.value;
-      el.learnedPromptInput.value = localStorage.getItem(LS.learnedPrompt) || '';
-      const savedMode = localStorage.getItem(LS.activeMode) || 'original';
-      if(savedMode === 'learned') el.useLearned.checked = true;
-      else el.useOriginal.checked = true;
-
       const savedChat = localStorage.getItem(LS.chat);
       if(savedChat){
         try{ chat = JSON.parse(savedChat) || []; } catch { chat = []; }
@@ -873,13 +798,8 @@
       localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
       localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
       
-      localStorage.setItem(LS.analysisPrompt, el.analysisPromptInput.value);
-      localStorage.setItem(LS.learnedPrompt, el.learnedPromptInput.value);
-      localStorage.setItem(LS.activeMode, el.useLearned.checked ? 'learned' : 'original');
-
       toast('저장 완료');
       el.settingsPanel.classList.add('hidden');
-      el.learningPanel.classList.add('hidden');
     }
 
     function saveChat(){
@@ -887,15 +807,9 @@
     }
 
     function toggleSettings(){
-      el.learningPanel.classList.add('hidden'); 
       el.settingsPanel.classList.toggle('hidden');
     }
      
-    function toggleLearning(){
-      el.settingsPanel.classList.add('hidden');
-      el.learningPanel.classList.toggle('hidden');
-    }
-
     let _isBusy = false;
     function setConnState(state){
       _isBusy = (state === 'busy');
@@ -936,7 +850,7 @@
       return v;
     }
 
-    async function callOpenRouter(userText, overrideSystemPrompt){
+    async function callOpenRouter(userText){
       const apiKey = el.apiKey.value.trim();
       if(!apiKey) throw new Error('API Key가 비어 있습니다.');
 
@@ -947,14 +861,7 @@
       const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
       const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
       
-      let systemPrompt = overrideSystemPrompt;
-      if (!systemPrompt) {
-          if (el.useLearned.checked && el.learnedPromptInput.value.trim()) {
-              systemPrompt = el.learnedPromptInput.value;
-          } else {
-              systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
-          }
-      }
+      const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
 
       const payload = {
         model,
@@ -967,7 +874,7 @@
         max_tokens
       };
 
-      // [수정] 429 오류 발생 시 자동 재시도 로직 추가
+      // 429 오류 발생 시 자동 재시도 (Lite 버전에서도 유지)
       let retries = 0;
       const maxRetries = 3;
 
@@ -986,10 +893,10 @@
           if(res.status === 429){
               if(retries < maxRetries){
                   retries++;
-                  const delay = 1000 * retries; // 1초, 2초, 3초 대기
+                  const delay = 1000 * retries;
                   toast(`서버 혼잡 (429). ${retries}차 재시도 중...`);
                   await new Promise(r => setTimeout(r, delay));
-                  continue; // 루프 다시 실행
+                  continue; 
               } else {
                    throw new Error('HTTP 429: 서버가 너무 바쁩니다. 잠시 후 다시 시도하세요.');
               }
@@ -1008,62 +915,6 @@
           if(typeof out !== 'string') throw new Error('응답 파싱 실패');
           return out;
       }
-    }
-
-    async function runLearning(){
-        if(chat.length === 0){
-            toast('학습할 대화 기록이 없습니다.');
-            return;
-        }
-
-        const analysisPrompt = el.analysisPromptInput.value.trim();
-        const currentSystemPrompt = el.systemPrompt.value.trim();
-        
-        let chatHistoryStr = "";
-        chat.forEach(m => {
-            const role = m.role === 'user' ? 'User' : 'AI';
-            chatHistoryStr += `${role}: ${m.text}\n`;
-        });
-
-        const finalPrompt = `
-${analysisPrompt}
-
-[기존 시스템 프롬프트]
-${currentSystemPrompt}
-
-[최근 대화 기록]
-${chatHistoryStr}
-        `.trim();
-
-        setConnState('busy');
-        el.runLearnBtn.textContent = "학습 중...";
-        el.runLearnBtn.disabled = true;
-
-        try {
-            const learnedResult = await callOpenRouter(finalPrompt, "You are an expert Prompt Engineer.");
-            el.learnedPromptInput.value = learnedResult;
-            localStorage.setItem(LS.learnedPrompt, learnedResult);
-            toast('학습 완료! 결과가 Prompt 2에 저장됨');
-            setConnState('ok');
-        } catch(err) {
-            toast('학습 실패: ' + err.message);
-            setConnState('err');
-        } finally {
-            el.runLearnBtn.textContent = "지금 학습 시작 (API 호출)";
-            el.runLearnBtn.disabled = false;
-        }
-    }
-
-    function mergePrompt() {
-        if(!el.learnedPromptInput.value.trim()){
-            toast('학습된 내용이 없습니다.');
-            return;
-        }
-        if(!confirm('학습된 프롬프트로 기존 프롬프트를 덮어쓰시겠습니까?')) return;
-        
-        el.systemPrompt.value = el.learnedPromptInput.value;
-        saveSettings();
-        toast('기존 프롬프트 업데이트 완료');
     }
 
     function renderChat(){
@@ -1122,7 +973,7 @@ ${chatHistoryStr}
       const userText = el.input.value.trim();
       if(!userText) return;
 
-      // [무한 루프 차단 1차] 방금 전송한 내용과 완벽히 동일하면 무시
+      // [무한 루프 차단 1차]
       if(userText === lastProcessedText) {
           console.log("중복 내용 감지: 자동 번역 실행 중단");
           return;
@@ -1131,7 +982,6 @@ ${chatHistoryStr}
 
       hideCopyBar();
       
-      // ✅ 전송 시 임시 저장 내용 초기화
       localStorage.setItem(LS.draft, '');
 
       chat.push({ role:'user', text:userText, ts:Date.now() });
@@ -1155,7 +1005,7 @@ ${chatHistoryStr}
           const ok = await copyToClipboard(translated, true);
           if(ok){
             toast('중국어 자동 복사 완료');
-            // [무한 루프 차단 2차] 자동 복사한 내용은 클립보드 감지에서 무시하도록 즉시 업데이트
+            // [무한 루프 차단 2차]
             updateLastClipboard(translated); 
           }
           else{
@@ -1180,7 +1030,7 @@ ${chatHistoryStr}
     async function testConnection(){
       setConnState('busy');
       try{
-        await callOpenRouter('ping');
+        await callOpenRouter('ping'); // 간단 호출
         setConnState('ok');
         toast('연결 테스트 성공');
       } catch(err){
@@ -1189,26 +1039,21 @@ ${chatHistoryStr}
       }
     }
 
-    // [기능 수정] 휴지통 클릭 시: 대화 + 클립보드 + 내부변수 완전 삭제
     async function clearChatOnly(){
       if(!confirm('모든 기록과 클립보드를 삭제합니다. 계속할까요?')) return;
       
-      // 1. 내부 상태 초기화
       chat = [];
       lastProcessedText = "";
       updateLastClipboard("");
 
-      // 2. 화면 초기화
       hideCopyBar();
       renderChat();
       el.input.value = "";
       scrollToBottom('smooth');
 
-      // 3. 저장소 초기화
       try{ localStorage.removeItem(LS.chat); } catch {}
       try{ localStorage.removeItem(LS.draft); } catch {}
 
-      // 4. 클립보드 완전 삭제
       try {
         await navigator.clipboard.writeText("");
         toast('기록 및 클립보드 완전 삭제');
@@ -1245,21 +1090,17 @@ ${chatHistoryStr}
     loadCustomFont();
     renderChat();
     el.settingsPanel.classList.add('hidden');
-    el.learningPanel.classList.add('hidden');
     setConnState('warn');
 
-    // ✅ 입력창 내용 실시간 저장 (새로고침 대비)
     el.input.addEventListener('input', () => {
         localStorage.setItem(LS.draft, el.input.value);
     });
 
-    // ✅ 페이지 로드 시 임시 저장된 내용 복원 및 자동 번역 시도
     const savedDraft = localStorage.getItem(LS.draft);
     if(savedDraft){
         el.input.value = savedDraft;
-        // API 키가 있고 내용이 있으면 자동 번역
         if(el.apiKey.value.trim()){
-            setTimeout(() => send(), 500); // UI 로딩 후 실행
+            setTimeout(() => send(), 500); 
         }
     }
 
@@ -1281,27 +1122,23 @@ ${chatHistoryStr}
         
         if(!trimmed) return;
         
-        // 1. 방금 처리한 텍스트와 같으면 패스 (1차 방어)
+        // 1. 방금 처리한 텍스트와 같으면 패스
         if(trimmed === lastProcessedText) return;
 
-        // 2. 내부적으로 알고 있는 마지막 클립보드 내용과 같으면 패스 (2차 방어)
+        // 2. 내부적으로 알고 있는 마지막 클립보드 내용과 같으면 패스
         if(_lastClipboardText === trimmed) return;
 
-        // 3. [핵심 수정] 대화 기록 전체(User + Assistant) 중 동일한 내용이 있으면 패스
-        // 단순 === 비교가 아니라 trim() 후 비교하여 미세한 공백 차이로 인한 루프 방지
+        // 3. 대화 기록 전체 중 동일한 내용이 있으면 패스
         const isExistInHistory = chat.some(msg => msg.text.trim() === trimmed);
 
         if(isExistInHistory) {
-            // 이미 기록에 존재함 → 클립보드 상태만 갱신하고 자동 입력은 하지 않음
             updateLastClipboard(trimmed);
             return;
         }
         
-        // 언어 감지 필터
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
         if(isEnglishLongText(trimmed)) return;
         
-        // 통과 시 실행
         updateLastClipboard(trimmed);
         el.input.value = trimmed;
         toast('클립보드 감지 → 자동 번역');
@@ -1322,18 +1159,11 @@ ${chatHistoryStr}
 
     // Events
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
-    el.learningToggleBtn.addEventListener('click', toggleLearning);
     el.downloadBtn.addEventListener('click', downloadChatAsTxt);
     el.topTestBtn.addEventListener('click', testConnection);
     el.topClearBtn.addEventListener('click', clearChatOnly);
     el.saveBtn.addEventListener('click', saveSettings);
     
-    el.runLearnBtn.addEventListener('click', runLearning);
-    el.mergePromptBtn.addEventListener('click', mergePrompt);
-    
-    el.useOriginal.addEventListener('change', saveSettings);
-    el.useLearned.addEventListener('change', saveSettings);
-
     el.sendBtnL.addEventListener('click', send);
     el.sendBtnR.addEventListener('click', send);
 
