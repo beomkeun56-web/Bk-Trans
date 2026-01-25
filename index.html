@@ -358,6 +358,21 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
       </button>
 
+      <!-- 번역 기록 다운로드 -->
+      <button id="downloadBtn" class="iconBtn" type="button" aria-label="번역 기록 다운로드">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zm7-18v12l4-4 1.4 1.4L12 16.8l-5.4-5.4L8 10l4 4V2z"/></svg>
+      </button>
+
+      <!-- 학습 버튼 -->
+      <button id="learnBtn" class="iconBtn" type="button" aria-label="학습 실행">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 12.18L3.82 10 12 5.82 20.18 10 12 15.18zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+      </button>
+
+      <!-- 프롬프트 선택 버튼 -->
+      <button id="promptSelectBtn" class="iconBtn" type="button" aria-label="프롬프트 선택">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+      </button>
+
       <div style="flex:1"></div>
 
       <!-- 연결 TEST + Clear -->
@@ -427,6 +442,52 @@
         <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
       </section>
 
+      <!-- 학습 패널 -->
+      <section id="learnPanel" class="settings hidden">
+        <div class="hint" style="margin-bottom:8px;">
+          학습 기능 - 대화 기록 기반 프롬프트 개선
+        </div>
+
+        <label for="learnPrompt1">학습 1번 프롬프트 (질문용)</label>
+        <textarea id="learnPrompt1" placeholder="예: 아래 번역 프롬프트와 대화 기록을 분석하여 개선된 번역 프롬프트를 작성해줘"></textarea>
+
+        <label for="learnPrompt2">학습 2번 프롬프트 (학습 결과 저장)</label>
+        <textarea id="learnPrompt2" placeholder="학습 결과가 여기에 저장됩니다." readonly style="background:rgba(0,0,0,.35); cursor:default;"></textarea>
+
+        <div class="row" style="align-items:center; margin-top:10px; gap:10px;">
+          <button id="runLearnBtn" class="btn" type="button">학습 실행</button>
+          <button id="saveLearnBtn" class="btn secondary" type="button">학습 설정 저장</button>
+          <button id="clearLearnBtn" class="btn secondary" type="button">학습 결과 초기화</button>
+        </div>
+        <div id="learnStatus" class="hint" style="margin-top:8px;">학습 상태: 대기 중</div>
+      </section>
+
+      <!-- 프롬프트 선택 패널 -->
+      <section id="promptSelectPanel" class="settings hidden">
+        <div class="hint" style="margin-bottom:8px;">
+          번역에 사용할 프롬프트 선택
+        </div>
+        <div class="row" style="gap:10px; flex-wrap:wrap;">
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text);">
+            <input type="radio" name="promptSelect" value="original" checked style="width:18px; height:18px; accent-color:var(--blue);" />
+            기존 프롬프트
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text);">
+            <input type="radio" name="promptSelect" value="learned" style="width:18px; height:18px; accent-color:var(--blue);" />
+            학습 프롬프트
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text);">
+            <input type="radio" name="promptSelect" value="merged" style="width:18px; height:18px; accent-color:var(--blue);" />
+            프롬프트 합치기
+          </label>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button id="applyPromptBtn" class="btn" type="button">선택 적용</button>
+          <button id="mergeToOriginalBtn" class="btn secondary" type="button">학습→기존 복사</button>
+        </div>
+        <div id="promptSelectStatus" class="hint" style="margin-top:8px;">현재: 기존 프롬프트 사용 중</div>
+      </section>
+
       <!-- 대화 -->
       <section class="panel">
         <div class="panelHead">
@@ -479,7 +540,10 @@
       maxTokens: 'bk_tr_maxTokens',
       system: 'bk_tr_systemPrompt',
       autoCopy: 'bk_tr_autoCopy',
-      chat: 'bk_tr_chat'
+      chat: 'bk_tr_chat',
+      learnPrompt1: 'bk_tr_learnPrompt1',
+      learnPrompt2: 'bk_tr_learnPrompt2',
+      promptSelect: 'bk_tr_promptSelect'
     };
 
     const el = {
@@ -487,6 +551,7 @@
 
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
+      downloadBtn: document.getElementById('downloadBtn'),
 
       topTestBtn: document.getElementById('topTestBtn'),
       topClearBtn: document.getElementById('topClearBtn'),
@@ -594,35 +659,37 @@
       return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(String(s || ''));
     }
 
+    // 영어 장문 여부 (40자 이상 영어만 있으면 장문으로 판단)
+    function isEnglishLongText(s){
+      const str = String(s || '');
+      if(hasKorean(str) || hasChinese(str)) return false;
+      const englishChars = str.match(/[a-zA-Z]/g);
+      return englishChars && englishChars.length >= 40;
+    }
+
     // 중국어 TTS 재생 (여성 목소리)
     function speakChinese(text){
       if(!('speechSynthesis' in window)) {
         toast('TTS 미지원 브라우저');
         return;
       }
-      
-      // 이미 재생 중이면 중지
       window.speechSynthesis.cancel();
-      
       const speak = () => {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'zh-CN';
         utterance.rate = 0.9;
         utterance.pitch = 1.1;
-        
-        // 여성 목소리 찾기
+
         const voices = window.speechSynthesis.getVoices();
-        const zhVoice = voices.find(v => 
-          (v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh')) && 
+        const zhVoice = voices.find(v =>
+          (v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh')) &&
           (v.name.toLowerCase().includes('female') || v.name.includes('Ting') || v.name.includes('Xiaoxiao') || v.name.includes('Huihui'))
         ) || voices.find(v => v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh'));
-        
+
         if(zhVoice) utterance.voice = zhVoice;
-        
         window.speechSynthesis.speak(utterance);
       };
-      
-      // voices가 로드되지 않았을 수 있으므로 대기 후 실행
+
       const voices = window.speechSynthesis.getVoices();
       if(voices.length > 0){
         speak();
@@ -631,7 +698,6 @@
           speak();
           window.speechSynthesis.onvoiceschanged = null;
         };
-        // 펴백으로 100ms 후 다시 시도
         setTimeout(() => {
           if(window.speechSynthesis.getVoices().length > 0) speak();
         }, 100);
@@ -843,7 +909,86 @@
       return v;
     }
 
-    async function callOpenRouter(userText){
+    /* =========================================================
+       ✅ PATCH: 네트워크/파싱 안정화 + 타임아웃/재시도/Abort/자동전송
+    ========================================================= */
+    const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+    const REQ_TIMEOUT_MS = 30000; // 30초
+    const RETRY_COUNT = 1;        // 1회 재시도(총 2회)
+    let _activeAbort = null;
+
+    const AUTO_SEND_ON_IDLE = true; // 원치 않으면 false
+    const AUTO_SEND_IDLE_MS = 650;
+    let _autoSendTimer = null;
+
+    function safeJsonParse(t){
+      try{ return JSON.parse(t); } catch { return null; }
+    }
+
+    function extractContentText(content){
+      if(typeof content === 'string') return content;
+
+      if(Array.isArray(content)){
+        const parts = content.map(p => {
+          if(typeof p === 'string') return p;
+          if(p && typeof p === 'object'){
+            if(typeof p.text === 'string') return p.text;
+            if(typeof p.content === 'string') return p.content;
+          }
+          return '';
+        });
+        return parts.join('');
+      }
+
+      if(content && typeof content === 'object'){
+        if(typeof content.text === 'string') return content.text;
+      }
+
+      return '';
+    }
+
+    function buildRefererHeader(){
+      const o = (location && location.origin) ? location.origin : '';
+      if(!o || o === 'null') return null; // file:// 등
+      return o;
+    }
+
+    function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+    function isRetriableStatus(s){
+      return s === 408 || s === 409 || s === 425 || s === 429 || (s >= 500 && s <= 599);
+    }
+
+    function isAbortError(err){
+      return err && (err.name === 'AbortError' || String(err.message || '').toLowerCase().includes('aborted'));
+    }
+
+    function mergeSignals(signalA, signalB){
+      if(!signalA) return signalB;
+      if(!signalB) return signalA;
+      const ctrl = new AbortController();
+      const onAbort = () => { if(!ctrl.signal.aborted) ctrl.abort(); };
+      signalA.addEventListener('abort', onAbort, {once:true});
+      signalB.addEventListener('abort', onAbort, {once:true});
+      return ctrl.signal;
+    }
+
+    async function fetchWithTimeout(url, options, timeoutMs){
+      const ctrl = new AbortController();
+      const t = setTimeout(() => {
+        try{ ctrl.abort(); } catch {}
+      }, timeoutMs);
+
+      const mergedSignal = options && options.signal ? mergeSignals(options.signal, ctrl.signal) : ctrl.signal;
+
+      try{
+        return await fetch(url, { ...(options || {}), signal: mergedSignal });
+      } finally {
+        clearTimeout(t);
+      }
+    }
+
+    async function callOpenRouter(userText, externalSignal){
       const apiKey = el.apiKey.value.trim();
       if(!apiKey) throw new Error('API Key가 비어 있습니다.');
 
@@ -863,32 +1008,86 @@
         ],
         temperature,
         top_p,
-        max_tokens
+        max_tokens,
+        stream: false
       };
 
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey,
-          'HTTP-Referer': location.origin,
-          'X-Title': 'BK Translator (Personal)'
-        },
-        body: JSON.stringify(payload)
-      });
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ' + apiKey,
+        'X-Title': 'BK Translator (Personal)'
+      };
 
-      const text = await res.text();
-      let json = null;
-      try{ json = JSON.parse(text); } catch {}
+      const ref = buildRefererHeader();
+      if(ref) headers['HTTP-Referer'] = ref;
 
-      if(!res.ok){
-        const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
-        throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
+      let lastErrText = '';
+
+      for(let attempt = 0; attempt <= RETRY_COUNT; attempt++){
+        try{
+          const res = await fetchWithTimeout(
+            OPENROUTER_URL,
+            {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(payload),
+              signal: externalSignal
+            },
+            REQ_TIMEOUT_MS
+          );
+
+          const raw = await res.text();
+          const json = safeJsonParse(raw);
+
+          if(!res.ok){
+            const msg =
+              (json && (json.error?.message || json.message))
+                ? (json.error?.message || json.message)
+                : raw;
+
+            lastErrText = String(msg || '').slice(0, 400);
+
+            if(isRetriableStatus(res.status) && attempt < RETRY_COUNT){
+              await sleep(600 * (attempt + 1));
+              continue;
+            }
+
+            throw new Error('HTTP ' + res.status + ': ' + lastErrText);
+          }
+
+          if(!json){
+            throw new Error('JSON 파싱 실패: ' + String(raw || '').slice(0, 200));
+          }
+
+          const choice0 = json.choices && json.choices[0] ? json.choices[0] : null;
+          const content = choice0 && choice0.message ? choice0.message.content : null;
+
+          let out = extractContentText(content);
+          if(!out && typeof choice0?.text === 'string') out = choice0.text;
+
+          if(typeof out !== 'string' || out.length === 0){
+            throw new Error('응답 파싱 실패: ' + String(raw || '').slice(0, 200));
+          }
+
+          return out;
+
+        } catch(err){
+          if(isAbortError(err)) throw err;
+
+          const msg = String(err && err.message ? err.message : err);
+          const isNetworkLike = msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('TypeError');
+
+          if(isNetworkLike && attempt < RETRY_COUNT){
+            await sleep(700 * (attempt + 1));
+            continue;
+          }
+
+          throw err;
+        }
       }
 
-      const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
-      if(typeof out !== 'string') throw new Error('응답 파싱 실패');
-      return out;
+      throw new Error(lastErrText || '요청 실패');
     }
 
     function renderChat(){
@@ -914,12 +1113,11 @@
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
 
-        // 중국어일 때 스피커 아이콘 추가
         if(hasChinese(m.text)){
           const speakBtn = document.createElement('button');
           speakBtn.className = 'miniIconBtn';
           speakBtn.type = 'button';
-          speakBtn.setAttribute('aria-label', '읍성 재생');
+          speakBtn.setAttribute('aria-label', '음성 재생');
           speakBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
           speakBtn.addEventListener('click', () => { speakChinese(m.text); });
           actions.appendChild(speakBtn);
@@ -948,6 +1146,16 @@
       const userText = el.input.value.trim();
       if(!userText) return;
 
+      if(_autoSendTimer){
+        clearTimeout(_autoSendTimer);
+        _autoSendTimer = null;
+      }
+
+      if(_activeAbort){
+        try{ _activeAbort.abort(); } catch {}
+        _activeAbort = null;
+      }
+
       hideCopyBar();
 
       chat.push({ role:'user', text:userText, ts:Date.now() });
@@ -958,8 +1166,11 @@
       el.input.value = '';
       setConnState('busy');
 
+      const controller = new AbortController();
+      _activeAbort = controller;
+
       try{
-        const translatedRaw = await callOpenRouter(userText);
+        const translatedRaw = await callOpenRouter(userText, controller.signal);
         const translated = normalizeOutput(userText, translatedRaw);
 
         chat.push({ role:'assistant', text: translated, ts: Date.now() });
@@ -967,31 +1178,36 @@
         renderChat();
         scrollToBottom('smooth');
 
-        // ✅ (2) 중국어(한자) 1글자라도 포함될 때만 자동복사
         if(el.autoCopy.checked && hasChinese(translated)){
           const ok = await copyToClipboard(translated, true);
           if(ok){
             toast('중국어 자동 복사 완료');
-            // 클립보드 상태 업데이트 - 자동 입력 방지
             updateLastClipboard(translated);
-          }
-          else{
+          } else {
             showCopyBar(translated);
             toast('자동 복사 제한 → 아래 바 탭');
           }
         } else {
-          // 한국어만이면 자동복사/복사바 없음
           hideCopyBar();
         }
 
         setConnState('ok');
+
       } catch(err){
+        if(isAbortError(err)){
+          setConnState('warn');
+          return;
+        }
+
         const msg = (err && err.message) ? err.message : String(err);
         chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
         saveChat();
         renderChat();
         setConnState('err');
         toast('요청 실패: ' + msg);
+
+      } finally {
+        if(_activeAbort === controller) _activeAbort = null;
       }
     }
 
@@ -1018,6 +1234,29 @@
       toast('Clear 완료');
     }
 
+    function downloadChatAsTxt(){
+      if(chat.length === 0){
+        toast('다운로드할 번역 기록이 없습니다.');
+        return;
+      }
+      let content = '';
+      for(const m of chat){
+        const role = m.role === 'user' ? '[입력]' : '[번역]';
+        const time = m.ts ? new Date(m.ts).toLocaleString('ko-KR') : '';
+        content += role + ' ' + time + '\n' + m.text + '\n\n';
+      }
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'BK_Translator_' + new Date().toISOString().slice(0,10) + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('번역 기록 다운로드 완료');
+    }
+
     // Init
     loadSettings();
     loadCustomFont();
@@ -1028,51 +1267,61 @@
     // 클립보드 상시 감시 및 자동 번역
     const LS_LAST_CLIP = 'bk_tr_lastClip';
     let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
-    
-    // 클립보드 상태 업데이트 함수 (자동 복사 시 호출)
+
     function updateLastClipboard(text){
       _lastClipboardText = text;
       localStorage.setItem(LS_LAST_CLIP, text);
     }
-    
+
+    async function canReadClipboard(){
+      try{
+        if(!navigator.permissions || !navigator.permissions.query) return false;
+        const p = await navigator.permissions.query({ name: 'clipboard-read' });
+        return p && p.state === 'granted';
+      } catch {
+        return false;
+      }
+    }
+
     async function checkClipboard(){
       try{
-        // 번역 중이면 클립보드 감시 중지
         if(_isBusy) return;
-        
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
+        if(!window.isSecureContext) return;
+
+        // 권한 미허용이면 반복 호출로 불필요한 오류/지연 방지
+        const okPerm = await canReadClipboard();
+        if(!okPerm) return;
+
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
         if(!trimmed) return;
-        
-        // 이전 클립보드 내용과 동일하면 무시
+
         if(_lastClipboardText === trimmed) return;
-        
-        // 모든 번역 결과(assistant)와 동일하면 무시
+
         const allAssistantMsgs = chat.filter(m => m.role === 'assistant');
         for(const msg of allAssistantMsgs){
           if(msg.text === trimmed) return;
         }
-        
-        // 모든 입력 내용(user)과 동일하면 무시
+
         const allUserMsgs = chat.filter(m => m.role === 'user');
         for(const msg of allUserMsgs){
           if(msg.text === trimmed) return;
         }
-        
-        // 한국어 또는 중국어가 포함된 경우에만 자동 입력 (영어만 있으면 무시)
+
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
-        
+        if(isEnglishLongText(trimmed)) return;
+
         updateLastClipboard(trimmed);
-        
+
         el.input.value = trimmed;
-        
+
         setTimeout(() => send(), 100);
       } catch(err){
         // 권한 거부 등은 조용히 무시
       }
     }
-    
+
     // 초기 실행 및 1초마다 클립보드 감시
     checkClipboard();
     setInterval(checkClipboard, 1000);
@@ -1085,6 +1334,7 @@
 
     // Events
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
+    el.downloadBtn.addEventListener('click', downloadChatAsTxt);
     el.topTestBtn.addEventListener('click', testConnection);
     el.topClearBtn.addEventListener('click', clearChatOnly);
     el.saveBtn.addEventListener('click', saveSettings);
@@ -1100,6 +1350,28 @@
       if(e.key === 'Escape'){
         el.input.value = '';
       }
+    });
+
+    // ✅ 입력하면 자동으로 연결해서 번역(붙여넣기 즉시 + 타이핑 멈춤 디바운스)
+    el.input.addEventListener('paste', () => {
+      setTimeout(() => {
+        if(!_isBusy && el.input.value.trim()) send();
+      }, 0);
+    });
+
+    el.input.addEventListener('input', () => {
+      if(!AUTO_SEND_ON_IDLE) return;
+      if(_isBusy) return;
+
+      const v = el.input.value.trim();
+      if(!v) return;
+
+      if(_autoSendTimer) clearTimeout(_autoSendTimer);
+      _autoSendTimer = setTimeout(() => {
+        if(!_isBusy && el.input.value.trim() === v){
+          send();
+        }
+      }, AUTO_SEND_IDLE_MS);
     });
 
     // Copy bar
@@ -1130,7 +1402,7 @@
     }
 
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
-      toast('권장: HTTPS에서 사용하세요(키 보안)');
+      toast('권장: HTTPS에서 사용하세요(키 보안/클립보드)');
     }
   </script>
 </body>
