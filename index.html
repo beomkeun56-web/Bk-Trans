@@ -117,9 +117,7 @@
       overflow:auto;
       padding: 10px;
       padding-bottom: 92px;
-      /* ✅ iOS/모바일 스크롤 안정 */
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
+      scroll-behavior: smooth;
     }
     .wrap{
       max-width: 860px;
@@ -659,7 +657,6 @@
     function clamp2(n){ return Math.round(n * 100) / 100; }
     function fmtVer(n){
       const v = clamp2(n);
-      // 소수점 두 자리까지만
       return v.toFixed(2);
     }
     function bumpVersionIfNeeded(){
@@ -668,7 +665,7 @@
       if(!Number.isFinite(ver)) ver = 1.40;
 
       if(prevBuild !== BUILD_ID){
-        ver = clamp2(ver + 0.01); // ✅ 수정 시 자동 +0.01 (v1.40 -> v1.41)
+        ver = clamp2(ver + 0.01);
         localStorage.setItem(LS_VER, String(ver));
         localStorage.setItem(LS_BUILD, BUILD_ID);
       }
@@ -750,7 +747,13 @@
     };
 
     /**********************
-     * Toast / Scroll (✅ 강화)
+     * ✅ Chat keep limit (speed + auto delete)
+     **********************/
+    const CHAT_LIMIT = 4;      // 화면/메모리 유지 개수
+    const PERSIST_LIMIT = 4;   // localStorage 저장 개수
+
+    /**********************
+     * Toast / Scroll
      **********************/
     function toast(msg){
       el.toast.textContent = String(msg ?? '');
@@ -759,34 +762,23 @@
       toast._t = setTimeout(() => el.toast.classList.remove('show'), 2200);
     }
 
-    // ✅ 어떤 상황에서도 "마지막 메시지/앵커"로 강제 이동
-    function _scrollMainToBottom(){
-      try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
-    }
-    function _scrollAnchorIntoView(behavior){
-      const b = behavior || 'auto';
-      try{
-        el.bottomAnchor.scrollIntoView({ behavior: (b === 'instant' ? 'auto' : b), block:'end' });
-      } catch {}
-      _scrollMainToBottom();
-    }
-    function ensureBottom(behavior){
-      // rAF 2번 + setTimeout으로 모바일/PC 모두 안정화
-      const b = behavior || 'auto';
-      requestAnimationFrame(() => {
-        _scrollAnchorIntoView(b);
-        requestAnimationFrame(() => {
-          _scrollAnchorIntoView(b);
-          setTimeout(() => _scrollAnchorIntoView('instant'), 60);
-        });
-      });
-    }
     function scrollToNode(node, behavior){
+      if(!node) return;
       const b = behavior || 'auto';
       try{
-        node.scrollIntoView({ behavior: (b === 'instant' ? 'auto' : b), block:'end' });
-      } catch {}
-      ensureBottom('instant');
+        node.scrollIntoView({ behavior: b === 'instant' ? 'auto' : b, block:'end' });
+      } catch {
+        try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
+      }
+    }
+
+    function scrollToBottom(behavior){
+      const b = behavior || 'auto';
+      try{
+        el.bottomAnchor.scrollIntoView({ behavior: b === 'instant' ? 'auto' : b, block:'end' });
+      } catch {
+        try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
+      }
     }
 
     /**********************
@@ -842,15 +834,10 @@
           toast('자동 복사 완료');
           _retryCopyText = '';
           hideCopyBar();
-        } else {
-          // ✅ 실패해도 바는 계속 유지
-          showCopyBar(_retryCopyText);
         }
       };
-      // ✅ 모바일/PC 제스처 모두 대응
       document.addEventListener('click', handler, { once:true, passive:true });
       document.addEventListener('touchend', handler, { once:true, passive:true });
-      document.addEventListener('pointerup', handler, { once:true, passive:true });
     }
 
     /**********************
@@ -971,15 +958,12 @@
       await idbSet('font', rec);
       applyFontRecord(rec);
       toast('폰트 적용 완료');
-      // ✅ 폰트 변경 후 레이아웃 변동 → 스크롤 재정렬
-      ensureBottom('instant');
     }
 
     async function clearCustomFont(){
       try{ await idbDel('font'); } catch {}
       applyFontRecord(null);
       toast('폰트 초기화 완료');
-      ensureBottom('instant');
     }
 
     /**********************
@@ -1038,9 +1022,6 @@
       setSwatch(el.sw_assistBubble, theme.assistBubble);
       setSwatch(el.sw_input, theme.inputBg);
       setSwatch(el.sw_sendBtn, theme.sendBtn);
-
-      // ✅ 테마 변경으로 높이 변동 시 스크롤 유지
-      ensureBottom('instant');
     }
 
     function currentThemeFromInputs(){
@@ -1133,9 +1114,6 @@
       el.settingsPanel.classList.toggle('hidden', !v);
       if(v){
         requestAnimationFrame(() => el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'}));
-      } else {
-        // ✅ 설정 닫으면 채팅 하단으로 복귀
-        ensureBottom('instant');
       }
     }
     function toggleSettings(){
@@ -1153,12 +1131,29 @@
     }
 
     /**********************
-     * Chat (✅ 속도/저장 개선)
+     * ✅ 429 보호(쿨다운)
+     **********************/
+    let _cooldownUntil = 0;
+    function inCooldown(){
+      return Date.now() < _cooldownUntil;
+    }
+    function startCooldown(ms){
+      _cooldownUntil = Date.now() + (ms || 5000);
+    }
+
+    /**********************
+     * Chat (append-only for speed)
      **********************/
     let chat = [];
-    const CHAT_LIMIT = 140;     // 화면에 유지(너무 길어지면 DOM/스크롤 느려짐 방지)
-    const PERSIST_LIMIT = 80;   // 저장은 더 짧게(요청: 전체 저장 X)
-    let _chatTextSet = new Set();
+    let _chatTextSet = new Set();   // 중복 감시용(빠르게)
+    let _saveChatTimer = null;
+
+    function rebuildChatTextSet(){
+      _chatTextSet = new Set();
+      for(const m of chat){
+        _chatTextSet.add(m.text);
+      }
+    }
 
     function defaultSystemPrompt(){
       return [
@@ -1169,13 +1164,6 @@
         "- Otherwise translate Simplified Chinese -> Korean.",
         "- Keep line breaks as-is."
       ].join("\\n");
-    }
-
-    function rebuildChatTextSet(){
-      _chatTextSet = new Set();
-      for(const m of chat){
-        _chatTextSet.add(m.text);
-      }
     }
 
     function loadSettings(){
@@ -1191,8 +1179,8 @@
       if(savedChat){
         try{ chat = JSON.parse(savedChat) || []; } catch { chat = []; }
       }
-      if(!Array.isArray(chat)) chat = [];
-      if(chat.length > CHAT_LIMIT) chat = chat.slice(-CHAT_LIMIT);
+      // ✅ 저장된 것도 4개로 정리
+      if(chat.length > PERSIST_LIMIT) chat = chat.slice(-PERSIST_LIMIT);
       rebuildChatTextSet();
     }
 
@@ -1208,8 +1196,6 @@
       setSettingsVisible(false);
     }
 
-    // ✅ 저장 디바운스(대화 길어질수록 느려지는 원인 제거)
-    let _saveChatTimer = null;
     function saveChatDebounced(){
       clearTimeout(_saveChatTimer);
       _saveChatTimer = setTimeout(() => {
@@ -1217,7 +1203,28 @@
           const toSave = chat.slice(-PERSIST_LIMIT);
           localStorage.setItem(LS.chat, JSON.stringify(toSave));
         } catch {}
-      }, 220);
+      }, 120);
+    }
+
+    function trimChatIfNeeded(){
+      if(chat.length <= CHAT_LIMIT) return;
+      const cut = chat.length - CHAT_LIMIT;
+
+      // data
+      chat = chat.slice(-CHAT_LIMIT);
+
+      // set
+      rebuildChatTextSet();
+
+      // dom
+      try{
+        for(let i=0; i<cut; i++){
+          if(el.chat.firstChild) el.chat.removeChild(el.chat.firstChild);
+        }
+      } catch {}
+
+      // storage
+      saveChatDebounced();
     }
 
     function normalizeNewlines(s){
@@ -1289,6 +1296,10 @@
 
       if(!res.ok){
         const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
+        // ✅ 429는 쿨다운 걸어 폭주 방지
+        if(res.status === 429){
+          startCooldown(8000);
+        }
         throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
       }
 
@@ -1329,83 +1340,86 @@
         empty.className = 'hint';
         empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
         el.chat.appendChild(empty);
-        ensureBottom('instant');
+        scrollToBottom('instant');
         return;
       }
       for(const m of chat){
         el.chat.appendChild(makeMsgNode(m));
       }
-      ensureBottom('instant');
+      scrollToBottom('instant');
     }
 
-    function trimChatIfNeeded(){
-      if(chat.length <= CHAT_LIMIT) return;
-      const cut = chat.length - CHAT_LIMIT;
-      chat = chat.slice(-CHAT_LIMIT);
-      // Set 재구성(빠르게)
-      rebuildChatTextSet();
-      // DOM도 동일하게 자르기(상단부터 제거)
-      try{
-        for(let i=0; i<cut; i++){
-          if(el.chat.firstChild) el.chat.removeChild(el.chat.firstChild);
-        }
-      } catch {}
-    }
-
+    // ✅ 노드 반환(스크롤 타겟 고정)
     function appendChatMessage(m){
-      // empty hint 제거
       const first = el.chat.firstChild;
       if(first && first.classList && first.classList.contains('hint')){
         el.chat.innerHTML = '';
       }
-
       const node = makeMsgNode(m);
       el.chat.appendChild(node);
 
-      // ✅ "입력 추가 직후" 그 위치로 스크롤
-      scrollToNode(node, 'auto');
-
-      // ✅ 대화 길어져도 속도 유지(상단 삭제)
+      // ✅ 항상 4개 유지
       trimChatIfNeeded();
 
-      // ✅ 하단 앵커로 최종 고정
-      ensureBottom('instant');
+      // ✅ “입력된 위치 / 출력된 위치”로 스크롤(PC/모바일 공통)
+      requestAnimationFrame(() => scrollToNode(node, 'auto'));
       return node;
     }
 
-    function pushChat(m){
-      chat.push(m);
-      _chatTextSet.add(m.text);
-      // 저장은 짧게/지연 저장
-      saveChatDebounced();
-    }
+    /**********************
+     * ✅ Send control (busy + cooldown + spam protect)
+     **********************/
+    let _lastSendAt = 0;
+    const SEND_MIN_INTERVAL_MS = 450; // 너무 빠른 연속 입력 방지
 
     async function send(){
+      if(_isBusy) return;
+
+      if(inCooldown()){
+        toast('잠시 대기(429 제한). 몇 초 후 다시 시도하세요.');
+        return;
+      }
+
+      const now = Date.now();
+      if(now - _lastSendAt < SEND_MIN_INTERVAL_MS){
+        return;
+      }
+      _lastSendAt = now;
+
       const userText = el.input.value.trim();
       if(!userText) return;
 
       hideCopyBar();
 
       const um = { role:'user', text:userText, ts:Date.now() };
-      pushChat(um);
-      appendChatMessage(um);
+      chat.push(um);
+      _chatTextSet.add(um.text);
+      saveChatDebounced();
+
+      const userNode = appendChatMessage(um);
 
       el.input.value = '';
       setConnState('busy');
 
       try{
+        // ✅ 입력 메시지 위치로 한번 더 고정
+        requestAnimationFrame(() => scrollToNode(userNode, 'auto'));
+
         const translatedRaw = await callOpenRouter(userText);
         const translated = normalizeOutput(userText, translatedRaw);
 
         const am = { role:'assistant', text: translated, ts: Date.now() };
-        pushChat(am);
-        appendChatMessage(am);
+        chat.push(am);
+        _chatTextSet.add(am.text);
+        saveChatDebounced();
 
-        // ✅ 자동복사: 언어 무관하게 시도(모바일 제스처 제한 시 CopyBar로 유도)
+        const assistantNode = appendChatMessage(am);
+
+        // ✅ 자동복사: 체크 시 “언어 상관없이” 시도 (갑자기 안되는 이슈 방지)
         if(el.autoCopy.checked){
           const ok = await copyToClipboard(translated, true);
           if(ok){
-            toast(hasChinese(translated) ? '중국어 자동 복사 완료' : '자동 복사 완료');
+            toast('자동 복사 완료');
             updateLastClipboard(translated);
             hideCopyBar();
           } else {
@@ -1418,29 +1432,46 @@
         }
 
         setConnState('ok');
-        ensureBottom('instant');
+
+        // ✅ 출력 메시지 위치로 강제 스크롤(1회 + 지연 1회)
+        requestAnimationFrame(() => scrollToNode(assistantNode, 'auto'));
+        setTimeout(() => scrollToNode(assistantNode, 'auto'), 60);
+
       } catch(err){
         const msg = (err && err.message) ? err.message : String(err);
         const em = { role:'assistant', text: '오류: ' + msg, ts: Date.now() };
-        pushChat(em);
-        appendChatMessage(em);
+        chat.push(em);
+        _chatTextSet.add(em.text);
+        saveChatDebounced();
+
+        const errNode = appendChatMessage(em);
         setConnState('err');
-        toast('요청 실패: ' + msg);
-        ensureBottom('instant');
+
+        // ✅ 429일 때 안내 강화
+        if(String(msg).includes('HTTP 429')){
+          toast('HTTP 429: 요청 과다(잠시 후 재시도)');
+        } else {
+          toast('요청 실패: ' + msg);
+        }
+
+        requestAnimationFrame(() => scrollToNode(errNode, 'auto'));
       }
     }
 
     async function testConnection(){
+      if(_isBusy) return;
+      if(inCooldown()){
+        toast('잠시 대기(429 제한).');
+        return;
+      }
       setConnState('busy');
       try{
         await callOpenRouter('ping');
         setConnState('ok');
         toast('연결 테스트 성공');
-        ensureBottom('instant');
       } catch(err){
         setConnState('err');
         toast('연결 테스트 실패: ' + (err && err.message ? err.message : err));
-        ensureBottom('instant');
       }
     }
 
@@ -1453,7 +1484,6 @@
       try{ localStorage.removeItem(LS.chat); } catch {}
       renderChatInitial();
       toast('Clear 완료');
-      ensureBottom('instant');
     }
 
     function downloadChatAsTxt(){
@@ -1477,7 +1507,6 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast('번역 기록 다운로드 완료');
-      ensureBottom('instant');
     }
 
     /**********************
@@ -1493,6 +1522,7 @@
     async function checkClipboard(){
       try{
         if(_isBusy) return;
+        if(inCooldown()) return;
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
 
         const clipText = await navigator.clipboard.readText();
@@ -1504,7 +1534,7 @@
 
         if(_lastClipboardText === trimmed) return;
 
-        // ✅ 대화 내 중복 방지(Set로 O(1))
+        // ✅ 대화 내 중복(빠르게)
         if(_chatTextSet.has(trimmed)) return;
 
         // 한국어/중국어만 자동
@@ -1514,8 +1544,10 @@
         updateLastClipboard(trimmed);
         el.input.value = trimmed;
 
-        // ✅ 입력값 들어오면 즉시 하단 유지(요구사항)
-        ensureBottom('instant');
+        // ✅ 입력이 들어오면 입력창 보이는 쪽으로 스크롤
+        requestAnimationFrame(() => {
+          try{ el.input.scrollIntoView({behavior:'smooth', block:'end'}); } catch {}
+        });
 
         setTimeout(() => send(), 80);
       } catch(err){
@@ -1568,7 +1600,6 @@
       applyTheme(t);
       saveTheme(t);
       toast('테마 초기화 완료');
-      ensureBottom('instant');
     });
 
     renderChatInitial();
@@ -1620,16 +1651,21 @@
     });
     el.clearFontBtn.addEventListener('click', clearCustomFont);
 
-    // ✅ 입력/키보드/화면 리사이즈 시 항상 하단 유지
-    el.input.addEventListener('focus', () => ensureBottom('instant'));
-    el.input.addEventListener('input', () => ensureBottom('instant'));
-
+    // ✅ 포커스/키보드 열림 시 최하단/입력창 유지
+    el.input.addEventListener('focus', () => {
+      requestAnimationFrame(() => {
+        try{ el.input.scrollIntoView({behavior:'smooth', block:'end'}); } catch {}
+        scrollToBottom('auto');
+      });
+    });
     if(window.visualViewport){
-      window.visualViewport.addEventListener('resize', () => ensureBottom('instant'));
-      window.visualViewport.addEventListener('scroll', () => ensureBottom('instant'));
+      window.visualViewport.addEventListener('resize', () => {
+        requestAnimationFrame(() => {
+          try{ el.input.scrollIntoView({behavior:'smooth', block:'end'}); } catch {}
+          scrollToBottom('auto');
+        });
+      });
     }
-    window.addEventListener('resize', () => ensureBottom('instant'));
-    window.addEventListener('orientationchange', () => ensureBottom('instant'));
 
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
       toast('권장: HTTPS에서 사용하세요(키 보안)');
