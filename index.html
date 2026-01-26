@@ -28,6 +28,7 @@
 
       --fontMain: system-ui;
 
+      /* ✅ 테마 색상(사용자 선택) */
       --userBubbleBg:#2e3440;
       --assistantBubbleBg: transparent;
       --inputBg:#2e3440;
@@ -98,24 +99,30 @@
     .iconBtn:active{transform:scale(.98)}
     .iconBtn svg{width:18px; height:18px; fill: currentColor}
 
-    .statusOnly{
-      width:18px;
-      height:18px;
-      border-radius:999px;
-      border: 2px solid rgba(255,255,255,.14);
-      background: var(--warn);
-      box-shadow: 0 8px 18px rgba(0,0,0,.35);
-      padding:0;
-      cursor:pointer;
-    }
-    .statusOnly:active{transform:scale(.98)}
+    /* ✅ 연결상태: 아이콘 없이 원형 색상만(아이콘 버튼과 동일 크기/간격) */
+.statusOnly{
+  width:36px;
+  height:36px;
+  border-radius:999px;
+  border: 2px solid rgba(255,255,255,.14);
+  background: var(--warn);
+  box-shadow: 0 8px 18px rgba(0,0,0,.35);
+  padding:0;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex: 0 0 auto;
+}
+.statusOnly:active{transform:scale(.98)}
 
     main{
       flex:1;
       overflow:auto;
       padding: 10px;
       padding-bottom: 92px;
-      scroll-behavior: smooth;
+      scroll-behavior: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .wrap{
       max-width: 860px;
@@ -138,6 +145,7 @@
     }
     .panelHead .left{display:flex; flex-direction:column; gap:3px}
     .panelHead .h{font-weight:800; font-size:13px}
+    .panelHead .s{font-size:12px; color:var(--muted); line-height:1.35}
 
     .settings{
       margin-bottom:10px;
@@ -175,6 +183,7 @@
     .btn.secondary{background: rgba(255,255,255,.06)}
     .btn.danger{background: rgba(255,107,107,.14)}
 
+    /* ===== Theme controls (팔레트 + HEX) ===== */
     .colorGrid{
       display:flex;
       flex-direction:column;
@@ -217,6 +226,7 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
     }
 
+    /* 오버레이 */
     .pickerOverlay{
       position: fixed;
       inset: 0;
@@ -267,6 +277,7 @@
       margin-top: 12px;
     }
 
+    /* ===== Chat ===== */
     .chat{
       padding: 14px;
       display:flex;
@@ -295,6 +306,7 @@
       max-width: 80%;
     }
 
+    /* ✅ 출력 말풍선도 색상 지정 가능(기본 transparent) */
     .msg.assistant .bubble{
       background: var(--assistantBubbleBg);
       color: rgba(230,237,243,.92);
@@ -444,7 +456,7 @@
   <header>
     <div class="topbar">
       <div class="title">
-        BK Translator <span id="verTag" class="ver">v1.40</span>
+        BK Translator <span id="verTag" class="ver">v1.23</span>
       </div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -457,6 +469,7 @@
 
       <div style="flex:1"></div>
 
+      <!-- ✅ 연결 TEST: 와이파이 아이콘 -->
       <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 18.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"></path>
@@ -470,6 +483,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
       </button>
 
+      <!-- ✅ 연결 상태: 원형 색상만 -->
       <button id="connBtn" class="statusOnly" type="button" aria-label="연결 상태"></button>
     </div>
   </header>
@@ -510,7 +524,7 @@
         <div class="row" style="align-items:center; margin-top:10px;">
           <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text);">
             <input id="autoCopy" type="checkbox" style="width:18px; height:18px; accent-color: var(--blue);" />
-            번역 완료 시 자동 복사(중국어 결과만)
+            번역 완료 시 자동 복사(Chrome 모바일)
           </label>
         </div>
 
@@ -522,6 +536,7 @@
         </div>
         <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
 
+        <!-- ✅ 테마(색상) 설정: 모바일 호환(팔레트+HEX) -->
         <label style="margin-top:14px;">색상 테마</label>
         <div class="hint">일부 모바일에서 색상선택이 안 되는 문제 방지(팔레트 + HEX 입력)</div>
 
@@ -584,6 +599,7 @@
         <div class="panelHead">
           <div class="left">
             <div class="h">Chat</div>
+            <div class="s">입력 후 전송하면 번역 결과가 아래에 표시됩니다.</div>
           </div>
         </div>
         <div id="chat" class="chat"></div>
@@ -620,6 +636,7 @@
 
   <div id="toast" class="toast"></div>
 
+  <!-- ✅ 모바일 호환 색상선택 오버레이 -->
   <div id="pickerOverlay" class="pickerOverlay hidden" role="dialog" aria-modal="true">
     <div class="pickerCard">
       <div class="pickerTitle">색상 선택</div>
@@ -636,7 +653,10 @@
   </div>
 
   <script>
-    const BUILD_ID = "2026-01-26-03";
+    /**********************
+     * Version (v1.xx)
+     **********************/
+    const BUILD_ID = "2026-01-26-03"; // 코드 수정 시 여기만 변경(자동 버전 증가 트리거)
     const LS_VER = "bk_tr_version";
     const LS_BUILD = "bk_tr_build";
     function clamp2(n){ return Math.round(n * 100) / 100; }
@@ -646,8 +666,8 @@
     }
     function bumpVersionIfNeeded(){
       const prevBuild = localStorage.getItem(LS_BUILD) || "";
-      let ver = Number(localStorage.getItem(LS_VER) || "1.40");
-      if(!Number.isFinite(ver)) ver = 1.40;
+      let ver = Number(localStorage.getItem(LS_VER) || "1.23");
+      if(!Number.isFinite(ver)) ver = 1.23;
 
       if(prevBuild !== BUILD_ID){
         ver = clamp2(ver + 0.01);
@@ -704,6 +724,7 @@
       clearFontBtn: document.getElementById('clearFontBtn'),
       fontStatus: document.getElementById('fontStatus'),
 
+      /* Theme inputs */
       c_bg: document.getElementById('c_bg'),
       c_chatBg: document.getElementById('c_chatBg'),
       c_userBubble: document.getElementById('c_userBubble'),
@@ -712,6 +733,7 @@
       c_sendBtn: document.getElementById('c_sendBtn'),
       themeResetBtn: document.getElementById('themeResetBtn'),
 
+      /* Swatches */
       sw_bg: document.getElementById('sw_bg'),
       sw_chatBg: document.getElementById('sw_chatBg'),
       sw_userBubble: document.getElementById('sw_userBubble'),
@@ -719,6 +741,7 @@
       sw_input: document.getElementById('sw_input'),
       sw_sendBtn: document.getElementById('sw_sendBtn'),
 
+      /* Picker overlay */
       pickerOverlay: document.getElementById('pickerOverlay'),
       pickerPalette: document.getElementById('pickerPalette'),
       pickerHex: document.getElementById('pickerHex'),
@@ -728,9 +751,15 @@
       verTag: document.getElementById('verTag')
     };
 
-    const CHAT_LIMIT = 4;
-    const PERSIST_LIMIT = 4;
+    /**********************
+     * ✅ Chat keep limit (speed + auto delete)
+     **********************/
+    const CHAT_LIMIT = 4;      // 화면/메모리 유지 개수
+    const PERSIST_LIMIT = 4;   // localStorage 저장 개수
 
+    /**********************
+     * Toast / Scroll
+     **********************/
     function toast(msg){
       el.toast.textContent = String(msg ?? '');
       el.toast.classList.add('show');
@@ -738,16 +767,43 @@
       toast._t = setTimeout(() => el.toast.classList.remove('show'), 2200);
     }
 
-    function scrollToNode(node, behavior){
-      if(!node) return;
-      const b = behavior || 'auto';
-      try{
-        node.scrollIntoView({ behavior: b === 'instant' ? 'auto' : b, block:'end' });
+    function hardScrollBottom(){
+  try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
+  try{
+    const se = document.scrollingElement;
+    if(se) se.scrollTop = se.scrollHeight;
+  } catch {}
+}
+
+function ensureBottom(){
+  hardScrollBottom();
+  requestAnimationFrame(hardScrollBottom);
+  setTimeout(hardScrollBottom, 50);
+  setTimeout(hardScrollBottom, 160);
+}
+
+function scrollToNode(node, behavior){
+  if(!node) return;
+  const b = behavior || 'auto';
+  // iOS/Safari에서 scrollIntoView가 간헐적으로 실패 → hard scroll 병행
+  try{
+    node.scrollIntoView({ behavior: b === 'instant' ? 'auto' : b, block:'end' });
+  } catch {}
+  ensureBottom();
+}
+
+function scrollToBottom(behavior){
+  // behavior 파라미터는 호환성 유지용(즉시 하단 고정)
+  ensureBottom();
+});
       } catch {
         try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
       }
     }
 
+    /**********************
+     * Clipboard Copy
+     **********************/
     async function copyToClipboard(text, silent){
       const t = String(text ?? '');
       try{
@@ -804,6 +860,9 @@
       document.addEventListener('touchend', handler, { once:true, passive:true });
     }
 
+    /**********************
+     * Language checks
+     **********************/
     function hasChinese(s){
       return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s || ''));
     }
@@ -817,6 +876,9 @@
       return englishChars && englishChars.length >= 40;
     }
 
+    /**********************
+     * Font: IndexedDB
+     **********************/
     const DB_NAME = 'bk_tr_db';
     const DB_STORE = 'kv';
     let _fontBlobUrl = null;
@@ -924,6 +986,9 @@
       toast('폰트 초기화 완료');
     }
 
+    /**********************
+     * Theme (팔레트 + HEX)
+     **********************/
     function normalizeColor(s){
       const raw = String(s || '').trim();
       if(!raw) return null;
@@ -1021,6 +1086,9 @@
       });
     }
 
+    /**********************
+     * Picker overlay
+     **********************/
     const PALETTE = [
       'transparent',
       '#050505','#0B0F14','#0E1420','#111827','#1F2937','#2E3440','#374151','#4B5563',
@@ -1059,6 +1127,9 @@
       _pickerTargetInput = null;
     }
 
+    /**********************
+     * Settings / Connection state
+     **********************/
     function setSettingsVisible(v){
       el.settingsPanel.classList.toggle('hidden', !v);
       if(v){
@@ -1079,6 +1150,9 @@
       else el.connBtn.style.background = 'var(--warn)';
     }
 
+    /**********************
+     * ✅ 429 보호(쿨다운)
+     **********************/
     let _cooldownUntil = 0;
     function inCooldown(){
       return Date.now() < _cooldownUntil;
@@ -1087,8 +1161,11 @@
       _cooldownUntil = Date.now() + (ms || 5000);
     }
 
+    /**********************
+     * Chat (append-only for speed)
+     **********************/
     let chat = [];
-    let _chatTextSet = new Set();
+    let _chatTextSet = new Set();   // 중복 감시용(빠르게)
     let _saveChatTimer = null;
 
     function rebuildChatTextSet(){
@@ -1122,6 +1199,7 @@
       if(savedChat){
         try{ chat = JSON.parse(savedChat) || []; } catch { chat = []; }
       }
+      // ✅ 저장된 것도 4개로 정리
       if(chat.length > PERSIST_LIMIT) chat = chat.slice(-PERSIST_LIMIT);
       rebuildChatTextSet();
     }
@@ -1152,15 +1230,20 @@
       if(chat.length <= CHAT_LIMIT) return;
       const cut = chat.length - CHAT_LIMIT;
 
+      // data
       chat = chat.slice(-CHAT_LIMIT);
+
+      // set
       rebuildChatTextSet();
 
+      // dom
       try{
         for(let i=0; i<cut; i++){
           if(el.chat.firstChild) el.chat.removeChild(el.chat.firstChild);
         }
       } catch {}
 
+      // storage
       saveChatDebounced();
     }
 
@@ -1193,56 +1276,137 @@
       return v;
     }
 
-    async function callOpenRouter(userText){
-      const apiKey = el.apiKey.value.trim();
-      if(!apiKey) throw new Error('API Key가 비어 있습니다.');
+    function buildORPayload(userText, stream){
+  const apiKey = el.apiKey.value.trim();
+  if(!apiKey) throw new Error('API Key가 비어 있습니다.');
 
-      const model = el.model.value.trim();
-      if(!model) throw new Error('모델이 비어 있습니다.');
+  const model = el.model.value.trim();
+  if(!model) throw new Error('모델이 비어 있습니다.');
 
-      const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
-      const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
-      const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
-      const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
+  const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
+  const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
+  const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
+  const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
 
-      const payload = {
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userText }
-        ],
-        temperature,
-        top_p,
-        max_tokens
-      };
+  const payload = {
+    model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userText }
+    ],
+    temperature,
+    top_p,
+    max_tokens
+  };
+  if(stream) payload.stream = true;
 
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey,
-          'HTTP-Referer': location.origin,
-          'X-Title': 'BK Translator (Personal)'
-        },
-        body: JSON.stringify(payload)
-      });
+  return { apiKey, payload };
+}
 
-      const text = await res.text();
-      let json = null;
-      try{ json = JSON.parse(text); } catch {}
+async function callOpenRouter(userText){
+  const { apiKey, payload } = buildORPayload(userText, false);
 
-      if(!res.ok){
-        const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
-        if(res.status === 429){
-          startCooldown(8000);
-        }
-        throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey,
+      'HTTP-Referer': location.origin,
+      'X-Title': 'BK Translator (Personal)'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const text = await res.text();
+  let json = null;
+  try{ json = JSON.parse(text); } catch {}
+
+  if(!res.ok){
+    const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
+    if(res.status === 429) startCooldown(8000);
+    throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
+  }
+
+  const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+  if(typeof out !== 'string') throw new Error('응답 파싱 실패');
+  return out;
+}
+
+// ✅ 스트리밍(체감 속도 개선)
+async function callOpenRouterStream(userText, onDelta){
+  const { apiKey, payload } = buildORPayload(userText, true);
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey,
+      'HTTP-Referer': location.origin,
+      'X-Title': 'BK Translator (Personal)'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if(!res.ok){
+    const text = await res.text();
+    let json = null;
+    try{ json = JSON.parse(text); } catch {}
+    const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
+    if(res.status === 429) startCooldown(8000);
+    throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
+  }
+
+  if(!res.body || !res.body.getReader){
+    // 스트림 미지원 환경 → 일반 호출로 폴백
+    const out = await callOpenRouter(userText);
+    if(typeof onDelta === 'function') onDelta(out);
+    return out;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buf = '';
+  let acc = '';
+
+  while(true){
+    const { value, done } = await reader.read();
+    if(done) break;
+
+    buf += decoder.decode(value, { stream:true });
+    const lines = buf.split(/
+?
+/);
+    buf = lines.pop() || '';
+
+    for(const line of lines){
+      const trimmed = line.trim();
+      if(!trimmed) continue;
+      if(!trimmed.startsWith('data:')) continue;
+
+      const data = trimmed.slice(5).trim();
+      if(data === '[DONE]') {
+        try{ await reader.cancel(); } catch {}
+        return acc;
       }
 
-      const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
-      if(typeof out !== 'string') throw new Error('응답 파싱 실패');
-      return out;
+      let j = null;
+      try{ j = JSON.parse(data); } catch { j = null; }
+      if(!j) continue;
+
+      const delta =
+        j.choices?.[0]?.delta?.content ??
+        j.choices?.[0]?.message?.content ??
+        '';
+
+      if(delta){
+        acc += delta;
+        if(typeof onDelta === 'function') onDelta(delta, acc);
+      }
     }
+  }
+
+  return acc;
+}
 
     function makeMsgNode(m){
       const row = document.createElement('div');
@@ -1276,13 +1440,16 @@
         empty.className = 'hint';
         empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
         el.chat.appendChild(empty);
+        scrollToBottom('instant');
         return;
       }
       for(const m of chat){
         el.chat.appendChild(makeMsgNode(m));
       }
+      scrollToBottom('instant');
     }
 
+    // ✅ 노드 반환(스크롤 타겟 고정)
     function appendChatMessage(m){
       const first = el.chat.firstChild;
       if(first && first.classList && first.classList.contains('hint')){
@@ -1291,98 +1458,129 @@
       const node = makeMsgNode(m);
       el.chat.appendChild(node);
 
+      // ✅ 항상 4개 유지
       trimChatIfNeeded();
 
+      // ✅ “입력된 위치 / 출력된 위치”로 스크롤(PC/모바일 공통)
       requestAnimationFrame(() => scrollToNode(node, 'auto'));
       return node;
     }
 
+    /**********************
+     * ✅ Send control (busy + cooldown + spam protect)
+     **********************/
     let _lastSendAt = 0;
-    const SEND_MIN_INTERVAL_MS = 450;
+    const SEND_MIN_INTERVAL_MS = 450; // 너무 빠른 연속 입력 방지
 
     async function send(){
-      if(_isBusy) return;
+  if(_isBusy) return;
 
-      if(inCooldown()){
-        toast('잠시 대기(429 제한).');
-        return;
+  if(inCooldown()){
+    toast('잠시 대기(429 제한). 몇 초 후 다시 시도하세요.');
+    return;
+  }
+
+  const now = Date.now();
+  if(now - _lastSendAt < SEND_MIN_INTERVAL_MS){
+    return;
+  }
+  _lastSendAt = now;
+
+  const userText = el.input.value.trim();
+  if(!userText) return;
+
+  hideCopyBar();
+
+  const um = { role:'user', text:userText, ts:Date.now() };
+  chat.push(um);
+  _chatTextSet.add(um.text);
+  saveChatDebounced();
+
+  const userNode = appendChatMessage(um);
+
+  el.input.value = '';
+  setConnState('busy');
+  ensureBottom();
+
+  // ✅ 출력 말풍선 먼저 만들고 스트리밍 업데이트(체감 속도 개선)
+  const am = { role:'assistant', text:'', ts: Date.now() };
+  chat.push(am);
+  const assistantNode = appendChatMessage(am);
+  const bubbleEl = assistantNode ? assistantNode.querySelector('.bubble') : null;
+
+  let acc = '';
+  let lastPaint = 0;
+
+  const paint = (force) => {
+    const t = performance.now ? performance.now() : Date.now();
+    if(!force && (t - lastPaint) < 33) return; // ~30fps
+    lastPaint = t;
+    if(bubbleEl) bubbleEl.textContent = acc;
+    ensureBottom();
+  };
+
+  try{
+    requestAnimationFrame(() => scrollToNode(userNode, 'auto'));
+
+    const translatedRaw = await callOpenRouterStream(userText, (delta, full) => {
+      acc = (typeof full === 'string') ? full : (acc + String(delta || ''));
+      paint(false);
+    });
+
+    acc = String(translatedRaw || '');
+    paint(true);
+
+    const translated = normalizeOutput(userText, acc);
+    am.text = translated;
+    if(bubbleEl) bubbleEl.textContent = translated;
+
+    // ✅ 저장/중복 세트는 완료 시점에만 반영
+    _chatTextSet.add(am.text);
+    saveChatDebounced();
+
+    // ✅ 자동복사(기존 동작 유지)
+    if(el.autoCopy.checked){
+      const ok = await copyToClipboard(translated, true);
+      if(ok){
+        toast('자동 복사 완료');
+        updateLastClipboard(translated);
+        hideCopyBar();
+      } else {
+        showCopyBar(translated);
+        scheduleCopyRetry(translated);
+        toast('자동 복사 제한 → 아래 바 탭(또는 화면 터치 시 재시도)');
       }
-
-      const now = Date.now();
-      if(now - _lastSendAt < SEND_MIN_INTERVAL_MS){
-        return;
-      }
-      _lastSendAt = now;
-
-      const userText = el.input.value.trim();
-      if(!userText) return;
-
+    } else {
       hideCopyBar();
-
-      const um = { role:'user', text:userText, ts:Date.now() };
-      chat.push(um);
-      _chatTextSet.add(um.text);
-      saveChatDebounced();
-
-      const userNode = appendChatMessage(um);
-
-      el.input.value = '';
-      setConnState('busy');
-
-      try{
-        requestAnimationFrame(() => scrollToNode(userNode, 'auto'));
-
-        const translatedRaw = await callOpenRouter(userText);
-        const translated = normalizeOutput(userText, translatedRaw);
-
-        const am = { role:'assistant', text: translated, ts: Date.now() };
-        chat.push(am);
-        _chatTextSet.add(am.text);
-        saveChatDebounced();
-
-        const assistantNode = appendChatMessage(am);
-
-        if(el.autoCopy.checked && hasChinese(translated)){
-          const ok = await copyToClipboard(translated, true);
-          if(ok){
-            toast('자동 복사 완료');
-            updateLastClipboard(translated);
-            hideCopyBar();
-          } else {
-            showCopyBar(translated);
-            scheduleCopyRetry(translated);
-            toast('자동 복사 제한 → 아래 바 탭(또는 화면 터치 시 재시도)');
-          }
-        } else {
-          hideCopyBar();
-        }
-
-        setConnState('ok');
-
-        requestAnimationFrame(() => scrollToNode(assistantNode, 'auto'));
-        setTimeout(() => scrollToNode(assistantNode, 'auto'), 60);
-
-      } catch(err){
-        const msg = (err && err.message) ? err.message : String(err);
-        const em = { role:'assistant', text: '오류: ' + msg, ts: Date.now() };
-        chat.push(em);
-        _chatTextSet.add(em.text);
-        saveChatDebounced();
-
-        const errNode = appendChatMessage(em);
-        setConnState('err');
-
-        if(String(msg).includes('HTTP 429')){
-          toast('HTTP 429: 요청 과다(잠시 후 재시도)');
-        } else {
-          toast('요청 실패: ' + msg);
-        }
-
-        requestAnimationFrame(() => scrollToNode(errNode, 'auto'));
-      }
     }
 
-    async function testConnection(){
+    setConnState('ok');
+    ensureBottom();
+
+  } catch(err){
+    const msg = (err && err.message) ? err.message : String(err);
+    const errText = '오류: ' + msg;
+
+    acc = errText;
+    am.text = errText;
+    if(bubbleEl) bubbleEl.textContent = errText;
+
+    _chatTextSet.add(am.text);
+    saveChatDebounced();
+
+    setConnState('err');
+
+    if(String(msg).includes('HTTP 429')){
+      toast('HTTP 429: 요청 과다(잠시 후 재시도)');
+    } else {
+      toast('요청 실패: ' + msg);
+    }
+
+    ensureBottom();
+  }
+}
+
+async function testConnection(){
       if(_isBusy) return;
       if(inCooldown()){
         toast('잠시 대기(429 제한).');
@@ -1433,6 +1631,9 @@
       toast('번역 기록 다운로드 완료');
     }
 
+    /**********************
+     * Clipboard auto-watch (>=300자 자동번역 방지)
+     **********************/
     const LS_LAST_CLIP = 'bk_tr_lastClip';
     let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
     function updateLastClipboard(text){
@@ -1450,24 +1651,35 @@
         const trimmed = String(clipText || '').trim();
         if(!trimmed) return;
 
+        // ✅ 300자 이상 자동번역 금지(프롬프트 붙여넣기 방지)
         if(trimmed.length >= 300) return;
+
         if(_lastClipboardText === trimmed) return;
+
+        // ✅ 대화 내 중복(빠르게)
         if(_chatTextSet.has(trimmed)) return;
 
+        // 한국어/중국어만 자동
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
         if(isEnglishLongText(trimmed)) return;
 
         updateLastClipboard(trimmed);
         el.input.value = trimmed;
 
+        // ✅ 입력이 들어오면 입력창 보이는 쪽으로 스크롤
         requestAnimationFrame(() => {
           try{ el.input.scrollIntoView({behavior:'smooth', block:'end'}); } catch {}
         });
 
         setTimeout(() => send(), 80);
-      } catch(err){}
+      } catch(err){
+        // 권한 거부 등 무시
+      }
     }
 
+    /**********************
+     * Init
+     **********************/
     const ver = bumpVersionIfNeeded();
     el.verTag.textContent = 'v' + fmtVer(ver);
 
@@ -1475,8 +1687,10 @@
     loadCustomFont();
     loadTheme();
 
+    // 테마 input 바인딩
     [el.c_bg, el.c_chatBg, el.c_userBubble, el.c_assistBubble, el.c_input, el.c_sendBtn].forEach(bindThemeInput);
 
+    // swatch 버튼 → picker
     el.sw_bg.addEventListener('click', () => openPicker(el.c_bg));
     el.sw_chatBg.addEventListener('click', () => openPicker(el.c_chatBg));
     el.sw_userBubble.addEventListener('click', () => openPicker(el.c_userBubble));
@@ -1511,12 +1725,23 @@
     });
 
     renderChatInitial();
+    // ✅ 새로고침/복귀 시 스크롤 위치 복원 방지 + 항상 맨 아래 고정
+    try{ if('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch {}
+    ensureBottom();
+    requestAnimationFrame(ensureBottom);
+    window.addEventListener('load', () => ensureBottom(), { once:true, passive:true });
+    window.addEventListener('pageshow', () => ensureBottom(), { passive:true });
+
     setSettingsVisible(false);
     setConnState('warn');
 
+    // 클립보드 감시
     checkClipboard();
     setInterval(checkClipboard, 1000);
 
+    /**********************
+     * Events
+     **********************/
     el.settingsToggleBtn.addEventListener('click', toggleSettings);
     el.downloadBtn.addEventListener('click', downloadChatAsTxt);
     el.topTestBtn.addEventListener('click', testConnection);
@@ -1555,15 +1780,18 @@
     });
     el.clearFontBtn.addEventListener('click', clearCustomFont);
 
+    // ✅ 포커스/키보드 열림 시 최하단/입력창 유지
     el.input.addEventListener('focus', () => {
       requestAnimationFrame(() => {
         try{ el.input.scrollIntoView({behavior:'smooth', block:'end'}); } catch {}
+        scrollToBottom('auto');
       });
     });
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize', () => {
         requestAnimationFrame(() => {
           try{ el.input.scrollIntoView({behavior:'smooth', block:'end'}); } catch {}
+          scrollToBottom('auto');
         });
       });
     }
