@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#050505" />
   <title>BK Translator</title>
 
-  <!-- 404 favicon 방지 -->
   <link rel="icon" href="data:," />
 
   <style>
@@ -30,11 +29,15 @@
 
       --fontMain: system-ui;
 
-      /* ✅ 글자 크기 배율(메뉴에서 조절) */
       --textScale: 1;
+
+      --chatBg: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
+      --inputBg: #2e3440;
+      --userBubbleBg: rgba(46, 52, 64, .92);
+      --assistantBubbleBg: transparent;
+      --sendBtnBg: rgba(45,107,255,.18);
     }
 
-    /* GitHub Pages에 올린 woff2가 있으면 자동 적용 (업로드폰트가 있으면 그게 우선) */
     @font-face{
       font-family:"BKRepoFont";
       src:url("./assets/fonts/NEXONLv2Gothic.woff2") format("woff2");
@@ -54,7 +57,6 @@
       overflow:hidden;
     }
 
-    /* ===== Header ===== */
     header{
       position:sticky; top:0; z-index:30;
       padding: 10px 10px calc(10px + env(safe-area-inset-top));
@@ -87,7 +89,6 @@
       user-select:none;
     }
 
-    /* 아이콘 버튼: 크기 통일 / 진한 검은색 / 테두리 없음 */
     .iconBtn{
       width:36px; height:36px;
       display:inline-flex;
@@ -105,14 +106,12 @@
     .iconBtn:active{transform:scale(.98)}
     .iconBtn svg{width:18px; height:18px; fill: currentColor}
 
-    /* ✅ 우측 버튼 3개: 동일 크기/간격 고정 */
     .rightBtns{
       display:flex;
       align-items:center;
       gap:10px;
     }
 
-    /* ✅ 연결상태: 아이콘 없이 “원형 색상”만 표시 (버튼 박스는 36x36로 통일) */
     .statusBtn{
       width:36px; height:36px;
       border-radius:12px;
@@ -134,7 +133,6 @@
       box-shadow: 0 0 0 2px rgba(5,5,5,.95);
     }
 
-    /* ===== Main ===== */
     main{
       flex:1;
       overflow:auto;
@@ -146,9 +144,8 @@
       margin:0 auto;
     }
 
-    /* 카드/테두리 제거: 배경색으로만 구분 */
     .panel{
-      background: var(--chatBg, linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92)));
+      background: var(--chatBg);
       border:none;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -165,7 +162,6 @@
     .panelHead .h{font-weight:800; font-size: calc(13px * var(--textScale))}
     .panelHead .s{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.35}
 
-    /* ===== Settings ===== */
     .settings{
       margin-bottom:10px;
       padding: 12px 14px 14px;
@@ -222,7 +218,6 @@
       flex: 0 0 14px;
     }
 
-    /* ===== Chat ===== */
     .chat{
       padding: 14px;
       display:flex;
@@ -243,18 +238,16 @@
       font-size: calc(15px * var(--textScale));
     }
 
-    /* 입력 말풍선 */
     .msg.user .bubble{
-      background: var(--userBubbleBg, rgba(46, 52, 64, .92));
+      background: var(--userBubbleBg);
       color: rgba(255,255,255,.95);
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       border-bottom-right-radius: 10px;
       max-width: 80%;
     }
 
-    /* 출력 말풍선 */
     .msg.assistant .bubble{
-      background: var(--assistantBubbleBg, transparent);
+      background: var(--assistantBubbleBg);
       color: rgba(230,237,243,.92);
       box-shadow: none;
       padding: 0;
@@ -279,7 +272,6 @@
     }
     .miniIconBtn svg{width:18px; height:18px; fill: currentColor}
 
-    /* ===== Composer ===== */
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
       padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
@@ -304,7 +296,7 @@
       border-radius: 16px;
       border:none;
 
-      background: var(--inputBg, #2e3440);
+      background: var(--inputBg);
       color: #ffffff;
 
       outline:none;
@@ -316,7 +308,7 @@
       min-width: 54px;
       border-radius: 16px;
       border:none;
-      background: var(--sendBtnBg, rgba(45,107,255,.18));
+      background: var(--sendBtnBg);
       color: #ffffff;
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       cursor:pointer;
@@ -335,7 +327,6 @@
       stroke-linejoin:round;
     }
 
-    /* 토스트 */
     .toast{
       position:fixed;
       left:50%;
@@ -356,7 +347,6 @@
     }
     .toast.show{opacity:1}
 
-    /* 복사 바 */
     .copyBar{
       position:fixed;
       left:50%;
@@ -410,6 +400,11 @@
     <div class="topbar">
       <div class="title">BK Translator <span class="ver" id="appVer">v1.21</span></div>
 
+      <!-- ✅ 메뉴(설정) -->
+      <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+      </button>
+
       <!-- 프롬프트 선택 버튼 -->
       <button id="promptSelectBtn" class="iconBtn" type="button" aria-label="프롬프트 선택">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
@@ -417,9 +412,7 @@
 
       <div style="flex:1"></div>
 
-      <!-- ✅ 우측 3버튼: 동일 크기/간격 -->
       <div class="rightBtns">
-        <!-- 연결 TEST: 와이파이 아이콘 -->
         <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 18.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"></path>
@@ -429,12 +422,10 @@
           </svg>
         </button>
 
-        <!-- Clear(대화 삭제): 휴지통 -->
         <button id="topClearBtn" class="iconBtn" type="button" aria-label="Clear(대화 삭제)">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
         </button>
 
-        <!-- 연결상태: 원형 색상만 -->
         <button id="connBtn" class="statusBtn" type="button" aria-label="연결 상태">
           <span id="statusCircle" class="statusCircle"></span>
         </button>
@@ -445,7 +436,6 @@
   <main id="main">
     <div class="wrap">
 
-      <!-- 설정 패널 -->
       <section id="settingsPanel" class="settings hidden">
         <div class="hint" style="margin-bottom:8px;">
           OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
@@ -483,7 +473,6 @@
           </label>
         </div>
 
-        <!-- ✅ 글자 크기 조절 -->
         <label for="fontScale">글자 크기</label>
         <div class="row" style="align-items:center;">
           <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
@@ -491,7 +480,6 @@
           <button id="fontScaleResetBtn" class="btn secondary" type="button">초기화</button>
         </div>
 
-        <!-- ✅ 색상 선택 -->
         <label>색상</label>
         <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end;">
           <div style="flex:1 1 140px; min-width:140px;">
@@ -520,7 +508,6 @@
           </div>
         </div>
 
-        <!-- ✅ 더 많은 색상(프리셋) -->
         <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap;">
           <button class="swatchBtn" type="button" data-preset="oled">
             <span class="swatchDot" style="background:#000000"></span> OLED Black
@@ -557,7 +544,6 @@
         <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
       </section>
 
-      <!-- 프롬프트 선택 패널(유지) -->
       <section id="promptSelectPanel" class="settings hidden">
         <div class="hint" style="margin-bottom:8px;">
           번역에 사용할 프롬프트 선택
@@ -583,7 +569,6 @@
         <div id="promptSelectStatus" class="hint" style="margin-top:8px;">현재: 기존 프롬프트 사용 중</div>
       </section>
 
-      <!-- 대화 -->
       <section class="panel">
         <div class="panelHead">
           <div class="left">
@@ -597,7 +582,6 @@
     </div>
   </main>
 
-  <!-- Composer -->
   <div class="composer">
     <div class="composerInner">
       <button id="sendBtnL" class="sendBtn" type="button" aria-label="전송(좌)">
@@ -618,7 +602,6 @@
     </div>
   </div>
 
-  <!-- Copy bar -->
   <div id="copyBar" class="copyBar hidden" role="button" aria-label="복사 바">
     <div class="copyBarText">번역 완료 · 탭하면 복사</div>
     <button id="copyBarBtn" class="copyBarBtn" type="button">복사</button>
@@ -652,6 +635,7 @@
       main: document.getElementById('main'),
       appVer: document.getElementById('appVer'),
 
+      settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
 
       topTestBtn: document.getElementById('topTestBtn'),
@@ -772,15 +756,12 @@
       el.copyBar.classList.add('hidden');
     }
 
-    // 중국어(한자) 1글자라도 포함 여부
     function hasChinese(s){
       return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s || ''));
     }
-    // 한국어 포함 여부
     function hasKorean(s){
       return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(String(s || ''));
     }
-    // 영어 장문 여부 (40자 이상 영어만 있으면 장문으로 판단)
     function isEnglishLongText(s){
       const str = String(s || '');
       if(hasKorean(str) || hasChinese(str)) return false;
@@ -788,7 +769,6 @@
       return englishChars && englishChars.length >= 40;
     }
 
-    // ===== Font Scale =====
     const FONT_SCALE_MIN = 0.85;
     const FONT_SCALE_MAX = 1.35;
 
@@ -801,7 +781,6 @@
       if(!Number.isFinite(s)) s = 1;
       s = clamp(s, FONT_SCALE_MIN, FONT_SCALE_MAX);
       document.documentElement.style.setProperty('--textScale', String(s));
-
       if(el.fontScale) el.fontScale.value = String(s);
       if(el.fontScaleVal) el.fontScaleVal.textContent = Math.round(s * 100) + '%';
     }
@@ -812,7 +791,6 @@
       applyFontScale(v);
     }
 
-    // ===== Colors =====
     const COLOR_DEFAULTS = {
       bg: '#050505',
       chatBg: '#0e1420',
@@ -837,32 +815,26 @@
       const savedBg = localStorage.getItem(LS.colorBg);
       if(el.colorBg) el.colorBg.value = savedBg || COLOR_DEFAULTS.bg;
       if(savedBg) document.documentElement.style.setProperty('--bg', savedBg);
-      else document.documentElement.style.removeProperty('--bg');
 
       const savedChat = localStorage.getItem(LS.colorChatBg);
       if(el.colorChatBg) el.colorChatBg.value = savedChat || COLOR_DEFAULTS.chatBg;
       if(savedChat) document.documentElement.style.setProperty('--chatBg', savedChat);
-      else document.documentElement.style.removeProperty('--chatBg');
 
       const savedInput = localStorage.getItem(LS.colorInputBg);
       if(el.colorInputBg) el.colorInputBg.value = savedInput || COLOR_DEFAULTS.inputBg;
       if(savedInput) document.documentElement.style.setProperty('--inputBg', savedInput);
-      else document.documentElement.style.removeProperty('--inputBg');
 
       const savedUserBubble = localStorage.getItem(LS.colorUserBubbleBg);
       if(el.colorUserBubbleBg) el.colorUserBubbleBg.value = savedUserBubble || COLOR_DEFAULTS.userBubbleBg;
       if(savedUserBubble) document.documentElement.style.setProperty('--userBubbleBg', savedUserBubble);
-      else document.documentElement.style.removeProperty('--userBubbleBg');
 
       const savedAssistantBubble = localStorage.getItem(LS.colorAssistantBubbleBg);
       if(el.colorAssistantBubbleBg) el.colorAssistantBubbleBg.value = savedAssistantBubble || COLOR_DEFAULTS.assistantBubbleBg;
       if(savedAssistantBubble) document.documentElement.style.setProperty('--assistantBubbleBg', savedAssistantBubble);
-      else document.documentElement.style.removeProperty('--assistantBubbleBg');
 
       const savedSendBtn = localStorage.getItem(LS.colorSendBtnBg);
       if(el.colorSendBtnBg) el.colorSendBtnBg.value = savedSendBtn || COLOR_DEFAULTS.sendBtnBg;
       if(savedSendBtn) document.documentElement.style.setProperty('--sendBtnBg', savedSendBtn);
-      else document.documentElement.style.removeProperty('--sendBtnBg');
     }
 
     function bindColorPicker(inputEl, lsKey, cssVar){
@@ -893,7 +865,6 @@
       setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
     }
 
-    // ===== Font: IndexedDB =====
     const DB_NAME = 'bk_tr_db';
     const DB_STORE = 'kv';
     let _fontBlobUrl = null;
@@ -1001,10 +972,8 @@
       toast('폰트 초기화 완료');
     }
 
-    // ===== Chat (세션 내만 유지) =====
     let chat = [];
 
-    // ✅ 한 페이지(입력 4개) 초과 시 자동 삭제
     const MAX_INPUTS_PER_PAGE = 4;
 
     function countUserInputs(arr){
@@ -1035,7 +1004,7 @@
         "- If input starts with '#', remove it and translate Korean -> Simplified Chinese.",
         "- Otherwise translate Simplified Chinese -> Korean.",
         "- Keep line breaks as-is."
-      ].join("\\n");
+      ].join("\n");
     }
 
     function loadSettings(){
@@ -1074,6 +1043,24 @@
     function toggleSettings(){
       const isHidden = el.settingsPanel.classList.contains('hidden');
       setSettingsVisible(isHidden);
+      if(!isHidden) return;
+      if(el.promptSelectPanel) el.promptSelectPanel.classList.add('hidden');
+    }
+
+    function setPromptSelectVisible(v){
+      if(!el.promptSelectPanel) return;
+      el.promptSelectPanel.classList.toggle('hidden', !v);
+      if(v){
+        requestAnimationFrame(() => el.promptSelectPanel.scrollIntoView({behavior:'smooth', block:'start'}));
+      }
+    }
+
+    function togglePromptSelect(){
+      if(!el.promptSelectPanel) return;
+      const isHidden = el.promptSelectPanel.classList.contains('hidden');
+      setPromptSelectVisible(isHidden);
+      if(isHidden === false) return;
+      if(el.settingsPanel) el.settingsPanel.classList.add('hidden');
     }
 
     let _isBusy = false;
@@ -1277,18 +1264,15 @@
       toast('Clear 완료');
     }
 
-    // Init
     loadSettings();
     loadCustomFont();
     renderChat();
     setSettingsVisible(false);
+    setPromptSelectVisible(false);
     setConnState('warn');
 
-    // 클립보드 상시 감시 및 자동 번역
     const LS_LAST_CLIP = 'bk_tr_lastClip';
     let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
-
-    // ✅ 300자 이상은 자동입력/자동번역 금지
     const AUTO_TRANSLATE_MAX_LEN = 300;
 
     function updateLastClipboard(text){
@@ -1315,55 +1299,55 @@
         el.input.value = trimmed;
         setTimeout(() => send(), 80);
       } catch(err){
-        // 권한 거부 등은 조용히 무시
       }
     }
 
     checkClipboard();
     setInterval(checkClipboard, 1000);
 
-    // Events
-    el.appVer.addEventListener('click', toggleSettings);
+    if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
+    if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
 
-    el.topTestBtn.addEventListener('click', testConnection);
-    el.topClearBtn.addEventListener('click', clearChatOnly);
-    el.saveBtn.addEventListener('click', saveSettings);
+    if(el.promptSelectBtn) el.promptSelectBtn.addEventListener('click', togglePromptSelect);
 
-    el.sendBtnL.addEventListener('click', send);
-    el.sendBtnR.addEventListener('click', send);
+    if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
+    if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
+    if(el.saveBtn) el.saveBtn.addEventListener('click', saveSettings);
 
-    el.input.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter'){
-        e.preventDefault();
-        send();
-      }
-      if(e.key === 'Escape'){
-        el.input.value = '';
-      }
-    });
+    if(el.sendBtnL) el.sendBtnL.addEventListener('click', send);
+    if(el.sendBtnR) el.sendBtnR.addEventListener('click', send);
 
-    // Copy bar
-    el.copyBar.addEventListener('click', async () => {
+    if(el.input){
+      el.input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          send();
+        }
+        if(e.key === 'Escape'){
+          el.input.value = '';
+        }
+      });
+    }
+
+    if(el.copyBar) el.copyBar.addEventListener('click', async () => {
       if(!_pendingCopyText) return;
       const ok = await copyToClipboard(_pendingCopyText, false);
       if(ok) hideCopyBar();
     });
-    el.copyBarBtn.addEventListener('click', async (e) => {
+    if(el.copyBarBtn) el.copyBarBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if(!_pendingCopyText) return;
       const ok = await copyToClipboard(_pendingCopyText, false);
       if(ok) hideCopyBar();
     });
 
-    // Font upload
-    el.fontFile.addEventListener('change', async (e) => {
+    if(el.fontFile) el.fontFile.addEventListener('change', async (e) => {
       const file = e.target.files && e.target.files[0];
       if(file) await saveCustomFontFile(file);
       e.target.value = '';
     });
-    el.clearFontBtn.addEventListener('click', clearCustomFont);
+    if(el.clearFontBtn) el.clearFontBtn.addEventListener('click', clearCustomFont);
 
-    // Font scale slider
     if(el.fontScale){
       el.fontScale.addEventListener('input', (e) => {
         const v = e.target && e.target.value ? e.target.value : '1';
@@ -1378,7 +1362,6 @@
       });
     }
 
-    // Color pickers
     applyColorsFromStorage();
     bindColorPicker(el.colorBg, LS.colorBg, '--bg');
     bindColorPicker(el.colorChatBg, LS.colorChatBg, '--chatBg');
@@ -1387,7 +1370,6 @@
     bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
     bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
 
-    // Preset buttons
     document.querySelectorAll('[data-preset]').forEach(btn => {
       btn.addEventListener('click', () => {
         const key = btn.getAttribute('data-preset');
@@ -1395,8 +1377,7 @@
       });
     });
 
-    // viewport 변화 시 하단 유지
-    el.input.addEventListener('focus', () => scrollToBottom('smooth'));
+    if(el.input) el.input.addEventListener('focus', () => scrollToBottom('smooth'));
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
     }
