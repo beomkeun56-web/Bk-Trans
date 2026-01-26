@@ -218,6 +218,24 @@
       flex: 0 0 14px;
     }
 
+    .chipRow{
+      margin-top:8px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .colorChip{
+      width:22px; height:22px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: transparent;
+      padding:0;
+      cursor:pointer;
+      box-shadow: 0 8px 18px rgba(0,0,0,.20);
+    }
+    .colorChip:active{transform:scale(.98)}
+
     .chat{
       padding: 14px;
       display:flex;
@@ -400,12 +418,10 @@
     <div class="topbar">
       <div class="title">BK Translator <span class="ver" id="appVer">v1.21</span></div>
 
-      <!-- ✅ 메뉴(설정) -->
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
       </button>
 
-      <!-- 프롬프트 선택 버튼 -->
       <button id="promptSelectBtn" class="iconBtn" type="button" aria-label="프롬프트 선택">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
       </button>
@@ -484,29 +500,119 @@
         <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end;">
           <div style="flex:1 1 140px; min-width:140px;">
             <div class="hint" style="margin-bottom:6px;">전체배경</div>
-            <input id="colorBg" type="color" value="#050505" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <input id="colorBg" type="color" value="#050505" list="darkPaletteBg" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorBg">
+              <button class="colorChip" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="colorChip" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="colorChip" type="button" data-color="#0f172a" style="background:#0f172a"></button>
+              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="colorChip" type="button" data-color="#111111" style="background:#111111"></button>
+              <button class="colorChip" type="button" data-color="#090c10" style="background:#090c10"></button>
+            </div>
           </div>
+
           <div style="flex:1 1 140px; min-width:140px;">
             <div class="hint" style="margin-bottom:6px;">채팅배경</div>
-            <input id="colorChatBg" type="color" value="#0e1420" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <input id="colorChatBg" type="color" value="#0e1420" list="darkPaletteChat" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorChatBg">
+              <button class="colorChip" type="button" data-color="#070c18" style="background:#070c18"></button>
+              <button class="colorChip" type="button" data-color="#0b1220" style="background:#0b1220"></button>
+              <button class="colorChip" type="button" data-color="#0e1420" style="background:#0e1420"></button>
+              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="colorChip" type="button" data-color="#131a2a" style="background:#131a2a"></button>
+              <button class="colorChip" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
+              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="colorChip" type="button" data-color="#0c1320" style="background:#0c1320"></button>
+            </div>
           </div>
+
           <div style="flex:1 1 140px; min-width:140px;">
             <div class="hint" style="margin-bottom:6px;">입력창</div>
-            <input id="colorInputBg" type="color" value="#2e3440" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <input id="colorInputBg" type="color" value="#2e3440" list="darkPaletteInput" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorInputBg">
+              <button class="colorChip" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+              <button class="colorChip" type="button" data-color="#232832" style="background:#232832"></button>
+              <button class="colorChip" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
+              <button class="colorChip" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="colorChip" type="button" data-color="#3a3f4b" style="background:#3a3f4b"></button>
+              <button class="colorChip" type="button" data-color="#161b22" style="background:#161b22"></button>
+              <button class="colorChip" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
+            </div>
           </div>
+
           <div style="flex:1 1 140px; min-width:140px;">
             <div class="hint" style="margin-bottom:6px;">입력말풍선</div>
-            <input id="colorUserBubbleBg" type="color" value="#2e3440" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <input id="colorUserBubbleBg" type="color" value="#2e3440" list="darkPaletteBubble" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorUserBubbleBg">
+              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="colorChip" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
+              <button class="colorChip" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="colorChip" type="button" data-color="#334155" style="background:#334155"></button>
+              <button class="colorChip" type="button" data-color="#3b4252" style="background:#3b4252"></button>
+              <button class="colorChip" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
+              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="colorChip" type="button" data-color="#30363d" style="background:#30363d"></button>
+            </div>
           </div>
+
           <div style="flex:1 1 140px; min-width:140px;">
             <div class="hint" style="margin-bottom:6px;">출력말풍선</div>
-            <input id="colorAssistantBubbleBg" type="color" value="#000000" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <input id="colorAssistantBubbleBg" type="color" value="#000000" list="darkPaletteAssistant" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorAssistantBubbleBg">
+              <button class="colorChip" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="colorChip" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="colorChip" type="button" data-color="#0e1420" style="background:#0e1420"></button>
+              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="colorChip" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
+              <button class="colorChip" type="button" data-color="#161b22" style="background:#161b22"></button>
+            </div>
           </div>
+
           <div style="flex:1 1 140px; min-width:140px;">
             <div class="hint" style="margin-bottom:6px;">전송버튼</div>
-            <input id="colorSendBtnBg" type="color" value="#2d6bff" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <input id="colorSendBtnBg" type="color" value="#2d6bff" list="darkPaletteAccent" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorSendBtnBg">
+              <button class="colorChip" type="button" data-color="#1d4ed8" style="background:#1d4ed8"></button>
+              <button class="colorChip" type="button" data-color="#2d6bff" style="background:#2d6bff"></button>
+              <button class="colorChip" type="button" data-color="#0ea5e9" style="background:#0ea5e9"></button>
+              <button class="colorChip" type="button" data-color="#22c55e" style="background:#22c55e"></button>
+              <button class="colorChip" type="button" data-color="#f59e0b" style="background:#f59e0b"></button>
+              <button class="colorChip" type="button" data-color="#ef4444" style="background:#ef4444"></button>
+              <button class="colorChip" type="button" data-color="#a855f7" style="background:#a855f7"></button>
+              <button class="colorChip" type="button" data-color="#14b8a6" style="background:#14b8a6"></button>
+            </div>
           </div>
         </div>
+
+        <datalist id="darkPaletteBg">
+          <option value="#000000"></option><option value="#050505"></option><option value="#0b0f14"></option><option value="#0f172a"></option>
+          <option value="#111827"></option><option value="#1f2937"></option><option value="#111111"></option><option value="#090c10"></option>
+        </datalist>
+        <datalist id="darkPaletteChat">
+          <option value="#070c18"></option><option value="#0b1220"></option><option value="#0e1420"></option><option value="#111827"></option>
+          <option value="#131a2a"></option><option value="#0a0f1a"></option><option value="#0b0f14"></option><option value="#0c1320"></option>
+        </datalist>
+        <datalist id="darkPaletteInput">
+          <option value="#1e2430"></option><option value="#232832"></option><option value="#2b2f3a"></option><option value="#2e3440"></option>
+          <option value="#1f2937"></option><option value="#3a3f4b"></option><option value="#161b22"></option><option value="#2a2a2a"></option>
+        </datalist>
+        <datalist id="darkPaletteBubble">
+          <option value="#1f2937"></option><option value="#2b2f3a"></option><option value="#2e3440"></option><option value="#334155"></option>
+          <option value="#3b4252"></option><option value="#2a2a2a"></option><option value="#111827"></option><option value="#30363d"></option>
+        </datalist>
+        <datalist id="darkPaletteAssistant">
+          <option value="#000000"></option><option value="#050505"></option><option value="#0b0f14"></option><option value="#0e1420"></option>
+          <option value="#111827"></option><option value="#1f2937"></option><option value="#0a0f1a"></option><option value="#161b22"></option>
+        </datalist>
+        <datalist id="darkPaletteAccent">
+          <option value="#1d4ed8"></option><option value="#2d6bff"></option><option value="#0ea5e9"></option><option value="#22c55e"></option>
+          <option value="#f59e0b"></option><option value="#ef4444"></option><option value="#a855f7"></option><option value="#14b8a6"></option>
+        </datalist>
 
         <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap;">
           <button class="swatchBtn" type="button" data-preset="oled">
@@ -531,7 +637,7 @@
             <span class="swatchDot" style="background:#111111"></span> Mono
           </button>
           <button class="swatchBtn" type="button" data-preset="reset">
-            <span class="swatchDot" style="background:#2d6bff"></span> 기본
+            <span class="swatchDot" style="background:#2d6bff"></spana> 기본
           </button>
         </div>
 
@@ -865,6 +971,22 @@
       setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
     }
 
+    function initColorChips(){
+      document.querySelectorAll('.chipRow').forEach(row => {
+        const targetId = row.getAttribute('data-target');
+        if(!targetId) return;
+        row.querySelectorAll('.colorChip').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const c = btn.getAttribute('data-color');
+            const input = document.getElementById(targetId);
+            if(!input || !c) return;
+            input.value = c;
+            input.dispatchEvent(new Event('input', { bubbles:true }));
+          });
+        });
+      });
+    }
+
     const DB_NAME = 'bk_tr_db';
     const DB_STORE = 'kv';
     let _fontBlobUrl = null;
@@ -973,7 +1095,6 @@
     }
 
     let chat = [];
-
     const MAX_INPUTS_PER_PAGE = 4;
 
     function countUserInputs(arr){
@@ -1307,7 +1428,6 @@
 
     if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
     if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
-
     if(el.promptSelectBtn) el.promptSelectBtn.addEventListener('click', togglePromptSelect);
 
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
@@ -1369,6 +1489,8 @@
     bindColorPicker(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg');
     bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
     bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
+
+    initColorChips();
 
     document.querySelectorAll('[data-preset]').forEach(btn => {
       btn.addEventListener('click', () => {
