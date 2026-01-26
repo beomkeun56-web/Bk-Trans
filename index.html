@@ -146,7 +146,7 @@
 
     /* 카드/테두리 제거: 배경색으로만 구분 */
     .panel{
-      background: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
+      background: var(--chatBg, linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92)));
       border:none;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -223,7 +223,7 @@
 
     /* 입력 말풍선: 단색 진한 회색 */
     .msg.user .bubble{
-      background: rgba(46, 52, 64, .92);
+      background: var(--userBubbleBg, rgba(46, 52, 64, .92));
       color: rgba(255,255,255,.95);
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       border-bottom-right-radius: 10px;
@@ -232,7 +232,7 @@
 
     /* 출력 말풍선: 배경 없음(투명) + 그림자 제거 */
     .msg.assistant .bubble{
-      background: transparent;
+      background: var(--assistantBubbleBg, transparent);
       color: rgba(230,237,243,.92);
       box-shadow: none;
       padding: 0;
@@ -282,7 +282,7 @@
       border-radius: 16px;
       border:none;
 
-      background: #2e3440;
+      background: var(--inputBg, #2e3440);
       color: #ffffff;
 
       outline:none;
@@ -294,7 +294,7 @@
       min-width: 54px;
       border-radius: 16px;
       border:none;
-      background: rgba(45,107,255,.18);
+      background: var(--sendBtnBg, rgba(45,107,255,.18));
       color: #ffffff;
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       cursor:pointer;
@@ -480,6 +480,35 @@
         </div>
         <div class="hint">말풍선/입력/메뉴 텍스트 크기 조절</div>
 
+        <!-- ✅ 색상 선택(메뉴 추가) -->
+        <label>색상</label>
+        <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end;">
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">전체배경</div>
+            <input id="colorBg" type="color" value="#050505" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+          </div>
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">채팅배경</div>
+            <input id="colorChatBg" type="color" value="#0e1420" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+          </div>
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">입력창</div>
+            <input id="colorInputBg" type="color" value="#2e3440" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+          </div>
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">입력말풍선</div>
+            <input id="colorUserBubbleBg" type="color" value="#2e3440" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+          </div>
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">출력말풍선</div>
+            <input id="colorAssistantBubbleBg" type="color" value="#000000" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+          </div>
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">전송버튼</div>
+            <input id="colorSendBtnBg" type="color" value="#2d6bff" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+          </div>
+        </div>
+
         <label>폰트(폰에서 업로드)</label>
         <div class="row" style="align-items:center;">
           <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" />
@@ -571,7 +600,14 @@
       autoCopy: 'bk_tr_autoCopy',
       chat: 'bk_tr_chat',
       promptSelect: 'bk_tr_promptSelect',
-      fontScale: 'bk_tr_fontScale'
+      fontScale: 'bk_tr_fontScale',
+
+      colorBg: 'bk_tr_color_bg',
+      colorChatBg: 'bk_tr_color_chat_bg',
+      colorInputBg: 'bk_tr_color_input_bg',
+      colorUserBubbleBg: 'bk_tr_color_user_bubble_bg',
+      colorAssistantBubbleBg: 'bk_tr_color_assistant_bubble_bg',
+      colorSendBtnBg: 'bk_tr_color_send_btn_bg'
     };
 
     const el = {
@@ -620,6 +656,13 @@
       fontScale: document.getElementById('fontScale'),
       fontScaleVal: document.getElementById('fontScaleVal'),
       fontScaleResetBtn: document.getElementById('fontScaleResetBtn'),
+
+      colorBg: document.getElementById('colorBg'),
+      colorChatBg: document.getElementById('colorChatBg'),
+      colorInputBg: document.getElementById('colorInputBg'),
+      colorUserBubbleBg: document.getElementById('colorUserBubbleBg'),
+      colorAssistantBubbleBg: document.getElementById('colorAssistantBubbleBg'),
+      colorSendBtnBg: document.getElementById('colorSendBtnBg'),
     };
 
     if(el.appVer) el.appVer.textContent = APP_VERSION;
@@ -731,6 +774,58 @@
       const saved = localStorage.getItem(LS.fontScale);
       const v = saved ? Number(saved) : 1;
       applyFontScale(v);
+    }
+
+    // ===== Colors =====
+    const COLOR_DEFAULTS = {
+      bg: '#050505',
+      chatBg: '#0e1420',
+      inputBg: '#2e3440',
+      userBubbleBg: '#2e3440',
+      assistantBubbleBg: '#000000',
+      sendBtnBg: '#2d6bff'
+    };
+
+    function applyColorsFromStorage(){
+      const savedBg = localStorage.getItem(LS.colorBg);
+      if(el.colorBg) el.colorBg.value = savedBg || COLOR_DEFAULTS.bg;
+      if(savedBg) document.documentElement.style.setProperty('--bg', savedBg);
+      else document.documentElement.style.removeProperty('--bg');
+
+      const savedChat = localStorage.getItem(LS.colorChatBg);
+      if(el.colorChatBg) el.colorChatBg.value = savedChat || COLOR_DEFAULTS.chatBg;
+      if(savedChat) document.documentElement.style.setProperty('--chatBg', savedChat);
+      else document.documentElement.style.removeProperty('--chatBg');
+
+      const savedInput = localStorage.getItem(LS.colorInputBg);
+      if(el.colorInputBg) el.colorInputBg.value = savedInput || COLOR_DEFAULTS.inputBg;
+      if(savedInput) document.documentElement.style.setProperty('--inputBg', savedInput);
+      else document.documentElement.style.removeProperty('--inputBg');
+
+      const savedUserBubble = localStorage.getItem(LS.colorUserBubbleBg);
+      if(el.colorUserBubbleBg) el.colorUserBubbleBg.value = savedUserBubble || COLOR_DEFAULTS.userBubbleBg;
+      if(savedUserBubble) document.documentElement.style.setProperty('--userBubbleBg', savedUserBubble);
+      else document.documentElement.style.removeProperty('--userBubbleBg');
+
+      const savedAssistantBubble = localStorage.getItem(LS.colorAssistantBubbleBg);
+      if(el.colorAssistantBubbleBg) el.colorAssistantBubbleBg.value = savedAssistantBubble || COLOR_DEFAULTS.assistantBubbleBg;
+      if(savedAssistantBubble) document.documentElement.style.setProperty('--assistantBubbleBg', savedAssistantBubble);
+      else document.documentElement.style.removeProperty('--assistantBubbleBg');
+
+      const savedSendBtn = localStorage.getItem(LS.colorSendBtnBg);
+      if(el.colorSendBtnBg) el.colorSendBtnBg.value = savedSendBtn || COLOR_DEFAULTS.sendBtnBg;
+      if(savedSendBtn) document.documentElement.style.setProperty('--sendBtnBg', savedSendBtn);
+      else document.documentElement.style.removeProperty('--sendBtnBg');
+    }
+
+    function bindColorPicker(inputEl, lsKey, cssVar){
+      if(!inputEl) return;
+      inputEl.addEventListener('input', (e) => {
+        const v = String(e.target.value || '').trim();
+        if(!v) return;
+        document.documentElement.style.setProperty(cssVar, v);
+        try{ localStorage.setItem(lsKey, v); } catch {}
+      });
     }
 
     // ===== Font: IndexedDB =====
@@ -870,6 +965,7 @@
       }
 
       initFontScale();
+      applyColorsFromStorage();
     }
 
     function saveSettings(){
@@ -1227,6 +1323,15 @@
         try{ localStorage.setItem(LS.fontScale, '1'); } catch {}
       });
     }
+
+    // ✅ Color pickers
+    applyColorsFromStorage();
+    bindColorPicker(el.colorBg, LS.colorBg, '--bg');
+    bindColorPicker(el.colorChatBg, LS.colorChatBg, '--chatBg');
+    bindColorPicker(el.colorInputBg, LS.colorInputBg, '--inputBg');
+    bindColorPicker(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg');
+    bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
+    bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
 
     // viewport 변화 시 하단 유지
     el.input.addEventListener('focus', () => scrollToBottom('smooth'));
