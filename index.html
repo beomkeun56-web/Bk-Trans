@@ -83,6 +83,8 @@
       border-radius: 999px;
       background: rgba(255,255,255,.08);
       color: rgba(230,237,243,.92);
+      cursor:pointer;
+      user-select:none;
     }
 
     /* 아이콘 버튼: 크기 통일 / 진한 검은색 / 테두리 없음 */
@@ -107,7 +109,7 @@
     .rightBtns{
       display:flex;
       align-items:center;
-      gap:10px;          /* 필요시 8px로 조정 가능 */
+      gap:10px;
     }
 
     /* ✅ 연결상태: 아이콘 없이 “원형 색상”만 표시 (버튼 박스는 36x36로 통일) */
@@ -200,6 +202,26 @@
     .btn.secondary{background: rgba(255,255,255,.06)}
     .btn.danger{background: rgba(255,107,107,.14)}
 
+    .swatchBtn{
+      border:none;
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor:pointer;
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      box-shadow: 0 8px 18px rgba(0,0,0,.25);
+      font-size: calc(13px * var(--textScale));
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+    }
+    .swatchDot{
+      width:14px; height:14px;
+      border-radius:999px;
+      box-shadow: 0 0 0 2px rgba(5,5,5,.9);
+      flex: 0 0 14px;
+    }
+
     /* ===== Chat ===== */
     .chat{
       padding: 14px;
@@ -221,7 +243,7 @@
       font-size: calc(15px * var(--textScale));
     }
 
-    /* 입력 말풍선: 단색 진한 회색 */
+    /* 입력 말풍선 */
     .msg.user .bubble{
       background: var(--userBubbleBg, rgba(46, 52, 64, .92));
       color: rgba(255,255,255,.95);
@@ -230,7 +252,7 @@
       max-width: 80%;
     }
 
-    /* 출력 말풍선: 배경 없음(투명) + 그림자 제거 */
+    /* 출력 말풍선 */
     .msg.assistant .bubble{
       background: var(--assistantBubbleBg, transparent);
       color: rgba(230,237,243,.92);
@@ -388,16 +410,6 @@
     <div class="topbar">
       <div class="title">BK Translator <span class="ver" id="appVer">v1.21</span></div>
 
-      <!-- 설정(메뉴) -->
-      <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-      </button>
-
-      <!-- 번역 기록 다운로드 -->
-      <button id="downloadBtn" class="iconBtn" type="button" aria-label="번역 기록 다운로드">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zm7-18v12l4-4 1.4 1.4L12 16.8l-5.4-5.4L8 10l4 4V2z"/></svg>
-      </button>
-
       <!-- 프롬프트 선택 버튼 -->
       <button id="promptSelectBtn" class="iconBtn" type="button" aria-label="프롬프트 선택">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
@@ -471,16 +483,15 @@
           </label>
         </div>
 
-        <!-- ✅ 글자 크기 조절(메뉴 추가) -->
+        <!-- ✅ 글자 크기 조절 -->
         <label for="fontScale">글자 크기</label>
         <div class="row" style="align-items:center;">
           <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
           <div id="fontScaleVal" class="hint" style="min-width:64px; text-align:right;">100%</div>
           <button id="fontScaleResetBtn" class="btn secondary" type="button">초기화</button>
         </div>
-        <div class="hint">말풍선/입력/메뉴 텍스트 크기 조절</div>
 
-        <!-- ✅ 색상 선택(메뉴 추가) -->
+        <!-- ✅ 색상 선택 -->
         <label>색상</label>
         <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end;">
           <div style="flex:1 1 140px; min-width:140px;">
@@ -507,6 +518,34 @@
             <div class="hint" style="margin-bottom:6px;">전송버튼</div>
             <input id="colorSendBtnBg" type="color" value="#2d6bff" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
           </div>
+        </div>
+
+        <!-- ✅ 더 많은 색상(프리셋) -->
+        <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap;">
+          <button class="swatchBtn" type="button" data-preset="oled">
+            <span class="swatchDot" style="background:#000000"></span> OLED Black
+          </button>
+          <button class="swatchBtn" type="button" data-preset="slate">
+            <span class="swatchDot" style="background:#0b0f14"></span> Slate
+          </button>
+          <button class="swatchBtn" type="button" data-preset="navy">
+            <span class="swatchDot" style="background:#070c18"></span> Navy
+          </button>
+          <button class="swatchBtn" type="button" data-preset="purple">
+            <span class="swatchDot" style="background:#1b1026"></span> Purple
+          </button>
+          <button class="swatchBtn" type="button" data-preset="emerald">
+            <span class="swatchDot" style="background:#071b14"></span> Emerald
+          </button>
+          <button class="swatchBtn" type="button" data-preset="warm">
+            <span class="swatchDot" style="background:#140f0b"></span> Warm
+          </button>
+          <button class="swatchBtn" type="button" data-preset="mono">
+            <span class="swatchDot" style="background:#111111"></span> Mono
+          </button>
+          <button class="swatchBtn" type="button" data-preset="reset">
+            <span class="swatchDot" style="background:#2d6bff"></span> 기본
+          </button>
         </div>
 
         <label>폰트(폰에서 업로드)</label>
@@ -598,7 +637,6 @@
       maxTokens: 'bk_tr_maxTokens',
       system: 'bk_tr_systemPrompt',
       autoCopy: 'bk_tr_autoCopy',
-      chat: 'bk_tr_chat',
       promptSelect: 'bk_tr_promptSelect',
       fontScale: 'bk_tr_fontScale',
 
@@ -614,9 +652,7 @@
       main: document.getElementById('main'),
       appVer: document.getElementById('appVer'),
 
-      settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
-      downloadBtn: document.getElementById('downloadBtn'),
 
       topTestBtn: document.getElementById('topTestBtn'),
       topClearBtn: document.getElementById('topClearBtn'),
@@ -786,6 +822,17 @@
       sendBtnBg: '#2d6bff'
     };
 
+    const COLOR_PRESETS = {
+      oled:     { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
+      slate:    { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
+      navy:     { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff' },
+      purple:   { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6' },
+      emerald:  { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e' },
+      warm:     { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b' },
+      mono:     { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff' },
+      reset:    { ...COLOR_DEFAULTS }
+    };
+
     function applyColorsFromStorage(){
       const savedBg = localStorage.getItem(LS.colorBg);
       if(el.colorBg) el.colorBg.value = savedBg || COLOR_DEFAULTS.bg;
@@ -826,6 +873,24 @@
         document.documentElement.style.setProperty(cssVar, v);
         try{ localStorage.setItem(lsKey, v); } catch {}
       });
+    }
+
+    function applyPreset(presetKey){
+      const p = COLOR_PRESETS[presetKey];
+      if(!p) return;
+
+      const setOne = (inputEl, lsKey, cssVar, val) => {
+        if(inputEl) inputEl.value = val;
+        document.documentElement.style.setProperty(cssVar, val);
+        try{ localStorage.setItem(lsKey, val); } catch {}
+      };
+
+      setOne(el.colorBg, LS.colorBg, '--bg', p.bg);
+      setOne(el.colorChatBg, LS.colorChatBg, '--chatBg', p.chatBg);
+      setOne(el.colorInputBg, LS.colorInputBg, '--inputBg', p.inputBg);
+      setOne(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg', p.userBubbleBg);
+      setOne(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg', p.assistantBubbleBg);
+      setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
     }
 
     // ===== Font: IndexedDB =====
@@ -936,8 +1001,31 @@
       toast('폰트 초기화 완료');
     }
 
-    // ===== Chat =====
+    // ===== Chat (세션 내만 유지) =====
     let chat = [];
+
+    // ✅ 한 페이지(입력 4개) 초과 시 자동 삭제
+    const MAX_INPUTS_PER_PAGE = 4;
+
+    function countUserInputs(arr){
+      let c = 0;
+      for(const m of arr){
+        if(m && m.role === 'user') c++;
+      }
+      return c;
+    }
+
+    function trimChatToMaxInputs(){
+      while(countUserInputs(chat) > MAX_INPUTS_PER_PAGE){
+        if(chat.length === 0) break;
+        if(chat[0] && chat[0].role === 'user'){
+          chat.shift();
+          if(chat[0] && chat[0].role === 'assistant') chat.shift();
+        } else {
+          chat.shift();
+        }
+      }
+    }
 
     function defaultSystemPrompt(){
       return [
@@ -959,11 +1047,6 @@
       el.systemPrompt.value = localStorage.getItem(LS.system) || defaultSystemPrompt();
       el.autoCopy.checked = (localStorage.getItem(LS.autoCopy) || '0') === '1';
 
-      const savedChat = localStorage.getItem(LS.chat);
-      if(savedChat){
-        try{ chat = JSON.parse(savedChat) || []; } catch { chat = []; }
-      }
-
       initFontScale();
       applyColorsFromStorage();
     }
@@ -979,10 +1062,6 @@
       localStorage.setItem(LS.fontScale, String(el.fontScale ? el.fontScale.value : '1'));
       toast('저장 완료');
       setSettingsVisible(false);
-    }
-
-    function saveChat(){
-      localStorage.setItem(LS.chat, JSON.stringify(chat));
     }
 
     function setSettingsVisible(v){
@@ -1007,21 +1086,21 @@
     }
 
     function normalizeNewlines(s){
-      return String(s).replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');
+      return String(s).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     }
 
     function countMeaningfulLines(s){
       const norm = normalizeNewlines(s);
-      const trimmed = norm.replace(/\\n+$/g, '');
+      const trimmed = norm.replace(/\n+$/g, '');
       if(trimmed.length === 0) return 1;
-      return trimmed.split('\\n').length;
+      return trimmed.split('\n').length;
     }
 
     function normalizeOutput(src, out){
       const srcLineCount = countMeaningfulLines(src);
       const norm = normalizeNewlines(out).trimEnd();
       if(norm.length === 0) return '';
-      const lines = norm.split('\\n');
+      const lines = norm.split('\n');
       const nonEmpty = lines.filter(l => l.trim().length > 0);
       const uniq = [...new Set(nonEmpty.map(l => l.trim()))];
       if(srcLineCount === 1 && uniq.length === 1 && nonEmpty.length > 1){
@@ -1134,7 +1213,6 @@
       hideCopyBar();
 
       chat.push({ role:'user', text:userText, ts:Date.now() });
-      saveChat();
       renderChat();
       scrollToBottom('smooth');
 
@@ -1146,13 +1224,12 @@
         const translated = normalizeOutput(userText, translatedRaw);
 
         chat.push({ role:'assistant', text: translated, ts: Date.now() });
-        saveChat();
+
+        trimChatToMaxInputs();
         renderChat();
 
-        // ✅ 번역 완료 후 “확실히” 하단 고정
         scrollToBottom('smooth');
 
-        // 자동복사(중국어일 때만)
         if(el.autoCopy.checked && hasChinese(translated)){
           const ok = await copyToClipboard(translated, true);
           if(ok){
@@ -1170,8 +1247,10 @@
       } catch(err){
         const msg = (err && err.message) ? err.message : String(err);
         chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
-        saveChat();
+
+        trimChatToMaxInputs();
         renderChat();
+
         setConnState('err');
         toast('요청 실패: ' + msg);
       }
@@ -1193,34 +1272,9 @@
       if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
       hideCopyBar();
-      try{ localStorage.setItem(LS.chat, '[]'); } catch {}
-      try{ localStorage.removeItem(LS.chat); } catch {}
       renderChat();
       scrollToBottom('smooth');
       toast('Clear 완료');
-    }
-
-    function downloadChatAsTxt(){
-      if(chat.length === 0){
-        toast('다운로드할 번역 기록이 없습니다.');
-        return;
-      }
-      let content = '';
-      for(const m of chat){
-        const role = m.role === 'user' ? '[입력]' : '[번역]';
-        const time = m.ts ? new Date(m.ts).toLocaleString('ko-KR') : '';
-        content += role + ' ' + time + '\n' + m.text + '\n\n';
-      }
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'BK_Translator_' + new Date().toISOString().slice(0,10) + '.txt';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast('번역 기록 다운로드 완료');
     }
 
     // Init
@@ -1269,8 +1323,8 @@
     setInterval(checkClipboard, 1000);
 
     // Events
-    el.settingsToggleBtn.addEventListener('click', toggleSettings);
-    el.downloadBtn.addEventListener('click', downloadChatAsTxt);
+    el.appVer.addEventListener('click', toggleSettings);
+
     el.topTestBtn.addEventListener('click', testConnection);
     el.topClearBtn.addEventListener('click', clearChatOnly);
     el.saveBtn.addEventListener('click', saveSettings);
@@ -1309,7 +1363,7 @@
     });
     el.clearFontBtn.addEventListener('click', clearCustomFont);
 
-    // ✅ Font scale slider
+    // Font scale slider
     if(el.fontScale){
       el.fontScale.addEventListener('input', (e) => {
         const v = e.target && e.target.value ? e.target.value : '1';
@@ -1324,7 +1378,7 @@
       });
     }
 
-    // ✅ Color pickers
+    // Color pickers
     applyColorsFromStorage();
     bindColorPicker(el.colorBg, LS.colorBg, '--bg');
     bindColorPicker(el.colorChatBg, LS.colorChatBg, '--chatBg');
@@ -1332,6 +1386,14 @@
     bindColorPicker(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg');
     bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
     bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
+
+    // Preset buttons
+    document.querySelectorAll('[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-preset');
+        applyPreset(key);
+      });
+    });
 
     // viewport 변화 시 하단 유지
     el.input.addEventListener('focus', () => scrollToBottom('smooth'));
