@@ -99,30 +99,25 @@
     .iconBtn:active{transform:scale(.98)}
     .iconBtn svg{width:18px; height:18px; fill: currentColor}
 
-    /* ✅ 연결상태: 아이콘 없이 원형 색상만(아이콘 버튼과 동일 크기/간격) */
-.statusOnly{
-  width:36px;
-  height:36px;
-  border-radius:999px;
-  border: 2px solid rgba(255,255,255,.14);
-  background: var(--warn);
-  box-shadow: 0 8px 18px rgba(0,0,0,.35);
-  padding:0;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  flex: 0 0 auto;
-}
-.statusOnly:active{transform:scale(.98)}
+    /* ✅ 연결상태: 아이콘 없이 원형 색상만 */
+    .statusOnly{
+      width:18px;
+      height:18px;
+      border-radius:999px;
+      border: 2px solid rgba(255,255,255,.14);
+      background: var(--warn);
+      box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      padding:0;
+      cursor:pointer;
+    }
+    .statusOnly:active{transform:scale(.98)}
 
     main{
       flex:1;
       overflow:auto;
       padding: 10px;
       padding-bottom: 92px;
-      scroll-behavior: auto;
-      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
     .wrap{
       max-width: 860px;
@@ -456,7 +451,7 @@
   <header>
     <div class="topbar">
       <div class="title">
-        BK Translator <span id="verTag" class="ver">v1.23</span>
+        BK Translator <span id="verTag" class="ver">v1.40</span>
       </div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -656,7 +651,7 @@
     /**********************
      * Version (v1.xx)
      **********************/
-    const BUILD_ID = "2026-01-26-03"; // 코드 수정 시 여기만 변경(자동 버전 증가 트리거)
+    const BUILD_ID = "2026-01-26-02"; // 코드 수정 시 여기만 변경(자동 버전 증가 트리거)
     const LS_VER = "bk_tr_version";
     const LS_BUILD = "bk_tr_build";
     function clamp2(n){ return Math.round(n * 100) / 100; }
@@ -666,8 +661,8 @@
     }
     function bumpVersionIfNeeded(){
       const prevBuild = localStorage.getItem(LS_BUILD) || "";
-      let ver = Number(localStorage.getItem(LS_VER) || "1.23");
-      if(!Number.isFinite(ver)) ver = 1.23;
+      let ver = Number(localStorage.getItem(LS_VER) || "1.40");
+      if(!Number.isFinite(ver)) ver = 1.40;
 
       if(prevBuild !== BUILD_ID){
         ver = clamp2(ver + 0.01);
@@ -767,35 +762,20 @@
       toast._t = setTimeout(() => el.toast.classList.remove('show'), 2200);
     }
 
-    function hardScrollBottom(){
-  try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
-  try{
-    const se = document.scrollingElement;
-    if(se) se.scrollTop = se.scrollHeight;
-  } catch {}
-}
+    function scrollToNode(node, behavior){
+      if(!node) return;
+      const b = behavior || 'auto';
+      try{
+        node.scrollIntoView({ behavior: b === 'instant' ? 'auto' : b, block:'end' });
+      } catch {
+        try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
+      }
+    }
 
-function ensureBottom(){
-  hardScrollBottom();
-  requestAnimationFrame(hardScrollBottom);
-  setTimeout(hardScrollBottom, 50);
-  setTimeout(hardScrollBottom, 160);
-}
-
-function scrollToNode(node, behavior){
-  if(!node) return;
-  const b = behavior || 'auto';
-  // iOS/Safari에서 scrollIntoView가 간헐적으로 실패 → hard scroll 병행
-  try{
-    node.scrollIntoView({ behavior: b === 'instant' ? 'auto' : b, block:'end' });
-  } catch {}
-  ensureBottom();
-}
-
-function scrollToBottom(behavior){
-  // behavior 파라미터는 호환성 유지용(즉시 하단 고정)
-  ensureBottom();
-});
+    function scrollToBottom(behavior){
+      const b = behavior || 'auto';
+      try{
+        el.bottomAnchor.scrollIntoView({ behavior: b === 'instant' ? 'auto' : b, block:'end' });
       } catch {
         try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
       }
@@ -1276,137 +1256,57 @@ function scrollToBottom(behavior){
       return v;
     }
 
-    function buildORPayload(userText, stream){
-  const apiKey = el.apiKey.value.trim();
-  if(!apiKey) throw new Error('API Key가 비어 있습니다.');
+    async function callOpenRouter(userText){
+      const apiKey = el.apiKey.value.trim();
+      if(!apiKey) throw new Error('API Key가 비어 있습니다.');
 
-  const model = el.model.value.trim();
-  if(!model) throw new Error('모델이 비어 있습니다.');
+      const model = el.model.value.trim();
+      if(!model) throw new Error('모델이 비어 있습니다.');
 
-  const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
-  const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
-  const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
-  const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
+      const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
+      const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
+      const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
+      const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
 
-  const payload = {
-    model,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userText }
-    ],
-    temperature,
-    top_p,
-    max_tokens
-  };
-  if(stream) payload.stream = true;
+      const payload = {
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userText }
+        ],
+        temperature,
+        top_p,
+        max_tokens
+      };
 
-  return { apiKey, payload };
-}
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey,
+          'HTTP-Referer': location.origin,
+          'X-Title': 'BK Translator (Personal)'
+        },
+        body: JSON.stringify(payload)
+      });
 
-async function callOpenRouter(userText){
-  const { apiKey, payload } = buildORPayload(userText, false);
+      const text = await res.text();
+      let json = null;
+      try{ json = JSON.parse(text); } catch {}
 
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + apiKey,
-      'HTTP-Referer': location.origin,
-      'X-Title': 'BK Translator (Personal)'
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const text = await res.text();
-  let json = null;
-  try{ json = JSON.parse(text); } catch {}
-
-  if(!res.ok){
-    const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
-    if(res.status === 429) startCooldown(8000);
-    throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
-  }
-
-  const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
-  if(typeof out !== 'string') throw new Error('응답 파싱 실패');
-  return out;
-}
-
-// ✅ 스트리밍(체감 속도 개선)
-async function callOpenRouterStream(userText, onDelta){
-  const { apiKey, payload } = buildORPayload(userText, true);
-
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + apiKey,
-      'HTTP-Referer': location.origin,
-      'X-Title': 'BK Translator (Personal)'
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if(!res.ok){
-    const text = await res.text();
-    let json = null;
-    try{ json = JSON.parse(text); } catch {}
-    const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
-    if(res.status === 429) startCooldown(8000);
-    throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
-  }
-
-  if(!res.body || !res.body.getReader){
-    // 스트림 미지원 환경 → 일반 호출로 폴백
-    const out = await callOpenRouter(userText);
-    if(typeof onDelta === 'function') onDelta(out);
-    return out;
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder('utf-8');
-  let buf = '';
-  let acc = '';
-
-  while(true){
-    const { value, done } = await reader.read();
-    if(done) break;
-
-    buf += decoder.decode(value, { stream:true });
-    const lines = buf.split(/
-?
-/);
-    buf = lines.pop() || '';
-
-    for(const line of lines){
-      const trimmed = line.trim();
-      if(!trimmed) continue;
-      if(!trimmed.startsWith('data:')) continue;
-
-      const data = trimmed.slice(5).trim();
-      if(data === '[DONE]') {
-        try{ await reader.cancel(); } catch {}
-        return acc;
+      if(!res.ok){
+        const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
+        // ✅ 429는 쿨다운 걸어 폭주 방지
+        if(res.status === 429){
+          startCooldown(8000);
+        }
+        throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
       }
 
-      let j = null;
-      try{ j = JSON.parse(data); } catch { j = null; }
-      if(!j) continue;
-
-      const delta =
-        j.choices?.[0]?.delta?.content ??
-        j.choices?.[0]?.message?.content ??
-        '';
-
-      if(delta){
-        acc += delta;
-        if(typeof onDelta === 'function') onDelta(delta, acc);
-      }
+      const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+      if(typeof out !== 'string') throw new Error('응답 파싱 실패');
+      return out;
     }
-  }
-
-  return acc;
-}
 
     function makeMsgNode(m){
       const row = document.createElement('div');
@@ -1473,114 +1373,92 @@ async function callOpenRouterStream(userText, onDelta){
     const SEND_MIN_INTERVAL_MS = 450; // 너무 빠른 연속 입력 방지
 
     async function send(){
-  if(_isBusy) return;
+      if(_isBusy) return;
 
-  if(inCooldown()){
-    toast('잠시 대기(429 제한). 몇 초 후 다시 시도하세요.');
-    return;
-  }
-
-  const now = Date.now();
-  if(now - _lastSendAt < SEND_MIN_INTERVAL_MS){
-    return;
-  }
-  _lastSendAt = now;
-
-  const userText = el.input.value.trim();
-  if(!userText) return;
-
-  hideCopyBar();
-
-  const um = { role:'user', text:userText, ts:Date.now() };
-  chat.push(um);
-  _chatTextSet.add(um.text);
-  saveChatDebounced();
-
-  const userNode = appendChatMessage(um);
-
-  el.input.value = '';
-  setConnState('busy');
-  ensureBottom();
-
-  // ✅ 출력 말풍선 먼저 만들고 스트리밍 업데이트(체감 속도 개선)
-  const am = { role:'assistant', text:'', ts: Date.now() };
-  chat.push(am);
-  const assistantNode = appendChatMessage(am);
-  const bubbleEl = assistantNode ? assistantNode.querySelector('.bubble') : null;
-
-  let acc = '';
-  let lastPaint = 0;
-
-  const paint = (force) => {
-    const t = performance.now ? performance.now() : Date.now();
-    if(!force && (t - lastPaint) < 33) return; // ~30fps
-    lastPaint = t;
-    if(bubbleEl) bubbleEl.textContent = acc;
-    ensureBottom();
-  };
-
-  try{
-    requestAnimationFrame(() => scrollToNode(userNode, 'auto'));
-
-    const translatedRaw = await callOpenRouterStream(userText, (delta, full) => {
-      acc = (typeof full === 'string') ? full : (acc + String(delta || ''));
-      paint(false);
-    });
-
-    acc = String(translatedRaw || '');
-    paint(true);
-
-    const translated = normalizeOutput(userText, acc);
-    am.text = translated;
-    if(bubbleEl) bubbleEl.textContent = translated;
-
-    // ✅ 저장/중복 세트는 완료 시점에만 반영
-    _chatTextSet.add(am.text);
-    saveChatDebounced();
-
-    // ✅ 자동복사(기존 동작 유지)
-    if(el.autoCopy.checked){
-      const ok = await copyToClipboard(translated, true);
-      if(ok){
-        toast('자동 복사 완료');
-        updateLastClipboard(translated);
-        hideCopyBar();
-      } else {
-        showCopyBar(translated);
-        scheduleCopyRetry(translated);
-        toast('자동 복사 제한 → 아래 바 탭(또는 화면 터치 시 재시도)');
+      if(inCooldown()){
+        toast('잠시 대기(429 제한). 몇 초 후 다시 시도하세요.');
+        return;
       }
-    } else {
+
+      const now = Date.now();
+      if(now - _lastSendAt < SEND_MIN_INTERVAL_MS){
+        return;
+      }
+      _lastSendAt = now;
+
+      const userText = el.input.value.trim();
+      if(!userText) return;
+
       hideCopyBar();
+
+      const um = { role:'user', text:userText, ts:Date.now() };
+      chat.push(um);
+      _chatTextSet.add(um.text);
+      saveChatDebounced();
+
+      const userNode = appendChatMessage(um);
+
+      el.input.value = '';
+      setConnState('busy');
+
+      try{
+        // ✅ 입력 메시지 위치로 한번 더 고정
+        requestAnimationFrame(() => scrollToNode(userNode, 'auto'));
+
+        const translatedRaw = await callOpenRouter(userText);
+        const translated = normalizeOutput(userText, translatedRaw);
+
+        const am = { role:'assistant', text: translated, ts: Date.now() };
+        chat.push(am);
+        _chatTextSet.add(am.text);
+        saveChatDebounced();
+
+        const assistantNode = appendChatMessage(am);
+
+        // ✅ 자동복사: 체크 시 “언어 상관없이” 시도 (갑자기 안되는 이슈 방지)
+        if(el.autoCopy.checked){
+          const ok = await copyToClipboard(translated, true);
+          if(ok){
+            toast('자동 복사 완료');
+            updateLastClipboard(translated);
+            hideCopyBar();
+          } else {
+            showCopyBar(translated);
+            scheduleCopyRetry(translated);
+            toast('자동 복사 제한 → 아래 바 탭(또는 화면 터치 시 재시도)');
+          }
+        } else {
+          hideCopyBar();
+        }
+
+        setConnState('ok');
+
+        // ✅ 출력 메시지 위치로 강제 스크롤(1회 + 지연 1회)
+        requestAnimationFrame(() => scrollToNode(assistantNode, 'auto'));
+        setTimeout(() => scrollToNode(assistantNode, 'auto'), 60);
+
+      } catch(err){
+        const msg = (err && err.message) ? err.message : String(err);
+        const em = { role:'assistant', text: '오류: ' + msg, ts: Date.now() };
+        chat.push(em);
+        _chatTextSet.add(em.text);
+        saveChatDebounced();
+
+        const errNode = appendChatMessage(em);
+        setConnState('err');
+
+        // ✅ 429일 때 안내 강화
+        if(String(msg).includes('HTTP 429')){
+          toast('HTTP 429: 요청 과다(잠시 후 재시도)');
+        } else {
+          toast('요청 실패: ' + msg);
+        }
+
+        requestAnimationFrame(() => scrollToNode(errNode, 'auto'));
+      }
     }
 
-    setConnState('ok');
-    ensureBottom();
-
-  } catch(err){
-    const msg = (err && err.message) ? err.message : String(err);
-    const errText = '오류: ' + msg;
-
-    acc = errText;
-    am.text = errText;
-    if(bubbleEl) bubbleEl.textContent = errText;
-
-    _chatTextSet.add(am.text);
-    saveChatDebounced();
-
-    setConnState('err');
-
-    if(String(msg).includes('HTTP 429')){
-      toast('HTTP 429: 요청 과다(잠시 후 재시도)');
-    } else {
-      toast('요청 실패: ' + msg);
-    }
-
-    ensureBottom();
-  }
-}
-
-async function testConnection(){
+    async function testConnection(){
       if(_isBusy) return;
       if(inCooldown()){
         toast('잠시 대기(429 제한).');
@@ -1725,13 +1603,6 @@ async function testConnection(){
     });
 
     renderChatInitial();
-    // ✅ 새로고침/복귀 시 스크롤 위치 복원 방지 + 항상 맨 아래 고정
-    try{ if('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch {}
-    ensureBottom();
-    requestAnimationFrame(ensureBottom);
-    window.addEventListener('load', () => ensureBottom(), { once:true, passive:true });
-    window.addEventListener('pageshow', () => ensureBottom(), { passive:true });
-
     setSettingsVisible(false);
     setConnState('warn');
 
@@ -1802,3 +1673,4 @@ async function testConnection(){
   </script>
 </body>
 </html>
+
