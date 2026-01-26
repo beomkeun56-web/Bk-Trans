@@ -650,7 +650,7 @@
     /**********************
      * Version (v1.xx)
      **********************/
-    const BUILD_ID = "2026-01-26-01"; // 코드 수정 시 여기만 변경(자동 버전 증가 트리거)
+    const BUILD_ID = "2026-01-26-02"; // ✅ (수정) 코드 수정 시 여기만 변경(자동 버전 증가 트리거)
     const LS_VER = "bk_tr_version";
     const LS_BUILD = "bk_tr_build";
     function clamp2(n){ return Math.round(n * 100) / 100; }
@@ -765,6 +765,22 @@
           el.main.scrollTop = el.main.scrollHeight;
         } catch {}
       }
+    }
+
+    // ✅ (추가) 모바일/PC 모두 안정적으로 “즉시 하단” 고정
+    function forceScrollBottom(){
+      // 1) 즉시 강제
+      try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
+      // 2) 레이아웃 반영 후 1회
+      requestAnimationFrame(() => {
+        try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
+        scrollToBottom('instant');
+        // 3) 모바일에서 한번 더(가상키보드/폰트 swap 등 타이밍)
+        setTimeout(() => {
+          try{ el.main.scrollTop = el.main.scrollHeight; } catch {}
+          scrollToBottom('instant');
+        }, 0);
+      });
     }
 
     /**********************
@@ -1121,6 +1137,32 @@
      **********************/
     let chat = [];
 
+    // ✅ (추가) 저장/DOM 제한으로 길어져도 느려지지 않게
+    const MAX_CHAT_STORE = 120; // localStorage에 저장할 최대 메시지 수(최근 N개만)
+    const MAX_CHAT_DOM   = 140; // 화면에 표시할 최대 메시지 수(최근 N개만)
+
+    // ✅ (추가) 클립보드 중복체크 O(1)
+    let chatTextSet = new Set();
+
+    function rebuildChatTextSet(){
+      chatTextSet = new Set();
+      for(const m of chat){
+        if(m && typeof m.text === 'string') chatTextSet.add(m.text);
+      }
+    }
+
+    function pruneChatAndDom(){
+      // 1) chat 저장/메모리 제한
+      if(chat.length > MAX_CHAT_STORE){
+        chat = chat.slice(chat.length - MAX_CHAT_STORE);
+        rebuildChatTextSet();
+      }
+      // 2) DOM 표시 제한(앞쪽부터 제거)
+      while(el.chat.childNodes.length > MAX_CHAT_DOM){
+        el.chat.removeChild(el.chat.firstChild);
+      }
+    }
+
     function defaultSystemPrompt(){
       return [
         "You are a translation engine.",
@@ -1145,6 +1187,12 @@
       if(savedChat){
         try{ chat = JSON.parse(savedChat) || []; } catch { chat = []; }
       }
+
+      // ✅ (추가) 로드 후 바로 제한 + Set 재구성
+      if(chat.length > MAX_CHAT_STORE){
+        chat = chat.slice(chat.length - MAX_CHAT_STORE);
+      }
+      rebuildChatTextSet();
     }
 
     function saveSettings(){
@@ -1160,7 +1208,11 @@
     }
 
     function saveChat(){
-      try{ localStorage.setItem(LS.chat, JSON.stringify(chat)); } catch {}
+      // ✅ (수정) 전체 저장 금지 → 최근 MAX_CHAT_STORE만 저장
+      try{
+        const slim = chat.length > MAX_CHAT_STORE ? chat.slice(chat.length - MAX_CHAT_STORE) : chat;
+        localStorage.setItem(LS.chat, JSON.stringify(slim));
+      } catch {}
     }
 
     function normalizeNewlines(s){
@@ -1272,13 +1324,14 @@
         empty.className = 'hint';
         empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
         el.chat.appendChild(empty);
-        scrollToBottom('instant');
+        forceScrollBottom(); // ✅ (수정)
         return;
       }
       for(const m of chat){
         el.chat.appendChild(makeMsgNode(m));
       }
-      scrollToBottom('instant');
+      pruneChatAndDom();     // ✅ (추가)
+      forceScrollBottom();   // ✅ (수정)
     }
 
     function appendChatMessage(m){
@@ -1288,7 +1341,10 @@
         el.chat.innerHTML = '';
       }
       el.chat.appendChild(makeMsgNode(m));
-      requestAnimationFrame(() => scrollToBottom('auto'));
+
+      // ✅ (추가) DOM 제한 + 즉시 하단 고정
+      pruneChatAndDom();
+      forceScrollBottom();
     }
 
     async function send(){
@@ -1299,6 +1355,8 @@
 
       const um = { role:'user', text:userText, ts:Date.now() };
       chat.push(um);
+      chatTextSet.add(um.text);   // ✅ (추가) Set 업데이트
+      pruneChatAndDom();          // ✅ (추가) chat 자체도 길이 제한
       saveChat();
       appendChatMessage(um);
 
@@ -1311,6 +1369,8 @@
 
         const am = { role:'assistant', text: translated, ts: Date.now() };
         chat.push(am);
+        chatTextSet.add(am.text); // ✅ (추가)
+        pruneChatAndDom();        // ✅ (추가)
         saveChat();
         appendChatMessage(am);
 
@@ -1330,11 +1390,13 @@
         }
 
         setConnState('ok');
-        requestAnimationFrame(() => scrollToBottom('auto'));
+        forceScrollBottom(); // ✅ (수정) 번역 완료 즉시 하단
       } catch(err){
         const msg = (err && err.message) ? err.message : String(err);
         const em = { role:'assistant', text: '오류: ' + msg, ts: Date.now() };
         chat.push(em);
+        chatTextSet.add(em.text); // ✅ (추가)
+        pruneChatAndDom();        // ✅ (추가)
         saveChat();
         appendChatMessage(em);
         setConnState('err');
@@ -1357,6 +1419,7 @@
     function clearChatOnly(){
       if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
+      chatTextSet = new Set(); // ✅ (추가)
       hideCopyBar();
       try{ localStorage.setItem(LS.chat, '[]'); } catch {}
       try{ localStorage.removeItem(LS.chat); } catch {}
@@ -1411,10 +1474,8 @@
 
         if(_lastClipboardText === trimmed) return;
 
-        // 대화 내 중복 방지
-        for(const msg of chat){
-          if(msg.text === trimmed) return;
-        }
+        // ✅ (수정) 대화 내 중복 방지: chat 순회 제거(Set로 O(1))
+        if(chatTextSet.has(trimmed)) return;
 
         // 한국어/중국어만 자동
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
@@ -1524,10 +1585,12 @@
     });
     el.clearFontBtn.addEventListener('click', clearCustomFont);
 
-    el.input.addEventListener('focus', () => requestAnimationFrame(() => scrollToBottom('auto')));
+    // ✅ (수정) 포커스/리사이즈 시에도 강제 하단 고정(PC/모바일)
+    el.input.addEventListener('focus', () => forceScrollBottom());
     if(window.visualViewport){
-      window.visualViewport.addEventListener('resize', () => requestAnimationFrame(() => scrollToBottom('auto')));
+      window.visualViewport.addEventListener('resize', () => forceScrollBottom());
     }
+    window.addEventListener('resize', () => forceScrollBottom());
 
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
       toast('권장: HTTPS에서 사용하세요(키 보안)');
