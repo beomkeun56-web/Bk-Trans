@@ -416,14 +416,10 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title">BK Translator <span class="ver" id="appVer">v1.23</span></div>
+      <div class="title">BK Translator <span class="ver" id="appVer">v1.24</span></div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-      </button>
-
-      <button id="promptSelectBtn" class="iconBtn" type="button" aria-label="프롬프트 선택">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
       </button>
 
       <div style="flex:1"></div>
@@ -650,31 +646,6 @@
         <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
       </section>
 
-      <section id="promptSelectPanel" class="settings hidden">
-        <div class="hint" style="margin-bottom:8px;">
-          번역에 사용할 프롬프트 선택
-        </div>
-        <div class="row" style="gap:10px; flex-wrap:wrap;">
-          <label style="display:flex; align-items:center; gap:6px; color:var(--text);">
-            <input type="radio" name="promptSelect" value="original" checked style="width:18px; height:18px; accent-color:var(--blue);" />
-            기존 프롬프트
-          </label>
-          <label style="display:flex; align-items:center; gap:6px; color:var(--text);">
-            <input type="radio" name="promptSelect" value="learned" style="width:18px; height:18px; accent-color:var(--blue);" />
-            학습 프롬프트
-          </label>
-          <label style="display:flex; align-items:center; gap:6px; color:var(--text);">
-            <input type="radio" name="promptSelect" value="merged" style="width:18px; height:18px; accent-color:var(--blue);" />
-            프롬프트 합치기
-          </label>
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <button id="applyPromptBtn" class="btn" type="button">선택 적용</button>
-          <button id="mergeToOriginalBtn" class="btn secondary" type="button">학습→기존 복사</button>
-        </div>
-        <div id="promptSelectStatus" class="hint" style="margin-top:8px;">현재: 기존 프롬프트 사용 중</div>
-      </section>
-
       <section class="panel">
         <div class="panelHead">
           <div class="left">
@@ -716,7 +687,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.23';
+    const APP_VERSION = 'v1.24';
 
     const LS = {
       apiKey: 'bk_tr_apiKey',
@@ -726,7 +697,6 @@
       maxTokens: 'bk_tr_maxTokens',
       system: 'bk_tr_systemPrompt',
       autoCopy: 'bk_tr_autoCopy',
-      promptSelect: 'bk_tr_promptSelect',
       fontScale: 'bk_tr_fontScale',
 
       colorBg: 'bk_tr_color_bg',
@@ -772,12 +742,6 @@
       fontFile: document.getElementById('fontFile'),
       clearFontBtn: document.getElementById('clearFontBtn'),
       fontStatus: document.getElementById('fontStatus'),
-
-      promptSelectBtn: document.getElementById('promptSelectBtn'),
-      promptSelectPanel: document.getElementById('promptSelectPanel'),
-      applyPromptBtn: document.getElementById('applyPromptBtn'),
-      mergeToOriginalBtn: document.getElementById('mergeToOriginalBtn'),
-      promptSelectStatus: document.getElementById('promptSelectStatus'),
 
       fontScale: document.getElementById('fontScale'),
       fontScaleVal: document.getElementById('fontScaleVal'),
@@ -1130,7 +1094,6 @@
 
     function loadSettings(){
       el.apiKey.value = localStorage.getItem(LS.apiKey) || '';
-      // 저장된 모델이 있으면 그걸 쓰고, 없으면 코드로 수정된 기본값 사용
       const savedModel = localStorage.getItem(LS.model);
       if(savedModel) el.model.value = savedModel;
 
@@ -1167,24 +1130,6 @@
     function toggleSettings(){
       const isHidden = el.settingsPanel.classList.contains('hidden');
       setSettingsVisible(isHidden);
-      if(!isHidden) return;
-      if(el.promptSelectPanel) el.promptSelectPanel.classList.add('hidden');
-    }
-
-    function setPromptSelectVisible(v){
-      if(!el.promptSelectPanel) return;
-      el.promptSelectPanel.classList.toggle('hidden', !v);
-      if(v){
-        requestAnimationFrame(() => el.promptSelectPanel.scrollIntoView({behavior:'smooth', block:'start'}));
-      }
-    }
-
-    function togglePromptSelect(){
-      if(!el.promptSelectPanel) return;
-      const isHidden = el.promptSelectPanel.classList.contains('hidden');
-      setPromptSelectVisible(isHidden);
-      if(isHidden === false) return;
-      if(el.settingsPanel) el.settingsPanel.classList.add('hidden');
     }
 
     let _isBusy = false;
@@ -1249,37 +1194,28 @@
         max_tokens
       };
 
-      // Gemini 모델 호환성: top_p 1 미만일 때만 전송
       if(top_p < 1) payload.top_p = top_p;
 
-      // 단축어처럼 순수한 API 요청을 위해 불필요한 헤더 제거
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + apiKey
-          // HTTP-Referer 및 X-Title 제거하여 단축어(Raw Request)와 동일 환경 구성
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        mode: 'cors'
       });
 
-      const text = await res.text();
-      let json = null;
-      try{ json = JSON.parse(text); } catch {}
-
       if(!res.ok){
-        let errorDetails = text;
-        if(json){
-            if(json.error && json.error.message) errorDetails = json.error.message;
-            else if(json.message) errorDetails = json.message;
-        }
-        if(errorDetails.length > 200) errorDetails = errorDetails.slice(0, 200) + '...';
-        throw new Error('HTTP ' + res.status + ': ' + errorDetails);
+        const text = await res.text();
+        let msg = text;
+        try { msg = JSON.parse(text).error.message; } catch{}
+        throw new Error('HTTP ' + res.status + ': ' + msg);
       }
 
-      const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
-      if(typeof out !== 'string') throw new Error('응답 데이터가 비어 있습니다.');
-      return out;
+      const json = await res.json();
+      return json.choices[0].message.content;
     }
 
     function renderChat(){
@@ -1399,7 +1335,6 @@
     loadCustomFont();
     renderChat();
     setSettingsVisible(false);
-    setPromptSelectVisible(false);
     setConnState('warn');
 
     const LS_LAST_CLIP = 'bk_tr_lastClip';
@@ -1413,7 +1348,6 @@
 
     async function checkClipboard(){
       try{
-        // 429 방지를 위해 통신 중이거나 바쁠 때는 스킵
         if(_isBusy) return;
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
 
@@ -1429,20 +1363,16 @@
 
         updateLastClipboard(trimmed);
         el.input.value = trimmed;
-        // 딜레이를 약간 주어 안정성 확보
         setTimeout(() => send(), 150);
       } catch(err){
       }
     }
 
-    // 초기 실행
     checkClipboard();
-    // 429 과부하 방지를 위해 클립보드 감시 주기를 1초 -> 2초로 완화
     setInterval(checkClipboard, 2000);
 
     if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
     if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
-    if(el.promptSelectBtn) el.promptSelectBtn.addEventListener('click', togglePromptSelect);
 
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
