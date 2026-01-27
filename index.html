@@ -28,6 +28,7 @@
       --shadow: 0 10px 28px rgba(0,0,0,.45);
 
       --fontMain: system-ui;
+
       --textScale: 1;
 
       --chatBg: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
@@ -335,11 +336,6 @@
       padding:0 14px;
     }
     .sendBtn:active{transform:scale(.98)}
-    .sendBtn:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-      transform:none !important;
-    }
     .sendBtn svg{
       width:20px; height:20px;
       fill:none;
@@ -420,7 +416,7 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title">BK Translator <span class="ver" id="appVer">v1.21</span></div>
+      <div class="title">BK Translator <span class="ver" id="appVer">v1.23</span></div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
@@ -641,7 +637,7 @@
             <span class="swatchDot" style="background:#111111"></span> Mono
           </button>
           <button class="swatchBtn" type="button" data-preset="reset">
-            <span class="swatchDot" style="background:#2d6bff"></span> 기본
+            <span class="swatchDot" style="background:#2d6bff"></spana> 기본
           </button>
         </div>
 
@@ -720,7 +716,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.22';
+    const APP_VERSION = 'v1.23';
 
     const LS = {
       apiKey: 'bk_tr_apiKey',
@@ -911,14 +907,14 @@
     };
 
     const COLOR_PRESETS = {
-      oled:     { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      slate:    { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      navy:     { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff' },
-      purple:   { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6' },
-      emerald:  { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e' },
-      warm:     { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b' },
-      mono:     { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff' },
-      reset:    { ...COLOR_DEFAULTS }
+      oled:      { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
+      slate:     { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
+      navy:      { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff' },
+      purple:    { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6' },
+      emerald:   { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e' },
+      warm:      { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b' },
+      mono:      { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff' },
+      reset:     { ...COLOR_DEFAULTS }
     };
 
     function applyColorsFromStorage(){
@@ -1134,7 +1130,10 @@
 
     function loadSettings(){
       el.apiKey.value = localStorage.getItem(LS.apiKey) || '';
-      el.model.value = localStorage.getItem(LS.model) || el.model.value;
+      // 저장된 모델이 있으면 그걸 쓰고, 없으면 코드로 수정된 기본값 사용
+      const savedModel = localStorage.getItem(LS.model);
+      if(savedModel) el.model.value = savedModel;
+
       el.temperature.value = localStorage.getItem(LS.temp) || el.temperature.value;
       el.top_p.value = localStorage.getItem(LS.top_p) || el.top_p.value;
       el.maxTokens.value = localStorage.getItem(LS.maxTokens) || el.maxTokens.value;
@@ -1189,20 +1188,12 @@
     }
 
     let _isBusy = false;
-
-    function setSendEnabled(enabled){
-      if(el.sendBtnL) el.sendBtnL.disabled = !enabled;
-      if(el.sendBtnR) el.sendBtnR.disabled = !enabled;
-      if(el.input) el.input.disabled = !enabled;
-    }
-
     function setConnState(state){
       _isBusy = (state === 'busy');
       if(state === 'ok') el.statusCircle.style.background = 'var(--ok)';
       else if(state === 'busy') el.statusCircle.style.background = 'var(--warn)';
       else if(state === 'err') el.statusCircle.style.background = 'var(--danger)';
       else el.statusCircle.style.background = 'var(--warn)';
-      setSendEnabled(!_isBusy);
     }
 
     function normalizeNewlines(s){
@@ -1236,24 +1227,6 @@
       return v;
     }
 
-    function extractTextFromContent(content){
-      if(typeof content === 'string') return content;
-
-      if(Array.isArray(content)){
-        const texts = [];
-        for(const p of content){
-          if(!p) continue;
-          if(typeof p === 'string'){ texts.push(p); continue; }
-          if(p.type === 'text' && typeof p.text === 'string'){ texts.push(p.text); continue; }
-          if(typeof p.text === 'string'){ texts.push(p.text); continue; }
-          if(typeof p.content === 'string'){ texts.push(p.content); continue; }
-        }
-        return texts.join('');
-      }
-
-      return '';
-    }
-
     async function callOpenRouter(userText){
       const apiKey = el.apiKey.value.trim();
       if(!apiKey) throw new Error('API Key가 비어 있습니다.');
@@ -1273,58 +1246,39 @@
           { role: 'user', content: userText }
         ],
         temperature,
-        top_p,
         max_tokens
       };
 
-      const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      };
+      // Gemini 모델 호환성: top_p 1 미만일 때만 전송
+      if(top_p < 1) payload.top_p = top_p;
 
-      // origin이 null(file://)이면 referer/xtitle을 제거(불필요한 400 방지)
-      if(location.origin && location.origin.startsWith('http')){
-        headers['HTTP-Referer'] = location.origin;
-        headers['X-Title'] = 'BK Translator (Personal)';
-      }
+      // 단축어처럼 순수한 API 요청을 위해 불필요한 헤더 제거
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+          // HTTP-Referer 및 X-Title 제거하여 단축어(Raw Request)와 동일 환경 구성
+        },
+        body: JSON.stringify(payload)
+      });
 
-      let res;
-      try{
-        res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload)
-        });
-      } catch(e){
-        // CORS/네트워크/보안 정책
-        throw new Error('네트워크 오류: ' + (e && e.message ? e.message : String(e)));
-      }
-
-      const raw = await res.text();
+      const text = await res.text();
       let json = null;
-      try{ json = JSON.parse(raw); } catch {}
-
-      // status와 무관하게 error 우선 처리(200이어도 provider error가 body에 올 수 있음)
-      const errMsg = json?.error?.message || json?.message;
-      if(errMsg){
-        const code = json?.error?.code || json?.code;
-        const statusHint = 'HTTP ' + res.status;
-        throw new Error(statusHint + (code ? ' [' + code + ']' : '') + ': ' + String(errMsg).slice(0, 1200));
-      }
+      try{ json = JSON.parse(text); } catch {}
 
       if(!res.ok){
-        throw new Error('HTTP ' + res.status + ': ' + String(raw).slice(0, 1200));
+        let errorDetails = text;
+        if(json){
+            if(json.error && json.error.message) errorDetails = json.error.message;
+            else if(json.message) errorDetails = json.message;
+        }
+        if(errorDetails.length > 200) errorDetails = errorDetails.slice(0, 200) + '...';
+        throw new Error('HTTP ' + res.status + ': ' + errorDetails);
       }
 
-      const choice = json?.choices?.[0];
-      const msg = choice?.message;
-      const content = msg?.content;
-
-      const out = extractTextFromContent(content) || (typeof choice?.text === 'string' ? choice.text : '');
-      if(typeof out !== 'string' || out.trim().length === 0){
-        throw new Error('응답 파싱 실패(choices/message/content 비정상)');
-      }
+      const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+      if(typeof out !== 'string') throw new Error('응답 데이터가 비어 있습니다.');
       return out;
     }
 
@@ -1371,8 +1325,6 @@
     }
 
     async function send(){
-      if(_isBusy) return;
-
       const userText = el.input.value.trim();
       if(!userText) return;
 
@@ -1423,7 +1375,6 @@
     }
 
     async function testConnection(){
-      if(_isBusy) return;
       setConnState('busy');
       try{
         await callOpenRouter('ping');
@@ -1460,19 +1411,16 @@
       localStorage.setItem(LS_LAST_CLIP, text);
     }
 
-    let _clipLock = false;
     async function checkClipboard(){
       try{
+        // 429 방지를 위해 통신 중이거나 바쁠 때는 스킵
         if(_isBusy) return;
-        if(_clipLock) return;
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
 
-        _clipLock = true;
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
-        _clipLock = false;
-
         if(!trimmed) return;
+
         if(trimmed.length >= AUTO_TRANSLATE_MAX_LEN) return;
         if(_lastClipboardText === trimmed) return;
 
@@ -1481,14 +1429,16 @@
 
         updateLastClipboard(trimmed);
         el.input.value = trimmed;
-        setTimeout(() => { if(!_isBusy) send(); }, 80);
+        // 딜레이를 약간 주어 안정성 확보
+        setTimeout(() => send(), 150);
       } catch(err){
-        _clipLock = false;
       }
     }
 
+    // 초기 실행
     checkClipboard();
-    setInterval(checkClipboard, 1000);
+    // 429 과부하 방지를 위해 클립보드 감시 주기를 1초 -> 2초로 완화
+    setInterval(checkClipboard, 2000);
 
     if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
     if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
