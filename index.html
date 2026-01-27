@@ -416,7 +416,7 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title">BK Translator <span class="ver" id="appVer">v1.21</span></div>
+      <div class="title">BK Translator <span class="ver" id="appVer">v1.22</span></div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
@@ -463,7 +463,7 @@
         <div class="row">
           <div style="flex:1 1 240px;">
             <label for="model">모델</label>
-            <input id="model" type="text" value="google/gemini-2.0-flash" />
+            <input id="model" type="text" value="google/gemini-2.0-flash-exp:free" />
           </div>
           <div style="flex:1 1 140px;">
             <label for="temperature">temperature</label>
@@ -716,7 +716,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.21';
+    const APP_VERSION = 'v1.22';
 
     const LS = {
       apiKey: 'bk_tr_apiKey',
@@ -907,14 +907,14 @@
     };
 
     const COLOR_PRESETS = {
-      oled:     { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      slate:    { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      navy:     { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff' },
-      purple:   { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6' },
-      emerald:  { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e' },
-      warm:     { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b' },
-      mono:     { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff' },
-      reset:    { ...COLOR_DEFAULTS }
+      oled:      { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
+      slate:     { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
+      navy:      { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff' },
+      purple:    { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6' },
+      emerald:   { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e' },
+      warm:      { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b' },
+      mono:      { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff' },
+      reset:     { ...COLOR_DEFAULTS }
     };
 
     function applyColorsFromStorage(){
@@ -1243,9 +1243,11 @@
           { role: 'user', content: userText }
         ],
         temperature,
-        top_p,
         max_tokens
       };
+
+      // Gemini 등 일부 모델은 top_p:1.0 전송 시 400 에러를 낼 수 있음
+      if(top_p < 1) payload.top_p = top_p;
 
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -1263,12 +1265,18 @@
       try{ json = JSON.parse(text); } catch {}
 
       if(!res.ok){
-        const msg = (json && (json.error?.message || json.message)) ? (json.error?.message || json.message) : text;
-        throw new Error('HTTP ' + res.status + ': ' + String(msg).slice(0, 300));
+        // 에러 메시지 파싱 강화
+        let errorDetails = text;
+        if(json){
+            if(json.error && json.error.message) errorDetails = json.error.message;
+            else if(json.message) errorDetails = json.message;
+        }
+        if(errorDetails.length > 200) errorDetails = errorDetails.slice(0, 200) + '...';
+        throw new Error('HTTP ' + res.status + ': ' + errorDetails);
       }
 
       const out = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
-      if(typeof out !== 'string') throw new Error('응답 파싱 실패');
+      if(typeof out !== 'string') throw new Error('응답 데이터가 비어 있습니다.');
       return out;
     }
 
