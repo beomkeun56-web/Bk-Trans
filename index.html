@@ -416,7 +416,7 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title">BK Translator <span class="ver" id="appVer">v1.24</span></div>
+      <div class="title"><span class="ver" id="modelTag">Model</span> BK Translator <span class="ver" id="appVer">v1.24</span></div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
@@ -710,6 +710,7 @@
     const el = {
       main: document.getElementById('main'),
       appVer: document.getElementById('appVer'),
+      modelTag: document.getElementById('modelTag'),
 
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
@@ -756,6 +757,27 @@
     };
 
     if(el.appVer) el.appVer.textContent = APP_VERSION;
+
+    function prettifyModelName(modelId){
+      const raw = String(modelId || '').trim();
+      if(!raw) return 'Model';
+      const short = raw.split('/').pop() || raw;
+      const cleaned = short.replace(/[_]+/g,'-').replace(/-+/g,'-');
+      return cleaned.split('-').filter(Boolean).map(t => {
+        if(/^\d+(\.\d+)?$/.test(t)) return t;
+        return t.charAt(0).toUpperCase() + t.slice(1);
+      }).join(' ');
+    }
+
+    function getCurrentModelId(){
+      return (localStorage.getItem(LS.model) || (el.model ? el.model.value : '') || '').trim();
+    }
+
+    function updateModelTag(){
+      const pretty = prettifyModelName(getCurrentModelId());
+      if(el.modelTag) el.modelTag.textContent = pretty;
+      document.title = pretty + ' BK Translator ' + APP_VERSION;
+    }
 
     function toast(msg){
       el.toast.textContent = String(msg ?? '');
@@ -1105,6 +1127,7 @@
 
       initFontScale();
       applyColorsFromStorage();
+      updateModelTag();
     }
 
     function saveSettings(){
@@ -1116,6 +1139,7 @@
       localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
       localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
       localStorage.setItem(LS.fontScale, String(el.fontScale ? el.fontScale.value : '1'));
+      updateModelTag();
       toast('저장 완료');
       setSettingsVisible(false);
     }
@@ -1377,6 +1401,8 @@
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
     if(el.saveBtn) el.saveBtn.addEventListener('click', saveSettings);
+
+    if(el.model) el.model.addEventListener('input', updateModelTag);
 
     if(el.sendBtnL) el.sendBtnL.addEventListener('click', send);
     if(el.sendBtnR) el.sendBtnR.addEventListener('click', send);
