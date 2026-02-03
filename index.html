@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BK v1.9</title>
+    <title>BK v1.9 (Reverted)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="importmap">
     {
@@ -576,7 +576,7 @@
                             </div>
                         )}
 
-                        {/* 연간 뷰 (그래프 제거, 표 강조) */}
+                        {/* 연간 뷰 */}
                         {activeTab === 'yearly' && (
                             <div className={`rounded-xl shadow border p-5 animate-in fade-in zoom-in duration-200 ${theme.card}`}>
                                 <div className="flex justify-between items-center mb-6">
@@ -597,7 +597,6 @@
                                             </tr>
                                         </thead>
                                         <tbody className={`divide-y divide-neutral-800 ${theme.cardText}`}>
-                                            {/* 1. 월별 요약 섹션 (상단 고정) */}
                                             <tr className="bg-neutral-800/50 font-bold">
                                                 <td className="px-3 py-2 sticky left-0 bg-neutral-800 z-10 border-r border-neutral-700 text-blue-400">월 수입 총액</td>
                                                 {yearlyStats.monthlyData.map((stat, i) => (
@@ -628,7 +627,6 @@
                                                 </td>
                                             </tr>
 
-                                            {/* 2. 항목별 상세 내용 */}
                                             <tr className="bg-blue-900/20 font-bold"><td colSpan="14" className="px-3 py-2 text-blue-400">수입 항목 상세</td></tr>
                                             {Object.entries(yearlyStats.categoryData.income).map(([cat, months]) => {
                                                 const total = months.reduce((a, b) => a + b, 0);
