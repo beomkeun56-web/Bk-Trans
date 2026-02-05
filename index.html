@@ -1,1482 +1,911 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#050505" />
-  <title>BK Trans</title>
-
-  <link rel="icon" href="data:," />
-
-  <style>
-    :root{
-      --bg:#050505;
-      --panel1:#0b0f14;
-      --panel2:#0e1420;
-
-      --text:#e6edf3;
-      --muted:#9fb0c0;
-
-      --blue:#2d6bff;
-      --blue2:#1d4ed8;
-
-      --ok:#33d17a;
-      --warn:#f7c948;
-      --danger:#ff6b6b;
-
-      --radius:18px;
-      --shadow: 0 10px 28px rgba(0,0,0,.45);
-
-      --fontMain: system-ui;
-
-      --textScale: 1;
-
-      --chatBg: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
-      --inputBg: #2e3440;
-      --userBubbleBg: rgba(46, 52, 64, .92);
-      --assistantBubbleBg: transparent;
-      --sendBtnBg: rgba(45,107,255,.18);
-    }
-
-    @font-face{
-      font-family:"BKRepoFont";
-      src:url("./assets/fonts/NEXONLv2Gothic.woff2") format("woff2");
-      font-display:swap;
-    }
-
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font-family: var(--fontMain), "BKRepoFont", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial;
-      -webkit-font-smoothing:antialiased;
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-    }
-
-    header{
-      position:sticky; top:0; z-index:30;
-      padding: 10px 10px calc(10px + env(safe-area-inset-top));
-      background: rgba(5,5,5,.92);
-      backdrop-filter: blur(10px);
-    }
-    .topbar{
-      max-width: 860px;
-      margin:0 auto;
-      display:flex; align-items:center; gap:10px;
-    }
-    .title{
-      font-weight:800;
-      letter-spacing:.2px;
-      font-size: calc(14px * var(--textScale));
-      margin-right:4px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      white-space:nowrap;
-    }
-    .ver{
-      font-size: calc(12px * var(--textScale));
-      font-weight:800;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      color: rgba(230,237,243,.92);
-      cursor:pointer;
-      user-select:none;
-    }
-
-    .iconBtn{
-      width:36px; height:36px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:12px;
-      border:none;
-      background: #070707;
-      box-shadow: 0 8px 18px rgba(0,0,0,.35);
-      cursor:pointer;
-      color: rgba(230,237,243,.88);
-      padding:0;
-      flex: 0 0 36px;
-    }
-    .iconBtn:active{transform:scale(.98)}
-    .iconBtn svg{width:18px; height:18px; fill: currentColor}
-
-    .rightBtns{
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-
-    .statusBtn{
-      width:36px; height:36px;
-      border-radius:12px;
-      border:none;
-      background:#070707;
-      box-shadow: 0 8px 18px rgba(0,0,0,.35);
-      cursor:pointer;
-      padding:0;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      flex: 0 0 36px;
-    }
-    .statusBtn:active{transform:scale(.98)}
-    .statusCircle{
-      width:14px; height:14px;
-      border-radius:999px;
-      background: var(--warn);
-      box-shadow: 0 0 0 2px rgba(5,5,5,.95);
-    }
-
-    main{
-      flex:1;
-      overflow:auto;
-      padding: 10px;
-      padding-bottom: 92px;
-    }
-    .wrap{
-      max-width: 860px;
-      margin:0 auto;
-    }
-
-    .panel{
-      background: var(--chatBg);
-      border:none;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .panelHead{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      padding: 12px 14px;
-      gap: 10px;
-    }
-    .panelHead .left{display:flex; flex-direction:column; gap:3px}
-    .panelHead .h{font-weight:800; font-size: calc(13px * var(--textScale))}
-    .panelHead .s{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.35}
-
-    .settings{
-      margin-bottom:10px;
-      padding: 12px 14px 14px;
-      background: rgba(10,14,20,.92);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-    }
-    .settings .row{display:flex; gap:10px; flex-wrap:wrap}
-    label{font-size: calc(12px * var(--textScale)); color:var(--muted); display:block; margin:10px 0 6px}
-    input[type="password"], input[type="text"], textarea{
-      width:100%;
-      background: rgba(0,0,0,.35);
-      color: var(--text);
-      border:none;
-      outline:none;
-      border-radius: 14px;
-      padding: 12px 12px;
-      font-size: calc(14px * var(--textScale));
-    }
-    textarea{min-height:120px; resize:vertical; line-height:1.5}
-    .hint{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.45}
-
-    .btn{
-      border:none;
-      background: rgba(45,107,255,.14);
-      color: var(--text);
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-size: calc(13px * var(--textScale));
-      cursor:pointer;
-      box-shadow: 0 8px 18px rgba(0,0,0,.35);
-    }
-    .btn:active{transform:scale(.98)}
-    .btn.secondary{background: rgba(255,255,255,.06)}
-    .btn.danger{background: rgba(255,107,107,.14)}
-
-    .swatchBtn{
-      border:none;
-      border-radius: 14px;
-      padding: 10px 12px;
-      cursor:pointer;
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      box-shadow: 0 8px 18px rgba(0,0,0,.25);
-      font-size: calc(13px * var(--textScale));
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-    }
-    .swatchDot{
-      width:14px; height:14px;
-      border-radius:999px;
-      box-shadow: 0 0 0 2px rgba(5,5,5,.9);
-      flex: 0 0 14px;
-    }
-
-    .chipRow{
-      margin-top:8px;
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .colorChip{
-      width:22px; height:22px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: transparent;
-      padding:0;
-      cursor:pointer;
-      box-shadow: 0 8px 18px rgba(0,0,0,.20);
-    }
-    .colorChip:active{transform:scale(.98)}
-
-    .chat{
-      padding: 14px;
-      display:flex;
-      flex-direction:column;
-      gap: 16px;
-    }
-    .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
-    .msg.user{align-items:flex-end}
-
-    .bubble{
-      max-width: 92%;
-      border:none;
-      border-radius: 18px;
-      padding: 12px 14px;
-      white-space: pre-wrap;
-      word-break: break-word;
-      line-height: 1.6;
-      font-size: calc(15px * var(--textScale));
-    }
-
-    .msg.user .bubble{
-      background: var(--userBubbleBg);
-      color: rgba(255,255,255,.95);
-      box-shadow: 0 10px 22px rgba(0,0,0,.35);
-      border-bottom-right-radius: 10px;
-      max-width: 80%;
-    }
-
-    .msg.assistant .bubble{
-      background: var(--assistantBubbleBg);
-      color: rgba(230,237,243,.92);
-      box-shadow: none;
-      padding: 0;
-      border-radius: 0;
-      max-width: 92%;
-    }
-
-    .actionsRow{
-      display:flex; gap:8px; align-items:center;
-      opacity:.9;
-    }
-    .miniIconBtn{
-      width:32px; height:32px;
-      border:none;
-      background: rgba(255,255,255,.06);
-      border-radius: 12px;
-      box-shadow: 0 8px 18px rgba(0,0,0,.25);
-      cursor:pointer;
-      color: rgba(230,237,243,.9);
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:0;
-    }
-    .miniIconBtn svg{width:18px; height:18px; fill: currentColor}
-
-    .composer{
-      position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
-      background: rgba(5,5,5,.92);
-      backdrop-filter: blur(10px);
-    }
-    .composerInner{
-      max-width: 860px;
-      margin:0 auto;
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-
-    #input{
-      height:44px;
-      line-height:44px;
-      flex: 0 1 440px;
-      min-width: 160px;
-      max-width: 520px;
-      padding: 0 12px;
-      border-radius: 16px;
-      border:none;
-
-      background: var(--inputBg);
-      color: #ffffff;
-
-      outline:none;
-      font-size: calc(15px * var(--textScale));
-    }
-
-    .sendBtn{
-      height:44px;
-      min-width: 54px;
-      border-radius: 16px;
-      border:none;
-      background: var(--sendBtnBg);
-      color: #ffffff;
-      box-shadow: 0 10px 22px rgba(0,0,0,.35);
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:0 14px;
-    }
-    .sendBtn:active{transform:scale(.98)}
-    .sendBtn svg{
-      width:20px; height:20px;
-      fill:none;
-      stroke:#ffffff;
-      stroke-width:2.8;
-      stroke-linecap:round;
-      stroke-linejoin:round;
-    }
-
-    .toast{
-      position:fixed;
-      left:50%;
-      top:70px;
-      transform:translateX(-50%);
-      background: rgba(10,16,32,.92);
-      border:none;
-      padding: 10px 12px;
-      border-radius: 14px;
-      box-shadow: var(--shadow);
-      font-size: calc(12px * var(--textScale));
-      color: var(--text);
-      opacity:0;
-      pointer-events:none;
-      transition: opacity .25s ease;
-      max-width: 90vw;
-      z-index: 999;
-    }
-    .toast.show{opacity:1}
-
-    .copyBar{
-      position:fixed;
-      left:50%;
-      transform:translateX(-50%);
-      bottom: calc(74px + env(safe-area-inset-bottom));
-      z-index: 60;
-      width: min(860px, 92vw);
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 12px;
-      border-radius: 16px;
-      border:none;
-      background: rgba(10,16,32,.92);
-      box-shadow: var(--shadow);
-    }
-    .copyBarText{flex:1; font-size: calc(12px * var(--textScale)); color: var(--muted)}
-    .copyBarBtn{
-      border:none;
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      border-radius: 14px;
-      padding: 10px 12px;
-      cursor:pointer;
-      font-size: calc(13px * var(--textScale));
-    }
-    .hidden{display:none !important}
-
-    @media (max-width: 520px){
-      .title{font-size: calc(13px * var(--textScale))}
-      .iconBtn{width:36px; height:36px}
-      .statusBtn{width:36px; height:36px}
-      main{padding:10px; padding-bottom: 96px;}
-      .bubble{font-size: calc(16px * var(--textScale))}
-      #input{
-        flex: 1 1 auto;
-        max-width: none;
-        height:46px;
-        line-height:46px;
-      }
-      .sendBtn{
-        height:46px;
-        min-width: 56px;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BK v3.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.263.1"
       }
     }
-  </style>
+    </script>
+    <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+    <style>
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        button { touch-action: manipulation; }
+        .text-transition { transition: font-size 0.2s ease-in-out; }
+    </style>
 </head>
-
-<body>
-  <header>
-    <div class="topbar">
-      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.24</span></div>
-
-      <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-      </button>
-
-      <div style="flex:1"></div>
-
-      <div class="rightBtns">
-        <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 18.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"></path>
-            <path d="M2.3 9.9a14 14 0 0 1 19.4 0l-1.4 1.4a12 12 0 0 0-16.6 0L2.3 9.9z"></path>
-            <path d="M5.8 13.4a9 9 0 0 1 12.4 0l-1.4 1.4a7 7 0 0 0-9.6 0l-1.4-1.4z"></path>
-            <path d="M9.3 16.9a4 4 0 0 1 5.4 0l-1.4 1.4a2 2 0 0 0-2.6 0l-1.4-1.4z"></path>
-          </svg>
-        </button>
-
-        <button id="topClearBtn" class="iconBtn" type="button" aria-label="Clear(대화 삭제)">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
-        </button>
-
-        <button id="connBtn" class="statusBtn" type="button" aria-label="연결 상태">
-          <span id="statusCircle" class="statusCircle"></span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main id="main">
-    <div class="wrap">
-
-      <section id="settingsPanel" class="settings hidden">
-        <div class="hint" style="margin-bottom:8px;">
-          OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
-        </div>
-
-        <label for="apiKey">OpenRouter API Key</label>
-        <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
-
-        <div class="row">
-          <div style="flex:1 1 240px;">
-            <label for="model">모델</label>
-            <input id="model" type="text" value="google/gemini-3-flash-preview" />
-          </div>
-          <div style="flex:1 1 140px;">
-            <label for="temperature">temperature</label>
-            <input id="temperature" type="text" value="0.2" />
-          </div>
-          <div style="flex:1 1 140px;">
-            <label for="top_p">top_p</label>
-            <input id="top_p" type="text" value="1" />
-          </div>
-          <div style="flex:1 1 140px;">
-            <label for="maxTokens">max_tokens</label>
-            <input id="maxTokens" type="text" value="800" />
-          </div>
-        </div>
-
-        <label for="systemPrompt">프롬프트(시스템/규칙)</label>
-        <textarea id="systemPrompt" placeholder="여기에 본인 프롬프트를 붙여넣으세요."></textarea>
-
-        <div class="row" style="align-items:center; margin-top:10px;">
-          <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text);">
-            <input id="autoCopy" type="checkbox" style="width:18px; height:18px; accent-color: var(--blue);" />
-            번역 완료 시 자동 복사(Chrome 모바일)
-          </label>
-        </div>
-
-        <label for="fontScale">글자 크기</label>
-        <div class="row" style="align-items:center;">
-          <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
-          <div id="fontScaleVal" class="hint" style="min-width:64px; text-align:right;">100%</div>
-          <button id="fontScaleResetBtn" class="btn secondary" type="button">초기화</button>
-        </div>
-
-        <label>색상</label>
-        <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end;">
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">전체배경</div>
-            <input id="colorBg" type="color" value="#050505" list="darkPaletteBg" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorBg">
-              <button class="colorChip" type="button" data-color="#000000" style="background:#000000"></button>
-              <button class="colorChip" type="button" data-color="#050505" style="background:#050505"></button>
-              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
-              <button class="colorChip" type="button" data-color="#0f172a" style="background:#0f172a"></button>
-              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
-              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
-              <button class="colorChip" type="button" data-color="#111111" style="background:#111111"></button>
-              <button class="colorChip" type="button" data-color="#090c10" style="background:#090c10"></button>
-            </div>
-          </div>
-
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">채팅배경</div>
-            <input id="colorChatBg" type="color" value="#0e1420" list="darkPaletteChat" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorChatBg">
-              <button class="colorChip" type="button" data-color="#070c18" style="background:#070c18"></button>
-              <button class="colorChip" type="button" data-color="#0b1220" style="background:#0b1220"></button>
-              <button class="colorChip" type="button" data-color="#0e1420" style="background:#0e1420"></button>
-              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
-              <button class="colorChip" type="button" data-color="#131a2a" style="background:#131a2a"></button>
-              <button class="colorChip" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
-              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
-              <button class="colorChip" type="button" data-color="#0c1320" style="background:#0c1320"></button>
-            </div>
-          </div>
-
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">입력창</div>
-            <input id="colorInputBg" type="color" value="#2e3440" list="darkPaletteInput" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorInputBg">
-              <button class="colorChip" type="button" data-color="#1e2430" style="background:#1e2430"></button>
-              <button class="colorChip" type="button" data-color="#232832" style="background:#232832"></button>
-              <button class="colorChip" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
-              <button class="colorChip" type="button" data-color="#2e3440" style="background:#2e3440"></button>
-              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
-              <button class="colorChip" type="button" data-color="#3a3f4b" style="background:#3a3f4b"></button>
-              <button class="colorChip" type="button" data-color="#161b22" style="background:#161b22"></button>
-              <button class="colorChip" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
-            </div>
-          </div>
-
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">입력말풍선</div>
-            <input id="colorUserBubbleBg" type="color" value="#2e3440" list="darkPaletteBubble" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorUserBubbleBg">
-              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
-              <button class="colorChip" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
-              <button class="colorChip" type="button" data-color="#2e3440" style="background:#2e3440"></button>
-              <button class="colorChip" type="button" data-color="#334155" style="background:#334155"></button>
-              <button class="colorChip" type="button" data-color="#3b4252" style="background:#3b4252"></button>
-              <button class="colorChip" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
-              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
-              <button class="colorChip" type="button" data-color="#30363d" style="background:#30363d"></button>
-            </div>
-          </div>
-
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">출력말풍선</div>
-            <input id="colorAssistantBubbleBg" type="color" value="#000000" list="darkPaletteAssistant" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorAssistantBubbleBg">
-              <button class="colorChip" type="button" data-color="#000000" style="background:#000000"></button>
-              <button class="colorChip" type="button" data-color="#050505" style="background:#050505"></button>
-              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
-              <button class="colorChip" type="button" data-color="#0e1420" style="background:#0e1420"></button>
-              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
-              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
-              <button class="colorChip" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
-              <button class="colorChip" type="button" data-color="#161b22" style="background:#161b22"></button>
-            </div>
-          </div>
-
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">전송버튼</div>
-            <input id="colorSendBtnBg" type="color" value="#2d6bff" list="darkPaletteAccent" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorSendBtnBg">
-              <button class="colorChip" type="button" data-color="#1d4ed8" style="background:#1d4ed8"></button>
-              <button class="colorChip" type="button" data-color="#2d6bff" style="background:#2d6bff"></button>
-              <button class="colorChip" type="button" data-color="#0ea5e9" style="background:#0ea5e9"></button>
-              <button class="colorChip" type="button" data-color="#22c55e" style="background:#22c55e"></button>
-              <button class="colorChip" type="button" data-color="#f59e0b" style="background:#f59e0b"></button>
-              <button class="colorChip" type="button" data-color="#ef4444" style="background:#ef4444"></button>
-              <button class="colorChip" type="button" data-color="#a855f7" style="background:#a855f7"></button>
-              <button class="colorChip" type="button" data-color="#14b8a6" style="background:#14b8a6"></button>
-            </div>
-          </div>
-        </div>
-
-        <datalist id="darkPaletteBg">
-          <option value="#000000"></option><option value="#050505"></option><option value="#0b0f14"></option><option value="#0f172a"></option>
-          <option value="#111827"></option><option value="#1f2937"></option><option value="#111111"></option><option value="#090c10"></option>
-        </datalist>
-        <datalist id="darkPaletteChat">
-          <option value="#070c18"></option><option value="#0b1220"></option><option value="#0e1420"></option><option value="#111827"></option>
-          <option value="#131a2a"></option><option value="#0a0f1a"></option><option value="#0b0f14"></option><option value="#0c1320"></option>
-        </datalist>
-        <datalist id="darkPaletteInput">
-          <option value="#1e2430"></option><option value="#232832"></option><option value="#2b2f3a"></option><option value="#2e3440"></option>
-          <option value="#1f2937"></option><option value="#3a3f4b"></option><option value="#161b22"></option><option value="#2a2a2a"></option>
-        </datalist>
-        <datalist id="darkPaletteBubble">
-          <option value="#1f2937"></option><option value="#2b2f3a"></option><option value="#2e3440"></option><option value="#334155"></option>
-          <option value="#3b4252"></option><option value="#2a2a2a"></option><option value="#111827"></option><option value="#30363d"></option>
-        </datalist>
-        <datalist id="darkPaletteAssistant">
-          <option value="#000000"></option><option value="#050505"></option><option value="#0b0f14"></option><option value="#0e1420"></option>
-          <option value="#111827"></option><option value="#1f2937"></option><option value="#0a0f1a"></option><option value="#161b22"></option>
-        </datalist>
-        <datalist id="darkPaletteAccent">
-          <option value="#1d4ed8"></option><option value="#2d6bff"></option><option value="#0ea5e9"></option><option value="#22c55e"></option>
-          <option value="#f59e0b"></option><option value="#ef4444"></option><option value="#a855f7"></option><option value="#14b8a6"></option>
-        </datalist>
-
-        <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap;">
-          <button class="swatchBtn" type="button" data-preset="oled">
-            <span class="swatchDot" style="background:#000000"></span> OLED Black
-          </button>
-          <button class="swatchBtn" type="button" data-preset="slate">
-            <span class="swatchDot" style="background:#0b0f14"></span> Slate
-          </button>
-          <button class="swatchBtn" type="button" data-preset="navy">
-            <span class="swatchDot" style="background:#070c18"></span> Navy
-          </button>
-          <button class="swatchBtn" type="button" data-preset="purple">
-            <span class="swatchDot" style="background:#1b1026"></span> Purple
-          </button>
-          <button class="swatchBtn" type="button" data-preset="emerald">
-            <span class="swatchDot" style="background:#071b14"></span> Emerald
-          </button>
-          <button class="swatchBtn" type="button" data-preset="warm">
-            <span class="swatchDot" style="background:#140f0b"></span> Warm
-          </button>
-          <button class="swatchBtn" type="button" data-preset="mono">
-            <span class="swatchDot" style="background:#111111"></span> Mono
-          </button>
-          <button class="swatchBtn" type="button" data-preset="reset">
-            <span class="swatchDot" style="background:#2d6bff"></spana> 기본
-          </button>
-        </div>
-
-        <label>폰트(폰에서 업로드)</label>
-        <div class="row" style="align-items:center;">
-          <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" />
-          <button id="clearFontBtn" class="btn secondary" type="button">폰트 초기화</button>
-          <button id="saveBtn" class="btn" type="button">저장</button>
-        </div>
-        <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
-      </section>
-
-      <section class="panel">
-        <div class="panelHead">
-          <div class="left">
-            <div class="h">Chat</div>
-          </div>
-        </div>
-        <div id="chat" class="chat"></div>
-        <div id="bottomAnchor" style="height:1px;"></div>
-      </section>
-
-    </div>
-  </main>
-
-  <div class="composer">
-    <div class="composerInner">
-      <button id="sendBtnL" class="sendBtn" type="button" aria-label="전송(좌)">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 19V5"></path>
-          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
-        </svg>
-      </button>
-
-      <input id="input" type="text" placeholder="" autocomplete="off" />
-
-      <button id="sendBtnR" class="sendBtn" type="button" aria-label="전송(우)">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 19V5"></path>
-          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <div id="copyBar" class="copyBar hidden" role="button" aria-label="복사 바">
-    <div class="copyBarText">번역 완료 · 탭하면 복사</div>
-    <button id="copyBarBtn" class="copyBarBtn" type="button">복사</button>
-  </div>
-
-  <div id="toast" class="toast"></div>
-
-  <script>
-    const APP_VERSION = 'v1.24';
-
-    const LS = {
-      apiKey: 'bk_tr_apiKey',
-      model: 'bk_tr_model',
-      temp: 'bk_tr_temp',
-      top_p: 'bk_tr_top_p',
-      maxTokens: 'bk_tr_maxTokens',
-      system: 'bk_tr_systemPrompt',
-      autoCopy: 'bk_tr_autoCopy',
-      fontScale: 'bk_tr_fontScale',
-
-      colorBg: 'bk_tr_color_bg',
-      colorChatBg: 'bk_tr_color_chat_bg',
-      colorInputBg: 'bk_tr_color_input_bg',
-      colorUserBubbleBg: 'bk_tr_color_user_bubble_bg',
-      colorAssistantBubbleBg: 'bk_tr_color_assistant_bubble_bg',
-      colorSendBtnBg: 'bk_tr_color_send_btn_bg'
-    };
-
-    const el = {
-      main: document.getElementById('main'),
-      appVer: document.getElementById('appVer'),
-      modelTag: document.getElementById('modelTag'),
-
-      settingsToggleBtn: document.getElementById('settingsToggleBtn'),
-      settingsPanel: document.getElementById('settingsPanel'),
-
-      topTestBtn: document.getElementById('topTestBtn'),
-      topClearBtn: document.getElementById('topClearBtn'),
-      connBtn: document.getElementById('connBtn'),
-      statusCircle: document.getElementById('statusCircle'),
-
-      apiKey: document.getElementById('apiKey'),
-      model: document.getElementById('model'),
-      temperature: document.getElementById('temperature'),
-      top_p: document.getElementById('top_p'),
-      maxTokens: document.getElementById('maxTokens'),
-      systemPrompt: document.getElementById('systemPrompt'),
-      autoCopy: document.getElementById('autoCopy'),
-      saveBtn: document.getElementById('saveBtn'),
-
-      chat: document.getElementById('chat'),
-      bottomAnchor: document.getElementById('bottomAnchor'),
-
-      input: document.getElementById('input'),
-      sendBtnL: document.getElementById('sendBtnL'),
-      sendBtnR: document.getElementById('sendBtnR'),
-
-      copyBar: document.getElementById('copyBar'),
-      copyBarBtn: document.getElementById('copyBarBtn'),
-      toast: document.getElementById('toast'),
-
-      fontFile: document.getElementById('fontFile'),
-      clearFontBtn: document.getElementById('clearFontBtn'),
-      fontStatus: document.getElementById('fontStatus'),
-
-      fontScale: document.getElementById('fontScale'),
-      fontScaleVal: document.getElementById('fontScaleVal'),
-      fontScaleResetBtn: document.getElementById('fontScaleResetBtn'),
-
-      colorBg: document.getElementById('colorBg'),
-      colorChatBg: document.getElementById('colorChatBg'),
-      colorInputBg: document.getElementById('colorInputBg'),
-      colorUserBubbleBg: document.getElementById('colorUserBubbleBg'),
-      colorAssistantBubbleBg: document.getElementById('colorAssistantBubbleBg'),
-      colorSendBtnBg: document.getElementById('colorSendBtnBg'),
-    };
-
-    if(el.appVer) el.appVer.textContent = APP_VERSION;
-
-    function prettifyModelName(modelId){
-      const raw = String(modelId || '').trim();
-      if(!raw) return 'Model';
-      const short = raw.split('/').pop() || raw;
-      const cleaned = short.replace(/[_]+/g,'-').replace(/-+/g,'-');
-      return cleaned.split('-').filter(Boolean).map(t => {
-        if(/^\d+(\.\d+)?$/.test(t)) return t;
-        return t.charAt(0).toUpperCase() + t.slice(1);
-      }).join(' ');
-    }
-
-    function getCurrentModelId(){
-      return (localStorage.getItem(LS.model) || (el.model ? el.model.value : '') || '').trim();
-    }
-
-    function updateModelTag(){
-      const pretty = prettifyModelName(getCurrentModelId());
-      if(el.modelTag) el.modelTag.textContent = pretty;
-      document.title = pretty + ' BK Trans ' + APP_VERSION;
-    }
-
-    function toast(msg){
-      el.toast.textContent = String(msg ?? '');
-      el.toast.classList.add('show');
-      clearTimeout(toast._t);
-      toast._t = setTimeout(() => el.toast.classList.remove('show'), 2200);
-    }
-
-    function scrollToBottom(behavior){
-      const b = behavior || 'smooth';
-      try{
-        el.bottomAnchor.scrollIntoView({behavior: (b === 'instant' ? 'auto' : b), block:'end'});
-      } catch {}
-      const scroller = el.main;
-      const doScroll = () => {
-        if(b === 'instant'){
-          scroller.scrollTop = scroller.scrollHeight;
-        } else {
-          try{ scroller.scrollTo({ top: scroller.scrollHeight, behavior: b }); }
-          catch { scroller.scrollTop = scroller.scrollHeight; }
-        }
-      };
-      if(b === 'instant'){
-        doScroll();
-      } else {
-        requestAnimationFrame(() => { doScroll(); requestAnimationFrame(doScroll); });
-      }
-    }
-
-    async function copyToClipboard(text, silent){
-      const t = String(text ?? '');
-      try{
-        if(navigator.clipboard && window.isSecureContext){
-          await navigator.clipboard.writeText(t);
-          if(!silent) toast('복사 완료');
-          return true;
-        }
-      } catch {}
-      try{
-        const ta = document.createElement('textarea');
-        ta.value = t;
-        ta.setAttribute('readonly', '');
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        ta.setSelectionRange(0, ta.value.length);
-        const ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-        if(ok){
-          if(!silent) toast('복사 완료');
-          return true;
-        }
-      } catch {}
-      if(!silent) toast('복사 실패(보안 정책)');
-      return false;
-    }
-
-    let _pendingCopyText = '';
-    function showCopyBar(text){
-      _pendingCopyText = String(text ?? '');
-      el.copyBar.classList.remove('hidden');
-    }
-    function hideCopyBar(){
-      _pendingCopyText = '';
-      el.copyBar.classList.add('hidden');
-    }
-
-    function hasChinese(s){
-      return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s || ''));
-    }
-    function hasKorean(s){
-      return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(String(s || ''));
-    }
-    function isEnglishLongText(s){
-      const str = String(s || '');
-      if(hasKorean(str) || hasChinese(str)) return false;
-      const englishChars = str.match(/[a-zA-Z]/g);
-      return englishChars && englishChars.length >= 40;
-    }
-
-    const FONT_SCALE_MIN = 0.85;
-    const FONT_SCALE_MAX = 1.35;
-
-    function clamp(n, min, max){
-      return Math.min(max, Math.max(min, n));
-    }
-
-    function applyFontScale(scale){
-      let s = Number(scale);
-      if(!Number.isFinite(s)) s = 1;
-      s = clamp(s, FONT_SCALE_MIN, FONT_SCALE_MAX);
-      document.documentElement.style.setProperty('--textScale', String(s));
-      if(el.fontScale) el.fontScale.value = String(s);
-      if(el.fontScaleVal) el.fontScaleVal.textContent = Math.round(s * 100) + '%';
-    }
-
-    function initFontScale(){
-      const saved = localStorage.getItem(LS.fontScale);
-      const v = saved ? Number(saved) : 1;
-      applyFontScale(v);
-    }
-
-    const COLOR_DEFAULTS = {
-      bg: '#050505',
-      chatBg: '#0e1420',
-      inputBg: '#2e3440',
-      userBubbleBg: '#2e3440',
-      assistantBubbleBg: '#000000',
-      sendBtnBg: '#2d6bff'
-    };
-
-    const COLOR_PRESETS = {
-      oled:      { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      slate:     { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      navy:      { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff' },
-      purple:    { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6' },
-      emerald:   { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e' },
-      warm:      { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b' },
-      mono:      { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff' },
-      reset:     { ...COLOR_DEFAULTS }
-    };
-
-    function applyColorsFromStorage(){
-      const savedBg = localStorage.getItem(LS.colorBg);
-      if(el.colorBg) el.colorBg.value = savedBg || COLOR_DEFAULTS.bg;
-      if(savedBg) document.documentElement.style.setProperty('--bg', savedBg);
-
-      const savedChat = localStorage.getItem(LS.colorChatBg);
-      if(el.colorChatBg) el.colorChatBg.value = savedChat || COLOR_DEFAULTS.chatBg;
-      if(savedChat) document.documentElement.style.setProperty('--chatBg', savedChat);
-
-      const savedInput = localStorage.getItem(LS.colorInputBg);
-      if(el.colorInputBg) el.colorInputBg.value = savedInput || COLOR_DEFAULTS.inputBg;
-      if(savedInput) document.documentElement.style.setProperty('--inputBg', savedInput);
-
-      const savedUserBubble = localStorage.getItem(LS.colorUserBubbleBg);
-      if(el.colorUserBubbleBg) el.colorUserBubbleBg.value = savedUserBubble || COLOR_DEFAULTS.userBubbleBg;
-      if(savedUserBubble) document.documentElement.style.setProperty('--userBubbleBg', savedUserBubble);
-
-      const savedAssistantBubble = localStorage.getItem(LS.colorAssistantBubbleBg);
-      if(el.colorAssistantBubbleBg) el.colorAssistantBubbleBg.value = savedAssistantBubble || COLOR_DEFAULTS.assistantBubbleBg;
-      if(savedAssistantBubble) document.documentElement.style.setProperty('--assistantBubbleBg', savedAssistantBubble);
-
-      const savedSendBtn = localStorage.getItem(LS.colorSendBtnBg);
-      if(el.colorSendBtnBg) el.colorSendBtnBg.value = savedSendBtn || COLOR_DEFAULTS.sendBtnBg;
-      if(savedSendBtn) document.documentElement.style.setProperty('--sendBtnBg', savedSendBtn);
-    }
-
-    function bindColorPicker(inputEl, lsKey, cssVar){
-      if(!inputEl) return;
-      inputEl.addEventListener('input', (e) => {
-        const v = String(e.target.value || '').trim();
-        if(!v) return;
-        document.documentElement.style.setProperty(cssVar, v);
-        try{ localStorage.setItem(lsKey, v); } catch {}
-      });
-    }
-
-    function applyPreset(presetKey){
-      const p = COLOR_PRESETS[presetKey];
-      if(!p) return;
-
-      const setOne = (inputEl, lsKey, cssVar, val) => {
-        if(inputEl) inputEl.value = val;
-        document.documentElement.style.setProperty(cssVar, val);
-        try{ localStorage.setItem(lsKey, val); } catch {}
-      };
-
-      setOne(el.colorBg, LS.colorBg, '--bg', p.bg);
-      setOne(el.colorChatBg, LS.colorChatBg, '--chatBg', p.chatBg);
-      setOne(el.colorInputBg, LS.colorInputBg, '--inputBg', p.inputBg);
-      setOne(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg', p.userBubbleBg);
-      setOne(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg', p.assistantBubbleBg);
-      setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
-    }
-
-    function initColorChips(){
-      document.querySelectorAll('.chipRow').forEach(row => {
-        const targetId = row.getAttribute('data-target');
-        if(!targetId) return;
-        row.querySelectorAll('.colorChip').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const c = btn.getAttribute('data-color');
-            const input = document.getElementById(targetId);
-            if(!input || !c) return;
-            input.value = c;
-            input.dispatchEvent(new Event('input', { bubbles:true }));
-          });
-        });
-      });
-    }
-
-    const DB_NAME = 'bk_tr_db';
-    const DB_STORE = 'kv';
-    let _fontBlobUrl = null;
-
-    function openDB(){
-      return new Promise((resolve, reject) => {
-        if(!('indexedDB' in window)) return reject(new Error('IndexedDB 미지원'));
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = () => {
-          const db = req.result;
-          if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+<body class="bg-black text-gray-100 font-sans selection:bg-blue-500 selection:text-white overflow-x-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module" data-presets="react">
+        import React, { useState, useMemo, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { ChevronLeft, ChevronRight, Plus, Minus, X, Wallet, TrendingUp, TrendingDown, Calendar as CalendarIcon, Settings, Moon, Sun, List, LayoutGrid, Download, Upload, Pencil, PieChart, BarChart3, Trash2, Scale, Layers, LineChart, Table2, StickyNote, FolderTree, Tag, ArrowRight } from 'lucide-react';
+
+        const APP_VERSION = "v3.0";
+        
+        // [수정] 폰트 크기 단계 확장 (150%까지)
+        const FONT_SIZES = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl'];
+        const FONT_LABELS = ['80%', '90%', '100%', '110%', '120%', '130%', '140%', '150%'];
+        
+        // [수정] 연간 표 전용 폰트 사이즈 (기존보다 더 크게 매핑)
+        const TABLE_FONT_SIZES = [
+            'text-[9px]',  // 80%
+            'text-[10px]', // 90%
+            'text-[11px]', // 100%
+            'text-[12px]', // 110%
+            'text-[13px]', // 120%
+            'text-[14px]', // 130%
+            'text-[15px]', // 140%
+            'text-[16px]'  // 150%
+        ];
+
+        const formatCurrency = (amount, currency) => {
+            const options = { style: 'currency', currency: currency, minimumFractionDigits: 0, maximumFractionDigits: 0 };
+            return new Intl.NumberFormat(currency === 'KRW' ? 'ko-KR' : 'zh-CN', options).format(amount);
         };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
 
-    async function idbGet(key){
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(DB_STORE, 'readonly');
-        const os = tx.objectStore(DB_STORE);
-        const r = os.get(key);
-        r.onsuccess = () => resolve(r.result);
-        r.onerror = () => reject(r.error);
-      });
-    }
+        const formatCompactNumber = (number) => {
+            if (number === 0) return '-';
+            const abs = Math.abs(number);
+            
+            if (abs < 100) return new Intl.NumberFormat('ko-KR').format(number);
 
-    async function idbSet(key, val){
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(DB_STORE, 'readwrite');
-        tx.objectStore(DB_STORE).put(val, key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-    }
+            if (abs < 1000) {
+                 const val = number / 100;
+                 return val.toFixed(val % 1 === 0 ? 0 : 1) + '백';
+            }
+            
+            if (abs < 10000) {
+                const val = number / 1000;
+                return val.toFixed(val % 1 === 0 ? 0 : 1) + '천';
+            }
+            
+            const val = number / 10000;
+            return val.toFixed(val % 1 === 0 ? 0 : 1) + '만';
+        };
 
-    async function idbDel(key){
-      const db = await openDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(DB_STORE, 'readwrite');
-        tx.objectStore(DB_STORE).delete(key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-    }
+        const generateCalendarDays = (year, month) => {
+            const firstDayOfMonth = new Date(year, month, 1);
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            const startDayOfWeek = firstDayOfMonth.getDay();
+            const daysInMonth = lastDayOfMonth.getDate();
+            const days = [];
+            for (let i = 0; i < startDayOfWeek; i++) days.push({ day: null, dateStr: null });
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                days.push({ day: i, dateStr: dateStr });
+            }
+            return days;
+        };
 
-    function applyFontRecord(rec){
-      if(_fontBlobUrl){
-        try{ URL.revokeObjectURL(_fontBlobUrl); } catch {}
-        _fontBlobUrl = null;
-      }
-      const styleId = 'customFontStyle';
-      let st = document.getElementById(styleId);
-      if(!st){
-        st = document.createElement('style');
-        st.id = styleId;
-        document.head.appendChild(st);
-      }
+        const DEFAULT_CATEGORIES = {
+            income: ['급여', '용돈', '상여금', '금융수입', '기타'],
+            expense: ['식비', '교통', '문화', '공과금', '쇼핑', '주거', '의료', '기타']
+        };
+        const DEFAULT_MAIN_CATEGORIES = {
+            income: ['근로소득', '금융소득', '기타'],
+            expense: ['고정지출', '변동지출', '저축', '기타']
+        };
 
-      if(!rec){
-        st.textContent = '';
-        document.documentElement.style.setProperty('--fontMain', 'system-ui');
-        el.fontStatus.textContent = '기본(레포 woff2 우선)';
-        return;
-      }
+        function App() {
+            const [isLoaded, setIsLoaded] = useState(false);
+            const [initialBalance, setInitialBalance] = useState(0);
+            const [currency, setCurrency] = useState('KRW'); 
+            const [isDarkMode, setIsDarkMode] = useState(true); 
+            const [fontIndex, setFontIndex] = useState(2); 
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [activeTab, setActiveTab] = useState('calendar');
+            const [currentDate, setCurrentDate] = useState(new Date());
+            const [transactions, setTransactions] = useState([]);
+            const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+            const [mainCategories, setMainCategories] = useState(DEFAULT_MAIN_CATEGORIES);
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [editingId, setEditingId] = useState(null);
+            const [selectedDateDetail, setSelectedDateDetail] = useState(null); 
+            const [settingsTab, setSettingsTab] = useState('general');
+            const [newCategoryName, setNewCategoryName] = useState('');
+            const [categoryTypeToAdd, setCategoryTypeToAdd] = useState('expense');
+            const [newTrans, setNewTrans] = useState({
+                date: new Date().toISOString().split('T')[0],
+                type: 'expense',
+                mainCategory: '', 
+                category: '',
+                amount: '',
+                desc: '',
+                memo: '' 
+            });
 
-      const blob = new Blob([rec.data], {type: rec.type || 'font/ttf'});
-      _fontBlobUrl = URL.createObjectURL(blob);
+            useEffect(() => {
+                const savedData = localStorage.getItem('bk_budget_data_v21');
+                const savedFontIndex = localStorage.getItem('bk_budget_font_idx');
+                if (savedData) {
+                    try {
+                        const parsed = JSON.parse(savedData);
+                        if (parsed.initialBalance !== undefined) setInitialBalance(parsed.initialBalance);
+                        if (parsed.currency) setCurrency(parsed.currency);
+                        if (parsed.isDarkMode !== undefined) setIsDarkMode(parsed.isDarkMode);
+                        if (parsed.transactions) setTransactions(parsed.transactions);
+                        if (parsed.categories) setCategories(parsed.categories);
+                        if (parsed.mainCategories) setMainCategories(parsed.mainCategories);
+                    } catch (e) { console.error(e); }
+                } else {
+                    const oldData = localStorage.getItem('bk_budget_data_v5');
+                    if (oldData) {
+                        try {
+                            const parsed = JSON.parse(oldData);
+                            if (parsed.transactions) setTransactions(parsed.transactions);
+                            if (parsed.initialBalance) setInitialBalance(parsed.initialBalance);
+                            if (parsed.categories) setCategories(parsed.categories);
+                        } catch(e) {}
+                    }
+                }
+                // [수정] 인덱스 범위 체크
+                if (savedFontIndex !== null) {
+                    const idx = parseInt(savedFontIndex, 10);
+                    if (idx >= 0 && idx < FONT_SIZES.length) setFontIndex(idx);
+                }
+                setIsLoaded(true);
+            }, []);
 
-      const format = (rec.type && rec.type.includes('woff2')) ? 'woff2' : 'truetype';
-      st.textContent =
-        '@font-face{' +
-          'font-family:"BKCustom";' +
-          'src:url("' + _fontBlobUrl + '") format("' + format + '");' +
-          'font-display:swap;' +
-        '}';
+            useEffect(() => {
+                if (isLoaded) {
+                    const dataToSave = { initialBalance, currency, isDarkMode, transactions, categories, mainCategories };
+                    localStorage.setItem('bk_budget_data_v21', JSON.stringify(dataToSave)); 
+                }
+            }, [initialBalance, currency, isDarkMode, transactions, categories, mainCategories, isLoaded]);
 
-      document.documentElement.style.setProperty('--fontMain', '"BKCustom"');
-      el.fontStatus.textContent = rec.name || 'BKCustom';
-    }
+            const handleFontUp = () => { const newIndex = Math.min(fontIndex + 1, FONT_SIZES.length - 1); setFontIndex(newIndex); localStorage.setItem('bk_budget_font_idx', newIndex); };
+            const handleFontDown = () => { const newIndex = Math.max(fontIndex - 1, 0); setFontIndex(newIndex); localStorage.setItem('bk_budget_font_idx', newIndex); };
 
-    async function loadCustomFont(){
-      try{
-        const rec = await idbGet('font');
-        applyFontRecord(rec || null);
-      } catch {
-        applyFontRecord(null);
-      }
-    }
+            useEffect(() => {
+                if (isModalOpen && !editingId) {
+                    const currentMainCats = newTrans.type === 'income' ? mainCategories.income : mainCategories.expense;
+                    const currentSubCats = newTrans.type === 'income' ? categories.income : categories.expense;
+                    setNewTrans(prev => ({ 
+                        ...prev, 
+                        mainCategory: currentMainCats.length > 0 ? currentMainCats[0] : '',
+                        category: currentSubCats.length > 0 ? currentSubCats[0] : ''
+                    }));
+                }
+            }, [newTrans.type, categories, mainCategories, isModalOpen, editingId]);
 
-    async function saveCustomFontFile(file){
-      if(!file) return;
-      const buf = await file.arrayBuffer();
-      const rec = {name: file.name, type: file.type, data: buf};
-      await idbSet('font', rec);
-      applyFontRecord(rec);
-      toast('폰트 적용 완료');
-    }
+            const handleExport = () => {
+                const dataToSave = { initialBalance, currency, isDarkMode, transactions, categories, mainCategories, exportDate: new Date().toISOString(), version: APP_VERSION };
+                const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `BK_Budget_${APP_VERSION}_${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
 
-    async function clearCustomFont(){
-      try{ await idbDel('font'); } catch {}
-      applyFontRecord(null);
-      toast('폰트 초기화 완료');
-    }
+            const handleImport = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        if (window.confirm("복원하시겠습니까?")) {
+                            if (parsed.initialBalance !== undefined) setInitialBalance(parsed.initialBalance);
+                            if (parsed.currency) setCurrency(parsed.currency);
+                            if (parsed.isDarkMode !== undefined) setIsDarkMode(parsed.isDarkMode);
+                            if (parsed.transactions) setTransactions(parsed.transactions);
+                            if (parsed.categories) setCategories(parsed.categories);
+                            if (parsed.mainCategories) setMainCategories(parsed.mainCategories);
+                            alert("복원 완료");
+                            setIsSettingsOpen(false);
+                        }
+                    } catch (err) { alert("파일 오류"); }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            };
 
-    let chat = [];
-    const MAX_INPUTS_PER_PAGE = 4;
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth(); 
+            const sortedTransactions = useMemo(() => [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date)), [transactions]);
 
-    function countUserInputs(arr){
-      let c = 0;
-      for(const m of arr){
-        if(m && m.role === 'user') c++;
-      }
-      return c;
-    }
+            const dailyStatsMap = useMemo(() => {
+                const stats = {};
+                let runningBalance = Number(initialBalance); 
+                sortedTransactions.forEach(t => {
+                    const dateKey = t.date;
+                    if (!stats[dateKey]) stats[dateKey] = { income: 0, expense: 0, balance: 0 };
+                    if (t.type === 'income') { stats[dateKey].income += Number(t.amount); runningBalance += Number(t.amount); }
+                    else { stats[dateKey].expense += Number(t.amount); runningBalance -= Number(t.amount); }
+                    stats[dateKey].balance = runningBalance;
+                });
+                return { stats, finalBalance: runningBalance };
+            }, [sortedTransactions, initialBalance]);
 
-    function trimChatToMaxInputs(){
-      while(countUserInputs(chat) > MAX_INPUTS_PER_PAGE){
-        if(chat.length === 0) break;
-        if(chat[0] && chat[0].role === 'user'){
-          chat.shift();
-          if(chat[0] && chat[0].role === 'assistant') chat.shift();
-        } else {
-          chat.shift();
+            const allTimeStats = useMemo(() => {
+                let income = 0;
+                let expense = 0;
+                transactions.forEach(t => {
+                    if (t.type === 'income') income += Number(t.amount);
+                    else expense += Number(t.amount);
+                });
+                const balance = Number(initialBalance) + income - expense;
+                return { income, expense, balance };
+            }, [transactions, initialBalance]);
+
+            const yearlyStats = useMemo(() => {
+                const monthlyData = Array(12).fill(null).map((_, i) => ({ month: i + 1, income: 0, expense: 0, balance: 0, carryover: 0, totalRevenue: 0 }));
+                const hierarchyData = { income: {}, expense: {} };
+                const yearTransactions = transactions.filter(t => t.date.startsWith(String(year)));
+                
+                yearTransactions.forEach(t => {
+                    const m = new Date(t.date).getMonth(); 
+                    const mainCat = t.mainCategory || '기타';
+                    const subCat = t.category || '기타';
+                    const amt = Number(t.amount);
+                    const type = t.type; 
+
+                    if (type === 'income') monthlyData[m].income += amt;
+                    else monthlyData[m].expense += amt;
+
+                    if (!hierarchyData[type][mainCat]) {
+                        hierarchyData[type][mainCat] = { total: 0, monthly: Array(12).fill(0), subs: {} };
+                    }
+                    hierarchyData[type][mainCat].total += amt;
+                    hierarchyData[type][mainCat].monthly[m] += amt;
+
+                    if (!hierarchyData[type][mainCat].subs[subCat]) {
+                        hierarchyData[type][mainCat].subs[subCat] = { total: 0, monthly: Array(12).fill(0) };
+                    }
+                    hierarchyData[type][mainCat].subs[subCat].total += amt;
+                    hierarchyData[type][mainCat].subs[subCat].monthly[m] += amt;
+                });
+
+                let currentCarryover = Number(initialBalance);
+                const prevYearTrans = transactions.filter(t => new Date(t.date).getFullYear() < year);
+                prevYearTrans.forEach(t => {
+                    if(t.type === 'income') currentCarryover += Number(t.amount);
+                    else currentCarryover -= Number(t.amount);
+                });
+
+                monthlyData.forEach(s => {
+                    s.carryover = currentCarryover; 
+                    s.totalRevenue = s.carryover + s.income; 
+                    s.balance = s.totalRevenue - s.expense; 
+                    currentCarryover = s.balance;
+                });
+
+                return { monthlyData, hierarchyData }; 
+            }, [transactions, year, initialBalance]);
+
+            const categoryStats = useMemo(() => {
+                const startStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+                const endStr = `${year}-${String(month + 1).padStart(2, '0')}-31`;
+                let carryover = Number(initialBalance);
+                transactions.forEach(t => {
+                    if (t.date < startStr) {
+                        if (t.type === 'income') carryover += Number(t.amount);
+                        else carryover -= Number(t.amount);
+                    }
+                });
+
+                const currentMonthTrans = transactions.filter(t => t.date >= startStr && t.date <= endStr);
+                const prevMonthTrans = transactions.filter(t => {
+                    const prevDate = new Date(year, month - 1, 1);
+                    const prevStart = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-01`;
+                    const prevEnd = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-31`;
+                    return t.date >= prevStart && t.date <= prevEnd;
+                });
+
+                const hierarchy = { income: {}, expense: {} };
+
+                const processTrans = (transList, isPrev) => {
+                    transList.forEach(t => {
+                        const type = t.type;
+                        const mainCat = t.mainCategory || '기타';
+                        const subCat = t.category || '기타';
+                        const amt = Number(t.amount);
+
+                        if (!hierarchy[type][mainCat]) hierarchy[type][mainCat] = { total: 0, prev: 0, subs: {} };
+                        if (isPrev) hierarchy[type][mainCat].prev += amt;
+                        else hierarchy[type][mainCat].total += amt;
+
+                        if (!hierarchy[type][mainCat].subs[subCat]) hierarchy[type][mainCat].subs[subCat] = { total: 0, prev: 0 };
+                        if (isPrev) hierarchy[type][mainCat].subs[subCat].prev += amt;
+                        else hierarchy[type][mainCat].subs[subCat].total += amt;
+                    });
+                };
+
+                processTrans(currentMonthTrans, false);
+                processTrans(prevMonthTrans, true);
+
+                const sortHierarchy = (data) => {
+                    return Object.entries(data).map(([key, val]) => {
+                        const sortedSubs = Object.entries(val.subs).map(([subKey, subVal]) => ({ name: subKey, ...subVal })).sort((a, b) => b.total - a.total);
+                        return { name: key, ...val, subs: sortedSubs };
+                    }).sort((a, b) => b.total - a.total);
+                };
+
+                const monthlyIncome = currentMonthTrans.filter(t => t.type === 'income').reduce((a, b) => a + Number(b.amount), 0);
+                const monthlyExpense = currentMonthTrans.filter(t => t.type === 'expense').reduce((a, b) => a + Number(b.amount), 0);
+                const totalRevenue = carryover + monthlyIncome;
+                const finalBalance = totalRevenue - monthlyExpense;
+
+                return {
+                    income: sortHierarchy(hierarchy.income),
+                    expense: sortHierarchy(hierarchy.expense),
+                    monthlyIncome, monthlyExpense, carryover, totalRevenue, finalBalance 
+                };
+            }, [transactions, year, month, initialBalance]);
+
+            const getBalanceAtDate = (targetDateStr) => {
+                let balance = Number(initialBalance); 
+                for (const t of sortedTransactions) {
+                    if (t.date > targetDateStr) break;
+                    if (t.type === 'income') balance += Number(t.amount);
+                    else balance -= Number(t.amount);
+                }
+                return balance;
+            };
+
+            const handlePrevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+            const handleNextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+            
+            const handleSaveTransaction = (e) => {
+                e.preventDefault();
+                if (!newTrans.amount || !newTrans.desc) return;
+                const currentMainCats = newTrans.type === 'income' ? mainCategories.income : mainCategories.expense;
+                const currentSubCats = newTrans.type === 'income' ? categories.income : categories.expense;
+                const transToSave = { 
+                    ...newTrans, 
+                    mainCategory: newTrans.mainCategory || (currentMainCats[0] || '기타'),
+                    category: newTrans.category || (currentSubCats[0] || '기타'),
+                    amount: Number(newTrans.amount) 
+                };
+                if (editingId) setTransactions(prev => prev.map(t => t.id === editingId ? { ...transToSave, id: editingId } : t));
+                else setTransactions([...transactions, { id: Date.now(), ...transToSave }]);
+                setIsModalOpen(false); setEditingId(null); setNewTrans({ ...newTrans, amount: '', desc: '', category: '', mainCategory: '', memo: '' }); setSelectedDateDetail(null);
+            };
+
+            const handleEditClick = (transaction) => {
+                setEditingId(transaction.id);
+                setNewTrans({ date: transaction.date, type: transaction.type, amount: transaction.amount, desc: transaction.desc, category: transaction.category || '', mainCategory: transaction.mainCategory || '', memo: transaction.memo || '' });
+                setIsModalOpen(true); setSelectedDateDetail(null);
+            };
+
+            const handleDelete = (id) => {
+                if (window.confirm("삭제하시겠습니까?")) {
+                    setTransactions(transactions.filter(t => t.id !== id));
+                    if (selectedDateDetail) setSelectedDateDetail(prev => ({ ...prev, items: prev.items.filter(i => i.id !== id) }));
+                }
+            };
+
+            const handleDateClick = (dateStr) => {
+                if (!dateStr) return;
+                const dayTrans = transactions.filter(t => t.date === dateStr);
+                setSelectedDateDetail({ dateStr, items: dayTrans });
+            };
+
+            const handleAddCategory = (isMain) => {
+                if (!newCategoryName.trim()) return;
+                const type = categoryTypeToAdd;
+                const targetState = isMain ? mainCategories : categories;
+                const setTargetState = isMain ? setMainCategories : setCategories;
+                if (targetState[type].includes(newCategoryName)) { alert('이미 존재함'); return; }
+                setTargetState(prev => ({ ...prev, [type]: [...prev[type], newCategoryName] }));
+                setNewCategoryName('');
+            };
+
+            const handleDeleteCategory = (isMain, type, name) => {
+                const targetState = isMain ? mainCategories : categories;
+                const setTargetState = isMain ? setMainCategories : setCategories;
+                if (targetState[type].length <= 1) { alert('최소 1개 필수'); return; }
+                if (window.confirm('삭제하시겠습니까?')) {
+                    setTargetState(prev => ({ ...prev, [type]: prev[type].filter(c => c !== name) }));
+                }
+            };
+
+            const calendarDays = generateCalendarDays(year, month);
+            
+            const theme = {
+                bg: isDarkMode ? 'bg-black' : 'bg-gray-50',
+                text: isDarkMode ? 'text-gray-100' : 'text-gray-800',
+                card: isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-gray-200',
+                cardText: isDarkMode ? 'text-gray-200' : 'text-gray-900',
+                subText: isDarkMode ? 'text-gray-400' : 'text-gray-500',
+                border: isDarkMode ? 'border-neutral-800' : 'border-gray-200',
+                hover: isDarkMode ? 'hover:bg-neutral-800' : 'hover:bg-gray-50',
+                input: isDarkMode ? 'bg-neutral-800 border-neutral-700 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900',
+                header: isDarkMode ? 'bg-black border-neutral-800' : 'bg-white border-gray-200',
+                th: isDarkMode ? 'bg-neutral-900 text-gray-400' : 'bg-gray-50 text-gray-600',
+                gridLine: isDarkMode ? 'border-neutral-800' : 'border-gray-100',
+                today: isDarkMode ? 'bg-indigo-900/40' : 'bg-indigo-50/30',
+                incomeText: isDarkMode ? 'text-blue-400' : 'text-blue-600',
+                incomeBg: isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100',
+                expenseText: isDarkMode ? 'text-rose-400' : 'text-rose-600',
+                expenseBg: isDarkMode ? 'bg-rose-500/20' : 'bg-red-100',
+            };
+
+            if (!isLoaded) return null; 
+
+            const renderComparison = (currentVal, category, type) => {
+                const diff = currentVal; // Note: This simplified version doesn't track prev month in detail view for brevity.
+                return null;
+            };
+
+            // 전체 폰트 클래스 (최대 150%)
+            const currentFontSizeClass = FONT_SIZES[Math.min(fontIndex, FONT_SIZES.length-1)];
+            // [수정] 연간 표 전용 폰트 (고정된 인덱스 범위)
+            const currentTableFontSize = TABLE_FONT_SIZES[Math.min(fontIndex, TABLE_FONT_SIZES.length-1)];
+
+            const renderCategoryManager = (isMain) => {
+                const targetState = isMain ? mainCategories : categories;
+                return (
+                    <div className="space-y-4">
+                        <div className="flex gap-2 p-1 bg-neutral-800 rounded mb-2">
+                            <button onClick={() => setCategoryTypeToAdd('income')} className={`flex-1 py-1.5 text-xs rounded ${categoryTypeToAdd === 'income' ? 'bg-blue-600 text-white' : 'text-gray-400'}`}>수입 {isMain ? '대항목' : '소항목'}</button>
+                            <button onClick={() => setCategoryTypeToAdd('expense')} className={`flex-1 py-1.5 text-xs rounded ${categoryTypeToAdd === 'expense' ? 'bg-rose-600 text-white' : 'text-gray-400'}`}>지출 {isMain ? '대항목' : '소항목'}</button>
+                        </div>
+                        <div className="flex gap-2">
+                            <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="새 항목 이름" className={`flex-1 rounded border px-3 py-2 text-sm ${theme.input}`} />
+                            <button onClick={() => handleAddCategory(isMain)} className="bg-blue-600 text-white px-3 py-2 rounded text-sm shrink-0">추가</button>
+                        </div>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                            {targetState[categoryTypeToAdd].map(cat => (
+                                <div key={cat} className={`flex justify-between items-center p-2 rounded border ${theme.border} ${theme.bg}`}>
+                                    <span className={`text-sm ${theme.cardText}`}>{cat}</span>
+                                    <button onClick={() => handleDeleteCategory(isMain, categoryTypeToAdd, cat)} className="text-gray-500 hover:text-red-500"><Trash2 size={14} /></button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className={`min-h-screen font-sans transition-colors duration-200 ${theme.bg} ${theme.text} overflow-x-hidden ${currentFontSizeClass} text-transition`}>
+                    <header className={`sticky top-0 z-50 border-b ${theme.header}`}>
+                        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-blue-600 p-2 rounded-lg text-white"><CalendarIcon size={20} /></div>
+                                <div className="flex items-end gap-1">
+                                    <h1 className={`text-xl font-bold tracking-tight ${theme.cardText}`}>BK</h1>
+                                    <span className={`text-xs font-mono mb-1 ${theme.subText}`}>{APP_VERSION}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center bg-neutral-800 rounded-lg p-0.5 mr-2">
+                                    <button onClick={handleFontDown} className="p-1.5 text-gray-400 hover:text-white"><Minus size={14}/></button>
+                                    <span className="text-[10px] w-8 text-center text-gray-300 font-mono">{FONT_LABELS[fontIndex]}</span>
+                                    <button onClick={handleFontUp} className="p-1.5 text-gray-400 hover:text-white"><Plus size={14}/></button>
+                                </div>
+                                <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full ${theme.hover} ${theme.subText}`}><Sun size={20} /></button>
+                                <button onClick={() => { setIsSettingsOpen(true); setSettingsTab('general'); }} className={`p-2 rounded-full ${theme.hover} ${theme.subText}`}><Settings size={20} /></button>
+                                <button onClick={() => { setEditingId(null); setIsModalOpen(true); }} className="ml-2 bg-blue-600 text-white px-3 py-2 rounded-md"><Plus size={16} /></button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-6xl mx-auto px-4 py-6 pb-20">
+                        {/* 1. 상단 대시보드 - [수정] 3단 레이아웃 (수입원/지출/잔액) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            {/* 1구역: 자금 확보 (이월 + 수입 = 총수입) */}
+                            <div className={`md:col-span-1 rounded-xl border p-4 flex flex-col justify-center gap-2 relative overflow-hidden ${theme.card}`}>
+                                <div className="flex justify-between items-center text-sm border-b border-neutral-800 pb-2 mb-1">
+                                    <span className={theme.subText}>전월 이월</span>
+                                    <span className={theme.cardText}>{formatCurrency(categoryStats.carryover, currency)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-blue-400 font-medium">이번 달 수입</span>
+                                    <span className="text-blue-400 font-bold">+{formatCurrency(categoryStats.monthlyIncome, currency)}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-2 mt-1 border-t border-neutral-700">
+                                    <span className="text-xs text-gray-400">총 가용 자금</span>
+                                    <span className={`text-lg font-bold ${theme.cardText}`}>{formatCurrency(categoryStats.totalRevenue, currency)}</span>
+                                </div>
+                            </div>
+
+                            {/* 2구역: 지출 */}
+                            <div className={`md:col-span-1 rounded-xl border p-4 flex flex-col justify-center items-center gap-1 relative overflow-hidden ${isDarkMode ? 'bg-rose-900/10 border-rose-800/30' : 'bg-rose-50 border-rose-200'}`}>
+                                <TrendingDown size={24} className="text-rose-500 mb-1"/>
+                                <span className={`text-xs ${theme.subText}`}>이번 달 총 지출</span>
+                                <span className="text-2xl font-bold text-rose-500">{formatCurrency(categoryStats.monthlyExpense, currency)}</span>
+                            </div>
+
+                            {/* 3구역: 잔액 (월 수지) */}
+                            <div className={`md:col-span-1 rounded-xl border p-4 flex flex-col justify-center items-center gap-1 relative overflow-hidden ${isDarkMode ? 'bg-blue-900/10 border-blue-800/30' : 'bg-blue-50 border-blue-200'}`}>
+                                <Wallet size={24} className="text-blue-500 mb-1"/>
+                                <span className={`text-xs ${theme.subText}`}>최종 월 잔액</span>
+                                <span className={`text-2xl font-bold ${categoryStats.finalBalance >= 0 ? 'text-blue-500' : 'text-rose-500'}`}>
+                                    {formatCurrency(categoryStats.finalBalance, currency)}
+                                </span>
+                            </div>
+                        </div>
+                        
+                         <div className={`rounded-xl border p-3 mb-6 flex justify-between items-center ${theme.card}`}>
+                            <div className="flex items-center gap-2"><Layers size={16} className="text-gray-400"/><span className={`text-xs ${theme.subText}`}>전체 누적 자산</span></div>
+                            <span className={`font-bold ${allTimeStats.balance >= 0 ? 'text-blue-400' : 'text-rose-400'}`}>{formatCurrency(allTimeStats.balance, currency)}</span>
+                        </div>
+
+                        {/* 탭 메뉴 */}
+                        <div className="flex gap-2 mb-4 border-b border-gray-200 dark:border-neutral-800">
+                            <button onClick={() => setActiveTab('calendar')} className={`pb-3 px-4 text-sm font-medium flex items-center gap-2 border-b-2 ${activeTab === 'calendar' ? `border-blue-500 text-blue-500` : `border-transparent ${theme.subText}`}`}><LayoutGrid size={18} />달력</button>
+                            <button onClick={() => setActiveTab('list')} className={`pb-3 px-4 text-sm font-medium flex items-center gap-2 border-b-2 ${activeTab === 'list' ? `border-blue-500 text-blue-500` : `border-transparent ${theme.subText}`}`}><List size={18} />목록</button>
+                            <button onClick={() => setActiveTab('stats')} className={`pb-3 px-4 text-sm font-medium flex items-center gap-2 border-b-2 ${activeTab === 'stats' ? `border-blue-500 text-blue-500` : `border-transparent ${theme.subText}`}`}><BarChart3 size={18} />통계</button>
+                            <button onClick={() => setActiveTab('yearly')} className={`pb-3 px-4 text-sm font-medium flex items-center gap-2 border-b-2 ${activeTab === 'yearly' ? `border-blue-500 text-blue-500` : `border-transparent ${theme.subText}`}`}><Table2 size={18} />연간</button>
+                        </div>
+
+                        {/* 캘린더 뷰 */}
+                        {activeTab === 'calendar' && (
+                            <div className={`rounded-xl shadow border overflow-hidden ${theme.card}`}>
+                                <div className="flex justify-between items-center p-4 border-b border-neutral-800">
+                                    <button onClick={handlePrevMonth} className={`p-1 rounded ${theme.hover}`}><ChevronLeft size={20}/></button>
+                                    <span className={`font-bold ${theme.cardText}`}>{year}년 {month + 1}월</span>
+                                    <button onClick={handleNextMonth} className={`p-1 rounded ${theme.hover}`}><ChevronRight size={20}/></button>
+                                </div>
+                                <div className={`grid grid-cols-7 border-b ${theme.border} ${theme.th}`}>
+                                    {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (<div key={day} className={`py-3 text-center text-xs font-semibold ${idx === 0 ? 'text-red-500' : idx === 6 ? 'text-blue-500' : ''}`}>{day}</div>))}
+                                </div>
+                                <div className="grid grid-cols-7 auto-rows-fr">
+                                    {calendarDays.map((item, idx) => {
+                                        if (!item.day) return <div key={`empty-${idx}`} className={`min-h-[100px] sm:min-h-[140px] border-b border-r last:border-r-0 ${theme.gridLine}`}></div>;
+                                        const dateStats = dailyStatsMap.stats[item.dateStr];
+                                        const currentBalance = dateStats ? dateStats.balance : getBalanceAtDate(item.dateStr);
+                                        const isToday = item.dateStr === new Date().toISOString().split('T')[0];
+                                        const dayTransactions = transactions.filter(t => t.date === item.dateStr);
+
+                                        return (
+                                            <div key={item.dateStr} onClick={() => handleDateClick(item.dateStr)} className={`min-h-[100px] sm:min-h-[140px] p-1 border-b border-r last:border-r-0 relative cursor-pointer ${theme.gridLine} ${theme.hover} ${isToday ? theme.today : ''}`}>
+                                                <div className="flex flex-col sm:flex-row justify-between items-start mb-1">
+                                                    <span className={`text-[10px] sm:text-sm font-medium w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : theme.subText}`}>{item.day}</span>
+                                                    {/* [수정] 잔액 색상 조건: 음수 빨강, 아니면 흰색 */}
+                                                    <span className={`text-[8px] sm:text-[10px] px-1 rounded ${currentBalance < 0 ? 'text-rose-500 font-bold' : 'text-white'}`}>{formatCurrency(currentBalance, currency)}</span>
+                                                </div>
+                                                <div className="flex flex-col gap-0.5 overflow-hidden h-[70px] sm:h-[90px] overflow-y-auto scrollbar-hide">
+                                                    {dayTransactions.map((t) => (
+                                                        <div key={t.id} className={`text-[9px] sm:text-[11px] flex justify-between items-center px-1 py-0.5 rounded ${t.type === 'income' ? `${theme.incomeBg} ${theme.incomeText}` : `${theme.expenseBg} ${theme.expenseText}`}`}>
+                                                            <div className="flex items-center gap-1 truncate max-w-[65%]">
+                                                                <span className="opacity-75 text-[8px] border px-0.5 rounded border-current">{t.category}</span>
+                                                                <span className="truncate">{t.desc}</span>
+                                                            </div>
+                                                            <span className="text-[9px]">{formatCurrency(t.amount, currency).replace(/[₩¥CNY]/g, '').trim()}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 리스트 뷰 */}
+                        {activeTab === 'list' && (
+                            <div className={`rounded-xl shadow border p-4 ${theme.card}`}>
+                                <div className="space-y-3">
+                                    {transactions.filter(t => t.date.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)).sort((a, b) => new Date(b.date) - new Date(a.date)).map(t => (
+                                        <div key={t.id} className={`flex justify-between items-center p-3 rounded border ${theme.border} ${theme.bg}`}>
+                                            <div>
+                                                <p className={`text-xs ${theme.subText} mb-0.5`}>{t.date}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border border-neutral-700 text-neutral-400`}>{t.mainCategory || '기타'}</span>
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${t.type === 'income' ? 'border-blue-500 text-blue-500' : 'border-rose-500 text-rose-500'}`}>{t.category}</span>
+                                                </div>
+                                                {t.memo && <p className="text-[10px] text-gray-500 mt-1 flex items-center gap-1"><StickyNote size={10}/> {t.memo}</p>}
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`font-bold ${t.type === 'income' ? theme.incomeText : theme.expenseText}`}>{t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount, currency)}</span>
+                                                <div className="flex gap-2"><button onClick={() => handleEditClick(t)} className="text-gray-400"><Pencil size={16}/></button><button onClick={() => handleDelete(t.id)} className="text-gray-400"><X size={16}/></button></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {transactions.filter(t => t.date.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)).length === 0 && <div className={`text-center py-10 ${theme.subText}`}>내역 없음</div>}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 통계 뷰 */}
+                        {activeTab === 'stats' && (
+                            <div className="space-y-6 animate-in fade-in zoom-in duration-200">
+                                <div className={`rounded-xl shadow border p-5 ${theme.card}`}>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h3 className={`font-bold flex items-center gap-2 ${theme.cardText}`}><Scale size={18} className="text-gray-400"/>이번 달 수지</h3>
+                                        <span className={`text-lg font-bold ${categoryStats.finalBalance >= 0 ? theme.incomeText : theme.expenseText}`}>{formatCurrency(categoryStats.finalBalance, currency)}</span>
+                                    </div>
+                                    <div className="relative h-4 bg-neutral-800 rounded-full overflow-hidden mb-2">
+                                        <div className="absolute left-0 top-0 h-full bg-blue-500" style={{ width: `${categoryStats.totalRevenue > 0 ? (categoryStats.totalRevenue / (categoryStats.totalRevenue + categoryStats.monthlyExpense)) * 100 : 0}%` }}></div>
+                                        <div className="absolute right-0 top-0 h-full bg-rose-500" style={{ width: `${categoryStats.monthlyExpense > 0 ? (categoryStats.monthlyExpense / (categoryStats.totalRevenue + categoryStats.monthlyExpense)) * 100 : 0}%` }}></div>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-blue-500">가용(총수입) {formatCurrency(categoryStats.totalRevenue, currency)}</span>
+                                        <span className="text-rose-500">지출 {formatCurrency(categoryStats.monthlyExpense, currency)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className={`rounded-xl shadow border p-4 ${theme.card}`}>
+                                        <h3 className={`font-bold mb-4 flex items-center gap-2 ${theme.cardText}`}><TrendingDown size={18} className="text-rose-500"/>지출 분석</h3>
+                                        <div className="space-y-4">
+                                            {categoryStats.expense.map((main) => (
+                                                <div key={main.name} className="space-y-2">
+                                                    <div className="flex justify-between items-end border-b border-neutral-800 pb-1">
+                                                        <span className={`font-bold ${theme.cardText}`}>{main.name}</span>
+                                                        <div className="flex gap-2 items-end">
+                                                            {/* 증감 표시 생략 (간결화) */}
+                                                            <span className={`${theme.expenseText} font-bold`}>{formatCurrency(main.total, currency)}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1.5 pl-2 border-l-2 border-neutral-800 ml-1">
+                                                        {main.subs.map((sub) => (
+                                                            <div key={sub.name}>
+                                                                <div className="flex justify-between items-end text-xs">
+                                                                    <span className={theme.subText}>{sub.name}</span>
+                                                                    <div className="flex gap-2 items-end">
+                                                                         <span className={theme.cardText}>{formatCurrency(sub.total, currency)}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden mt-0.5">
+                                                                    <div className="bg-rose-500/50 h-1.5 rounded-full" style={{ width: `${main.total > 0 ? (sub.total / main.total) * 100 : 0}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {categoryStats.expense.length === 0 && <p className={`text-center text-sm py-4 ${theme.subText}`}>지출 내역이 없습니다.</p>}
+                                        </div>
+                                    </div>
+
+                                    <div className={`rounded-xl shadow border p-4 ${theme.card}`}>
+                                        <h3 className={`font-bold mb-4 flex items-center gap-2 ${theme.cardText}`}><TrendingUp size={18} className="text-blue-500"/>수입 분석</h3>
+                                        <div className="space-y-4">
+                                            {categoryStats.income.map((main) => (
+                                                <div key={main.name} className="space-y-2">
+                                                    <div className="flex justify-between items-end border-b border-neutral-800 pb-1">
+                                                        <span className={`font-bold ${theme.cardText}`}>{main.name}</span>
+                                                        <div className="flex gap-2 items-end">
+                                                            <span className={`${theme.incomeText} font-bold`}>{formatCurrency(main.total, currency)}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1.5 pl-2 border-l-2 border-neutral-800 ml-1">
+                                                        {main.subs.map((sub) => (
+                                                            <div key={sub.name}>
+                                                                <div className="flex justify-between items-end text-xs">
+                                                                    <span className={theme.subText}>{sub.name}</span>
+                                                                    <div className="flex gap-2 items-end">
+                                                                         <span className={theme.cardText}>{formatCurrency(sub.total, currency)}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden mt-0.5">
+                                                                    <div className="bg-blue-500/50 h-1.5 rounded-full" style={{ width: `${main.total > 0 ? (sub.total / main.total) * 100 : 0}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {categoryStats.income.length === 0 && <p className={`text-center text-sm py-4 ${theme.subText}`}>수입 내역이 없습니다.</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* [수정] 연간 뷰 (Fit-to-Screen & Expandable) */}
+                        {activeTab === 'yearly' && (
+                            <div className={`rounded-xl shadow border p-2 animate-in fade-in zoom-in duration-200 ${theme.card}`}>
+                                <div className="flex justify-between items-center mb-4 px-2">
+                                    <h3 className={`font-bold flex items-center gap-2 ${theme.cardText}`}>
+                                        <Table2 size={18} className="text-gray-400"/>
+                                        {year}년 계층형 흐름
+                                    </h3>
+                                    <span className={`text-xs ${theme.subText}`}>1월 - 12월</span>
+                                </div>
+                                
+                                <div className="overflow-x-auto border border-neutral-800 rounded-lg">
+                                    <table className={`w-full ${currentTableFontSize} text-left table-fixed`}>
+                                        <thead className={`bg-neutral-900 ${theme.subText}`}>
+                                            <tr>
+                                                {/* [수정] 구분 항목 너비 축소 (60px) */}
+                                                <th className="px-1 py-2 sticky left-0 bg-neutral-900 z-20 border-r border-neutral-800 font-bold text-gray-300 w-[60px] max-w-[60px] whitespace-nowrap overflow-hidden text-ellipsis">구분</th>
+                                                {[...Array(12)].map((_, i) => <th key={i} className="px-0.5 py-2 text-center border-r border-neutral-800 last:border-0 w-[6%]">{i+1}</th>)}
+                                                <th className="px-1 py-2 text-right bg-neutral-900 border-l border-neutral-800 font-bold text-gray-300 w-[13%]">합계</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className={`divide-y divide-neutral-800 ${theme.cardText}`}>
+                                            {/* 월별 요약 섹션 */}
+                                            <tr className="bg-neutral-800/80 font-bold">
+                                                <td className="px-1 py-2 border-r border-neutral-700 text-gray-400 truncate">전월 이월</td>
+                                                {yearlyStats.monthlyData.map((stat, i) => (
+                                                    <td key={i} className="px-0.5 py-2 text-right border-r border-neutral-800 text-gray-400 truncate">{formatCompactNumber(stat.carryover)}</td>
+                                                ))}
+                                                <td className="px-1 py-2 text-right border-l border-neutral-700 text-gray-400">-</td>
+                                            </tr>
+                                            <tr className="bg-neutral-800/50 font-bold">
+                                                <td className="px-1 py-2 border-r border-neutral-700 text-blue-400 truncate">월 수입</td>
+                                                {yearlyStats.monthlyData.map((stat, i) => (
+                                                    <td key={i} className="px-0.5 py-2 text-right border-r border-neutral-800 text-blue-400 truncate">{formatCompactNumber(stat.income)}</td>
+                                                ))}
+                                                <td className="px-1 py-2 text-right border-l border-neutral-700 text-blue-400 truncate">
+                                                    {formatCompactNumber(yearlyStats.monthlyData.reduce((a, b) => a + b.income, 0))}
+                                                </td>
+                                            </tr>
+                                            <tr className="bg-neutral-800/50 font-bold">
+                                                <td className="px-1 py-2 border-r border-neutral-700 text-rose-400 truncate">월 지출</td>
+                                                {yearlyStats.monthlyData.map((stat, i) => (
+                                                    <td key={i} className="px-0.5 py-2 text-right border-r border-neutral-800 text-rose-400 truncate">{formatCompactNumber(stat.expense)}</td>
+                                                ))}
+                                                <td className="px-1 py-2 text-right border-l border-neutral-700 text-rose-400 truncate">
+                                                    {formatCompactNumber(yearlyStats.monthlyData.reduce((a, b) => a + b.expense, 0))}
+                                                </td>
+                                            </tr>
+                                            <tr className="bg-neutral-800/80 font-bold border-b-2 border-neutral-700">
+                                                <td className="px-1 py-2 border-r border-neutral-700 text-white truncate">월 잔액</td>
+                                                {yearlyStats.monthlyData.map((stat, i) => (
+                                                    <td key={i} className={`px-0.5 py-2 text-right border-r border-neutral-800 truncate ${stat.balance >= 0 ? 'text-blue-300' : 'text-rose-300'}`}>
+                                                        {formatCompactNumber(stat.balance)}
+                                                    </td>
+                                                ))}
+                                                <td className="px-1 py-2 text-right border-l border-neutral-700 text-white truncate">
+                                                    {formatCompactNumber(yearlyStats.monthlyData.reduce((a, b) => a + b.balance, 0))}
+                                                </td>
+                                            </tr>
+
+                                            {/* 수입 계층형 테이블 */}
+                                            <tr className="bg-blue-900/30 font-bold border-b border-blue-900"><td colSpan="14" className="px-1 py-2 text-blue-400 truncate pl-2">수입 내역</td></tr>
+                                            {Object.entries(yearlyStats.hierarchyData.income).map(([mainCat, data]) => (
+                                                <React.Fragment key={mainCat}>
+                                                    <tr className="bg-neutral-800/30 font-bold">
+                                                        <td className="px-1 py-2 border-r border-neutral-800 text-blue-200 pl-2 border-l-2 border-l-blue-500 truncate">{mainCat}</td>
+                                                        {data.monthly.map((amt, i) => (
+                                                            <td key={i} className="px-0.5 py-2 text-right border-r border-neutral-800 text-blue-200 truncate">{amt > 0 ? formatCompactNumber(amt) : ''}</td>
+                                                        ))}
+                                                        <td className="px-1 py-2 text-right border-l border-neutral-800 text-blue-200 truncate">{formatCompactNumber(data.total)}</td>
+                                                    </tr>
+                                                    {Object.entries(data.subs).map(([subCat, subData]) => (
+                                                        <tr key={`${mainCat}-${subCat}`} className="hover:bg-neutral-800/50 text-neutral-400">
+                                                            <td className="px-1 py-1.5 border-r border-neutral-800 pl-4 truncate">{subCat}</td>
+                                                            {subData.monthly.map((amt, i) => (
+                                                                <td key={i} className="px-0.5 py-1.5 text-right border-r border-neutral-800 truncate">{amt > 0 ? formatCompactNumber(amt) : ''}</td>
+                                                            ))}
+                                                            <td className="px-1 py-1.5 text-right border-l border-neutral-800 truncate">{formatCompactNumber(subData.total)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </React.Fragment>
+                                            ))}
+
+                                            {/* 지출 계층형 테이블 */}
+                                            <tr className="bg-rose-900/30 font-bold border-b border-rose-900"><td colSpan="14" className="px-1 py-2 text-rose-400 truncate pl-2">지출 내역</td></tr>
+                                            {Object.entries(yearlyStats.hierarchyData.expense).map(([mainCat, data]) => (
+                                                <React.Fragment key={mainCat}>
+                                                    <tr className="bg-neutral-800/30 font-bold">
+                                                        <td className="px-1 py-2 border-r border-neutral-800 text-rose-200 pl-2 border-l-2 border-l-rose-500 truncate">{mainCat}</td>
+                                                        {data.monthly.map((amt, i) => (
+                                                            <td key={i} className="px-0.5 py-2 text-right border-r border-neutral-800 text-rose-200 truncate">{amt > 0 ? formatCompactNumber(amt) : ''}</td>
+                                                        ))}
+                                                        <td className="px-1 py-2 text-right border-l border-neutral-800 text-rose-200 truncate">{formatCompactNumber(data.total)}</td>
+                                                    </tr>
+                                                    {Object.entries(data.subs).map(([subCat, subData]) => (
+                                                        <tr key={`${mainCat}-${subCat}`} className="hover:bg-neutral-800/50 text-neutral-400">
+                                                            <td className="px-1 py-1.5 border-r border-neutral-800 pl-4 truncate">{subCat}</td>
+                                                            {subData.monthly.map((amt, i) => (
+                                                                <td key={i} className="px-0.5 py-1.5 text-right border-r border-neutral-800 truncate">{amt > 0 ? formatCompactNumber(amt) : ''}</td>
+                                                            ))}
+                                                            <td className="px-1 py-1.5 text-right border-l border-neutral-800 truncate">{formatCompactNumber(subData.total)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </React.Fragment>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {selectedDateDetail && (
+                        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => setSelectedDateDetail(null)}>
+                            <div className={`rounded-xl shadow-xl w-full max-w-sm overflow-hidden ${theme.card}`} onClick={e => e.stopPropagation()}>
+                                <div className={`px-4 py-3 border-b flex justify-between items-center ${theme.border}`}><h3 className={`font-bold ${theme.cardText}`}>{selectedDateDetail.dateStr}</h3><button onClick={() => setSelectedDateDetail(null)} className={theme.subText}><X size={20} /></button></div>
+                                <div className="max-h-[50vh] overflow-y-auto p-2 space-y-2">
+                                    {selectedDateDetail.items.map(t => (
+                                        <div key={t.id} className={`flex justify-between items-center p-3 rounded border ${theme.border} ${theme.bg}`}>
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border border-neutral-700 text-neutral-400`}>{t.mainCategory || '기타'}</span>
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${t.type === 'income' ? 'border-blue-500 text-blue-500' : 'border-rose-500 text-rose-500'}`}>{t.category}</span>
+                                                </div>
+                                                <p className={`font-medium ${theme.cardText}`}>{t.desc}</p>
+                                                {t.memo && <p className="text-[10px] text-gray-500 mt-1">📝 {t.memo}</p>}
+                                            </div>
+                                            <div className="flex items-center gap-2"><span className={`font-bold ${t.type === 'income' ? theme.incomeText : theme.expenseText}`}>{formatCurrency(t.amount, currency)}</span><button onClick={() => handleEditClick(t)}><Pencil size={16} className="text-gray-400"/></button><button onClick={() => handleDelete(t.id)}><X size={16} className="text-gray-400"/></button></div>
+                                        </div>
+                                    ))}
+                                    {selectedDateDetail.items.length === 0 && <div className={`text-center py-4 ${theme.subText}`}>내역 없음</div>}
+                                </div>
+                                <div className="p-2 border-t border-gray-100 dark:border-neutral-800"><button onClick={() => { setEditingId(null); setIsModalOpen(true); setNewTrans(prev => ({...prev, date: selectedDateDetail.dateStr, amount: '', desc: ''})); setSelectedDateDetail(null); }} className="w-full py-3 rounded-lg border border-dashed border-blue-500/30 text-blue-500 text-sm flex items-center justify-center gap-2"><Plus size={16} /> 추가하기</button></div>
+                            </div>
+                        </div>
+                    )}
+
+                    {isSettingsOpen && (
+                        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                            <div className={`rounded-xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col max-h-[80vh] ${theme.card}`}>
+                                <div className={`px-4 py-3 border-b flex justify-between items-center ${theme.border}`}><h3 className={`font-bold ${theme.cardText}`}>설정</h3><button onClick={() => setIsSettingsOpen(false)} className={theme.subText}><X size={20} /></button></div>
+                                <div className={`flex border-b ${theme.border}`}>
+                                    <button onClick={() => setSettingsTab('general')} className={`flex-1 py-3 text-sm font-medium ${settingsTab === 'general' ? 'text-blue-500 border-b-2 border-blue-500' : theme.subText}`}>기본 설정</button>
+                                    <button onClick={() => setSettingsTab('main_category')} className={`flex-1 py-3 text-sm font-medium ${settingsTab === 'main_category' ? 'text-blue-500 border-b-2 border-blue-500' : theme.subText}`}>대항목 관리</button>
+                                    <button onClick={() => setSettingsTab('sub_category')} className={`flex-1 py-3 text-sm font-medium ${settingsTab === 'sub_category' ? 'text-blue-500 border-b-2 border-blue-500' : theme.subText}`}>소항목 관리</button>
+                                </div>
+                                <div className="p-4 space-y-4 overflow-y-auto">
+                                    {settingsTab === 'general' ? (
+                                        <>
+                                            <div className="pb-4 border-b border-gray-200 dark:border-neutral-800">
+                                                <h4 className={`text-sm font-bold mb-2 ${theme.cardText}`}>백업/복원</h4>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button onClick={handleExport} className={`flex flex-col items-center p-2 rounded border border-dashed ${theme.border} ${theme.subText}`}><Download size={16} /><span className="text-xs mt-1">저장</span></button>
+                                                    <label className={`flex flex-col items-center p-2 rounded border border-dashed ${theme.border} ${theme.subText}`}><Upload size={16} /><span className="text-xs mt-1">복원</span><input type="file" accept=".json" onChange={handleImport} className="hidden" /></label>
+                                                </div>
+                                            </div>
+                                            <div><label className={`text-xs block mb-1 ${theme.subText}`}>기초 잔액</label><input type="number" value={initialBalance} onChange={(e) => setInitialBalance(Number(e.target.value))} className={`w-full rounded border px-3 py-2 text-sm ${theme.input}`} /></div>
+                                            <div><label className={`text-xs block mb-1 ${theme.subText}`}>통화</label><div className="flex gap-2"><button onClick={() => setCurrency('KRW')} className={`flex-1 py-2 text-sm border rounded ${currency === 'KRW' ? 'bg-blue-600 text-white' : theme.input}`}>원 (₩)</button><button onClick={() => setCurrency('CNY')} className={`flex-1 py-2 text-sm border rounded ${currency === 'CNY' ? 'bg-blue-600 text-white' : theme.input}`}>위안 (¥)</button></div></div>
+                                        </>
+                                    ) : (
+                                        renderCategoryManager(settingsTab === 'main_category')
+                                    )}
+                                </div>
+                                <div className={`p-4 border-t ${theme.border}`}><button onClick={() => setIsSettingsOpen(false)} className="w-full bg-blue-600 text-white py-2 rounded">닫기</button></div>
+                            </div>
+                        </div>
+                    )}
+
+                    {isModalOpen && (
+                        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                            <div className={`rounded-xl shadow-xl w-full max-w-sm overflow-hidden ${theme.card}`}>
+                                <div className={`px-4 py-3 border-b flex justify-between items-center ${theme.border}`}><h3 className={`font-bold ${theme.cardText}`}>{editingId ? '수정' : '추가'}</h3><button onClick={() => setIsModalOpen(false)} className={theme.subText}><X size={20} /></button></div>
+                                <form onSubmit={handleSaveTransaction} className="p-4 space-y-3">
+                                    <div className="flex gap-2">
+                                        <div className="flex-1"><label className={`text-xs block mb-1 ${theme.subText}`}>날짜</label><input type="date" required value={newTrans.date} onChange={(e) => setNewTrans({ ...newTrans, date: e.target.value })} className={`w-full rounded border px-2 py-2 text-sm ${theme.input}`} /></div>
+                                        <div className="flex-1"><label className={`text-xs block mb-1 ${theme.subText}`}>유형</label><div className="flex gap-1"><button type="button" onClick={() => setNewTrans({ ...newTrans, type: 'income' })} className={`flex-1 py-2 text-sm rounded ${newTrans.type === 'income' ? 'bg-blue-600 text-white' : theme.input}`}>수입</button><button type="button" onClick={() => setNewTrans({ ...newTrans, type: 'expense' })} className={`flex-1 py-2 text-sm rounded ${newTrans.type === 'expense' ? 'bg-rose-600 text-white' : theme.input}`}>지출</button></div></div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <label className={`text-xs block mb-1 ${theme.subText}`}>대항목</label>
+                                            <select value={newTrans.mainCategory} onChange={(e) => setNewTrans({ ...newTrans, mainCategory: e.target.value })} className={`w-full rounded border px-3 py-2 text-sm ${theme.input}`}>
+                                                {(newTrans.type === 'income' ? mainCategories.income : mainCategories.expense).map(cat => (
+                                                    <option key={cat} value={cat}>{cat}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className={`text-xs block mb-1 ${theme.subText}`}>소항목</label>
+                                            <select value={newTrans.category} onChange={(e) => setNewTrans({ ...newTrans, category: e.target.value })} className={`w-full rounded border px-3 py-2 text-sm ${theme.input}`}>
+                                                {(newTrans.type === 'income' ? categories.income : categories.expense).map(cat => (
+                                                    <option key={cat} value={cat}>{cat}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div><label className={`text-xs block mb-1 ${theme.subText}`}>금액</label><input type="number" required min="0" placeholder="0" value={newTrans.amount} onChange={(e) => setNewTrans({ ...newTrans, amount: e.target.value })} className={`w-full rounded border px-3 py-2 text-sm ${theme.input}`} /></div>
+                                    <div><label className={`text-xs block mb-1 ${theme.subText}`}>내용</label><input type="text" required placeholder="내용 입력" value={newTrans.desc} onChange={(e) => setNewTrans({ ...newTrans, desc: e.target.value })} className={`w-full rounded border px-3 py-2 text-sm ${theme.input}`} /></div>
+                                    <div><label className={`text-xs block mb-1 ${theme.subText}`}>메모</label><input type="text" placeholder="메모 (목록에만 표시됨)" value={newTrans.memo} onChange={(e) => setNewTrans({ ...newTrans, memo: e.target.value })} className={`w-full rounded border px-3 py-2 text-sm ${theme.input}`} /></div>
+                                    <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded mt-2">{editingId ? '수정 완료' : '저장'}</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
         }
-      }
-    }
-
-    function defaultSystemPrompt(){
-      return [
-        "You are a translation engine.",
-        "Translate the user's input according to the rules below.",
-        "- Output ONLY the translated text. No explanations.",
-        "- If input starts with '#', remove it and translate Korean -> Simplified Chinese.",
-        "- Otherwise translate Simplified Chinese -> Korean.",
-        "- Keep line breaks as-is."
-      ].join("\n");
-    }
-
-    function loadSettings(){
-      el.apiKey.value = localStorage.getItem(LS.apiKey) || '';
-      const savedModel = localStorage.getItem(LS.model);
-      if(savedModel) el.model.value = savedModel;
-
-      el.temperature.value = localStorage.getItem(LS.temp) || el.temperature.value;
-      el.top_p.value = localStorage.getItem(LS.top_p) || el.top_p.value;
-      el.maxTokens.value = localStorage.getItem(LS.maxTokens) || el.maxTokens.value;
-      el.systemPrompt.value = localStorage.getItem(LS.system) || defaultSystemPrompt();
-      el.autoCopy.checked = (localStorage.getItem(LS.autoCopy) || '0') === '1';
-
-      initFontScale();
-      applyColorsFromStorage();
-      updateModelTag();
-    }
-
-    function saveSettings(){
-      localStorage.setItem(LS.apiKey, el.apiKey.value.trim());
-      localStorage.setItem(LS.model, el.model.value.trim());
-      localStorage.setItem(LS.temp, el.temperature.value.trim());
-      localStorage.setItem(LS.top_p, el.top_p.value.trim());
-      localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
-      localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
-      localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
-      localStorage.setItem(LS.fontScale, String(el.fontScale ? el.fontScale.value : '1'));
-      updateModelTag();
-      toast('저장 완료');
-      setSettingsVisible(false);
-    }
-
-    function setSettingsVisible(v){
-      el.settingsPanel.classList.toggle('hidden', !v);
-      if(v){
-        requestAnimationFrame(() => el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'}));
-      }
-    }
-
-    function toggleSettings(){
-      const isHidden = el.settingsPanel.classList.contains('hidden');
-      setSettingsVisible(isHidden);
-    }
-
-    let _isBusy = false;
-    function setConnState(state){
-      _isBusy = (state === 'busy');
-      if(state === 'ok') el.statusCircle.style.background = 'var(--ok)';
-      else if(state === 'busy') el.statusCircle.style.background = 'var(--warn)';
-      else if(state === 'err') el.statusCircle.style.background = 'var(--danger)';
-      else el.statusCircle.style.background = 'var(--warn)';
-    }
-
-    function normalizeNewlines(s){
-      return String(s).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    }
-
-    function countMeaningfulLines(s){
-      const norm = normalizeNewlines(s);
-      const trimmed = norm.replace(/\n+$/g, '');
-      if(trimmed.length === 0) return 1;
-      return trimmed.split('\n').length;
-    }
-
-    function normalizeOutput(src, out){
-      const srcLineCount = countMeaningfulLines(src);
-      const norm = normalizeNewlines(out).trimEnd();
-      if(norm.length === 0) return '';
-      const lines = norm.split('\n');
-      const nonEmpty = lines.filter(l => l.trim().length > 0);
-      const uniq = [...new Set(nonEmpty.map(l => l.trim()))];
-      if(srcLineCount === 1 && uniq.length === 1 && nonEmpty.length > 1){
-        return uniq[0];
-      }
-      return norm;
-    }
-
-    function validateNumber(x, min, max, name){
-      const v = Number(x);
-      if(!Number.isFinite(v)) throw new Error(name + ' 값이 숫자가 아닙니다.');
-      if(v < min || v > max) throw new Error(name + ' 범위 오류(' + min + '~' + max + ')');
-      return v;
-    }
-
-    async function callOpenRouter(userText){
-      const apiKey = el.apiKey.value.trim();
-      if(!apiKey) throw new Error('API Key가 비어 있습니다.');
-
-      const model = el.model.value.trim();
-      if(!model) throw new Error('모델이 비어 있습니다.');
-
-      const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
-      const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
-      const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
-      const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
-
-      const payload = {
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userText }
-        ],
-        temperature,
-        max_tokens
-      };
-
-      if(top_p < 1) payload.top_p = top_p;
-
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey
-        },
-        body: JSON.stringify(payload),
-        cache: 'no-store',
-        mode: 'cors'
-      });
-
-      if(!res.ok){
-        const text = await res.text();
-        let msg = text;
-        try { msg = JSON.parse(text).error.message; } catch{}
-        throw new Error('HTTP ' + res.status + ': ' + msg);
-      }
-
-      const json = await res.json();
-      return json.choices[0].message.content;
-    }
-
-    function renderChat(){
-      el.chat.innerHTML = '';
-      if(chat.length === 0){
-        const empty = document.createElement('div');
-        empty.className = 'hint';
-        empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
-        el.chat.appendChild(empty);
-        scrollToBottom('instant');
-        return;
-      }
-
-      for(const m of chat){
-        const row = document.createElement('div');
-        row.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
-
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.textContent = m.text;
-        row.appendChild(bubble);
-
-        const actions = document.createElement('div');
-        actions.className = 'actionsRow';
-
-        if(m.role === 'assistant'){
-          const copyBtn = document.createElement('button');
-          copyBtn.className = 'miniIconBtn';
-          copyBtn.type = 'button';
-          copyBtn.setAttribute('aria-label', '복사');
-          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
-          copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
-          actions.appendChild(copyBtn);
-        }
-
-        if(actions.children.length > 0){
-          row.appendChild(actions);
-        }
-
-        el.chat.appendChild(row);
-      }
-      scrollToBottom('instant');
-    }
-
-    async function send(){
-      const userText = el.input.value.trim();
-      if(!userText) return;
-
-      hideCopyBar();
-
-      chat.push({ role:'user', text:userText, ts:Date.now() });
-      renderChat();
-      scrollToBottom('smooth');
-
-      el.input.value = '';
-      setConnState('busy');
-
-      try{
-        const translatedRaw = await callOpenRouter(userText);
-        const translated = normalizeOutput(userText, translatedRaw);
-
-        chat.push({ role:'assistant', text: translated, ts: Date.now() });
-
-        trimChatToMaxInputs();
-        renderChat();
-
-        scrollToBottom('smooth');
-
-        if(el.autoCopy.checked && hasChinese(translated)){
-          const ok = await copyToClipboard(translated, true);
-          if(ok){
-            toast('중국어 자동 복사 완료');
-            updateLastClipboard(translated);
-          } else {
-            showCopyBar(translated);
-            toast('자동 복사 제한 → 아래 바 탭');
-          }
-        } else {
-          hideCopyBar();
-        }
-
-        setConnState('ok');
-      } catch(err){
-        const msg = (err && err.message) ? err.message : String(err);
-        chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
-
-        trimChatToMaxInputs();
-        renderChat();
-
-        setConnState('err');
-        toast('요청 실패: ' + msg);
-      }
-    }
-
-    async function testConnection(){
-      setConnState('busy');
-      try{
-        await callOpenRouter('ping');
-        setConnState('ok');
-        toast('연결 테스트 성공');
-      } catch(err){
-        setConnState('err');
-        toast('연결 테스트 실패: ' + (err && err.message ? err.message : err));
-      }
-    }
-
-    function clearChatOnly(){
-      if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
-      chat = [];
-      hideCopyBar();
-      renderChat();
-      scrollToBottom('smooth');
-      toast('Clear 완료');
-    }
-
-    loadSettings();
-    loadCustomFont();
-    renderChat();
-    setSettingsVisible(false);
-    setConnState('warn');
-
-    const LS_LAST_CLIP = 'bk_tr_lastClip';
-    let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
-    const AUTO_TRANSLATE_MAX_LEN = 300;
-
-    function updateLastClipboard(text){
-      _lastClipboardText = text;
-      localStorage.setItem(LS_LAST_CLIP, text);
-    }
-
-    async function checkClipboard(){
-      try{
-        if(_isBusy) return;
-        if(!navigator.clipboard || !navigator.clipboard.readText) return;
-
-        const clipText = await navigator.clipboard.readText();
-        const trimmed = String(clipText || '').trim();
-        if(!trimmed) return;
-
-        if(trimmed.length >= AUTO_TRANSLATE_MAX_LEN) return;
-        if(_lastClipboardText === trimmed) return;
-
-        if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
-        if(isEnglishLongText(trimmed)) return;
-
-        updateLastClipboard(trimmed);
-        el.input.value = trimmed;
-        setTimeout(() => send(), 150);
-      } catch(err){
-      }
-    }
-
-    checkClipboard();
-    setInterval(checkClipboard, 2000);
-
-    if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
-    if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
-
-    if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
-    if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
-    if(el.saveBtn) el.saveBtn.addEventListener('click', saveSettings);
-
-    if(el.model) el.model.addEventListener('input', updateModelTag);
-
-    if(el.sendBtnL) el.sendBtnL.addEventListener('click', send);
-    if(el.sendBtnR) el.sendBtnR.addEventListener('click', send);
-
-    if(el.input){
-      el.input.addEventListener('keydown', (e) => {
-        if(e.key === 'Enter'){
-          e.preventDefault();
-          send();
-        }
-        if(e.key === 'Escape'){
-          el.input.value = '';
-        }
-      });
-    }
-
-    if(el.copyBar) el.copyBar.addEventListener('click', async () => {
-      if(!_pendingCopyText) return;
-      const ok = await copyToClipboard(_pendingCopyText, false);
-      if(ok) hideCopyBar();
-    });
-    if(el.copyBarBtn) el.copyBarBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if(!_pendingCopyText) return;
-      const ok = await copyToClipboard(_pendingCopyText, false);
-      if(ok) hideCopyBar();
-    });
-
-    if(el.fontFile) el.fontFile.addEventListener('change', async (e) => {
-      const file = e.target.files && e.target.files[0];
-      if(file) await saveCustomFontFile(file);
-      e.target.value = '';
-    });
-    if(el.clearFontBtn) el.clearFontBtn.addEventListener('click', clearCustomFont);
-
-    if(el.fontScale){
-      el.fontScale.addEventListener('input', (e) => {
-        const v = e.target && e.target.value ? e.target.value : '1';
-        applyFontScale(v);
-        try{ localStorage.setItem(LS.fontScale, String(v)); } catch {}
-      });
-    }
-    if(el.fontScaleResetBtn){
-      el.fontScaleResetBtn.addEventListener('click', () => {
-        applyFontScale(1);
-        try{ localStorage.setItem(LS.fontScale, '1'); } catch {}
-      });
-    }
-
-    applyColorsFromStorage();
-    bindColorPicker(el.colorBg, LS.colorBg, '--bg');
-    bindColorPicker(el.colorChatBg, LS.colorChatBg, '--chatBg');
-    bindColorPicker(el.colorInputBg, LS.colorInputBg, '--inputBg');
-    bindColorPicker(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg');
-    bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
-    bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
-
-    initColorChips();
-
-    document.querySelectorAll('[data-preset]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.getAttribute('data-preset');
-        applyPreset(key);
-      });
-    });
-
-    if(el.input) el.input.addEventListener('focus', () => scrollToBottom('smooth'));
-    if(window.visualViewport){
-      window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
-    }
-
-    if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
-      toast('권장: HTTPS에서 사용하세요(키 보안)');
-    }
-  </script>
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
