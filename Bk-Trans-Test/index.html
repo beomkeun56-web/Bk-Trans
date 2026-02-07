@@ -224,26 +224,6 @@
     .btn.secondary{background: rgba(255,255,255,.06)}
     .btn.danger{background: rgba(255,107,107,.14)}
 
-    .swatchBtn{
-      border:none;
-      border-radius: 14px;
-      padding: 10px 12px;
-      cursor:pointer;
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      box-shadow: 0 8px 18px rgba(0,0,0,.25);
-      font-size: calc(13px * var(--textScale));
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-    }
-    .swatchDot{
-      width:14px; height:14px;
-      border-radius:999px;
-      box-shadow: 0 0 0 2px rgba(5,5,5,.9);
-      flex: 0 0 14px;
-    }
-
     .colorItem{
       min-width:0;
     }
@@ -460,7 +440,7 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.3T</span></div>
+      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.4T</span></div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
@@ -679,11 +659,6 @@
     <div class="wrap">
 
       <section class="panel">
-        <div class="panelHead">
-          <div class="left">
-            <div class="h">Chat</div>
-          </div>
-        </div>
         <div id="chat" class="chat"></div>
         <div id="bottomAnchor" style="height:1px;"></div>
       </section>
@@ -700,7 +675,7 @@
         </svg>
       </button>
 
-      <input id="input" type="text" placeholder="" autocomplete="off" />
+      <input id="input" type="text" placeholder="번역할 문장 입력..." autocomplete="off" />
 
       <button id="sendBtnR" class="sendBtn" type="button" aria-label="전송(우)">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -719,7 +694,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.3T';
+    const APP_VERSION = 'v1.4T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -736,7 +711,8 @@
       colorInputBg: 'bk_tr_test_color_input_bg',
       colorUserBubbleBg: 'bk_tr_test_color_user_bubble_bg',
       colorAssistantBubbleBg: 'bk_tr_test_color_assistant_bubble_bg',
-      colorSendBtnBg: 'bk_tr_test_color_send_btn_bg'
+      colorSendBtnBg: 'bk_tr_test_color_send_btn_bg',
+      chatHistory: 'bk_tr_test_chatHistory'
     };
 
     const el = {
@@ -1115,6 +1091,16 @@
     let chat = [];
     const MAX_INPUTS_PER_PAGE = 6;
 
+    function saveChatHistory(){
+      try{ localStorage.setItem(LS.chatHistory, JSON.stringify(chat)); } catch{}
+    }
+    function loadChatHistory(){
+      try{
+        const saved = localStorage.getItem(LS.chatHistory);
+        if(saved){ chat = JSON.parse(saved); }
+      } catch{ chat = []; }
+    }
+
     function countUserInputs(arr){
       let c = 0;
       for(const m of arr){
@@ -1237,6 +1223,12 @@
       return s.includes('anthropic/') || s.includes('claude');
     }
 
+    let _currentAbort = null;
+
+    function abortCurrentRequest(){
+      if(_currentAbort){ _currentAbort.abort(); _currentAbort = null; }
+    }
+
     async function callOpenRouterStream(userText, onChunk){
       const apiKey = el.apiKey.value.trim();
       if(!apiKey) throw new Error('API Key가 비어 있습니다.');
@@ -1269,16 +1261,26 @@
 
       if(top_p < 1) payload.top_p = top_p;
 
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey
-        },
-        body: JSON.stringify(payload),
-        cache: 'no-store',
-        mode: 'cors'
-      });
+      const ac = new AbortController();
+      _currentAbort = ac;
+      const timeout = setTimeout(() => ac.abort(), 30000);
+
+      let res;
+      try{
+        res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey
+          },
+          body: JSON.stringify(payload),
+          cache: 'no-store',
+          mode: 'cors',
+          signal: ac.signal
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
 
       if(!res.ok){
         const text = await res.text();
@@ -1358,7 +1360,18 @@
       scrollToBottom('instant');
     }
 
+    const SEND_SVG = '<path d="M12 19V5"></path><path d="M5.5 11.5L12 5l6.5 6.5"></path>';
+    const STOP_SVG = '<rect x="6" y="6" width="12" height="12" rx="2" fill="#ffffff"></rect>';
+
+    function setSendBtnsMode(mode){
+      const svg = mode === 'stop' ? STOP_SVG : SEND_SVG;
+      if(el.sendBtnL) el.sendBtnL.querySelector('svg').innerHTML = svg;
+      if(el.sendBtnR) el.sendBtnR.querySelector('svg').innerHTML = svg;
+    }
+
     async function send(){
+      if(_isBusy){ abortCurrentRequest(); return; }
+
       const userText = el.input.value.trim();
       if(!userText) return;
 
@@ -1366,16 +1379,18 @@
 
       chat.push({ role:'user', text:userText, ts:Date.now() });
       renderChat();
-      scrollToBottom('smooth');
 
       el.input.value = '';
+      if(document.activeElement === el.input) el.input.blur();
       setConnState('busy');
+      setSendBtnsMode('stop');
 
       const streamRow = document.createElement('div');
       streamRow.className = 'msg assistant';
       const streamBubble = document.createElement('div');
       streamBubble.className = 'bubble';
-      streamBubble.textContent = '';
+      streamBubble.textContent = '번역 중...';
+      streamBubble.style.opacity = '0.5';
       streamRow.appendChild(streamBubble);
       el.chat.appendChild(streamRow);
 
@@ -1391,6 +1406,7 @@
 
       try{
         const translatedRaw = await callOpenRouterStream(userText, (partial) => {
+          streamBubble.style.opacity = '1';
           streamBubble.textContent = partial;
           scrollThrottled();
         });
@@ -1398,8 +1414,10 @@
 
         chat.push({ role:'assistant', text: translated, ts: Date.now() });
         trimChatToMaxInputs();
+        saveChatHistory();
 
         streamBubble.textContent = translated;
+        streamBubble.style.opacity = '1';
 
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
@@ -1430,14 +1448,23 @@
         setConnState('ok');
       } catch(err){
         const msg = (err && err.message) ? err.message : String(err);
+        const isAbort = (err && err.name === 'AbortError');
         if(streamRow.parentNode) streamRow.remove();
-        chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
 
-        trimChatToMaxInputs();
+        if(isAbort){
+          toast('번역 취소됨');
+          chat.pop();
+        } else {
+          chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
+          trimChatToMaxInputs();
+          toast('요청 실패: ' + msg);
+        }
+        saveChatHistory();
         renderChat();
-
-        setConnState('err');
-        toast('요청 실패: ' + msg);
+        setConnState(isAbort ? 'warn' : 'err');
+      } finally {
+        setSendBtnsMode('send');
+        _currentAbort = null;
       }
     }
 
@@ -1456,6 +1483,7 @@
     function clearChatOnly(){
       if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
+      saveChatHistory();
       hideCopyBar();
       renderChat();
       scrollToBottom('smooth');
@@ -1464,6 +1492,7 @@
 
     loadSettings();
     loadCustomFont();
+    loadChatHistory();
     renderChat();
     setSettingsVisible(false);
     setConnState('warn');
