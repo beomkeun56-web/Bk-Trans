@@ -535,7 +535,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title">BK Trans <span class="ver" id="appVer">v2.3T</span></div>
+        <div class="title">BK Trans <span class="ver" id="appVer">v2.4T</span></div>
 
         <div class="rightBtns">
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -704,7 +704,13 @@
             </div>
           </div>
           <div class="colorItem">
-            <div class="hint" style="margin-bottom:4px;">채팅배경</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div class="hint">채팅배경</div>
+              <label style="display:flex; align-items:center; gap:4px; font-size:calc(11px * var(--textScale)); color:var(--muted); cursor:pointer;">
+                <input id="chatBgTransparent" type="checkbox" style="width:14px; height:14px; accent-color:var(--blue); cursor:pointer;" />
+                <span>반투명</span>
+              </label>
+            </div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorChatBg" type="color" value="#0e1420" style="width:50px; height:36px; flex-shrink:0;" />
               <input id="colorChatBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorChatBg" />
@@ -723,7 +729,13 @@
             </div>
           </div>
           <div class="colorItem">
-            <div class="hint" style="margin-bottom:4px;">입력창</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div class="hint">입력창</div>
+              <label style="display:flex; align-items:center; gap:4px; font-size:calc(11px * var(--textScale)); color:var(--muted); cursor:pointer;">
+                <input id="inputBgTransparent" type="checkbox" style="width:14px; height:14px; accent-color:var(--blue); cursor:pointer;" />
+                <span>반투명</span>
+              </label>
+            </div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorInputBg" type="color" value="#2e3440" style="width:50px; height:36px; flex-shrink:0;" />
               <input id="colorInputBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorInputBg" />
@@ -801,7 +813,13 @@
             </div>
           </div>
           <div class="colorItem">
-            <div class="hint" style="margin-bottom:4px;">상단바</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div class="hint">상단바</div>
+              <label style="display:flex; align-items:center; gap:4px; font-size:calc(11px * var(--textScale)); color:var(--muted); cursor:pointer;">
+                <input id="headerBgTransparent" type="checkbox" style="width:14px; height:14px; accent-color:var(--blue); cursor:pointer;" />
+                <span>반투명</span>
+              </label>
+            </div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorHeaderBg" type="color" value="#141820" style="width:50px; height:36px; flex-shrink:0;" />
               <input id="colorHeaderBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorHeaderBg" />
@@ -883,7 +901,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v2.3T';
+    const APP_VERSION = 'v2.4T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -903,6 +921,9 @@
       colorSendBtnBg: 'bk_tr_test_color_send_btn_bg',
       colorHeaderBg: 'bk_tr_test_color_header_bg',
       colorCopyBtnBg: 'bk_tr_test_color_copy_btn_bg',
+      headerBgTransparent: 'bk_tr_test_header_bg_transparent',
+      inputBgTransparent: 'bk_tr_test_input_bg_transparent',
+      chatBgTransparent: 'bk_tr_test_chat_bg_transparent',
       chatHistory: 'bk_tr_test_chatHistory'
     };
 
@@ -1152,18 +1173,36 @@
       reset:     { ...COLOR_DEFAULTS }
     };
 
+    function hexToRgba(hex, alpha){
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function applyColorWithTransparency(color, cssVar, isTransparent){
+      const finalColor = isTransparent ? hexToRgba(color, 0.88) : color;
+      document.documentElement.style.setProperty(cssVar, finalColor);
+    }
+
     function applyColorsFromStorage(){
       const savedBg = localStorage.getItem(LS.colorBg);
       if(el.colorBg) el.colorBg.value = savedBg || COLOR_DEFAULTS.bg;
       if(savedBg) document.documentElement.style.setProperty('--bg', savedBg);
 
       const savedChat = localStorage.getItem(LS.colorChatBg);
+      const chatTransparent = localStorage.getItem(LS.chatBgTransparent) === '1';
       if(el.colorChatBg) el.colorChatBg.value = savedChat || COLOR_DEFAULTS.chatBg;
-      if(savedChat) document.documentElement.style.setProperty('--chatBg', savedChat);
+      const chatBgCheckbox = document.getElementById('chatBgTransparent');
+      if(chatBgCheckbox) chatBgCheckbox.checked = chatTransparent;
+      if(savedChat) applyColorWithTransparency(savedChat, '--chatBg', chatTransparent);
 
       const savedInput = localStorage.getItem(LS.colorInputBg);
+      const inputTransparent = localStorage.getItem(LS.inputBgTransparent) === '1';
       if(el.colorInputBg) el.colorInputBg.value = savedInput || COLOR_DEFAULTS.inputBg;
-      if(savedInput) document.documentElement.style.setProperty('--inputBg', savedInput);
+      const inputBgCheckbox = document.getElementById('inputBgTransparent');
+      if(inputBgCheckbox) inputBgCheckbox.checked = inputTransparent;
+      if(savedInput) applyColorWithTransparency(savedInput, '--inputBg', inputTransparent);
 
       const savedUserBubble = localStorage.getItem(LS.colorUserBubbleBg);
       if(el.colorUserBubbleBg) el.colorUserBubbleBg.value = savedUserBubble || COLOR_DEFAULTS.userBubbleBg;
@@ -1178,8 +1217,11 @@
       if(savedSendBtn) document.documentElement.style.setProperty('--sendBtnBg', savedSendBtn);
 
       const savedHeader = localStorage.getItem(LS.colorHeaderBg);
+      const headerTransparent = localStorage.getItem(LS.headerBgTransparent) === '1';
       if(el.colorHeaderBg) el.colorHeaderBg.value = savedHeader || COLOR_DEFAULTS.headerBg;
-      if(savedHeader) document.documentElement.style.setProperty('--headerBg', savedHeader);
+      const headerBgCheckbox = document.getElementById('headerBgTransparent');
+      if(headerBgCheckbox) headerBgCheckbox.checked = headerTransparent;
+      if(savedHeader) applyColorWithTransparency(savedHeader, '--headerBg', headerTransparent);
 
       const savedCopyBtn = localStorage.getItem(LS.colorCopyBtnBg);
       if(el.colorCopyBtnBg) el.colorCopyBtnBg.value = savedCopyBtn || COLOR_DEFAULTS.copyBtnBg;
@@ -1200,24 +1242,37 @@
       const p = COLOR_PRESETS[presetKey];
       if(!p) return;
 
-      const setOne = (inputEl, lsKey, cssVar, val) => {
+      const setOne = (inputEl, lsKey, cssVar, val, checkTransparency) => {
         if(inputEl) {
           inputEl.value = val;
           const textInput = document.querySelector('.colorTextInput[data-target="' + inputEl.id + '"]');
           if(textInput) textInput.value = val.toUpperCase();
         }
-        document.documentElement.style.setProperty(cssVar, val);
+
+        if(checkTransparency){
+          let checkboxId = '';
+          if(cssVar === '--chatBg') checkboxId = 'chatBgTransparent';
+          else if(cssVar === '--inputBg') checkboxId = 'inputBgTransparent';
+          else if(cssVar === '--headerBg') checkboxId = 'headerBgTransparent';
+
+          const checkbox = checkboxId ? document.getElementById(checkboxId) : null;
+          const isTransparent = checkbox ? checkbox.checked : false;
+          applyColorWithTransparency(val, cssVar, isTransparent);
+        } else {
+          document.documentElement.style.setProperty(cssVar, val);
+        }
+
         try{ localStorage.setItem(lsKey, val); } catch {}
       };
 
-      setOne(el.colorBg, LS.colorBg, '--bg', p.bg);
-      setOne(el.colorChatBg, LS.colorChatBg, '--chatBg', p.chatBg);
-      setOne(el.colorInputBg, LS.colorInputBg, '--inputBg', p.inputBg);
-      setOne(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg', p.userBubbleBg);
-      setOne(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg', p.assistantBubbleBg);
-      setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
-      if(p.headerBg) setOne(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg', p.headerBg);
-      if(p.copyBtnBg) setOne(el.colorCopyBtnBg, LS.colorCopyBtnBg, '--copyBtnBg', p.copyBtnBg);
+      setOne(el.colorBg, LS.colorBg, '--bg', p.bg, false);
+      setOne(el.colorChatBg, LS.colorChatBg, '--chatBg', p.chatBg, true);
+      setOne(el.colorInputBg, LS.colorInputBg, '--inputBg', p.inputBg, true);
+      setOne(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg', p.userBubbleBg, false);
+      setOne(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg', p.assistantBubbleBg, false);
+      setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg, false);
+      if(p.headerBg) setOne(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg', p.headerBg, true);
+      if(p.copyBtnBg) setOne(el.colorCopyBtnBg, LS.colorCopyBtnBg, '--copyBtnBg', p.copyBtnBg, false);
     }
 
     function initColorChips(){
@@ -1422,6 +1477,15 @@
 
     function saveColorSettings(){
       localStorage.setItem(LS.fontScale, String(el.fontScale ? el.fontScale.value : '1'));
+
+      const headerBgCheckbox = document.getElementById('headerBgTransparent');
+      const inputBgCheckbox = document.getElementById('inputBgTransparent');
+      const chatBgCheckbox = document.getElementById('chatBgTransparent');
+
+      if(headerBgCheckbox) localStorage.setItem(LS.headerBgTransparent, headerBgCheckbox.checked ? '1' : '0');
+      if(inputBgCheckbox) localStorage.setItem(LS.inputBgTransparent, inputBgCheckbox.checked ? '1' : '0');
+      if(chatBgCheckbox) localStorage.setItem(LS.chatBgTransparent, chatBgCheckbox.checked ? '1' : '0');
+
       toast('외관 설정 저장 완료');
       setColorSettingsVisible(false);
     }
@@ -1924,6 +1988,27 @@
     }
 
     syncColorTextInputs();
+
+    function setupTransparencyCheckbox(checkboxId, colorPickerId, cssVar, lsKey){
+      const checkbox = document.getElementById(checkboxId);
+      const colorPicker = document.getElementById(colorPickerId);
+      if(!checkbox || !colorPicker) return;
+
+      checkbox.addEventListener('change', () => {
+        const color = colorPicker.value;
+        applyColorWithTransparency(color, cssVar, checkbox.checked);
+        localStorage.setItem(lsKey, checkbox.checked ? '1' : '0');
+      });
+
+      colorPicker.addEventListener('input', () => {
+        const color = colorPicker.value;
+        applyColorWithTransparency(color, cssVar, checkbox.checked);
+      });
+    }
+
+    setupTransparencyCheckbox('headerBgTransparent', 'colorHeaderBg', '--headerBg', LS.headerBgTransparent);
+    setupTransparencyCheckbox('inputBgTransparent', 'colorInputBg', '--inputBg', LS.inputBgTransparent);
+    setupTransparencyCheckbox('chatBgTransparent', 'colorChatBg', '--chatBg', LS.chatBgTransparent);
 
     document.querySelectorAll('[data-preset]').forEach(btn => {
       btn.addEventListener('click', () => {
