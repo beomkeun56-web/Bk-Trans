@@ -76,7 +76,7 @@
       max-width: 860px;
       margin:0 auto;
       display:flex; align-items:center; gap:6px;
-      height:48px;
+      height:58px;
     }
     .title{
       font-weight:800;
@@ -102,11 +102,11 @@
       letter-spacing:.3px;
     }
     #modelTag{
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 8px;
       background: rgba(255,255,255,.12);
       color: #ffffff;
-      font-size: calc(11px * var(--textScale));
+      font-size: calc(14px * var(--textScale));
       font-weight:700;
       display:inline-block;
       vertical-align:middle;
@@ -165,13 +165,20 @@
 
     main{
       flex:1;
-      overflow:auto;
+      overflow:hidden;
       padding: 10px;
       padding-bottom: 92px;
+      display:flex;
+      flex-direction:column;
     }
     .wrap{
       max-width: 860px;
       margin:0 auto;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      width:100%;
     }
 
     .panel{
@@ -180,6 +187,10 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
     }
     .panelHead{
       display:flex;
@@ -284,6 +295,9 @@
       display:flex;
       flex-direction:column;
       gap: 16px;
+      flex:1;
+      overflow-y:auto;
+      min-height:0;
     }
     .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
     .msg.user{align-items:flex-end}
@@ -442,7 +456,8 @@
       .topbar{gap:4px}
       .title{font-size: calc(12px * var(--textScale)); gap:4px}
       .ver{font-size: calc(9px * var(--textScale)); padding:2px 6px}
-      #modelTag{font-size: calc(10px * var(--textScale))}
+      .topbar{height:52px}
+      #modelTag{font-size: calc(12px * var(--textScale))}
       .iconBtn{width:32px; height:32px; flex:0 0 32px}
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
@@ -721,8 +736,9 @@
     <div class="wrap">
 
       <section class="panel">
-        <div id="chat" class="chat"></div>
-        <div id="bottomAnchor" style="height:1px;"></div>
+        <div id="chat" class="chat">
+          <div id="bottomAnchor" style="height:1px;"></div>
+        </div>
       </section>
 
     </div>
@@ -860,10 +876,10 @@
 
     function scrollToBottom(behavior){
       const b = behavior || 'smooth';
+      const scroller = el.chat;
       try{
         el.bottomAnchor.scrollIntoView({behavior: (b === 'instant' ? 'auto' : b), block:'end'});
       } catch {}
-      const scroller = el.main;
       const doScroll = () => {
         if(b === 'instant'){
           scroller.scrollTop = scroller.scrollHeight;
@@ -1400,6 +1416,7 @@
     function renderChat(){
       el.chat.innerHTML = '';
       if(chat.length === 0){
+        el.chat.appendChild(el.bottomAnchor);
         scrollToBottom('instant');
         return;
       }
@@ -1432,6 +1449,7 @@
 
         el.chat.appendChild(row);
       }
+      el.chat.appendChild(el.bottomAnchor);
       scrollToBottom('instant');
     }
 
@@ -1467,14 +1485,14 @@
       streamBubble.textContent = '번역 중...';
       streamBubble.style.opacity = '0.5';
       streamRow.appendChild(streamBubble);
-      el.chat.appendChild(streamRow);
+      el.chat.insertBefore(streamRow, el.bottomAnchor);
 
       let _scrollRaf = 0;
       function scrollThrottled(){
         if(_scrollRaf) return;
         _scrollRaf = requestAnimationFrame(() => {
           _scrollRaf = 0;
-          el.main.scrollTop = el.main.scrollHeight;
+          el.chat.scrollTop = el.chat.scrollHeight;
         });
       }
       scrollThrottled();
