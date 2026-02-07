@@ -95,12 +95,19 @@
       letter-spacing:.3px;
     }
     #modelTag{
-      max-width:140px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.10);
+      color: #ffffff;
+      font-size: calc(11px * var(--textScale));
+      font-weight:700;
+      max-width: none;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
       display:inline-block;
       vertical-align:middle;
+      letter-spacing:.2px;
     }
 
     .iconBtn{
@@ -432,7 +439,7 @@
       .topbar{gap:4px}
       .title{font-size: calc(12px * var(--textScale)); gap:4px}
       .ver{font-size: calc(9px * var(--textScale)); padding:2px 6px}
-      #modelTag{max-width:100px}
+      #modelTag{max-width:130px}
       .iconBtn{width:32px; height:32px; flex:0 0 32px}
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
@@ -456,18 +463,20 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.5T</span></div>
-
-      <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-      </button>
+      <span class="ver" id="modelTag">Model</span>
 
       <div style="flex:1"></div>
 
+      <div class="title">BK Trans <span class="ver" id="appVer">v1.6T</span></div>
+
       <div class="rightBtns">
+        <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+
         <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none"></path>
@@ -503,7 +512,14 @@
         <div class="row">
           <div style="flex:1 1 240px;">
             <label for="model">모델</label>
-            <input id="model" type="text" value="google/gemini-3-flash-preview" />
+            <input id="model" type="text" value="google/gemini-3-flash-preview" list="modelList" />
+            <datalist id="modelList">
+              <option value="google/gemini-3-flash-preview">Gemini 3 Flash</option>
+              <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
+              <option value="anthropic/claude-sonnet-4.5">Claude Sonnet 4.5</option>
+              <option value="openai/gpt-5.2">GPT 5.2</option>
+              <option value="openai/gpt-5.2-chat">GPT 5.2 Chat</option>
+            </datalist>
           </div>
           <div style="flex:1 1 140px;">
             <label for="temperature">temperature</label>
@@ -715,7 +731,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.5T';
+    const APP_VERSION = 'v1.6T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1111,6 +1127,7 @@
 
     let chat = [];
     const MAX_INPUTS_PER_PAGE = 6;
+    const MAX_MESSAGES = 30;
 
     function saveChatHistory(){
       try{ localStorage.setItem(LS.chatHistory, JSON.stringify(chat)); } catch{}
@@ -1139,6 +1156,9 @@
         } else {
           chat.shift();
         }
+      }
+      while(chat.length > MAX_MESSAGES){
+        chat.shift();
       }
     }
 
