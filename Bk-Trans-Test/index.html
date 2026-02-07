@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#050505" />
+  <title>BK Trans TEST</title>
+
+  <link rel="icon" href="data:," />
+
+  <style>
+    :root{
+      --bg:#050505;
+      --panel1:#0b0f14;
+      --panel2:#0e1420;
+
+      --text:#e6edf3;
+      --muted:#9fb0c0;
+
+      --blue:#2d6bff;
+      --blue2:#1d4ed8;
+
+      --ok:#33d17a;
+      --warn:#f7c948;
+      --danger:#ff6b6b;
+
+      --radius:18px;
+      --shadow: 0 10px 28px rgba(0,0,0,.45);
+
+      --fontMain: system-ui;
+
+      --textScale: 1;
+
+      --chatBg: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
+      --inputBg: #2e3440;
+      --userBubbleBg: rgba(46, 52, 64, .92);
+      --assistantBubbleBg: transparent;
+      --sendBtnBg: rgba(45,107,255,.18);
+    }
+
+    @font-face{
+      font-family:"BKRepoFont";
+      src:url("./assets/fonts/NEXONLv2Gothic.woff2") format("woff2");
+      font-display:swap;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family: var(--fontMain), "BKRepoFont", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial;
+      -webkit-font-smoothing:antialiased;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+
+    header{
+      position:sticky; top:0; z-index:30;
+      padding: 10px 10px calc(10px + env(safe-area-inset-top));
+      background: rgba(5,5,5,.92);
+      backdrop-filter: blur(10px);
+    }
+    .topbar{
+      max-width: 860px;
+      margin:0 auto;
+      display:flex; align-items:center; gap:10px;
+    }
+    .title{
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size: calc(14px * var(--textScale));
+      margin-right:4px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .ver{
+      font-size: calc(12px * var(--textScale));
+      font-weight:800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      color: rgba(230,237,243,.92);
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .iconBtn{
+      width:36px; height:36px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:12px;
+      border:none;
+      background: #070707;
+      box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      cursor:pointer;
+      color: rgba(230,237,243,.88);
+      padding:0;
+      flex: 0 0 36px;
+    }
+    .iconBtn:active{transform:scale(.98)}
+    .iconBtn svg{width:18px; height:18px; fill: currentColor}
+
+    .rightBtns{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .statusBtn{
+      width:36px; height:36px;
+      border-radius:12px;
+      border:none;
+      background:#070707;
+      box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      cursor:pointer;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      flex: 0 0 36px;
+    }
+    .statusBtn:active{transform:scale(.98)}
+    .statusCircle{
+      width:14px; height:14px;
+      border-radius:999px;
+      background: var(--warn);
+      box-shadow: 0 0 0 2px rgba(5,5,5,.95);
+    }
+
+    main{
+      flex:1;
+      overflow:auto;
+      padding: 10px;
+      padding-bottom: 92px;
+    }
+    .wrap{
+      max-width: 860px;
+      margin:0 auto;
+    }
+
+    .panel{
+      background: var(--chatBg);
+      border:none;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panelHead{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      padding: 12px 14px;
+      gap: 10px;
+    }
+    .panelHead .left{display:flex; flex-direction:column; gap:3px}
+    .panelHead .h{font-weight:800; font-size: calc(13px * var(--textScale))}
+    .panelHead .s{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.35}
+
+    .settings{
+      margin-bottom:10px;
+      padding: 12px 14px 14px;
+      background: rgba(10,14,20,.92);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .settings .row{display:flex; gap:10px; flex-wrap:wrap}
+    label{font-size: calc(12px * var(--textScale)); color:var(--muted); display:block; margin:10px 0 6px}
+    input[type="password"], input[type="text"], textarea{
+      width:100%;
+      background: rgba(0,0,0,.35);
+      color: var(--text);
+      border:none;
+      outline:none;
+      border-radius: 14px;
+      padding: 12px 12px;
+      font-size: calc(14px * var(--textScale));
+    }
+    textarea{min-height:120px; resize:vertical; line-height:1.5}
+    .hint{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.45}
+
+    .btn{
+      border:none;
+      background: rgba(45,107,255,.14);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: calc(13px * var(--textScale));
+      cursor:pointer;
+      box-shadow: 0 8px 18px rgba(0,0,0,.35);
+    }
+    .btn:active{transform:scale(.98)}
+    .btn.secondary{background: rgba(255,255,255,.06)}
+    .btn.danger{background: rgba(255,107,107,.14)}
+
+    .swatchBtn{
+      border:none;
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor:pointer;
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      box-shadow: 0 8px 18px rgba(0,0,0,.25);
+      font-size: calc(13px * var(--textScale));
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+    }
+    .swatchDot{
+      width:14px; height:14px;
+      border-radius:999px;
+      box-shadow: 0 0 0 2px rgba(5,5,5,.9);
+      flex: 0 0 14px;
+    }
+
+    .chipRow{
+      margin-top:8px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .colorChip{
+      width:22px; height:22px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: transparent;
+      padding:0;
+      cursor:pointer;
+      box-shadow: 0 8px 18px rgba(0,0,0,.20);
+    }
+    .colorChip:active{transform:scale(.98)}
+
+    .chat{
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      gap: 16px;
+    }
+    .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
+    .msg.user{align-items:flex-end}
+
+    .bubble{
+      max-width: 92%;
+      border:none;
+      border-radius: 18px;
+      padding: 12px 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+      font-size: calc(15px * var(--textScale));
+    }
+
+    .msg.user .bubble{
+      background: var(--userBubbleBg);
+      color: rgba(255,255,255,.95);
+      box-shadow: 0 10px 22px rgba(0,0,0,.35);
+      border-bottom-right-radius: 10px;
+      max-width: 80%;
+    }
+
+    .msg.assistant .bubble{
+      background: var(--assistantBubbleBg);
+      color: rgba(230,237,243,.92);
+      box-shadow: none;
+      padding: 0;
+      border-radius: 0;
+      max-width: 92%;
+    }
+
+    .actionsRow{
+      display:flex; gap:8px; align-items:center;
+      opacity:.9;
+    }
+    .miniIconBtn{
+      width:32px; height:32px;
+      border:none;
+      background: rgba(255,255,255,.06);
+      border-radius: 12px;
+      box-shadow: 0 8px 18px rgba(0,0,0,.25);
+      cursor:pointer;
+      color: rgba(230,237,243,.9);
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:0;
+    }
+    .miniIconBtn svg{width:18px; height:18px; fill: currentColor}
+
+    .composer{
+      position:fixed; left:0; right:0; bottom:0; z-index:40;
+      padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(5,5,5,.92);
+      backdrop-filter: blur(10px);
+    }
+    .composerInner{
+      max-width: 860px;
+      margin:0 auto;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+
+    #input{
+      height:44px;
+      line-height:44px;
+      flex: 0 1 440px;
+      min-width: 160px;
+      max-width: 520px;
+      padding: 0 12px;
+      border-radius: 16px;
+      border:none;
+
+      background: var(--inputBg);
+      color: #ffffff;
+
+      outline:none;
+      font-size: calc(15px * var(--textScale));
+    }
+
+    .sendBtn{
+      height:44px;
+      min-width: 54px;
+      border-radius: 16px;
+      border:none;
+      background: var(--sendBtnBg);
+      color: #ffffff;
+      box-shadow: 0 10px 22px rgba(0,0,0,.35);
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0 14px;
+    }
+    .sendBtn:active{transform:scale(.98)}
+    .sendBtn svg{
+      width:20px; height:20px;
+      fill:none;
+      stroke:#ffffff;
+      stroke-width:2.8;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      top:70px;
+      transform:translateX(-50%);
+      background: rgba(10,16,32,.92);
+      border:none;
+      padding: 10px 12px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      font-size: calc(12px * var(--textScale));
+      color: var(--text);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .25s ease;
+      max-width: 90vw;
+      z-index: 999;
+    }
+    .toast.show{opacity:1}
+
+    .copyBar{
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom: calc(74px + env(safe-area-inset-bottom));
+      z-index: 60;
+      width: min(860px, 92vw);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border:none;
+      background: rgba(10,16,32,.92);
+      box-shadow: var(--shadow);
+    }
+    .copyBarText{flex:1; font-size: calc(12px * var(--textScale)); color: var(--muted)}
+    .copyBarBtn{
+      border:none;
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-size: calc(13px * var(--textScale));
+    }
+    .hidden{display:none !important}
+
+    @media (max-width: 520px){
+      .title{font-size: calc(13px * var(--textScale))}
+      .iconBtn{width:36px; height:36px}
+      .statusBtn{width:36px; height:36px}
+      main{padding:10px; padding-bottom: 96px;}
+      .bubble{font-size: calc(16px * var(--textScale))}
+      #input{
+        flex: 1 1 auto;
+        max-width: none;
+        height:46px;
+        line-height:46px;
+      }
+      .sendBtn{
+        height:46px;
+        min-width: 56px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="topbar">
+      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans TEST <span class="ver" id="appVer">v1.24</span></div>
+
+      <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+      </button>
+
+      <div style="flex:1"></div>
+
+      <div class="rightBtns">
+        <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 18.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"></path>
+            <path d="M2.3 9.9a14 14 0 0 1 19.4 0l-1.4 1.4a12 12 0 0 0-16.6 0L2.3 9.9z"></path>
+            <path d="M5.8 13.4a9 9 0 0 1 12.4 0l-1.4 1.4a7 7 0 0 0-9.6 0l-1.4-1.4z"></path>
+            <path d="M9.3 16.9a4 4 0 0 1 5.4 0l-1.4 1.4a2 2 0 0 0-2.6 0l-1.4-1.4z"></path>
+          </svg>
+        </button>
+
+        <button id="topClearBtn" class="iconBtn" type="button" aria-label="Clear(대화 삭제)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
+        </button>
+
+        <button id="connBtn" class="statusBtn" type="button" aria-label="연결 상태">
+          <span id="statusCircle" class="statusCircle"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="wrap">
+
+      <section id="settingsPanel" class="settings hidden">
+        <div class="hint" style="margin-bottom:8px;">
+          OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
+        </div>
+
+        <label for="apiKey">OpenRouter API Key</label>
+        <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
+
+        <div class="row">
+          <div style="flex:1 1 240px;">
+            <label for="model">모델</label>
+            <input id="model" type="text" value="google/gemini-3-flash-preview" />
+          </div>
+          <div style="flex:1 1 140px;">
+            <label for="temperature">temperature</label>
+            <input id="temperature" type="text" value="0.2" />
+          </div>
+          <div style="flex:1 1 140px;">
+            <label for="top_p">top_p</label>
+            <input id="top_p" type="text" value="1" />
+          </div>
+          <div style="flex:1 1 140px;">
+            <label for="maxTokens">max_tokens</label>
+            <input id="maxTokens" type="text" value="800" />
+          </div>
+        </div>
+
+        <label for="systemPrompt">프롬프트(시스템/규칙)</label>
+        <textarea id="systemPrompt" placeholder="여기에 본인 프롬프트를 붙여넣으세요."></textarea>
+
+        <div class="row" style="align-items:center; margin-top:10px;">
+          <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text);">
+            <input id="autoCopy" type="checkbox" style="width:18px; height:18px; accent-color: var(--blue);" />
+            번역 완료 시 자동 복사(Chrome 모바일)
+          </label>
+        </div>
+
+        <label for="fontScale">글자 크기</label>
+        <div class="row" style="align-items:center;">
+          <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
+          <div id="fontScaleVal" class="hint" style="min-width:64px; text-align:right;">100%</div>
+          <button id="fontScaleResetBtn" class="btn secondary" type="button">초기화</button>
+        </div>
+
+        <label>색상</label>
+        <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end;">
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">전체배경</div>
+            <input id="colorBg" type="color" value="#050505" list="darkPaletteBg" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorBg">
+              <button class="colorChip" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="colorChip" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="colorChip" type="button" data-color="#0f172a" style="background:#0f172a"></button>
+              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="colorChip" type="button" data-color="#111111" style="background:#111111"></button>
+              <button class="colorChip" type="button" data-color="#090c10" style="background:#090c10"></button>
+            </div>
+          </div>
+
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">채팅배경</div>
+            <input id="colorChatBg" type="color" value="#0e1420" list="darkPaletteChat" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorChatBg">
+              <button class="colorChip" type="button" data-color="#070c18" style="background:#070c18"></button>
+              <button class="colorChip" type="button" data-color="#0b1220" style="background:#0b1220"></button>
+              <button class="colorChip" type="button" data-color="#0e1420" style="background:#0e1420"></button>
+              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="colorChip" type="button" data-color="#131a2a" style="background:#131a2a"></button>
+              <button class="colorChip" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
+              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="colorChip" type="button" data-color="#0c1320" style="background:#0c1320"></button>
+            </div>
+          </div>
+
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">입력창</div>
+            <input id="colorInputBg" type="color" value="#2e3440" list="darkPaletteInput" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorInputBg">
+              <button class="colorChip" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+              <button class="colorChip" type="button" data-color="#232832" style="background:#232832"></button>
+              <button class="colorChip" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
+              <button class="colorChip" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="colorChip" type="button" data-color="#3a3f4b" style="background:#3a3f4b"></button>
+              <button class="colorChip" type="button" data-color="#161b22" style="background:#161b22"></button>
+              <button class="colorChip" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
+            </div>
+          </div>
+
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">입력말풍선</div>
+            <input id="colorUserBubbleBg" type="color" value="#2e3440" list="darkPaletteBubble" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorUserBubbleBg">
+              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="colorChip" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
+              <button class="colorChip" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="colorChip" type="button" data-color="#334155" style="background:#334155"></button>
+              <button class="colorChip" type="button" data-color="#3b4252" style="background:#3b4252"></button>
+              <button class="colorChip" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
+              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="colorChip" type="button" data-color="#30363d" style="background:#30363d"></button>
+            </div>
+          </div>
+
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">출력말풍선</div>
+            <input id="colorAssistantBubbleBg" type="color" value="#000000" list="darkPaletteAssistant" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorAssistantBubbleBg">
+              <button class="colorChip" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="colorChip" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="colorChip" type="button" data-color="#0e1420" style="background:#0e1420"></button>
+              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="colorChip" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
+              <button class="colorChip" type="button" data-color="#161b22" style="background:#161b22"></button>
+            </div>
+          </div>
+
+          <div style="flex:1 1 140px; min-width:140px;">
+            <div class="hint" style="margin-bottom:6px;">전송버튼</div>
+            <input id="colorSendBtnBg" type="color" value="#2d6bff" list="darkPaletteAccent" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
+            <div class="chipRow" data-target="colorSendBtnBg">
+              <button class="colorChip" type="button" data-color="#1d4ed8" style="background:#1d4ed8"></button>
+              <button class="colorChip" type="button" data-color="#2d6bff" style="background:#2d6bff"></button>
+              <button class="colorChip" type="button" data-color="#0ea5e9" style="background:#0ea5e9"></button>
+              <button class="colorChip" type="button" data-color="#22c55e" style="background:#22c55e"></button>
+              <button class="colorChip" type="button" data-color="#f59e0b" style="background:#f59e0b"></button>
+              <button class="colorChip" type="button" data-color="#ef4444" style="background:#ef4444"></button>
+              <button class="colorChip" type="button" data-color="#a855f7" style="background:#a855f7"></button>
+              <button class="colorChip" type="button" data-color="#14b8a6" style="background:#14b8a6"></button>
+            </div>
+          </div>
+        </div>
+
+        <datalist id="darkPaletteBg">
+          <option value="#000000"></option><option value="#050505"></option><option value="#0b0f14"></option><option value="#0f172a"></option>
+          <option value="#111827"></option><option value="#1f2937"></option><option value="#111111"></option><option value="#090c10"></option>
+        </datalist>
+        <datalist id="darkPaletteChat">
+          <option value="#070c18"></option><option value="#0b1220"></option><option value="#0e1420"></option><option value="#111827"></option>
+          <option value="#131a2a"></option><option value="#0a0f1a"></option><option value="#0b0f14"></option><option value="#0c1320"></option>
+        </datalist>
+        <datalist id="darkPaletteInput">
+          <option value="#1e2430"></option><option value="#232832"></option><option value="#2b2f3a"></option><option value="#2e3440"></option>
+          <option value="#1f2937"></option><option value="#3a3f4b"></option><option value="#161b22"></option><option value="#2a2a2a"></option>
+        </datalist>
+        <datalist id="darkPaletteBubble">
+          <option value="#1f2937"></option><option value="#2b2f3a"></option><option value="#2e3440"></option><option value="#334155"></option>
+          <option value="#3b4252"></option><option value="#2a2a2a"></option><option value="#111827"></option><option value="#30363d"></option>
+        </datalist>
+        <datalist id="darkPaletteAssistant">
+          <option value="#000000"></option><option value="#050505"></option><option value="#0b0f14"></option><option value="#0e1420"></option>
+          <option value="#111827"></option><option value="#1f2937"></option><option value="#0a0f1a"></option><option value="#161b22"></option>
+        </datalist>
+        <datalist id="darkPaletteAccent">
+          <option value="#1d4ed8"></option><option value="#2d6bff"></option><option value="#0ea5e9"></option><option value="#22c55e"></option>
+          <option value="#f59e0b"></option><option value="#ef4444"></option><option value="#a855f7"></option><option value="#14b8a6"></option>
+        </datalist>
+
+        <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap;">
+          <button class="swatchBtn" type="button" data-preset="oled">
+            <span class="swatchDot" style="background:#000000"></span> OLED Black
+          </button>
+          <button class="swatchBtn" type="button" data-preset="slate">
+            <span class="swatchDot" style="background:#0b0f14"></span> Slate
+          </button>
+          <button class="swatchBtn" type="button" data-preset="navy">
+            <span class="swatchDot" style="background:#070c18"></span> Navy
+          </button>
+          <button class="swatchBtn" type="button" data-preset="purple">
+            <span class="swatchDot" style="background:#1b1026"></span> Purple
+          </button>
+          <button class="swatchBtn" type="button" data-preset="emerald">
+            <span class="swatchDot" style="background:#071b14"></span> Emerald
+          </button>
+          <button class="swatchBtn" type="button" data-preset="warm">
+            <span class="swatchDot" style="background:#140f0b"></span> Warm
+          </button>
+          <button class="swatchBtn" type="button" data-preset="mono">
+            <span class="swatchDot" style="background:#111111"></span> Mono
+          </button>
+          <button class="swatchBtn" type="button" data-preset="reset">
+            <span class="swatchDot" style="background:#2d6bff"></spana> 기본
+          </button>
+        </div>
+
+        <label>폰트(폰에서 업로드)</label>
+        <div class="row" style="align-items:center;">
+          <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" />
+          <button id="clearFontBtn" class="btn secondary" type="button">폰트 초기화</button>
+          <button id="saveBtn" class="btn" type="button">저장</button>
+        </div>
+        <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
+      </section>
+
+      <section class="panel">
+        <div class="panelHead">
+          <div class="left">
+            <div class="h">Chat</div>
+          </div>
+        </div>
+        <div id="chat" class="chat"></div>
+        <div id="bottomAnchor" style="height:1px;"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <div class="composer">
+    <div class="composerInner">
+      <button id="sendBtnL" class="sendBtn" type="button" aria-label="전송(좌)">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 19V5"></path>
+          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
+        </svg>
+      </button>
+
+      <input id="input" type="text" placeholder="" autocomplete="off" />
+
+      <button id="sendBtnR" class="sendBtn" type="button" aria-label="전송(우)">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 19V5"></path>
+          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="copyBar" class="copyBar hidden" role="button" aria-label="복사 바">
+    <div class="copyBarText">번역 완료 · 탭하면 복사</div>
+    <button id="copyBarBtn" class="copyBarBtn" type="button">복사</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const APP_VERSION = 'v1.24-TEST';
+
+    const LS = {
+      apiKey: 'bk_tr_test_apiKey',
+      model: 'bk_tr_test_model',
+      temp: 'bk_tr_test_temp',
+      top_p: 'bk_tr_test_top_p',
+      maxTokens: 'bk_tr_test_maxTokens',
+      system: 'bk_tr_test_systemPrompt',
+      autoCopy: 'bk_tr_test_autoCopy',
+      fontScale: 'bk_tr_test_fontScale',
+
+      colorBg: 'bk_tr_test_color_bg',
+      colorChatBg: 'bk_tr_test_color_chat_bg',
+      colorInputBg: 'bk_tr_test_color_input_bg',
+      colorUserBubbleBg: 'bk_tr_test_color_user_bubble_bg',
+      colorAssistantBubbleBg: 'bk_tr_test_color_assistant_bubble_bg',
+      colorSendBtnBg: 'bk_tr_test_color_send_btn_bg'
+    };
+
+    const el = {
+      main: document.getElementById('main'),
+      appVer: document.getElementById('appVer'),
+      modelTag: document.getElementById('modelTag'),
+
+      settingsToggleBtn: document.getElementById('settingsToggleBtn'),
+      settingsPanel: document.getElementById('settingsPanel'),
+
+      topTestBtn: document.getElementById('topTestBtn'),
+      topClearBtn: document.getElementById('topClearBtn'),
+      connBtn: document.getElementById('connBtn'),
+      statusCircle: document.getElementById('statusCircle'),
+
+      apiKey: document.getElementById('apiKey'),
+      model: document.getElementById('model'),
+      temperature: document.getElementById('temperature'),
+      top_p: document.getElementById('top_p'),
+      maxTokens: document.getElementById('maxTokens'),
+      systemPrompt: document.getElementById('systemPrompt'),
+      autoCopy: document.getElementById('autoCopy'),
+      saveBtn: document.getElementById('saveBtn'),
+
+      chat: document.getElementById('chat'),
+      bottomAnchor: document.getElementById('bottomAnchor'),
+
+      input: document.getElementById('input'),
+      sendBtnL: document.getElementById('sendBtnL'),
+      sendBtnR: document.getElementById('sendBtnR'),
+
+      copyBar: document.getElementById('copyBar'),
+      copyBarBtn: document.getElementById('copyBarBtn'),
+      toast: document.getElementById('toast'),
+
+      fontFile: document.getElementById('fontFile'),
+      clearFontBtn: document.getElementById('clearFontBtn'),
+      fontStatus: document.getElementById('fontStatus'),
+
+      fontScale: document.getElementById('fontScale'),
+      fontScaleVal: document.getElementById('fontScaleVal'),
+      fontScaleResetBtn: document.getElementById('fontScaleResetBtn'),
+
+      colorBg: document.getElementById('colorBg'),
+      colorChatBg: document.getElementById('colorChatBg'),
+      colorInputBg: document.getElementById('colorInputBg'),
+      colorUserBubbleBg: document.getElementById('colorUserBubbleBg'),
+      colorAssistantBubbleBg: document.getElementById('colorAssistantBubbleBg'),
+      colorSendBtnBg: document.getElementById('colorSendBtnBg'),
+    };
+
+    if(el.appVer) el.appVer.textContent = APP_VERSION;
+
+    function prettifyModelName(modelId){
+      const raw = String(modelId || '').trim();
+      if(!raw) return 'Model';
+      const short = raw.split('/').pop() || raw;
+      const cleaned = short.replace(/[_]+/g,'-').replace(/-+/g,'-');
+      return cleaned.split('-').filter(Boolean).map(t => {
+        if(/^\d+(\.\d+)?$/.test(t)) return t;
+        return t.charAt(0).toUpperCase() + t.slice(1);
+      }).join(' ');
+    }
+
+    function getCurrentModelId(){
+      return (localStorage.getItem(LS.model) || (el.model ? el.model.value : '') || '').trim();
+    }
+
+    function updateModelTag(){
+      const pretty = prettifyModelName(getCurrentModelId());
+      if(el.modelTag) el.modelTag.textContent = pretty;
+      document.title = pretty + ' BK Trans TEST ' + APP_VERSION;
+    }
+
+    function toast(msg){
+      el.toast.textContent = String(msg ?? '');
+      el.toast.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.toast.classList.remove('show'), 2200);
+    }
+
+    function scrollToBottom(behavior){
+      const b = behavior || 'smooth';
+      try{
+        el.bottomAnchor.scrollIntoView({behavior: (b === 'instant' ? 'auto' : b), block:'end'});
+      } catch {}
+      const scroller = el.main;
+      const doScroll = () => {
+        if(b === 'instant'){
+          scroller.scrollTop = scroller.scrollHeight;
+        } else {
+          try{ scroller.scrollTo({ top: scroller.scrollHeight, behavior: b }); }
+          catch { scroller.scrollTop = scroller.scrollHeight; }
+        }
+      };
+      if(b === 'instant'){
+        doScroll();
+      } else {
+        requestAnimationFrame(() => { doScroll(); requestAnimationFrame(doScroll); });
+      }
+    }
+
+    async function copyToClipboard(text, silent){
+      const t = String(text ?? '');
+      try{
+        if(navigator.clipboard && window.isSecureContext){
+          await navigator.clipboard.writeText(t);
+          if(!silent) toast('복사 완료');
+          return true;
+        }
+      } catch {}
+      try{
+        const ta = document.createElement('textarea');
+        ta.value = t;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if(ok){
+          if(!silent) toast('복사 완료');
+          return true;
+        }
+      } catch {}
+      if(!silent) toast('복사 실패(보안 정책)');
+      return false;
+    }
+
+    let _pendingCopyText = '';
+    function showCopyBar(text){
+      _pendingCopyText = String(text ?? '');
+      el.copyBar.classList.remove('hidden');
+    }
+    function hideCopyBar(){
+      _pendingCopyText = '';
+      el.copyBar.classList.add('hidden');
+    }
+
+    function hasChinese(s){
+      return /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/.test(String(s || ''));
+    }
+    function hasKorean(s){
+      return /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(String(s || ''));
+    }
+    function isEnglishLongText(s){
+      const str = String(s || '');
+      if(hasKorean(str) || hasChinese(str)) return false;
+      const englishChars = str.match(/[a-zA-Z]/g);
+      return englishChars && englishChars.length >= 40;
+    }
+
+    const FONT_SCALE_MIN = 0.85;
+    const FONT_SCALE_MAX = 1.35;
+
+    function clamp(n, min, max){
+      return Math.min(max, Math.max(min, n));
+    }
+
+    function applyFontScale(scale){
+      let s = Number(scale);
+      if(!Number.isFinite(s)) s = 1;
+      s = clamp(s, FONT_SCALE_MIN, FONT_SCALE_MAX);
+      document.documentElement.style.setProperty('--textScale', String(s));
+      if(el.fontScale) el.fontScale.value = String(s);
+      if(el.fontScaleVal) el.fontScaleVal.textContent = Math.round(s * 100) + '%';
+    }
+
+    function initFontScale(){
+      const saved = localStorage.getItem(LS.fontScale);
+      const v = saved ? Number(saved) : 1;
+      applyFontScale(v);
+    }
+
+    const COLOR_DEFAULTS = {
+      bg: '#050505',
+      chatBg: '#0e1420',
+      inputBg: '#2e3440',
+      userBubbleBg: '#2e3440',
+      assistantBubbleBg: '#000000',
+      sendBtnBg: '#2d6bff'
+    };
+
+    const COLOR_PRESETS = {
+      oled:      { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
+      slate:     { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
+      navy:      { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff' },
+      purple:    { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6' },
+      emerald:   { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e' },
+      warm:      { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b' },
+      mono:      { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff' },
+      reset:     { ...COLOR_DEFAULTS }
+    };
+
+    function applyColorsFromStorage(){
+      const savedBg = localStorage.getItem(LS.colorBg);
+      if(el.colorBg) el.colorBg.value = savedBg || COLOR_DEFAULTS.bg;
+      if(savedBg) document.documentElement.style.setProperty('--bg', savedBg);
+
+      const savedChat = localStorage.getItem(LS.colorChatBg);
+      if(el.colorChatBg) el.colorChatBg.value = savedChat || COLOR_DEFAULTS.chatBg;
+      if(savedChat) document.documentElement.style.setProperty('--chatBg', savedChat);
+
+      const savedInput = localStorage.getItem(LS.colorInputBg);
+      if(el.colorInputBg) el.colorInputBg.value = savedInput || COLOR_DEFAULTS.inputBg;
+      if(savedInput) document.documentElement.style.setProperty('--inputBg', savedInput);
+
+      const savedUserBubble = localStorage.getItem(LS.colorUserBubbleBg);
+      if(el.colorUserBubbleBg) el.colorUserBubbleBg.value = savedUserBubble || COLOR_DEFAULTS.userBubbleBg;
+      if(savedUserBubble) document.documentElement.style.setProperty('--userBubbleBg', savedUserBubble);
+
+      const savedAssistantBubble = localStorage.getItem(LS.colorAssistantBubbleBg);
+      if(el.colorAssistantBubbleBg) el.colorAssistantBubbleBg.value = savedAssistantBubble || COLOR_DEFAULTS.assistantBubbleBg;
+      if(savedAssistantBubble) document.documentElement.style.setProperty('--assistantBubbleBg', savedAssistantBubble);
+
+      const savedSendBtn = localStorage.getItem(LS.colorSendBtnBg);
+      if(el.colorSendBtnBg) el.colorSendBtnBg.value = savedSendBtn || COLOR_DEFAULTS.sendBtnBg;
+      if(savedSendBtn) document.documentElement.style.setProperty('--sendBtnBg', savedSendBtn);
+    }
+
+    function bindColorPicker(inputEl, lsKey, cssVar){
+      if(!inputEl) return;
+      inputEl.addEventListener('input', (e) => {
+        const v = String(e.target.value || '').trim();
+        if(!v) return;
+        document.documentElement.style.setProperty(cssVar, v);
+        try{ localStorage.setItem(lsKey, v); } catch {}
+      });
+    }
+
+    function applyPreset(presetKey){
+      const p = COLOR_PRESETS[presetKey];
+      if(!p) return;
+
+      const setOne = (inputEl, lsKey, cssVar, val) => {
+        if(inputEl) inputEl.value = val;
+        document.documentElement.style.setProperty(cssVar, val);
+        try{ localStorage.setItem(lsKey, val); } catch {}
+      };
+
+      setOne(el.colorBg, LS.colorBg, '--bg', p.bg);
+      setOne(el.colorChatBg, LS.colorChatBg, '--chatBg', p.chatBg);
+      setOne(el.colorInputBg, LS.colorInputBg, '--inputBg', p.inputBg);
+      setOne(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg', p.userBubbleBg);
+      setOne(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg', p.assistantBubbleBg);
+      setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
+    }
+
+    function initColorChips(){
+      document.querySelectorAll('.chipRow').forEach(row => {
+        const targetId = row.getAttribute('data-target');
+        if(!targetId) return;
+        row.querySelectorAll('.colorChip').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const c = btn.getAttribute('data-color');
+            const input = document.getElementById(targetId);
+            if(!input || !c) return;
+            input.value = c;
+            input.dispatchEvent(new Event('input', { bubbles:true }));
+          });
+        });
+      });
+    }
+
+    const DB_NAME = 'bk_tr_test_db_test';
+    const DB_STORE = 'kv';
+    let _fontBlobUrl = null;
+
+    function openDB(){
+      return new Promise((resolve, reject) => {
+        if(!('indexedDB' in window)) return reject(new Error('IndexedDB 미지원'));
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function idbGet(key){
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readonly');
+        const os = tx.objectStore(DB_STORE);
+        const r = os.get(key);
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      });
+    }
+
+    async function idbSet(key, val){
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).put(val, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function idbDel(key){
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, 'readwrite');
+        tx.objectStore(DB_STORE).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function applyFontRecord(rec){
+      if(_fontBlobUrl){
+        try{ URL.revokeObjectURL(_fontBlobUrl); } catch {}
+        _fontBlobUrl = null;
+      }
+      const styleId = 'customFontStyle';
+      let st = document.getElementById(styleId);
+      if(!st){
+        st = document.createElement('style');
+        st.id = styleId;
+        document.head.appendChild(st);
+      }
+
+      if(!rec){
+        st.textContent = '';
+        document.documentElement.style.setProperty('--fontMain', 'system-ui');
+        el.fontStatus.textContent = '기본(레포 woff2 우선)';
+        return;
+      }
+
+      const blob = new Blob([rec.data], {type: rec.type || 'font/ttf'});
+      _fontBlobUrl = URL.createObjectURL(blob);
+
+      const format = (rec.type && rec.type.includes('woff2')) ? 'woff2' : 'truetype';
+      st.textContent =
+        '@font-face{' +
+          'font-family:"BKCustom";' +
+          'src:url("' + _fontBlobUrl + '") format("' + format + '");' +
+          'font-display:swap;' +
+        '}';
+
+      document.documentElement.style.setProperty('--fontMain', '"BKCustom"');
+      el.fontStatus.textContent = rec.name || 'BKCustom';
+    }
+
+    async function loadCustomFont(){
+      try{
+        const rec = await idbGet('font');
+        applyFontRecord(rec || null);
+      } catch {
+        applyFontRecord(null);
+      }
+    }
+
+    async function saveCustomFontFile(file){
+      if(!file) return;
+      const buf = await file.arrayBuffer();
+      const rec = {name: file.name, type: file.type, data: buf};
+      await idbSet('font', rec);
+      applyFontRecord(rec);
+      toast('폰트 적용 완료');
+    }
+
+    async function clearCustomFont(){
+      try{ await idbDel('font'); } catch {}
+      applyFontRecord(null);
+      toast('폰트 초기화 완료');
+    }
+
+    let chat = [];
+    const MAX_INPUTS_PER_PAGE = 4;
+
+    function countUserInputs(arr){
+      let c = 0;
+      for(const m of arr){
+        if(m && m.role === 'user') c++;
+      }
+      return c;
+    }
+
+    function trimChatToMaxInputs(){
+      while(countUserInputs(chat) > MAX_INPUTS_PER_PAGE){
+        if(chat.length === 0) break;
+        if(chat[0] && chat[0].role === 'user'){
+          chat.shift();
+          if(chat[0] && chat[0].role === 'assistant') chat.shift();
+        } else {
+          chat.shift();
+        }
+      }
+    }
+
+    function defaultSystemPrompt(){
+      return [
+        "You are a translation engine.",
+        "Translate the user's input according to the rules below.",
+        "- Output ONLY the translated text. No explanations.",
+        "- If input starts with '#', remove it and translate Korean -> Simplified Chinese.",
+        "- Otherwise translate Simplified Chinese -> Korean.",
+        "- Keep line breaks as-is."
+      ].join("\n");
+    }
+
+    function loadSettings(){
+      el.apiKey.value = localStorage.getItem(LS.apiKey) || '';
+      const savedModel = localStorage.getItem(LS.model);
+      if(savedModel) el.model.value = savedModel;
+
+      el.temperature.value = localStorage.getItem(LS.temp) || el.temperature.value;
+      el.top_p.value = localStorage.getItem(LS.top_p) || el.top_p.value;
+      el.maxTokens.value = localStorage.getItem(LS.maxTokens) || el.maxTokens.value;
+      el.systemPrompt.value = localStorage.getItem(LS.system) || defaultSystemPrompt();
+      el.autoCopy.checked = (localStorage.getItem(LS.autoCopy) || '0') === '1';
+
+      initFontScale();
+      applyColorsFromStorage();
+      updateModelTag();
+    }
+
+    function saveSettings(){
+      localStorage.setItem(LS.apiKey, el.apiKey.value.trim());
+      localStorage.setItem(LS.model, el.model.value.trim());
+      localStorage.setItem(LS.temp, el.temperature.value.trim());
+      localStorage.setItem(LS.top_p, el.top_p.value.trim());
+      localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
+      localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
+      localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
+      localStorage.setItem(LS.fontScale, String(el.fontScale ? el.fontScale.value : '1'));
+      updateModelTag();
+      toast('저장 완료');
+      setSettingsVisible(false);
+    }
+
+    function setSettingsVisible(v){
+      el.settingsPanel.classList.toggle('hidden', !v);
+      if(v){
+        requestAnimationFrame(() => el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'}));
+      }
+    }
+
+    function toggleSettings(){
+      const isHidden = el.settingsPanel.classList.contains('hidden');
+      setSettingsVisible(isHidden);
+    }
+
+    let _isBusy = false;
+    function setConnState(state){
+      _isBusy = (state === 'busy');
+      if(state === 'ok') el.statusCircle.style.background = 'var(--ok)';
+      else if(state === 'busy') el.statusCircle.style.background = 'var(--warn)';
+      else if(state === 'err') el.statusCircle.style.background = 'var(--danger)';
+      else el.statusCircle.style.background = 'var(--warn)';
+    }
+
+    function normalizeNewlines(s){
+      return String(s).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    }
+
+    function countMeaningfulLines(s){
+      const norm = normalizeNewlines(s);
+      const trimmed = norm.replace(/\n+$/g, '');
+      if(trimmed.length === 0) return 1;
+      return trimmed.split('\n').length;
+    }
+
+    function normalizeOutput(src, out){
+      const srcLineCount = countMeaningfulLines(src);
+      const norm = normalizeNewlines(out).trimEnd();
+      if(norm.length === 0) return '';
+      const lines = norm.split('\n');
+      const nonEmpty = lines.filter(l => l.trim().length > 0);
+      const uniq = [...new Set(nonEmpty.map(l => l.trim()))];
+      if(srcLineCount === 1 && uniq.length === 1 && nonEmpty.length > 1){
+        return uniq[0];
+      }
+      return norm;
+    }
+
+    function validateNumber(x, min, max, name){
+      const v = Number(x);
+      if(!Number.isFinite(v)) throw new Error(name + ' 값이 숫자가 아닙니다.');
+      if(v < min || v > max) throw new Error(name + ' 범위 오류(' + min + '~' + max + ')');
+      return v;
+    }
+
+    async function callOpenRouter(userText){
+      const apiKey = el.apiKey.value.trim();
+      if(!apiKey) throw new Error('API Key가 비어 있습니다.');
+
+      const model = el.model.value.trim();
+      if(!model) throw new Error('모델이 비어 있습니다.');
+
+      const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
+      const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
+      const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
+      const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
+
+      const payload = {
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userText }
+        ],
+        temperature,
+        max_tokens
+      };
+
+      if(top_p < 1) payload.top_p = top_p;
+
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        mode: 'cors'
+      });
+
+      if(!res.ok){
+        const text = await res.text();
+        let msg = text;
+        try { msg = JSON.parse(text).error.message; } catch{}
+        throw new Error('HTTP ' + res.status + ': ' + msg);
+      }
+
+      const json = await res.json();
+      return json.choices[0].message.content;
+    }
+
+    function renderChat(){
+      el.chat.innerHTML = '';
+      if(chat.length === 0){
+        const empty = document.createElement('div');
+        empty.className = 'hint';
+        empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
+        el.chat.appendChild(empty);
+        scrollToBottom('instant');
+        return;
+      }
+
+      for(const m of chat){
+        const row = document.createElement('div');
+        row.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = m.text;
+        row.appendChild(bubble);
+
+        const actions = document.createElement('div');
+        actions.className = 'actionsRow';
+
+        if(m.role === 'assistant'){
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'miniIconBtn';
+          copyBtn.type = 'button';
+          copyBtn.setAttribute('aria-label', '복사');
+          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
+          copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
+          actions.appendChild(copyBtn);
+        }
+
+        if(actions.children.length > 0){
+          row.appendChild(actions);
+        }
+
+        el.chat.appendChild(row);
+      }
+      scrollToBottom('instant');
+    }
+
+    async function send(){
+      const userText = el.input.value.trim();
+      if(!userText) return;
+
+      hideCopyBar();
+
+      chat.push({ role:'user', text:userText, ts:Date.now() });
+      renderChat();
+      scrollToBottom('smooth');
+
+      el.input.value = '';
+      setConnState('busy');
+
+      try{
+        const translatedRaw = await callOpenRouter(userText);
+        const translated = normalizeOutput(userText, translatedRaw);
+
+        chat.push({ role:'assistant', text: translated, ts: Date.now() });
+
+        trimChatToMaxInputs();
+        renderChat();
+
+        scrollToBottom('smooth');
+
+        if(el.autoCopy.checked && hasChinese(translated)){
+          const ok = await copyToClipboard(translated, true);
+          if(ok){
+            toast('중국어 자동 복사 완료');
+            updateLastClipboard(translated);
+          } else {
+            showCopyBar(translated);
+            toast('자동 복사 제한 → 아래 바 탭');
+          }
+        } else {
+          hideCopyBar();
+        }
+
+        setConnState('ok');
+      } catch(err){
+        const msg = (err && err.message) ? err.message : String(err);
+        chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
+
+        trimChatToMaxInputs();
+        renderChat();
+
+        setConnState('err');
+        toast('요청 실패: ' + msg);
+      }
+    }
+
+    async function testConnection(){
+      setConnState('busy');
+      try{
+        await callOpenRouter('ping');
+        setConnState('ok');
+        toast('연결 테스트 성공');
+      } catch(err){
+        setConnState('err');
+        toast('연결 테스트 실패: ' + (err && err.message ? err.message : err));
+      }
+    }
+
+    function clearChatOnly(){
+      if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
+      chat = [];
+      hideCopyBar();
+      renderChat();
+      scrollToBottom('smooth');
+      toast('Clear 완료');
+    }
+
+    loadSettings();
+    loadCustomFont();
+    renderChat();
+    setSettingsVisible(false);
+    setConnState('warn');
+
+    const LS_LAST_CLIP = 'bk_tr_test_lastClip';
+    let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
+    const AUTO_TRANSLATE_MAX_LEN = 300;
+
+    function updateLastClipboard(text){
+      _lastClipboardText = text;
+      localStorage.setItem(LS_LAST_CLIP, text);
+    }
+
+    async function checkClipboard(){
+      try{
+        if(_isBusy) return;
+        if(!navigator.clipboard || !navigator.clipboard.readText) return;
+
+        const clipText = await navigator.clipboard.readText();
+        const trimmed = String(clipText || '').trim();
+        if(!trimmed) return;
+
+        if(trimmed.length >= AUTO_TRANSLATE_MAX_LEN) return;
+        if(_lastClipboardText === trimmed) return;
+
+        if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
+        if(isEnglishLongText(trimmed)) return;
+
+        updateLastClipboard(trimmed);
+        el.input.value = trimmed;
+        setTimeout(() => send(), 150);
+      } catch(err){
+      }
+    }
+
+    checkClipboard();
+    setInterval(checkClipboard, 2000);
+
+    if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
+    if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
+
+    if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
+    if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
+    if(el.saveBtn) el.saveBtn.addEventListener('click', saveSettings);
+
+    if(el.model) el.model.addEventListener('input', updateModelTag);
+
+    if(el.sendBtnL) el.sendBtnL.addEventListener('click', send);
+    if(el.sendBtnR) el.sendBtnR.addEventListener('click', send);
+
+    if(el.input){
+      el.input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          send();
+        }
+        if(e.key === 'Escape'){
+          el.input.value = '';
+        }
+      });
+    }
+
+    if(el.copyBar) el.copyBar.addEventListener('click', async () => {
+      if(!_pendingCopyText) return;
+      const ok = await copyToClipboard(_pendingCopyText, false);
+      if(ok) hideCopyBar();
+    });
+    if(el.copyBarBtn) el.copyBarBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if(!_pendingCopyText) return;
+      const ok = await copyToClipboard(_pendingCopyText, false);
+      if(ok) hideCopyBar();
+    });
+
+    if(el.fontFile) el.fontFile.addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if(file) await saveCustomFontFile(file);
+      e.target.value = '';
+    });
+    if(el.clearFontBtn) el.clearFontBtn.addEventListener('click', clearCustomFont);
+
+    if(el.fontScale){
+      el.fontScale.addEventListener('input', (e) => {
+        const v = e.target && e.target.value ? e.target.value : '1';
+        applyFontScale(v);
+        try{ localStorage.setItem(LS.fontScale, String(v)); } catch {}
+      });
+    }
+    if(el.fontScaleResetBtn){
+      el.fontScaleResetBtn.addEventListener('click', () => {
+        applyFontScale(1);
+        try{ localStorage.setItem(LS.fontScale, '1'); } catch {}
+      });
+    }
+
+    applyColorsFromStorage();
+    bindColorPicker(el.colorBg, LS.colorBg, '--bg');
+    bindColorPicker(el.colorChatBg, LS.colorChatBg, '--chatBg');
+    bindColorPicker(el.colorInputBg, LS.colorInputBg, '--inputBg');
+    bindColorPicker(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg');
+    bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
+    bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
+
+    initColorChips();
+
+    document.querySelectorAll('[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-preset');
+        applyPreset(key);
+      });
+    });
+
+    if(el.input) el.input.addEventListener('focus', () => scrollToBottom('smooth'));
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
+    }
+
+    if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
+      toast('권장: HTTPS에서 사용하세요(키 보안)');
+    }
+  </script>
+</body>
+</html>
