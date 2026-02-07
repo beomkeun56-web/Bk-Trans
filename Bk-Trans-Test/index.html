@@ -413,7 +413,7 @@
       width:100%;
       min-height:46px;
       max-height:160px;
-      padding: 13px 60px;
+      padding: 13px 16px;
       border-radius: 18px;
       border:none;
       background: transparent;
@@ -426,32 +426,6 @@
       overflow-y:auto;
     }
 
-    .sendBtn{
-      width:38px; height:38px;
-      border-radius: 12px;
-      border:none;
-      background: var(--sendBtnBg);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(0,0,0,.3);
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:0;
-      position:absolute;
-      bottom:4px;
-    }
-    .sendBtn.left{left:6px}
-    .sendBtn.right{right:6px}
-    .sendBtn:active{transform:scale(.93)}
-    .sendBtn svg{
-      width:18px; height:18px;
-      fill:none;
-      stroke:#ffffff;
-      stroke-width:2.8;
-      stroke-linecap:round;
-      stroke-linejoin:round;
-    }
 
     .toast{
       position:fixed;
@@ -518,11 +492,7 @@
       .bubble{font-size: calc(16px * var(--textScale))}
       .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
       .composerInner{border-radius:16px}
-      #input{padding: 12px 52px; min-height:44px}
-      .sendBtn{width:34px; height:34px; border-radius:10px}
-      .sendBtn svg{width:16px; height:16px}
-      .sendBtn.left{left:5px}
-      .sendBtn.right{right:5px}
+      #input{padding: 12px 16px; min-height:44px}
     }
   </style>
 </head>
@@ -797,21 +767,7 @@
 
   <div class="composer">
     <div class="composerInner">
-      <button id="sendBtnL" class="sendBtn left" type="button" aria-label="전송(좌)">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 19V5"></path>
-          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
-        </svg>
-      </button>
-
-      <textarea id="input" rows="1" placeholder="번역할 문장 입력..." autocomplete="off"></textarea>
-
-      <button id="sendBtnR" class="sendBtn right" type="button" aria-label="전송(우)">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 19V5"></path>
-          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
-        </svg>
-      </button>
+      <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
     </div>
   </div>
 
@@ -872,8 +828,6 @@
       bottomAnchor: document.getElementById('bottomAnchor'),
 
       input: document.getElementById('input'),
-      sendBtnL: document.getElementById('sendBtnL'),
-      sendBtnR: document.getElementById('sendBtnR'),
 
       copyBar: document.getElementById('copyBar'),
       copyBarBtn: document.getElementById('copyBarBtn'),
@@ -1552,14 +1506,6 @@
       scrollToBottom('instant');
     }
 
-    const SEND_SVG = '<path d="M12 19V5"></path><path d="M5.5 11.5L12 5l6.5 6.5"></path>';
-    const STOP_SVG = '<rect x="6" y="6" width="12" height="12" rx="2" fill="#ffffff"></rect>';
-
-    function setSendBtnsMode(mode){
-      const svg = mode === 'stop' ? STOP_SVG : SEND_SVG;
-      if(el.sendBtnL) el.sendBtnL.querySelector('svg').innerHTML = svg;
-      if(el.sendBtnR) el.sendBtnR.querySelector('svg').innerHTML = svg;
-    }
 
     async function send(){
       if(_isBusy){ abortCurrentRequest(); return; }
@@ -1576,7 +1522,6 @@
       autoResizeInput();
       if(document.activeElement === el.input) el.input.blur();
       setConnState('busy');
-      setSendBtnsMode('stop');
 
       const streamRow = document.createElement('div');
       streamRow.className = 'msg assistant';
@@ -1656,7 +1601,6 @@
         renderChat();
         setConnState(isAbort ? 'warn' : 'err');
       } finally {
-        setSendBtnsMode('send');
         _currentAbort = null;
       }
     }
@@ -1742,8 +1686,6 @@
 
     if(el.model) el.model.addEventListener('input', updateModelTag);
 
-    if(el.sendBtnL) el.sendBtnL.addEventListener('click', send);
-    if(el.sendBtnR) el.sendBtnR.addEventListener('click', send);
 
     function autoResizeInput(){
       if(!el.input) return;
@@ -1816,9 +1758,27 @@
       });
     });
 
-    if(el.input) el.input.addEventListener('focus', () => scrollToBottom('smooth'));
+    const composerEl = document.querySelector('.composer');
+    function adjustForKeyboard(){
+      if(!window.visualViewport) return;
+      const vv = window.visualViewport;
+      const bottomOffset = window.innerHeight - vv.height - vv.offsetTop;
+      if(composerEl){
+        composerEl.style.bottom = Math.max(0, bottomOffset) + 'px';
+      }
+      if(el.main){
+        el.main.style.paddingBottom = (Math.max(0, bottomOffset) + 82) + 'px';
+      }
+      scrollToBottom('instant');
+    }
+    if(el.input) el.input.addEventListener('focus', () => { adjustForKeyboard(); scrollToBottom('smooth'); });
+    if(el.input) el.input.addEventListener('blur', () => {
+      if(composerEl) composerEl.style.bottom = '0';
+      if(el.main) el.main.style.paddingBottom = '';
+    });
     if(window.visualViewport){
-      window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
+      window.visualViewport.addEventListener('resize', adjustForKeyboard);
+      window.visualViewport.addEventListener('scroll', adjustForKeyboard);
     }
 
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
