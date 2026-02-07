@@ -216,8 +216,8 @@
     main{
       flex:1;
       overflow:hidden;
-      padding: 10px;
-      padding-bottom: 82px;
+      padding: 16px;
+      padding-bottom: 88px;
       display:flex;
       flex-direction:column;
     }
@@ -243,6 +243,7 @@
       display:flex;
       flex-direction:column;
       min-height:0;
+      max-height: 65vh;
     }
     .panelHead{
       display:flex;
@@ -469,6 +470,11 @@
       height:24px;
       background: linear-gradient(to bottom, transparent, var(--bg));
       pointer-events:none;
+      opacity:0;
+      transition: opacity 0.2s;
+    }
+    .composer:focus-within .composerFade{
+      opacity:1;
     }
     .composerInner{
       max-width: 860px;
