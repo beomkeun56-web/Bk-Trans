@@ -61,16 +61,16 @@
 
     header{
       position:sticky; top:0; z-index:30;
-      padding: 8px 10px 0;
-      padding-top: calc(8px + env(safe-area-inset-top));
+      padding: 0 10px;
+      padding-top: env(safe-area-inset-top);
       background: transparent;
     }
     .headerInner{
       background: var(--headerBg);
       backdrop-filter: blur(12px);
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.14);
-      padding: 0 14px;
+      border: none;
+      padding: 0;
       box-shadow: 0 4px 20px rgba(0,0,0,.35);
       position:relative;
     }
@@ -79,6 +79,7 @@
       margin:0 auto;
       display:flex; align-items:center; gap:6px;
       height:64px;
+      padding: 0 14px;
     }
     .title{
       font-weight:800;
@@ -226,7 +227,7 @@
 
     .panel{
       background: var(--chatBg);
-      border: 1px solid rgba(255,255,255,.14);
+      border: none;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
@@ -411,7 +412,7 @@
       max-width: 860px;
       margin:0 auto;
       background: var(--inputBg);
-      border:1px solid rgba(255,255,255,.14);
+      border: none;
       border-radius: 18px;
       box-shadow: 0 6px 24px rgba(0,0,0,.4);
       display:flex;
@@ -489,9 +490,9 @@
     .hidden{display:none !important}
 
     @media (max-width: 520px){
-      header{padding: 6px 6px 0; padding-top: calc(6px + env(safe-area-inset-top));}
-      .headerInner{border-radius:14px; padding:0 10px;}
-      .topbar{gap:4px}
+      header{padding: 0 6px; padding-top: env(safe-area-inset-top);}
+      .headerInner{border-radius:14px; padding:0;}
+      .topbar{gap:4px; padding: 0 10px;}
       .title{font-size: calc(12px * var(--textScale)); gap:4px}
       .ver{font-size: calc(9px * var(--textScale)); padding:2px 6px}
       .topbar{height:56px}
@@ -520,7 +521,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title">BK Trans <span class="ver" id="appVer">v1.7T</span></div>
+        <div class="title">BK Trans <span class="ver" id="appVer">v2.2T</span></div>
 
         <div class="rightBtns">
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -809,7 +810,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v2.1T';
+    const APP_VERSION = 'v2.2T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -892,7 +893,7 @@
       return cleaned.split('-').filter(Boolean).map(t => {
         if(/^\d+(\.\d+)?$/.test(t)) return t;
         return t.charAt(0).toUpperCase() + t.slice(1);
-      }).join(' ');
+      }).filter(word => word.toLowerCase() !== 'preview').join(' ');
     }
 
     function getCurrentModelId(){
