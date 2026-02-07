@@ -61,23 +61,16 @@
 
     header{
       position:sticky; top:0; z-index:30;
-      padding: 12px 10px 0;
-      padding-top: calc(12px + env(safe-area-inset-top));
-      background: transparent;
+      padding: 0 10px;
+      padding-top: env(safe-area-inset-top);
+      background: var(--bg);
     }
     .headerInner{
-      background: linear-gradient(to bottom,
-        rgba(255,255,255,0.15) 0%,
-        rgba(255,255,255,0.1) 50%,
-        rgba(255,255,255,0.05) 100%);
-      backdrop-filter: blur(40px) saturate(180%);
-      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      background: var(--panel1);
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.2);
+      border: none;
       padding: 0;
-      box-shadow: 0 4px 20px rgba(0,0,0,.35),
-                  inset 0 1px 0 rgba(255,255,255,.15),
-                  inset 0 0 20px rgba(255,255,255,.03);
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
       position:relative;
     }
     .topbar{
@@ -137,13 +130,12 @@
       margin-top:6px;
       min-width:240px;
       max-width:320px;
-      background: rgba(14,18,26,.97);
+      background: var(--panel2);
       border:1px solid rgba(255,255,255,.08);
       border-radius:14px;
       box-shadow: 0 12px 36px rgba(0,0,0,.55);
       padding:6px;
       z-index:50;
-      backdrop-filter:blur(12px);
     }
     .modelDropdown.show{display:block}
     .modelDropdownItem{
@@ -232,9 +224,7 @@
     }
 
     .panel{
-      background: var(--chatBg);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      background: var(--panel1);
       border: none;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -259,8 +249,7 @@
       display:none;
       position:fixed; top:0; left:0; right:0; bottom:0;
       z-index:100;
-      background: rgba(0,0,0,.6);
-      backdrop-filter: blur(4px);
+      background: rgba(0,0,0,.75);
       align-items:center; justify-content:center;
       padding: 20px;
     }
@@ -334,18 +323,6 @@
       cursor: pointer;
       border: none;
       box-shadow: 0 2px 4px rgba(0,0,0,.3);
-    }
-    .liquidPreset{
-      transition: transform .15s, box-shadow .15s;
-      font-family: inherit;
-    }
-    .liquidPreset:hover{
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,.3);
-    }
-    .liquidPreset:active{
-      transform: translateY(0);
-      box-shadow: 0 2px 6px rgba(0,0,0,.2);
     }
     textarea{min-height:120px; resize:vertical; line-height:1.5}
     .hint{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.45}
@@ -475,11 +452,9 @@
       max-width: 860px;
       margin:0 auto;
       background: var(--inputBg);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255,255,255,.14);
+      border: none;
       border-radius: 18px;
-      box-shadow: 0 6px 24px rgba(0,0,0,.4);
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
       display:flex;
       flex-direction:column;
       position:relative;
@@ -699,18 +674,6 @@
             <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
             <div id="fontScaleVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--textScale));">100%</div>
             <button id="fontScaleResetBtn" class="btn secondary" type="button">초기화</button>
-          </div>
-        </div>
-
-        <div style="margin-bottom:24px;">
-          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">리퀴드 글래스 프리셋</label>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:16px;">
-            <button class="liquidPreset" data-preset="ios" style="padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.15); background:linear-gradient(to bottom, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">iOS Classic</button>
-            <button class="liquidPreset" data-preset="frost" style="padding:12px; border-radius:12px; border:1px solid rgba(139,233,253,.25); background:linear-gradient(to bottom, rgba(139,233,253,0.2), rgba(139,233,253,0.08)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Frost Blue</button>
-            <button class="liquidPreset" data-preset="aurora" style="padding:12px; border-radius:12px; border:1px solid rgba(167,139,250,.25); background:linear-gradient(to bottom, rgba(167,139,250,0.2), rgba(167,139,250,0.08)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Aurora</button>
-            <button class="liquidPreset" data-preset="mint" style="padding:12px; border-radius:12px; border:1px solid rgba(110,231,183,.25); background:linear-gradient(to bottom, rgba(110,231,183,0.2), rgba(110,231,183,0.08)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Mint Glass</button>
-            <button class="liquidPreset" data-preset="rose" style="padding:12px; border-radius:12px; border:1px solid rgba(251,113,133,.25); background:linear-gradient(to bottom, rgba(251,113,133,0.2), rgba(251,113,133,0.08)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Rose Gold</button>
-            <button class="liquidPreset" data-preset="dark" style="padding:12px; border-radius:12px; border:1px solid rgba(0,0,0,.4); background:linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.15)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Dark Glass</button>
           </div>
         </div>
 
@@ -2036,41 +1999,6 @@
     setupOpacitySlider('opacitySendBtnBg', 'colorSendBtnBg', '--sendBtnBg', 'opacitySendBtnBg');
     setupOpacitySlider('opacityHeaderBg', 'colorHeaderBg', '--headerBg', 'opacityHeaderBg');
     setupOpacitySlider('opacityCopyBtnBg', 'colorCopyBtnBg', '--copyBtnBg', 'opacityCopyBtnBg');
-
-    // Liquid Glass Presets
-    const liquidPresets = {
-      ios: { color: '#ffffff', opacity: 10, gradient: 'linear-gradient(to bottom, rgba(255,255,255,0.15), rgba(255,255,255,0.05))' },
-      frost: { color: '#8be9fd', opacity: 15, gradient: 'linear-gradient(to bottom, rgba(139,233,253,0.2), rgba(139,233,253,0.08))' },
-      aurora: { color: '#a78bfa', opacity: 15, gradient: 'linear-gradient(to bottom, rgba(167,139,250,0.2), rgba(167,139,250,0.08))' },
-      mint: { color: '#6ee7b7', opacity: 15, gradient: 'linear-gradient(to bottom, rgba(110,231,183,0.2), rgba(110,231,183,0.08))' },
-      rose: { color: '#fb7185', opacity: 15, gradient: 'linear-gradient(to bottom, rgba(251,113,133,0.2), rgba(251,113,133,0.08))' },
-      dark: { color: '#000000', opacity: 20, gradient: 'linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.15))' }
-    };
-
-    document.querySelectorAll('.liquidPreset').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const presetName = btn.getAttribute('data-preset');
-        const preset = liquidPresets[presetName];
-        if(!preset) return;
-
-        // Apply gradient to header
-        const headerInner = document.querySelector('.headerInner');
-        if(headerInner){
-          headerInner.style.background = preset.gradient;
-        }
-
-        // Update color picker and opacity slider (optional - for consistency)
-        const colorPicker = document.getElementById('colorHeaderBg');
-        const opacitySlider = document.getElementById('opacityHeaderBg');
-        if(colorPicker) colorPicker.value = preset.color;
-        if(opacitySlider){
-          opacitySlider.value = preset.opacity;
-          opacitySlider.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        showToast(`${btn.textContent} 프리셋 적용됨`);
-      });
-    });
 
     const composerEl = document.querySelector('.composer');
     function adjustForKeyboard(){
