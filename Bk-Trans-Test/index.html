@@ -37,6 +37,7 @@
       --assistantBubbleBg: rgba(30,36,48,.92);
       --sendBtnBg: rgba(45,107,255,.18);
       --headerBg: rgba(20,24,32,.92);
+      --copyBtnBg: rgba(255,255,255,.08);
     }
 
     @font-face{
@@ -342,6 +343,8 @@
       min-height:0;
       scroll-padding-top: 14px;
       scroll-padding-bottom: 14px;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0px, #000 16px, #000 100%);
+      mask-image: linear-gradient(to bottom, transparent 0px, #000 16px, #000 100%);
     }
     .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
     .msg.user{align-items:flex-end}
@@ -374,21 +377,23 @@
     }
 
     .actionsRow{
-      display:flex; gap:8px; align-items:center;
-      opacity:.9;
+      display:flex; gap:6px; align-items:center;
     }
-    .miniIconBtn{
-      width:32px; height:32px;
+    .copyPill{
       border:none;
-      background: rgba(255,255,255,.06);
-      border-radius: 12px;
-      box-shadow: 0 8px 18px rgba(0,0,0,.25);
+      background: var(--copyBtnBg);
+      border-radius: 10px;
+      padding: 4px 10px;
       cursor:pointer;
-      color: rgba(230,237,243,.9);
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:0;
+      color: rgba(230,237,243,.6);
+      font-size: calc(11px * var(--textScale));
+      font-family:inherit;
+      font-weight:600;
+      letter-spacing:.3px;
+      transition: background .15s, color .15s;
     }
-    .miniIconBtn svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+    .copyPill:hover{background:rgba(255,255,255,.14); color:rgba(230,237,243,.9)}
+    .copyPill:active{transform:scale(.95)}
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
@@ -717,6 +722,22 @@
               <button class="cSwatch" type="button" data-color="#1a1a1a" style="background:#1a1a1a"></button>
             </div>
           </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">복사버튼</div>
+            <input id="colorCopyBtnBg" type="color" value="#1a1f2a" />
+            <div class="colorSwatches" data-target="colorCopyBtnBg">
+              <button class="cSwatch" type="button" data-color="#111111" style="background:#111111"></button>
+              <button class="cSwatch" type="button" data-color="#1a1f2a" style="background:#1a1f2a"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+              <button class="cSwatch" type="button" data-color="#222832" style="background:#222832"></button>
+              <button class="cSwatch" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="cSwatch" type="button" data-color="#162038" style="background:#162038"></button>
+              <button class="cSwatch" type="button" data-color="#221832" style="background:#221832"></button>
+              <button class="cSwatch" type="button" data-color="#122a20" style="background:#122a20"></button>
+              <button class="cSwatch" type="button" data-color="#261c16" style="background:#261c16"></button>
+              <button class="cSwatch" type="button" data-color="#1e1e1e" style="background:#1e1e1e"></button>
+            </div>
+          </div>
         </div>
 
         <div class="hint" style="margin-top:12px; margin-bottom:6px;">테마 프리셋</div>
@@ -788,7 +809,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v2.0T';
+    const APP_VERSION = 'v2.1T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -807,6 +828,7 @@
       colorAssistantBubbleBg: 'bk_tr_test_color_assistant_bubble_bg',
       colorSendBtnBg: 'bk_tr_test_color_send_btn_bg',
       colorHeaderBg: 'bk_tr_test_color_header_bg',
+      colorCopyBtnBg: 'bk_tr_test_color_copy_btn_bg',
       chatHistory: 'bk_tr_test_chatHistory'
     };
 
@@ -857,6 +879,7 @@
       colorAssistantBubbleBg: document.getElementById('colorAssistantBubbleBg'),
       colorSendBtnBg: document.getElementById('colorSendBtnBg'),
       colorHeaderBg: document.getElementById('colorHeaderBg'),
+      colorCopyBtnBg: document.getElementById('colorCopyBtnBg'),
     };
 
     if(el.appVer) el.appVer.textContent = APP_VERSION;
@@ -1040,17 +1063,18 @@
       userBubbleBg: '#2e3440',
       assistantBubbleBg: '#1e2430',
       sendBtnBg: '#2d6bff',
-      headerBg: '#141820'
+      headerBg: '#141820',
+      copyBtnBg: '#1a1f2a'
     };
 
     const COLOR_PRESETS = {
-      oled:      { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#111111', sendBtnBg:'#2d6bff', headerBg:'#0a0a0a' },
-      slate:     { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#1e2430', sendBtnBg:'#2d6bff', headerBg:'#0b0f14' },
-      navy:      { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#162038', sendBtnBg:'#4f7cff', headerBg:'#0a1020' },
-      purple:    { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#221832', sendBtnBg:'#8b5cf6', headerBg:'#1b1026' },
-      emerald:   { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#122a20', sendBtnBg:'#22c55e', headerBg:'#0a1a14' },
-      warm:      { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#261c16', sendBtnBg:'#f59e0b', headerBg:'#1a1410' },
-      mono:      { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#1e1e1e', sendBtnBg:'#ffffff', headerBg:'#1a1a1a' },
+      oled:      { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#111111', sendBtnBg:'#2d6bff', headerBg:'#0a0a0a', copyBtnBg:'#111111' },
+      slate:     { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#1e2430', sendBtnBg:'#2d6bff', headerBg:'#0b0f14', copyBtnBg:'#1a1f2a' },
+      navy:      { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#162038', sendBtnBg:'#4f7cff', headerBg:'#0a1020', copyBtnBg:'#162038' },
+      purple:    { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#221832', sendBtnBg:'#8b5cf6', headerBg:'#1b1026', copyBtnBg:'#221832' },
+      emerald:   { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#122a20', sendBtnBg:'#22c55e', headerBg:'#0a1a14', copyBtnBg:'#122a20' },
+      warm:      { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#261c16', sendBtnBg:'#f59e0b', headerBg:'#1a1410', copyBtnBg:'#261c16' },
+      mono:      { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#1e1e1e', sendBtnBg:'#ffffff', headerBg:'#1a1a1a', copyBtnBg:'#1e1e1e' },
       reset:     { ...COLOR_DEFAULTS }
     };
 
@@ -1082,6 +1106,10 @@
       const savedHeader = localStorage.getItem(LS.colorHeaderBg);
       if(el.colorHeaderBg) el.colorHeaderBg.value = savedHeader || COLOR_DEFAULTS.headerBg;
       if(savedHeader) document.documentElement.style.setProperty('--headerBg', savedHeader);
+
+      const savedCopyBtn = localStorage.getItem(LS.colorCopyBtnBg);
+      if(el.colorCopyBtnBg) el.colorCopyBtnBg.value = savedCopyBtn || COLOR_DEFAULTS.copyBtnBg;
+      if(savedCopyBtn) document.documentElement.style.setProperty('--copyBtnBg', savedCopyBtn);
     }
 
     function bindColorPicker(inputEl, lsKey, cssVar){
@@ -1111,6 +1139,7 @@
       setOne(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg', p.assistantBubbleBg);
       setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
       if(p.headerBg) setOne(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg', p.headerBg);
+      if(p.copyBtnBg) setOne(el.colorCopyBtnBg, LS.colorCopyBtnBg, '--copyBtnBg', p.copyBtnBg);
     }
 
     function initColorChips(){
@@ -1497,10 +1526,9 @@
 
         if(m.role === 'assistant'){
           const copyBtn = document.createElement('button');
-          copyBtn.className = 'miniIconBtn';
+          copyBtn.className = 'copyPill';
           copyBtn.type = 'button';
-          copyBtn.setAttribute('aria-label', '복사');
-          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+          copyBtn.textContent = 'Copy';
           copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
           actions.appendChild(copyBtn);
         }
@@ -1569,10 +1597,9 @@
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
         const copyBtn = document.createElement('button');
-        copyBtn.className = 'miniIconBtn';
+        copyBtn.className = 'copyPill';
         copyBtn.type = 'button';
-        copyBtn.setAttribute('aria-label', '복사');
-        copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        copyBtn.textContent = 'Copy';
         copyBtn.addEventListener('click', async () => { await copyToClipboard(translated, false); });
         actions.appendChild(copyBtn);
         streamRow.appendChild(actions);
@@ -1757,6 +1784,7 @@
     bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
     bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
     bindColorPicker(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg');
+    bindColorPicker(el.colorCopyBtnBg, LS.colorCopyBtnBg, '--copyBtnBg');
 
     initColorChips();
 
