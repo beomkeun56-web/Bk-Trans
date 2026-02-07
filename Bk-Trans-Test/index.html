@@ -67,12 +67,12 @@
     }
     .headerInner{
       background: var(--headerBg);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
       border-radius: 16px;
-      border: none;
+      border: 1px solid rgba(255,255,255,.18);
       padding: 0;
-      box-shadow: 0 4px 20px rgba(0,0,0,.35);
+      box-shadow: 0 4px 20px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.1);
       position:relative;
     }
     .topbar{
@@ -569,7 +569,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title">BK Trans <span class="ver" id="appVer">v2.9T</span></div>
+        <div class="title">BK Trans <span class="ver" id="appVer">v3.0T</span></div>
 
         <div class="rightBtns">
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -811,13 +811,13 @@
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">상단바</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
-              <input id="colorHeaderBg" type="color" value="#141820" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorHeaderBg" type="color" value="#ffffff" style="width:50px; height:36px; flex-shrink:0;" />
               <input id="colorHeaderBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorHeaderBg" data-opacity="opacityHeaderBg" />
             </div>
             <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
               <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
-              <input id="opacityHeaderBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorHeaderBg" />
-              <span id="opacityHeaderBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
+              <input id="opacityHeaderBg" type="range" min="0" max="100" value="10" class="opacitySlider" data-target="colorHeaderBg" />
+              <span id="opacityHeaderBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">10%</span>
             </div>
             <div class="colorSwatches" data-target="colorHeaderBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
@@ -893,7 +893,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v2.9T';
+    const APP_VERSION = 'v3.0T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1150,7 +1150,7 @@
       userBubbleBg: '#2e3440',
       assistantBubbleBg: '#1e2430',
       sendBtnBg: '#2d6bff',
-      headerBg: 'rgba(20, 24, 32, 0.8)',
+      headerBg: 'rgba(255, 255, 255, 0.1)',
       copyBtnBg: '#1a1f2a'
     };
 
