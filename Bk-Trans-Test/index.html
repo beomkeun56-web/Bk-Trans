@@ -209,7 +209,7 @@
       flex:1;
       overflow:hidden;
       padding: 10px;
-      padding-bottom: 92px;
+      padding-bottom: 82px;
       display:flex;
       flex-direction:column;
     }
@@ -391,52 +391,61 @@
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
-      background: rgba(5,5,5,.92);
-      backdrop-filter: blur(10px);
+      padding: 0 10px calc(8px + env(safe-area-inset-bottom));
+      padding-top:8px;
+      background: transparent;
+      pointer-events:none;
     }
     .composerInner{
       max-width: 860px;
       margin:0 auto;
+      background: var(--inputBg);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 18px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.4);
       display:flex;
-      gap:10px;
-      align-items:center;
+      flex-direction:column;
+      position:relative;
+      pointer-events:auto;
     }
 
     #input{
-      height:44px;
-      line-height:44px;
-      flex: 0 1 440px;
-      min-width: 160px;
-      max-width: 520px;
-      padding: 0 12px;
-      border-radius: 16px;
+      width:100%;
+      min-height:46px;
+      max-height:160px;
+      padding: 13px 60px;
+      border-radius: 18px;
       border:none;
-
-      background: var(--inputBg);
+      background: transparent;
       color: #ffffff;
-
       outline:none;
       font-size: calc(15px * var(--textScale));
+      font-family:inherit;
+      line-height:1.5;
+      resize:none;
+      overflow-y:auto;
     }
 
     .sendBtn{
-      height:44px;
-      min-width: 54px;
-      border-radius: 16px;
+      width:38px; height:38px;
+      border-radius: 12px;
       border:none;
       background: var(--sendBtnBg);
       color: #ffffff;
-      box-shadow: 0 10px 22px rgba(0,0,0,.35);
+      box-shadow: 0 4px 12px rgba(0,0,0,.3);
       cursor:pointer;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      padding:0 14px;
+      padding:0;
+      position:absolute;
+      bottom:4px;
     }
-    .sendBtn:active{transform:scale(.98)}
+    .sendBtn.left{left:6px}
+    .sendBtn.right{right:6px}
+    .sendBtn:active{transform:scale(.93)}
     .sendBtn svg{
-      width:20px; height:20px;
+      width:18px; height:18px;
       fill:none;
       stroke:#ffffff;
       stroke-width:2.8;
@@ -505,18 +514,15 @@
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
       .rightBtns{gap:0}
-      main{padding:10px; padding-bottom: 96px;}
+      main{padding:10px; padding-bottom: 80px;}
       .bubble{font-size: calc(16px * var(--textScale))}
-      #input{
-        flex: 1 1 auto;
-        max-width: none;
-        height:46px;
-        line-height:46px;
-      }
-      .sendBtn{
-        height:46px;
-        min-width: 56px;
-      }
+      .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
+      .composerInner{border-radius:16px}
+      #input{padding: 12px 52px; min-height:44px}
+      .sendBtn{width:34px; height:34px; border-radius:10px}
+      .sendBtn svg{width:16px; height:16px}
+      .sendBtn.left{left:5px}
+      .sendBtn.right{right:5px}
     }
   </style>
 </head>
@@ -791,16 +797,16 @@
 
   <div class="composer">
     <div class="composerInner">
-      <button id="sendBtnL" class="sendBtn" type="button" aria-label="전송(좌)">
+      <button id="sendBtnL" class="sendBtn left" type="button" aria-label="전송(좌)">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 19V5"></path>
           <path d="M5.5 11.5L12 5l6.5 6.5"></path>
         </svg>
       </button>
 
-      <input id="input" type="text" placeholder="번역할 문장 입력..." autocomplete="off" />
+      <textarea id="input" rows="1" placeholder="번역할 문장 입력..." autocomplete="off"></textarea>
 
-      <button id="sendBtnR" class="sendBtn" type="button" aria-label="전송(우)">
+      <button id="sendBtnR" class="sendBtn right" type="button" aria-label="전송(우)">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 19V5"></path>
           <path d="M5.5 11.5L12 5l6.5 6.5"></path>
@@ -1567,6 +1573,7 @@
       renderChat();
 
       el.input.value = '';
+      autoResizeInput();
       if(document.activeElement === el.input) el.input.blur();
       setConnState('busy');
       setSendBtnsMode('stop');
@@ -1738,16 +1745,24 @@
     if(el.sendBtnL) el.sendBtnL.addEventListener('click', send);
     if(el.sendBtnR) el.sendBtnR.addEventListener('click', send);
 
+    function autoResizeInput(){
+      if(!el.input) return;
+      el.input.style.height = 'auto';
+      el.input.style.height = Math.min(el.input.scrollHeight, 160) + 'px';
+    }
+
     if(el.input){
       el.input.addEventListener('keydown', (e) => {
-        if(e.key === 'Enter'){
+        if(e.key === 'Enter' && !e.shiftKey){
           e.preventDefault();
           send();
         }
         if(e.key === 'Escape'){
           el.input.value = '';
+          autoResizeInput();
         }
       });
+      el.input.addEventListener('input', autoResizeInput);
     }
 
     if(el.copyBar) el.copyBar.addEventListener('click', async () => {
