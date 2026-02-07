@@ -67,7 +67,8 @@
     }
     .headerInner{
       background: var(--headerBg);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
       border-radius: 16px;
       border: none;
       padding: 0;
@@ -227,6 +228,8 @@
 
     .panel{
       background: var(--chatBg);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: none;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -426,6 +429,8 @@
       max-width: 860px;
       margin:0 auto;
       background: var(--inputBg);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid rgba(255,255,255,.14);
       border-radius: 18px;
       box-shadow: 0 6px 24px rgba(0,0,0,.4);
@@ -535,7 +540,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title">BK Trans <span class="ver" id="appVer">v2.6T</span></div>
+        <div class="title">BK Trans <span class="ver" id="appVer">v2.7T</span></div>
 
         <div class="rightBtns">
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -871,7 +876,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v2.6T';
+    const APP_VERSION = 'v2.7T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
