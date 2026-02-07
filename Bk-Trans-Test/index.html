@@ -31,13 +31,13 @@
 
       --textScale: 1;
 
-      --chatBg: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
+      --chatBg: #0e1420;
       --inputBg: #2e3440;
-      --userBubbleBg: rgba(46, 52, 64, .92);
-      --assistantBubbleBg: rgba(30,36,48,.92);
-      --sendBtnBg: rgba(45,107,255,.18);
-      --headerBg: rgba(20,24,32,.92);
-      --copyBtnBg: rgba(255,255,255,.08);
+      --userBubbleBg: #2e3440;
+      --assistantBubbleBg: #1e2430;
+      --sendBtnBg: #2d6bff;
+      --headerBg: #0b0f14;
+      --copyBtnBg: #1a1f2a;
     }
 
     @font-face{
@@ -61,23 +61,16 @@
 
     header{
       position:sticky; top:0; z-index:30;
-      padding: 12px 10px 0;
-      padding-top: calc(12px + env(safe-area-inset-top));
-      background: transparent;
+      padding: 10px 10px 0;
+      padding-top: calc(10px + env(safe-area-inset-top));
+      background: var(--bg);
     }
     .headerInner{
-      background: linear-gradient(to bottom,
-        rgba(255,255,255,0.15) 0%,
-        rgba(255,255,255,0.1) 50%,
-        rgba(255,255,255,0.05) 100%);
-      backdrop-filter: blur(40px) saturate(180%);
-      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      background: var(--headerBg);
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.2);
+      border: none;
       padding: 0;
-      box-shadow: 0 4px 20px rgba(0,0,0,.35),
-                  inset 0 1px 0 rgba(255,255,255,.15),
-                  inset 0 0 20px rgba(255,255,255,.03);
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
       position:relative;
     }
     .topbar{
@@ -137,13 +130,12 @@
       margin-top:6px;
       min-width:240px;
       max-width:320px;
-      background: rgba(14,18,26,.97);
+      background: var(--panel2);
       border:1px solid rgba(255,255,255,.08);
       border-radius:14px;
       box-shadow: 0 12px 36px rgba(0,0,0,.55);
       padding:6px;
       z-index:50;
-      backdrop-filter:blur(12px);
     }
     .modelDropdown.show{display:block}
     .modelDropdownItem{
@@ -233,8 +225,6 @@
 
     .panel{
       background: var(--chatBg);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
       border: none;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -260,8 +250,7 @@
       display:none;
       position:fixed; top:0; left:0; right:0; bottom:0;
       z-index:100;
-      background: rgba(0,0,0,.6);
-      backdrop-filter: blur(4px);
+      background: rgba(0,0,0,.75);
       align-items:center; justify-content:center;
       padding: 20px;
     }
@@ -306,47 +295,6 @@
       text-transform: none;
       flex:1;
       min-width:0;
-    }
-    .opacitySlider{
-      width:100%;
-      height: 6px;
-      -webkit-appearance: none;
-      appearance: none;
-      background: linear-gradient(to right, transparent, var(--blue));
-      border-radius: 3px;
-      outline: none;
-      cursor: pointer;
-    }
-    .opacitySlider::-webkit-slider-thumb{
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      background: var(--text);
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,.3);
-    }
-    .opacitySlider::-moz-range-thumb{
-      width: 16px;
-      height: 16px;
-      background: var(--text);
-      border-radius: 50%;
-      cursor: pointer;
-      border: none;
-      box-shadow: 0 2px 4px rgba(0,0,0,.3);
-    }
-    .liquidPreset{
-      transition: transform .15s, box-shadow .15s;
-      font-family: inherit;
-    }
-    .liquidPreset:hover{
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,.3);
-    }
-    .liquidPreset:active{
-      transform: translateY(0);
-      box-shadow: 0 2px 6px rgba(0,0,0,.2);
     }
     textarea{min-height:120px; resize:vertical; line-height:1.5}
     .hint{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.45}
@@ -461,8 +409,8 @@
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 0 10px calc(8px + env(safe-area-inset-bottom));
-      padding-top:0;
+      padding: 10px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
       background: transparent;
       pointer-events:none;
     }
@@ -480,11 +428,9 @@
       max-width: 860px;
       margin:0 auto;
       background: var(--inputBg);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.15);
       border-radius: 18px;
-      box-shadow: 0 6px 24px rgba(0,0,0,.4);
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
       display:flex;
       flex-direction:column;
       position:relative;
@@ -493,9 +439,9 @@
 
     #input{
       width:100%;
-      min-height:60px;
+      min-height:72px;
       max-height:240px;
-      padding: 14px 16px;
+      padding: 18px 16px;
       border-radius: 18px;
       border:none;
       background: transparent;
@@ -508,6 +454,8 @@
       overflow-y:auto;
       scroll-padding-top: 14px;
       scroll-padding-bottom: 12px;
+      display: flex;
+      align-items: center;
     }
 
 
@@ -708,30 +656,13 @@
         </div>
 
         <div style="margin-bottom:24px;">
-          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">리퀴드 글래스 프리셋</label>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:16px;">
-            <button class="liquidPreset" data-preset="ios" style="padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.15); background:linear-gradient(to bottom, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">iOS Classic</button>
-            <button class="liquidPreset" data-preset="frost" style="padding:12px; border-radius:12px; border:1px solid rgba(139,233,253,.25); background:linear-gradient(to bottom, rgba(139,233,253,0.2), rgba(139,233,253,0.08)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Frost Blue</button>
-            <button class="liquidPreset" data-preset="aurora" style="padding:12px; border-radius:12px; border:1px solid rgba(167,139,250,.25); background:linear-gradient(to bottom, rgba(167,139,250,0.2), rgba(167,139,250,0.08)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Aurora</button>
-            <button class="liquidPreset" data-preset="mint" style="padding:12px; border-radius:12px; border:1px solid rgba(110,231,183,.25); background:linear-gradient(to bottom, rgba(110,231,183,0.2), rgba(110,231,183,0.08)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Mint Glass</button>
-            <button class="liquidPreset" data-preset="rose" style="padding:12px; border-radius:12px; border:1px solid rgba(251,113,133,.25); background:linear-gradient(to bottom, rgba(251,113,133,0.2), rgba(251,113,133,0.08)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Rose Gold</button>
-            <button class="liquidPreset" data-preset="dark" style="padding:12px; border-radius:12px; border:1px solid rgba(0,0,0,.4); background:linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.15)); backdrop-filter:blur(20px); cursor:pointer; color:var(--text); font-size:calc(12px * var(--textScale)); font-weight:600;">Dark Glass</button>
-          </div>
-        </div>
-
-        <div style="margin-bottom:24px;">
           <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">색상 설정</label>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">전체배경</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorBg" type="color" value="#050505" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorBg" data-opacity="opacityBg" />
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
-              <input id="opacityBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorBg" />
-              <span id="opacityBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
+              <input id="colorBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorBg" />
             </div>
             <div class="colorSwatches" data-target="colorBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
@@ -746,12 +677,7 @@
             <div class="hint" style="margin-bottom:4px;">채팅배경</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorChatBg" type="color" value="#0e1420" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorChatBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorChatBg" data-opacity="opacityChatBg" />
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
-              <input id="opacityChatBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorChatBg" />
-              <span id="opacityChatBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
+              <input id="colorChatBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorChatBg" />
             </div>
             <div class="colorSwatches" data-target="colorChatBg">
               <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
@@ -766,12 +692,7 @@
             <div class="hint" style="margin-bottom:4px;">입력창</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorInputBg" type="color" value="#2e3440" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorInputBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorInputBg" data-opacity="opacityInputBg" />
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
-              <input id="opacityInputBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorInputBg" />
-              <span id="opacityInputBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
+              <input id="colorInputBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorInputBg" />
             </div>
             <div class="colorSwatches" data-target="colorInputBg">
               <button class="cSwatch" type="button" data-color="#161b22" style="background:#161b22"></button>
@@ -786,12 +707,7 @@
             <div class="hint" style="margin-bottom:4px;">입력말풍선</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorUserBubbleBg" type="color" value="#2e3440" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorUserBubbleBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorUserBubbleBg" data-opacity="opacityUserBubbleBg" />
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
-              <input id="opacityUserBubbleBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorUserBubbleBg" />
-              <span id="opacityUserBubbleBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
+              <input id="colorUserBubbleBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorUserBubbleBg" />
             </div>
             <div class="colorSwatches" data-target="colorUserBubbleBg">
               <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
@@ -805,13 +721,8 @@
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">출력말풍선</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
-              <input id="colorAssistantBubbleBg" type="color" value="#000000" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorAssistantBubbleBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorAssistantBubbleBg" data-opacity="opacityAssistantBubbleBg" />
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
-              <input id="opacityAssistantBubbleBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorAssistantBubbleBg" />
-              <span id="opacityAssistantBubbleBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
+              <input id="colorAssistantBubbleBg" type="color" value="#1e2430" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAssistantBubbleBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAssistantBubbleBg" />
             </div>
             <div class="colorSwatches" data-target="colorAssistantBubbleBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
@@ -826,12 +737,7 @@
             <div class="hint" style="margin-bottom:4px;">모델명 배경</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorSendBtnBg" type="color" value="#2d6bff" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorSendBtnBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorSendBtnBg" data-opacity="opacitySendBtnBg" />
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
-              <input id="opacitySendBtnBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorSendBtnBg" />
-              <span id="opacitySendBtnBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
+              <input id="colorSendBtnBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorSendBtnBg" />
             </div>
             <div class="colorSwatches" data-target="colorSendBtnBg">
               <button class="cSwatch" type="button" data-color="#1d4ed8" style="background:#1d4ed8"></button>
@@ -845,13 +751,8 @@
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">상단바</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
-              <input id="colorHeaderBg" type="color" value="#ffffff" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorHeaderBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorHeaderBg" data-opacity="opacityHeaderBg" />
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
-              <input id="opacityHeaderBg" type="range" min="0" max="100" value="10" class="opacitySlider" data-target="colorHeaderBg" />
-              <span id="opacityHeaderBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">10%</span>
+              <input id="colorHeaderBg" type="color" value="#0b0f14" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorHeaderBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorHeaderBg" />
             </div>
             <div class="colorSwatches" data-target="colorHeaderBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
@@ -866,12 +767,7 @@
             <div class="hint" style="margin-bottom:4px;">복사버튼</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorCopyBtnBg" type="color" value="#1a1f2a" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorCopyBtnBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorCopyBtnBg" data-opacity="opacityCopyBtnBg" />
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
-              <input id="opacityCopyBtnBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorCopyBtnBg" />
-              <span id="opacityCopyBtnBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
+              <input id="colorCopyBtnBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorCopyBtnBg" />
             </div>
             <div class="colorSwatches" data-target="colorCopyBtnBg">
               <button class="cSwatch" type="button" data-color="#111111" style="background:#111111"></button>
@@ -1179,12 +1075,12 @@
 
     const COLOR_DEFAULTS = {
       bg: '#050505',
-      chatBg: 'rgba(14, 20, 32, 0.85)',
-      inputBg: 'rgba(46, 52, 64, 0.8)',
+      chatBg: '#0e1420',
+      inputBg: '#2e3440',
       userBubbleBg: '#2e3440',
       assistantBubbleBg: '#1e2430',
       sendBtnBg: '#2d6bff',
-      headerBg: 'rgba(255, 255, 255, 0.1)',
+      headerBg: '#0b0f14',
       copyBtnBg: '#1a1f2a'
     };
 
@@ -1201,43 +1097,24 @@
     }
 
     function applyColorsFromStorage(){
-      const loadColorWithOpacity = (colorKey, opacityKey, colorPickerId, opacitySliderId, cssVar, defaultColor, defaultOpacity = 100) => {
+      const loadColor = (colorKey, colorPickerId, cssVar, defaultColor) => {
         const savedColor = localStorage.getItem(colorKey);
-        const savedOpacity = localStorage.getItem(opacityKey);
         const colorPicker = document.getElementById(colorPickerId);
-        const opacitySlider = document.getElementById(opacitySliderId);
-        const opacityValue = document.getElementById(opacitySliderId + 'Value');
 
-        // Handle rgba default colors
-        let hexColor = defaultColor;
-        let opacity = defaultOpacity;
-        if(defaultColor.startsWith('rgba')){
-          const rgba = parseRgba(defaultColor);
-          if(rgba){
-            hexColor = rgbToHex(rgba.r, rgba.g, rgba.b);
-            opacity = Math.round(rgba.a * 100);
-          }
-        }
-
-        const finalColor = savedColor || hexColor;
-        const finalOpacity = savedOpacity || opacity;
+        const finalColor = savedColor || defaultColor;
 
         if(colorPicker) colorPicker.value = finalColor;
-        if(opacitySlider) opacitySlider.value = finalOpacity;
-        if(opacityValue) opacityValue.textContent = finalOpacity + '%';
-
-        const color = hexToRgba(finalColor, (finalOpacity / 100).toFixed(2));
-        document.documentElement.style.setProperty(cssVar, color);
+        document.documentElement.style.setProperty(cssVar, finalColor);
       };
 
-      loadColorWithOpacity(LS.colorBg, 'opacityBg', 'colorBg', 'opacityBg', '--bg', COLOR_DEFAULTS.bg);
-      loadColorWithOpacity(LS.colorChatBg, 'opacityChatBg', 'colorChatBg', 'opacityChatBg', '--chatBg', COLOR_DEFAULTS.chatBg);
-      loadColorWithOpacity(LS.colorInputBg, 'opacityInputBg', 'colorInputBg', 'opacityInputBg', '--inputBg', COLOR_DEFAULTS.inputBg);
-      loadColorWithOpacity(LS.colorUserBubbleBg, 'opacityUserBubbleBg', 'colorUserBubbleBg', 'opacityUserBubbleBg', '--userBubbleBg', COLOR_DEFAULTS.userBubbleBg);
-      loadColorWithOpacity(LS.colorAssistantBubbleBg, 'opacityAssistantBubbleBg', 'colorAssistantBubbleBg', 'opacityAssistantBubbleBg', '--assistantBubbleBg', COLOR_DEFAULTS.assistantBubbleBg);
-      loadColorWithOpacity(LS.colorSendBtnBg, 'opacitySendBtnBg', 'colorSendBtnBg', 'opacitySendBtnBg', '--sendBtnBg', COLOR_DEFAULTS.sendBtnBg);
-      loadColorWithOpacity(LS.colorHeaderBg, 'opacityHeaderBg', 'colorHeaderBg', 'opacityHeaderBg', '--headerBg', COLOR_DEFAULTS.headerBg);
-      loadColorWithOpacity(LS.colorCopyBtnBg, 'opacityCopyBtnBg', 'colorCopyBtnBg', 'opacityCopyBtnBg', '--copyBtnBg', COLOR_DEFAULTS.copyBtnBg);
+      loadColor(LS.colorBg, 'colorBg', '--bg', COLOR_DEFAULTS.bg);
+      loadColor(LS.colorChatBg, 'colorChatBg', '--chatBg', COLOR_DEFAULTS.chatBg);
+      loadColor(LS.colorInputBg, 'colorInputBg', '--inputBg', COLOR_DEFAULTS.inputBg);
+      loadColor(LS.colorUserBubbleBg, 'colorUserBubbleBg', '--userBubbleBg', COLOR_DEFAULTS.userBubbleBg);
+      loadColor(LS.colorAssistantBubbleBg, 'colorAssistantBubbleBg', '--assistantBubbleBg', COLOR_DEFAULTS.assistantBubbleBg);
+      loadColor(LS.colorSendBtnBg, 'colorSendBtnBg', '--sendBtnBg', COLOR_DEFAULTS.sendBtnBg);
+      loadColor(LS.colorHeaderBg, 'colorHeaderBg', '--headerBg', COLOR_DEFAULTS.headerBg);
+      loadColor(LS.colorCopyBtnBg, 'colorCopyBtnBg', '--copyBtnBg', COLOR_DEFAULTS.copyBtnBg);
     }
 
     function bindColorPicker(inputEl, lsKey, cssVar){
@@ -1245,9 +1122,8 @@
       inputEl.addEventListener('input', (e) => {
         const v = String(e.target.value || '').trim();
         if(!v) return;
-        // Only save to localStorage, don't set CSS var directly
-        // The opacity slider handles applying the color with opacity
         try{ localStorage.setItem(lsKey, v); } catch {}
+        document.documentElement.style.setProperty(cssVar, v);
       });
     }
 
@@ -1968,39 +1844,20 @@
     function syncColorTextInputs(){
       document.querySelectorAll('.colorTextInput').forEach(textInput => {
         const targetId = textInput.getAttribute('data-target');
-        const opacityId = textInput.getAttribute('data-opacity');
         const colorPicker = document.getElementById(targetId);
-        const opacitySlider = document.getElementById(opacityId);
-        if(!colorPicker || !opacitySlider) return;
+        if(!colorPicker) return;
 
         const updateTextInput = () => {
           const hex = colorPicker.value;
-          const opacity = parseInt(opacitySlider.value) / 100;
-          if(opacity < 1){
-            textInput.value = hexToRgba(hex, opacity.toFixed(2));
-          } else {
-            textInput.value = hex.toUpperCase();
-          }
+          textInput.value = hex.toUpperCase();
         };
 
         updateTextInput();
 
         colorPicker.addEventListener('input', updateTextInput);
-        opacitySlider.addEventListener('input', updateTextInput);
 
         textInput.addEventListener('input', (e) => {
           let val = e.target.value.trim();
-
-          // Try parsing as rgba
-          const rgba = parseRgba(val);
-          if(rgba){
-            const hex = rgbToHex(rgba.r, rgba.g, rgba.b);
-            colorPicker.value = hex;
-            opacitySlider.value = Math.round(rgba.a * 100);
-            colorPicker.dispatchEvent(new Event('input', { bubbles: true }));
-            opacitySlider.dispatchEvent(new Event('input', { bubbles: true }));
-            return;
-          }
 
           // Try parsing as hex
           if(!val.startsWith('#')) val = '#' + val;
@@ -2014,68 +1871,7 @@
 
     syncColorTextInputs();
 
-    function setupOpacitySlider(opacityId, colorPickerId, cssVar, lsKey){
-      const slider = document.getElementById(opacityId);
-      const valueDisplay = document.getElementById(opacityId + 'Value');
-      const colorPicker = document.getElementById(colorPickerId);
-      if(!slider || !colorPicker || !valueDisplay) return;
 
-      const applyColor = () => {
-        const hex = colorPicker.value;
-        const opacity = parseInt(slider.value) / 100;
-        const color = hexToRgba(hex, opacity.toFixed(2));
-        document.documentElement.style.setProperty(cssVar, color);
-        valueDisplay.textContent = slider.value + '%';
-        try{ localStorage.setItem(lsKey, slider.value); } catch {}
-      };
-
-      slider.addEventListener('input', applyColor);
-      colorPicker.addEventListener('input', applyColor);
-    }
-
-    setupOpacitySlider('opacityBg', 'colorBg', '--bg', 'opacityBg');
-    setupOpacitySlider('opacityChatBg', 'colorChatBg', '--chatBg', 'opacityChatBg');
-    setupOpacitySlider('opacityInputBg', 'colorInputBg', '--inputBg', 'opacityInputBg');
-    setupOpacitySlider('opacityUserBubbleBg', 'colorUserBubbleBg', '--userBubbleBg', 'opacityUserBubbleBg');
-    setupOpacitySlider('opacityAssistantBubbleBg', 'colorAssistantBubbleBg', '--assistantBubbleBg', 'opacityAssistantBubbleBg');
-    setupOpacitySlider('opacitySendBtnBg', 'colorSendBtnBg', '--sendBtnBg', 'opacitySendBtnBg');
-    setupOpacitySlider('opacityHeaderBg', 'colorHeaderBg', '--headerBg', 'opacityHeaderBg');
-    setupOpacitySlider('opacityCopyBtnBg', 'colorCopyBtnBg', '--copyBtnBg', 'opacityCopyBtnBg');
-
-    // Liquid Glass Presets
-    const liquidPresets = {
-      ios: { color: '#ffffff', opacity: 10, gradient: 'linear-gradient(to bottom, rgba(255,255,255,0.15), rgba(255,255,255,0.05))' },
-      frost: { color: '#8be9fd', opacity: 15, gradient: 'linear-gradient(to bottom, rgba(139,233,253,0.2), rgba(139,233,253,0.08))' },
-      aurora: { color: '#a78bfa', opacity: 15, gradient: 'linear-gradient(to bottom, rgba(167,139,250,0.2), rgba(167,139,250,0.08))' },
-      mint: { color: '#6ee7b7', opacity: 15, gradient: 'linear-gradient(to bottom, rgba(110,231,183,0.2), rgba(110,231,183,0.08))' },
-      rose: { color: '#fb7185', opacity: 15, gradient: 'linear-gradient(to bottom, rgba(251,113,133,0.2), rgba(251,113,133,0.08))' },
-      dark: { color: '#000000', opacity: 20, gradient: 'linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.15))' }
-    };
-
-    document.querySelectorAll('.liquidPreset').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const presetName = btn.getAttribute('data-preset');
-        const preset = liquidPresets[presetName];
-        if(!preset) return;
-
-        // Apply gradient to header
-        const headerInner = document.querySelector('.headerInner');
-        if(headerInner){
-          headerInner.style.background = preset.gradient;
-        }
-
-        // Update color picker and opacity slider (optional - for consistency)
-        const colorPicker = document.getElementById('colorHeaderBg');
-        const opacitySlider = document.getElementById('opacityHeaderBg');
-        if(colorPicker) colorPicker.value = preset.color;
-        if(opacitySlider){
-          opacitySlider.value = preset.opacity;
-          opacitySlider.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-
-        showToast(`${btn.textContent} 프리셋 적용됨`);
-      });
-    });
 
     const composerEl = document.querySelector('.composer');
     function adjustForKeyboard(){
