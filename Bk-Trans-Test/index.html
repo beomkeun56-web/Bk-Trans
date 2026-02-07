@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#050505" />
-  <title>BK Trans TEST</title>
+  <title>BK Trans</title>
 
   <link rel="icon" href="data:," />
 
@@ -165,13 +165,36 @@
     .panelHead .h{font-weight:800; font-size: calc(13px * var(--textScale))}
     .panelHead .s{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.35}
 
-    .settings{
-      margin-bottom:10px;
-      padding: 12px 14px 14px;
-      background: rgba(10,14,20,.92);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+    .settingsOverlay{
+      display:none;
+      position:fixed; top:0; left:0; right:0; bottom:0;
+      z-index:100;
+      background: rgba(0,0,0,.6);
+      backdrop-filter: blur(4px);
+      align-items:center; justify-content:center;
+      padding: 20px;
     }
+    .settingsOverlay.show{
+      display:flex;
+    }
+    .settings{
+      width:100%; max-width:580px;
+      max-height: calc(100vh - 40px);
+      overflow-y:auto;
+      padding: 16px 16px 20px;
+      background: rgba(10,14,20,.97);
+      border-radius: var(--radius);
+      box-shadow: 0 20px 60px rgba(0,0,0,.7);
+      position:relative;
+    }
+    .settingsCloseBtn{
+      position:absolute; top:10px; right:10px;
+      width:32px; height:32px; border:none; border-radius:10px;
+      background:rgba(255,255,255,.06); color:var(--text);
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:18px; line-height:1;
+    }
+    .settingsCloseBtn:active{transform:scale(.95)}
     .settings .row{display:flex; gap:10px; flex-wrap:wrap}
     label{font-size: calc(12px * var(--textScale)); color:var(--muted); display:block; margin:10px 0 6px}
     input[type="password"], input[type="text"], textarea{
@@ -437,7 +460,7 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans TEST <span class="ver" id="appVer">v1.24</span></div>
+      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.3T</span></div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
@@ -466,13 +489,12 @@
     </div>
   </header>
 
-  <main id="main">
-    <div class="wrap">
-
-      <section id="settingsPanel" class="settings hidden">
-        <div class="hint" style="margin-bottom:8px;">
-          OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
-        </div>
+  <div id="settingsOverlay" class="settingsOverlay">
+    <section id="settingsPanel" class="settings">
+      <button id="settingsCloseBtn" class="settingsCloseBtn" type="button" aria-label="닫기">&times;</button>
+      <div class="hint" style="margin-bottom:8px;">
+        OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
+      </div>
 
         <label for="apiKey">OpenRouter API Key</label>
         <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
@@ -650,7 +672,11 @@
           <button id="saveBtn" class="btn" type="button">저장</button>
         </div>
         <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
-      </section>
+    </section>
+  </div>
+
+  <main id="main">
+    <div class="wrap">
 
       <section class="panel">
         <div class="panelHead">
@@ -693,7 +719,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.24-TEST';
+    const APP_VERSION = 'v1.3T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -782,7 +808,7 @@
     function updateModelTag(){
       const pretty = prettifyModelName(getCurrentModelId());
       if(el.modelTag) el.modelTag.textContent = pretty;
-      document.title = pretty + ' BK Trans TEST ' + APP_VERSION;
+      document.title = pretty + ' BK Trans ' + APP_VERSION;
     }
 
     function toast(msg){
@@ -1150,16 +1176,20 @@
       setSettingsVisible(false);
     }
 
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const settingsCloseBtn = document.getElementById('settingsCloseBtn');
+
     function setSettingsVisible(v){
-      el.settingsPanel.classList.toggle('hidden', !v);
       if(v){
-        requestAnimationFrame(() => el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'}));
+        settingsOverlay.classList.add('show');
+      } else {
+        settingsOverlay.classList.remove('show');
       }
     }
 
     function toggleSettings(){
-      const isHidden = el.settingsPanel.classList.contains('hidden');
-      setSettingsVisible(isHidden);
+      const isVisible = settingsOverlay.classList.contains('show');
+      setSettingsVisible(!isVisible);
     }
 
     let _isBusy = false;
@@ -1412,6 +1442,10 @@
 
     if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
     if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
+    if(settingsCloseBtn) settingsCloseBtn.addEventListener('click', () => setSettingsVisible(false));
+    if(settingsOverlay) settingsOverlay.addEventListener('click', (e) => {
+      if(e.target === settingsOverlay) setSettingsVisible(false);
+    });
 
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
