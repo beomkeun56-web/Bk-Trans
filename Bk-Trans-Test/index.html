@@ -1801,7 +1801,7 @@
       if(!window.visualViewport) return;
       const vv = window.visualViewport;
       const bottomOffset = window.innerHeight - vv.height - vv.offsetTop;
-      const extraLift = 40;
+      const extraLift = bottomOffset > 0 ? 15 : 0;
       if(composerEl){
         composerEl.style.bottom = Math.max(0, bottomOffset + extraLift) + 'px';
       }
