@@ -68,7 +68,7 @@
       background: var(--headerBg);
       backdrop-filter: blur(12px);
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
       padding: 0 14px;
       box-shadow: 0 4px 20px rgba(0,0,0,.35);
       position:relative;
@@ -225,7 +225,7 @@
 
     .panel{
       background: var(--chatBg);
-      border: 1px solid rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
@@ -400,7 +400,7 @@
       max-width: 860px;
       margin:0 auto;
       background: var(--inputBg);
-      border:1px solid rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.14);
       border-radius: 18px;
       box-shadow: 0 6px 24px rgba(0,0,0,.4);
       display:flex;
@@ -413,7 +413,7 @@
       width:100%;
       min-height:46px;
       max-height:160px;
-      padding: 16px 16px 13px;
+      padding: 14px 16px;
       border-radius: 18px;
       border:none;
       background: transparent;
@@ -424,6 +424,8 @@
       line-height:1.5;
       resize:none;
       overflow-y:auto;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0px, #000 14px, #000 calc(100% - 12px), transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0px, #000 14px, #000 calc(100% - 12px), transparent 100%);
     }
 
 
