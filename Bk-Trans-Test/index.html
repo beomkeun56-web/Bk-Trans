@@ -394,8 +394,13 @@
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
       padding: 0 10px calc(8px + env(safe-area-inset-bottom));
-      padding-top:8px;
+      padding-top:0;
       background: transparent;
+      pointer-events:none;
+    }
+    .composerFade{
+      height:24px;
+      background: linear-gradient(to bottom, transparent, var(--bg));
       pointer-events:none;
     }
     .composerInner{
@@ -414,7 +419,7 @@
     #input{
       width:100%;
       min-height:46px;
-      max-height:160px;
+      max-height:240px;
       padding: 14px 16px;
       border-radius: 18px;
       border:none;
@@ -770,6 +775,7 @@
   </main>
 
   <div class="composer">
+    <div class="composerFade"></div>
     <div class="composerInner">
       <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
     </div>
@@ -783,7 +789,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.8T';
+    const APP_VERSION = 'v1.9T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1694,7 +1700,7 @@
     function autoResizeInput(){
       if(!el.input) return;
       el.input.style.height = 'auto';
-      el.input.style.height = Math.min(el.input.scrollHeight, 160) + 'px';
+      el.input.style.height = Math.min(el.input.scrollHeight, 240) + 'px';
     }
 
     if(el.input){
