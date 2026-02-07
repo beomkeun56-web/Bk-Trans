@@ -224,6 +224,35 @@
     .colorItem{
       min-width:0;
     }
+    .colorItem input[type="color"]{
+      width:100%; height:36px; padding:0; border:none;
+      border-radius:10px; background:rgba(0,0,0,.35); cursor:pointer;
+    }
+    .colorSwatches{
+      display:flex; gap:5px; flex-wrap:wrap; margin-top:6px;
+    }
+    .cSwatch{
+      width:24px; height:24px; border-radius:7px; border:1.5px solid rgba(255,255,255,.08);
+      padding:0; cursor:pointer; transition: transform .1s, border-color .15s;
+    }
+    .cSwatch:hover{border-color:rgba(255,255,255,.3)}
+    .cSwatch:active{transform:scale(.9)}
+    .presetGrid{
+      display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px;
+    }
+    .presetBtn{
+      border:none; border-radius:12px; padding:10px 0;
+      cursor:pointer; background:rgba(255,255,255,.04);
+      color:var(--text); font-size:calc(12px * var(--textScale));
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      transition: background .15s;
+    }
+    .presetBtn:hover{background:rgba(255,255,255,.08)}
+    .presetBtn:active{transform:scale(.97)}
+    .presetDot{
+      width:20px; height:20px; border-radius:999px;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.08);
+    }
 
     .chat{
       padding: 14px;
@@ -488,54 +517,129 @@
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">전체배경</div>
-            <input id="colorBg" type="color" value="#050505" style="width:100%; height:38px; padding:0; border:none; border-radius:10px; background:rgba(0,0,0,.35); cursor:pointer;" />
+            <input id="colorBg" type="color" value="#050505" />
+            <div class="colorSwatches" data-target="colorBg">
+              <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="cSwatch" type="button" data-color="#0a0a0a" style="background:#0a0a0a"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="cSwatch" type="button" data-color="#0f172a" style="background:#0f172a"></button>
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#1a1a2e" style="background:#1a1a2e"></button>
+              <button class="cSwatch" type="button" data-color="#0c0614" style="background:#0c0614"></button>
+              <button class="cSwatch" type="button" data-color="#090c10" style="background:#090c10"></button>
+              <button class="cSwatch" type="button" data-color="#050a08" style="background:#050a08"></button>
+            </div>
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">채팅배경</div>
-            <input id="colorChatBg" type="color" value="#0e1420" style="width:100%; height:38px; padding:0; border:none; border-radius:10px; background:rgba(0,0,0,.35); cursor:pointer;" />
+            <input id="colorChatBg" type="color" value="#0e1420" />
+            <div class="colorSwatches" data-target="colorChatBg">
+              <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="cSwatch" type="button" data-color="#070c18" style="background:#070c18"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="cSwatch" type="button" data-color="#0e1420" style="background:#0e1420"></button>
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#131a2a" style="background:#131a2a"></button>
+              <button class="cSwatch" type="button" data-color="#1b1026" style="background:#1b1026"></button>
+              <button class="cSwatch" type="button" data-color="#071b14" style="background:#071b14"></button>
+              <button class="cSwatch" type="button" data-color="#140f0b" style="background:#140f0b"></button>
+              <button class="cSwatch" type="button" data-color="#111111" style="background:#111111"></button>
+            </div>
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">입력창</div>
-            <input id="colorInputBg" type="color" value="#2e3440" style="width:100%; height:38px; padding:0; border:none; border-radius:10px; background:rgba(0,0,0,.35); cursor:pointer;" />
+            <input id="colorInputBg" type="color" value="#2e3440" />
+            <div class="colorSwatches" data-target="colorInputBg">
+              <button class="cSwatch" type="button" data-color="#161b22" style="background:#161b22"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+              <button class="cSwatch" type="button" data-color="#22304a" style="background:#22304a"></button>
+              <button class="cSwatch" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
+              <button class="cSwatch" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="cSwatch" type="button" data-color="#2d2240" style="background:#2d2240"></button>
+              <button class="cSwatch" type="button" data-color="#1f3a30" style="background:#1f3a30"></button>
+              <button class="cSwatch" type="button" data-color="#3a2a22" style="background:#3a2a22"></button>
+              <button class="cSwatch" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
+            </div>
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">입력말풍선</div>
-            <input id="colorUserBubbleBg" type="color" value="#2e3440" style="width:100%; height:38px; padding:0; border:none; border-radius:10px; background:rgba(0,0,0,.35); cursor:pointer;" />
+            <input id="colorUserBubbleBg" type="color" value="#2e3440" />
+            <div class="colorSwatches" data-target="colorUserBubbleBg">
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#1b1b1b" style="background:#1b1b1b"></button>
+              <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="cSwatch" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
+              <button class="cSwatch" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="cSwatch" type="button" data-color="#334155" style="background:#334155"></button>
+              <button class="cSwatch" type="button" data-color="#3b4252" style="background:#3b4252"></button>
+              <button class="cSwatch" type="button" data-color="#22304a" style="background:#22304a"></button>
+              <button class="cSwatch" type="button" data-color="#2d2240" style="background:#2d2240"></button>
+              <button class="cSwatch" type="button" data-color="#30363d" style="background:#30363d"></button>
+            </div>
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">출력말풍선</div>
-            <input id="colorAssistantBubbleBg" type="color" value="#000000" style="width:100%; height:38px; padding:0; border:none; border-radius:10px; background:rgba(0,0,0,.35); cursor:pointer;" />
+            <input id="colorAssistantBubbleBg" type="color" value="#000000" />
+            <div class="colorSwatches" data-target="colorAssistantBubbleBg">
+              <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="cSwatch" type="button" data-color="#0a0a0a" style="background:#0a0a0a"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="cSwatch" type="button" data-color="#0e1420" style="background:#0e1420"></button>
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="cSwatch" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
+              <button class="cSwatch" type="button" data-color="#161b22" style="background:#161b22"></button>
+              <button class="cSwatch" type="button" data-color="#1a1a1a" style="background:#1a1a1a"></button>
+            </div>
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">전송버튼</div>
-            <input id="colorSendBtnBg" type="color" value="#2d6bff" style="width:100%; height:38px; padding:0; border:none; border-radius:10px; background:rgba(0,0,0,.35); cursor:pointer;" />
+            <input id="colorSendBtnBg" type="color" value="#2d6bff" />
+            <div class="colorSwatches" data-target="colorSendBtnBg">
+              <button class="cSwatch" type="button" data-color="#1d4ed8" style="background:#1d4ed8"></button>
+              <button class="cSwatch" type="button" data-color="#2d6bff" style="background:#2d6bff"></button>
+              <button class="cSwatch" type="button" data-color="#4f7cff" style="background:#4f7cff"></button>
+              <button class="cSwatch" type="button" data-color="#0ea5e9" style="background:#0ea5e9"></button>
+              <button class="cSwatch" type="button" data-color="#14b8a6" style="background:#14b8a6"></button>
+              <button class="cSwatch" type="button" data-color="#22c55e" style="background:#22c55e"></button>
+              <button class="cSwatch" type="button" data-color="#8b5cf6" style="background:#8b5cf6"></button>
+              <button class="cSwatch" type="button" data-color="#a855f7" style="background:#a855f7"></button>
+              <button class="cSwatch" type="button" data-color="#f59e0b" style="background:#f59e0b"></button>
+              <button class="cSwatch" type="button" data-color="#ef4444" style="background:#ef4444"></button>
+              <button class="cSwatch" type="button" data-color="#ec4899" style="background:#ec4899"></button>
+              <button class="cSwatch" type="button" data-color="#ffffff" style="background:#ffffff"></button>
+            </div>
           </div>
         </div>
 
-        <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap;">
-          <button class="swatchBtn" type="button" data-preset="oled">
-            <span class="swatchDot" style="background:#000000"></span> OLED Black
+        <div class="hint" style="margin-top:12px; margin-bottom:6px;">테마 프리셋</div>
+        <div class="presetGrid">
+          <button class="presetBtn" type="button" data-preset="oled">
+            <span class="presetDot" style="background:#000000"></span>OLED Black
           </button>
-          <button class="swatchBtn" type="button" data-preset="slate">
-            <span class="swatchDot" style="background:#0b0f14"></span> Slate
+          <button class="presetBtn" type="button" data-preset="slate">
+            <span class="presetDot" style="background:#0b0f14"></span>Slate
           </button>
-          <button class="swatchBtn" type="button" data-preset="navy">
-            <span class="swatchDot" style="background:#070c18"></span> Navy
+          <button class="presetBtn" type="button" data-preset="navy">
+            <span class="presetDot" style="background:#070c18"></span>Navy
           </button>
-          <button class="swatchBtn" type="button" data-preset="purple">
-            <span class="swatchDot" style="background:#1b1026"></span> Purple
+          <button class="presetBtn" type="button" data-preset="purple">
+            <span class="presetDot" style="background:#1b1026"></span>Purple
           </button>
-          <button class="swatchBtn" type="button" data-preset="emerald">
-            <span class="swatchDot" style="background:#071b14"></span> Emerald
+          <button class="presetBtn" type="button" data-preset="emerald">
+            <span class="presetDot" style="background:#071b14"></span>Emerald
           </button>
-          <button class="swatchBtn" type="button" data-preset="warm">
-            <span class="swatchDot" style="background:#140f0b"></span> Warm
+          <button class="presetBtn" type="button" data-preset="warm">
+            <span class="presetDot" style="background:#140f0b"></span>Warm
           </button>
-          <button class="swatchBtn" type="button" data-preset="mono">
-            <span class="swatchDot" style="background:#111111"></span> Mono
+          <button class="presetBtn" type="button" data-preset="mono">
+            <span class="presetDot" style="background:#111111"></span>Mono
           </button>
-          <button class="swatchBtn" type="button" data-preset="reset">
-            <span class="swatchDot" style="background:#2d6bff"></spana> 기본
+          <button class="presetBtn" type="button" data-preset="reset">
+            <span class="presetDot" style="background:linear-gradient(135deg,#2d6bff,#0e1420)"></span>기본
           </button>
         </div>
 
@@ -859,7 +963,21 @@
       setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
     }
 
-    function initColorChips(){}
+    function initColorChips(){
+      document.querySelectorAll('.colorSwatches').forEach(row => {
+        const targetId = row.getAttribute('data-target');
+        if(!targetId) return;
+        row.querySelectorAll('.cSwatch').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const c = btn.getAttribute('data-color');
+            const input = document.getElementById(targetId);
+            if(!input || !c) return;
+            input.value = c;
+            input.dispatchEvent(new Event('input', { bubbles:true }));
+          });
+        });
+      });
+    }
 
     const DB_NAME = 'bk_tr_test_db_test';
     const DB_STORE = 'kv';
