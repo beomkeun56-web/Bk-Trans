@@ -36,6 +36,7 @@
       --userBubbleBg: rgba(46, 52, 64, .92);
       --assistantBubbleBg: transparent;
       --sendBtnBg: rgba(45,107,255,.18);
+      --headerBg: rgba(20,24,32,.92);
     }
 
     @font-face{
@@ -59,11 +60,17 @@
 
     header{
       position:sticky; top:0; z-index:30;
-      padding: 0 14px;
-      padding-top: env(safe-area-inset-top);
-      background: rgba(5,5,5,.95);
+      padding: 8px 10px 0;
+      padding-top: calc(8px + env(safe-area-inset-top));
+      background: transparent;
+    }
+    .headerInner{
+      background: var(--headerBg);
       backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255,255,255,.04);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.06);
+      padding: 0 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.35);
     }
     .topbar{
       max-width: 860px;
@@ -430,6 +437,8 @@
     .hidden{display:none !important}
 
     @media (max-width: 520px){
+      header{padding: 6px 6px 0; padding-top: calc(6px + env(safe-area-inset-top));}
+      .headerInner{border-radius:14px; padding:0 10px;}
       .topbar{gap:4px}
       .title{font-size: calc(12px * var(--textScale)); gap:4px}
       .ver{font-size: calc(9px * var(--textScale)); padding:2px 6px}
@@ -456,39 +465,41 @@
 
 <body>
   <header>
-    <div class="topbar">
-      <span class="ver" id="modelTag">Model</span>
+    <div class="headerInner">
+      <div class="topbar">
+        <span class="ver" id="modelTag">Model</span>
 
-      <div style="flex:1"></div>
+        <div style="flex:1"></div>
 
-      <div class="title">BK Trans <span class="ver" id="appVer">v1.7T</span></div>
+        <div class="title">BK Trans <span class="ver" id="appVer">v1.7T</span></div>
 
-      <div class="rightBtns">
-        <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </button>
+        <div class="rightBtns">
+          <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
 
-        <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none"></path>
-          </svg>
-        </button>
+          <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none"></path>
+            </svg>
+          </button>
 
-        <button id="topClearBtn" class="iconBtn" type="button" aria-label="Clear(대화 삭제)">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            <line x1="10" y1="11" x2="10" y2="17"></line>
-            <line x1="14" y1="11" x2="14" y2="17"></line>
-          </svg>
-        </button>
+          <button id="topClearBtn" class="iconBtn" type="button" aria-label="Clear(대화 삭제)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
 
-        <button id="connBtn" class="statusBtn" type="button" aria-label="연결 상태">
-          <span id="statusCircle" class="statusCircle"></span>
-        </button>
+          <button id="connBtn" class="statusBtn" type="button" aria-label="연결 상태">
+            <span id="statusCircle" class="statusCircle"></span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -646,6 +657,22 @@
               <button class="cSwatch" type="button" data-color="#ffffff" style="background:#ffffff"></button>
             </div>
           </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">상단바</div>
+            <input id="colorHeaderBg" type="color" value="#141820" />
+            <div class="colorSwatches" data-target="colorHeaderBg">
+              <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="cSwatch" type="button" data-color="#141820" style="background:#141820"></button>
+              <button class="cSwatch" type="button" data-color="#1a1f2e" style="background:#1a1f2e"></button>
+              <button class="cSwatch" type="button" data-color="#1e293b" style="background:#1e293b"></button>
+              <button class="cSwatch" type="button" data-color="#1b1026" style="background:#1b1026"></button>
+              <button class="cSwatch" type="button" data-color="#0a1a14" style="background:#0a1a14"></button>
+              <button class="cSwatch" type="button" data-color="#1a1410" style="background:#1a1410"></button>
+              <button class="cSwatch" type="button" data-color="#1a1a1a" style="background:#1a1a1a"></button>
+            </div>
+          </div>
         </div>
 
         <div class="hint" style="margin-top:12px; margin-bottom:6px;">테마 프리셋</div>
@@ -747,6 +774,7 @@
       colorUserBubbleBg: 'bk_tr_test_color_user_bubble_bg',
       colorAssistantBubbleBg: 'bk_tr_test_color_assistant_bubble_bg',
       colorSendBtnBg: 'bk_tr_test_color_send_btn_bg',
+      colorHeaderBg: 'bk_tr_test_color_header_bg',
       chatHistory: 'bk_tr_test_chatHistory'
     };
 
@@ -797,6 +825,7 @@
       colorUserBubbleBg: document.getElementById('colorUserBubbleBg'),
       colorAssistantBubbleBg: document.getElementById('colorAssistantBubbleBg'),
       colorSendBtnBg: document.getElementById('colorSendBtnBg'),
+      colorHeaderBg: document.getElementById('colorHeaderBg'),
     };
 
     if(el.appVer) el.appVer.textContent = APP_VERSION;
@@ -932,17 +961,18 @@
       inputBg: '#2e3440',
       userBubbleBg: '#2e3440',
       assistantBubbleBg: '#000000',
-      sendBtnBg: '#2d6bff'
+      sendBtnBg: '#2d6bff',
+      headerBg: '#141820'
     };
 
     const COLOR_PRESETS = {
-      oled:      { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      slate:     { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      navy:      { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff' },
-      purple:    { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6' },
-      emerald:   { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e' },
-      warm:      { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b' },
-      mono:      { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff' },
+      oled:      { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff', headerBg:'#0a0a0a' },
+      slate:     { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff', headerBg:'#0b0f14' },
+      navy:      { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff', headerBg:'#0a1020' },
+      purple:    { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6', headerBg:'#1b1026' },
+      emerald:   { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e', headerBg:'#0a1a14' },
+      warm:      { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b', headerBg:'#1a1410' },
+      mono:      { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff', headerBg:'#1a1a1a' },
       reset:     { ...COLOR_DEFAULTS }
     };
 
@@ -970,6 +1000,10 @@
       const savedSendBtn = localStorage.getItem(LS.colorSendBtnBg);
       if(el.colorSendBtnBg) el.colorSendBtnBg.value = savedSendBtn || COLOR_DEFAULTS.sendBtnBg;
       if(savedSendBtn) document.documentElement.style.setProperty('--sendBtnBg', savedSendBtn);
+
+      const savedHeader = localStorage.getItem(LS.colorHeaderBg);
+      if(el.colorHeaderBg) el.colorHeaderBg.value = savedHeader || COLOR_DEFAULTS.headerBg;
+      if(savedHeader) document.documentElement.style.setProperty('--headerBg', savedHeader);
     }
 
     function bindColorPicker(inputEl, lsKey, cssVar){
@@ -998,6 +1032,7 @@
       setOne(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg', p.userBubbleBg);
       setOne(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg', p.assistantBubbleBg);
       setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
+      if(p.headerBg) setOne(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg', p.headerBg);
     }
 
     function initColorChips(){
@@ -1643,6 +1678,7 @@
     bindColorPicker(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg');
     bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
     bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
+    bindColorPicker(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg');
 
     initColorChips();
 
