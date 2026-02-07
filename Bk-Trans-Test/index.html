@@ -535,7 +535,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title">BK Trans <span class="ver" id="appVer">v2.2T</span></div>
+        <div class="title">BK Trans <span class="ver" id="appVer">v2.3T</span></div>
 
         <div class="rightBtns">
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -568,60 +568,121 @@
     </div>
   </header>
 
-  <div id="settingsOverlay" class="settingsOverlay">
-    <section id="settingsPanel" class="settings">
-      <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <button id="saveBtn" class="btn" type="button" style="flex:1;">저장</button>
-        <button id="settingsCloseBtn" class="btn secondary" type="button" style="flex:1;">닫기</button>
+  <!-- API 설정 패널 -->
+  <div id="apiSettingsOverlay" class="settingsOverlay">
+    <section id="apiSettingsPanel" class="settings">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,.08);">
+        <h2 style="margin:0; font-size:calc(18px * var(--textScale)); font-weight:700; color:var(--text);">API 및 프롬프트 설정</h2>
+        <button id="apiSettingsCloseBtn" class="iconBtn" type="button" aria-label="닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
 
-        <label for="apiKey">OpenRouter API Key</label>
-        <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
+        <div style="margin-bottom:20px;">
+          <label for="apiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">OpenRouter API Key</label>
+          <input id="apiKey" type="password" placeholder="sk-or-v1-..." autocomplete="off" />
 
-        <div class="row">
-          <div style="flex:1 1 240px;">
-            <label for="model">모델</label>
-            <input id="model" type="text" value="google/gemini-3-flash-preview" list="modelList" />
-            <datalist id="modelList">
-              <option value="google/gemini-3-flash-preview">Gemini 3 Flash</option>
-              <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
-              <option value="anthropic/claude-sonnet-4.5">Claude Sonnet 4.5</option>
-              <option value="openai/gpt-5.2">GPT 5.2</option>
-              <option value="openai/gpt-5.2-chat">GPT 5.2 Chat</option>
-            </datalist>
-          </div>
-          <div style="flex:1 1 140px;">
-            <label for="temperature">temperature</label>
-            <input id="temperature" type="text" value="0.2" />
-          </div>
-          <div style="flex:1 1 140px;">
-            <label for="top_p">top_p</label>
-            <input id="top_p" type="text" value="1" />
-          </div>
-          <div style="flex:1 1 140px;">
-            <label for="maxTokens">max_tokens</label>
-            <input id="maxTokens" type="text" value="800" />
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">모델 파라미터</label>
+          <div class="row" style="gap:12px;">
+            <div style="flex:1 1 240px;">
+              <label for="model" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">모델</label>
+              <input id="model" type="text" value="google/gemini-3-flash-preview" list="modelList" />
+              <datalist id="modelList">
+                <option value="google/gemini-3-flash-preview">Gemini 3 Flash</option>
+                <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
+                <option value="anthropic/claude-sonnet-4.5">Claude Sonnet 4.5</option>
+                <option value="openai/gpt-5.2">GPT 5.2</option>
+                <option value="openai/gpt-5.2-chat">GPT 5.2 Chat</option>
+              </datalist>
+            </div>
+            <div style="flex:1 1 120px;">
+              <label for="temperature" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Temperature</label>
+              <input id="temperature" type="text" value="0.2" />
+            </div>
+            <div style="flex:1 1 120px;">
+              <label for="top_p" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Top P</label>
+              <input id="top_p" type="text" value="1" />
+            </div>
+            <div style="flex:1 1 120px;">
+              <label for="maxTokens" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Max Tokens</label>
+              <input id="maxTokens" type="text" value="800" />
+            </div>
           </div>
         </div>
 
-        <label for="systemPrompt">프롬프트(시스템/규칙)</label>
-        <textarea id="systemPrompt" placeholder="여기에 본인 프롬프트를 붙여넣으세요."></textarea>
+        <div style="margin-bottom:20px;">
+          <label for="systemPrompt" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">시스템 프롬프트</label>
+          <textarea id="systemPrompt" placeholder="여기에 시스템 프롬프트를 입력하세요..." style="min-height:140px;"></textarea>
+        </div>
 
-        <div class="row" style="align-items:center; margin-top:10px;">
-          <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text);">
-            <input id="autoCopy" type="checkbox" style="width:18px; height:18px; accent-color: var(--blue);" />
-            번역 완료 시 자동 복사(Chrome 모바일)
+        <div style="margin-bottom:24px;">
+          <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text); cursor:pointer; padding:12px; background:rgba(255,255,255,.03); border-radius:12px;">
+            <input id="autoCopy" type="checkbox" style="width:18px; height:18px; accent-color: var(--blue); cursor:pointer;" />
+            <span style="font-size:calc(13px * var(--textScale));">번역 완료 시 자동 복사 (Chrome 모바일)</span>
           </label>
         </div>
 
-        <label for="fontScale">글자 크기</label>
-        <div class="row" style="align-items:center;">
-          <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
-          <div id="fontScaleVal" class="hint" style="min-width:64px; text-align:right;">100%</div>
-          <button id="fontScaleResetBtn" class="btn secondary" type="button">초기화</button>
+        <div style="display:flex; gap:10px;">
+          <button id="apiSaveBtn" class="btn" type="button" style="flex:1; font-weight:600;">저장</button>
+          <button id="apiCloseBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
+        </div>
+    </section>
+  </div>
+
+  <!-- 색상 설정 패널 -->
+  <div id="colorSettingsOverlay" class="settingsOverlay">
+    <section id="colorSettingsPanel" class="settings">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,.08);">
+        <h2 style="margin:0; font-size:calc(18px * var(--textScale)); font-weight:700; color:var(--text);">외관 및 색상 설정</h2>
+        <button id="colorSettingsCloseBtn" class="iconBtn" type="button" aria-label="닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="fontScale" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">글자 크기</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
+            <div id="fontScaleVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--textScale));">100%</div>
+            <button id="fontScaleResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
         </div>
 
-        <label>색상</label>
+        <div style="margin-bottom:24px;">
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">테마 프리셋</label>
+          <div class="presetGrid">
+            <button class="presetBtn" type="button" data-preset="oled">
+              <span class="presetDot" style="background:#000000"></span>OLED Black
+            </button>
+            <button class="presetBtn" type="button" data-preset="slate">
+              <span class="presetDot" style="background:#0b0f14"></span>Slate
+            </button>
+            <button class="presetBtn" type="button" data-preset="navy">
+              <span class="presetDot" style="background:#070c18"></span>Navy
+            </button>
+            <button class="presetBtn" type="button" data-preset="purple">
+              <span class="presetDot" style="background:#1b1026"></span>Purple
+            </button>
+            <button class="presetBtn" type="button" data-preset="emerald">
+              <span class="presetDot" style="background:#071b14"></span>Emerald
+            </button>
+            <button class="presetBtn" type="button" data-preset="warm">
+              <span class="presetDot" style="background:#140f0b"></span>Warm
+            </button>
+            <button class="presetBtn" type="button" data-preset="mono">
+              <span class="presetDot" style="background:#111111"></span>Mono
+            </button>
+            <button class="presetBtn" type="button" data-preset="reset">
+              <span class="presetDot" style="background:linear-gradient(135deg,#2d6bff,#0e1420)"></span>기본
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">커스텀 색상</label>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">전체배경</div>
@@ -779,44 +840,18 @@
           </div>
         </div>
 
-        <div class="hint" style="margin-top:12px; margin-bottom:6px;">테마 프리셋</div>
-        <div class="presetGrid">
-          <button class="presetBtn" type="button" data-preset="oled">
-            <span class="presetDot" style="background:#000000"></span>OLED Black
-          </button>
-          <button class="presetBtn" type="button" data-preset="slate">
-            <span class="presetDot" style="background:#0b0f14"></span>Slate
-          </button>
-          <button class="presetBtn" type="button" data-preset="navy">
-            <span class="presetDot" style="background:#070c18"></span>Navy
-          </button>
-          <button class="presetBtn" type="button" data-preset="purple">
-            <span class="presetDot" style="background:#1b1026"></span>Purple
-          </button>
-          <button class="presetBtn" type="button" data-preset="emerald">
-            <span class="presetDot" style="background:#071b14"></span>Emerald
-          </button>
-          <button class="presetBtn" type="button" data-preset="warm">
-            <span class="presetDot" style="background:#140f0b"></span>Warm
-          </button>
-          <button class="presetBtn" type="button" data-preset="mono">
-            <span class="presetDot" style="background:#111111"></span>Mono
-          </button>
-          <button class="presetBtn" type="button" data-preset="reset">
-            <span class="presetDot" style="background:linear-gradient(135deg,#2d6bff,#0e1420)"></span>기본
-          </button>
+        <div style="margin-bottom:24px;">
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">커스텀 폰트</label>
+          <div class="row" style="align-items:center; gap:10px;">
+            <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" style="flex:1;" />
+            <button id="clearFontBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+          <div class="hint" style="margin-top:8px;">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
         </div>
 
-        <label>폰트(폰에서 업로드)</label>
-        <div class="row" style="align-items:center;">
-          <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" />
-          <button id="clearFontBtn" class="btn secondary" type="button">폰트 초기화</button>
-        </div>
-        <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
-
-        <div style="display:flex; gap:8px; margin-top:16px;">
-          <button id="saveBtnBottom" class="btn" type="button" style="flex:1;">저장</button>
-          <button id="closeBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
+        <div style="display:flex; gap:10px;">
+          <button id="colorSaveBtn" class="btn" type="button" style="flex:1; font-weight:600;">저장</button>
+          <button id="colorCloseBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
         </div>
     </section>
   </div>
@@ -848,7 +883,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v2.2T';
+    const APP_VERSION = 'v2.3T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1372,7 +1407,7 @@
       updateModelTag();
     }
 
-    function saveSettings(){
+    function saveApiSettings(){
       localStorage.setItem(LS.apiKey, el.apiKey.value.trim());
       localStorage.setItem(LS.model, el.model.value.trim());
       localStorage.setItem(LS.temp, el.temperature.value.trim());
@@ -1380,26 +1415,44 @@
       localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
       localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
       localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
-      localStorage.setItem(LS.fontScale, String(el.fontScale ? el.fontScale.value : '1'));
       updateModelTag();
-      toast('저장 완료');
-      setSettingsVisible(false);
+      toast('API 설정 저장 완료');
+      setApiSettingsVisible(false);
     }
 
-    const settingsOverlay = document.getElementById('settingsOverlay');
-    const settingsCloseBtn = document.getElementById('settingsCloseBtn');
+    function saveColorSettings(){
+      localStorage.setItem(LS.fontScale, String(el.fontScale ? el.fontScale.value : '1'));
+      toast('외관 설정 저장 완료');
+      setColorSettingsVisible(false);
+    }
 
-    function setSettingsVisible(v){
+    const apiSettingsOverlay = document.getElementById('apiSettingsOverlay');
+    const colorSettingsOverlay = document.getElementById('colorSettingsOverlay');
+
+    function setApiSettingsVisible(v){
       if(v){
-        settingsOverlay.classList.add('show');
+        apiSettingsOverlay.classList.add('show');
       } else {
-        settingsOverlay.classList.remove('show');
+        apiSettingsOverlay.classList.remove('show');
       }
     }
 
-    function toggleSettings(){
-      const isVisible = settingsOverlay.classList.contains('show');
-      setSettingsVisible(!isVisible);
+    function setColorSettingsVisible(v){
+      if(v){
+        colorSettingsOverlay.classList.add('show');
+      } else {
+        colorSettingsOverlay.classList.remove('show');
+      }
+    }
+
+    function toggleApiSettings(){
+      const isVisible = apiSettingsOverlay.classList.contains('show');
+      setApiSettingsVisible(!isVisible);
+    }
+
+    function toggleColorSettings(){
+      const isVisible = colorSettingsOverlay.classList.contains('show');
+      setColorSettingsVisible(!isVisible);
     }
 
     let _isBusy = false;
@@ -1710,7 +1763,8 @@
     loadCustomFont();
     loadChatHistory();
     renderChat();
-    setSettingsVisible(false);
+    setApiSettingsVisible(false);
+    setColorSettingsVisible(false);
     setConnState('warn');
 
     const LS_LAST_CLIP = 'bk_tr_test_lastClip';
@@ -1748,20 +1802,31 @@
     setInterval(checkClipboard, 500);
 
     if(el.modelTag) el.modelTag.addEventListener('click', toggleModelDropdown);
-    if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
-    if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
-    if(settingsCloseBtn) settingsCloseBtn.addEventListener('click', () => setSettingsVisible(false));
-    if(settingsOverlay) settingsOverlay.addEventListener('click', (e) => {
-      if(e.target === settingsOverlay) setSettingsVisible(false);
+    if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleColorSettings);
+    if(el.appVer) el.appVer.addEventListener('click', toggleApiSettings);
+
+    const apiSettingsCloseBtn = document.getElementById('apiSettingsCloseBtn');
+    const apiSaveBtn = document.getElementById('apiSaveBtn');
+    const apiCloseBtnBottom = document.getElementById('apiCloseBtnBottom');
+    if(apiSettingsCloseBtn) apiSettingsCloseBtn.addEventListener('click', () => setApiSettingsVisible(false));
+    if(apiSaveBtn) apiSaveBtn.addEventListener('click', saveApiSettings);
+    if(apiCloseBtnBottom) apiCloseBtnBottom.addEventListener('click', () => setApiSettingsVisible(false));
+    if(apiSettingsOverlay) apiSettingsOverlay.addEventListener('click', (e) => {
+      if(e.target === apiSettingsOverlay) setApiSettingsVisible(false);
+    });
+
+    const colorSettingsCloseBtn = document.getElementById('colorSettingsCloseBtn');
+    const colorSaveBtn = document.getElementById('colorSaveBtn');
+    const colorCloseBtnBottom = document.getElementById('colorCloseBtnBottom');
+    if(colorSettingsCloseBtn) colorSettingsCloseBtn.addEventListener('click', () => setColorSettingsVisible(false));
+    if(colorSaveBtn) colorSaveBtn.addEventListener('click', saveColorSettings);
+    if(colorCloseBtnBottom) colorCloseBtnBottom.addEventListener('click', () => setColorSettingsVisible(false));
+    if(colorSettingsOverlay) colorSettingsOverlay.addEventListener('click', (e) => {
+      if(e.target === colorSettingsOverlay) setColorSettingsVisible(false);
     });
 
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
-    if(el.saveBtn) el.saveBtn.addEventListener('click', saveSettings);
-    const saveBtnBottom = document.getElementById('saveBtnBottom');
-    const closeBtnBottom = document.getElementById('closeBtnBottom');
-    if(saveBtnBottom) saveBtnBottom.addEventListener('click', saveSettings);
-    if(closeBtnBottom) closeBtnBottom.addEventListener('click', () => setSettingsVisible(false));
 
     if(el.model) el.model.addEventListener('input', updateModelTag);
 
