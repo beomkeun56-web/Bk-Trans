@@ -535,7 +535,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title">BK Trans <span class="ver" id="appVer">v2.5T</span></div>
+        <div class="title">BK Trans <span class="ver" id="appVer">v2.6T</span></div>
 
         <div class="rightBtns">
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -871,7 +871,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v2.5T';
+    const APP_VERSION = 'v2.6T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1140,7 +1140,7 @@
     }
 
     function applyColorWithTransparency(color, cssVar, isTransparent){
-      const finalColor = isTransparent ? hexToRgba(color, 0.75) : color;
+      const finalColor = isTransparent ? hexToRgba(color, 0.5) : color;
       document.documentElement.style.setProperty(cssVar, finalColor);
     }
 
