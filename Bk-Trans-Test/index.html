@@ -50,7 +50,7 @@
       margin:0;
       background:var(--bg);
       color:var(--text);
-      font-family: var(--fontMain), "BKRepoFont", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial;
+      font-family: var(--fontMain), "BKRepoFont", "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Arial;
       -webkit-font-smoothing:antialiased;
       display:flex;
       flex-direction:column;
@@ -97,17 +97,16 @@
     #modelTag{
       padding: 4px 10px;
       border-radius: 8px;
-      background: rgba(255,255,255,.10);
+      background: rgba(255,255,255,.12);
       color: #ffffff;
       font-size: calc(11px * var(--textScale));
       font-weight:700;
-      max-width: none;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
       display:inline-block;
       vertical-align:middle;
       letter-spacing:.2px;
+      white-space:normal;
+      word-break:keep-all;
+      line-height:1.3;
     }
 
     .iconBtn{
@@ -208,16 +207,11 @@
       box-shadow: 0 20px 60px rgba(0,0,0,.7);
       position:relative;
     }
-    .settingsCloseBtn{
-      position:absolute; top:10px; right:10px;
-      width:32px; height:32px; border:none; border-radius:10px;
-      background:rgba(255,255,255,.06); color:var(--text);
-      cursor:pointer; display:flex; align-items:center; justify-content:center;
-      font-size:18px; line-height:1;
-    }
-    .settingsCloseBtn:active{transform:scale(.95)}
     .settings .row{display:flex; gap:10px; flex-wrap:wrap}
     label{font-size: calc(12px * var(--textScale)); color:var(--muted); display:block; margin:10px 0 6px}
+    input, textarea, select, button{
+      font-family: inherit;
+    }
     input[type="password"], input[type="text"], textarea{
       width:100%;
       background: rgba(0,0,0,.35);
@@ -439,7 +433,7 @@
       .topbar{gap:4px}
       .title{font-size: calc(12px * var(--textScale)); gap:4px}
       .ver{font-size: calc(9px * var(--textScale)); padding:2px 6px}
-      #modelTag{max-width:130px}
+      #modelTag{font-size: calc(10px * var(--textScale))}
       .iconBtn{width:32px; height:32px; flex:0 0 32px}
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
@@ -467,7 +461,7 @@
 
       <div style="flex:1"></div>
 
-      <div class="title">BK Trans <span class="ver" id="appVer">v1.6T</span></div>
+      <div class="title">BK Trans <span class="ver" id="appVer">v1.7T</span></div>
 
       <div class="rightBtns">
         <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -501,9 +495,9 @@
 
   <div id="settingsOverlay" class="settingsOverlay">
     <section id="settingsPanel" class="settings">
-      <button id="settingsCloseBtn" class="settingsCloseBtn" type="button" aria-label="닫기">&times;</button>
-      <div class="hint" style="margin-bottom:8px;">
-        OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
+      <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <button id="saveBtn" class="btn" type="button" style="flex:1;">저장</button>
+        <button id="settingsCloseBtn" class="btn secondary" type="button" style="flex:1;">닫기</button>
       </div>
 
         <label for="apiKey">OpenRouter API Key</label>
@@ -686,9 +680,13 @@
         <div class="row" style="align-items:center;">
           <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" />
           <button id="clearFontBtn" class="btn secondary" type="button">폰트 초기화</button>
-          <button id="saveBtn" class="btn" type="button">저장</button>
         </div>
         <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
+
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <button id="saveBtnBottom" class="btn" type="button" style="flex:1;">저장</button>
+          <button id="closeBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
+        </div>
     </section>
   </div>
 
@@ -731,7 +729,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.6T';
+    const APP_VERSION = 'v1.7T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1583,6 +1581,10 @@
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
     if(el.saveBtn) el.saveBtn.addEventListener('click', saveSettings);
+    const saveBtnBottom = document.getElementById('saveBtnBottom');
+    const closeBtnBottom = document.getElementById('closeBtnBottom');
+    if(saveBtnBottom) saveBtnBottom.addEventListener('click', saveSettings);
+    if(closeBtnBottom) closeBtnBottom.addEventListener('click', () => setSettingsVisible(false));
 
     if(el.model) el.model.addEventListener('input', updateModelTag);
 
