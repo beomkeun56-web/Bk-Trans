@@ -71,6 +71,7 @@
       border: 1px solid rgba(255,255,255,.06);
       padding: 0 14px;
       box-shadow: 0 4px 20px rgba(0,0,0,.35);
+      position:relative;
     }
     .topbar{
       max-width: 860px;
@@ -114,7 +115,48 @@
       white-space:normal;
       word-break:keep-all;
       line-height:1.3;
+      cursor:pointer;
+      transition: background .15s;
     }
+    #modelTag:hover{background:rgba(255,255,255,.18)}
+    #modelTag:active{transform:scale(.97)}
+
+    .modelDropdown{
+      display:none;
+      position:absolute;
+      top:100%;
+      left:10px;
+      margin-top:6px;
+      min-width:240px;
+      max-width:320px;
+      background: rgba(14,18,26,.97);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      box-shadow: 0 12px 36px rgba(0,0,0,.55);
+      padding:6px;
+      z-index:50;
+      backdrop-filter:blur(12px);
+    }
+    .modelDropdown.show{display:block}
+    .modelDropdownItem{
+      display:block;
+      width:100%;
+      padding:10px 12px;
+      border:none;
+      background:transparent;
+      color:var(--text);
+      font-size:calc(13px * var(--textScale));
+      font-family:inherit;
+      text-align:left;
+      border-radius:10px;
+      cursor:pointer;
+      transition:background .12s;
+    }
+    .modelDropdownItem:hover{background:rgba(255,255,255,.08)}
+    .modelDropdownItem:active{transform:scale(.98)}
+    .modelDropdownItem.active{background:rgba(45,107,255,.2); color:#ffffff;}
+    .modelDropdownItem .mdName{font-weight:700}
+    .modelDropdownItem .mdId{font-size:calc(11px * var(--textScale)); color:var(--muted); margin-top:2px}
 
     .iconBtn{
       width:36px; height:36px;
@@ -458,6 +500,7 @@
       .ver{font-size: calc(9px * var(--textScale)); padding:2px 6px}
       .topbar{height:52px}
       #modelTag{font-size: calc(12px * var(--textScale))}
+      .modelDropdown{left:6px; min-width:220px; max-width:280px}
       .iconBtn{width:32px; height:32px; flex:0 0 32px}
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
@@ -483,6 +526,8 @@
     <div class="headerInner">
       <div class="topbar">
         <span class="ver" id="modelTag">Model</span>
+
+        <div id="modelDropdown" class="modelDropdown"></div>
 
         <div style="flex:1"></div>
 
@@ -798,6 +843,7 @@
       main: document.getElementById('main'),
       appVer: document.getElementById('appVer'),
       modelTag: document.getElementById('modelTag'),
+      modelDropdown: document.getElementById('modelDropdown'),
 
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
@@ -866,6 +912,53 @@
       if(el.modelTag) el.modelTag.textContent = pretty;
       document.title = pretty + ' BK Trans ' + APP_VERSION;
     }
+
+    const MODEL_OPTIONS = [
+      { id:'google/gemini-3-flash-preview', name:'Gemini 3 Flash' },
+      { id:'anthropic/claude-haiku-4.5', name:'Claude Haiku 4.5' },
+      { id:'anthropic/claude-sonnet-4.5', name:'Claude Sonnet 4.5' },
+      { id:'openai/gpt-5.2', name:'GPT 5.2' },
+      { id:'openai/gpt-5.2-chat', name:'GPT 5.2 Chat' }
+    ];
+
+    function renderModelDropdown(){
+      if(!el.modelDropdown) return;
+      const currentId = getCurrentModelId();
+      el.modelDropdown.innerHTML = '';
+      MODEL_OPTIONS.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'modelDropdownItem' + (m.id === currentId ? ' active' : '');
+        btn.type = 'button';
+        btn.innerHTML = '<div class="mdName">' + m.name + '</div><div class="mdId">' + m.id + '</div>';
+        btn.addEventListener('click', () => {
+          if(el.model) el.model.value = m.id;
+          localStorage.setItem(LS.model, m.id);
+          updateModelTag();
+          closeModelDropdown();
+          toast(m.name + ' 선택');
+        });
+        el.modelDropdown.appendChild(btn);
+      });
+    }
+
+    function toggleModelDropdown(){
+      if(!el.modelDropdown) return;
+      const isOpen = el.modelDropdown.classList.contains('show');
+      if(isOpen){ closeModelDropdown(); }
+      else { renderModelDropdown(); el.modelDropdown.classList.add('show'); }
+    }
+
+    function closeModelDropdown(){
+      if(el.modelDropdown) el.modelDropdown.classList.remove('show');
+    }
+
+    document.addEventListener('click', (e) => {
+      if(el.modelDropdown && el.modelDropdown.classList.contains('show')){
+        if(!el.modelTag.contains(e.target) && !el.modelDropdown.contains(e.target)){
+          closeModelDropdown();
+        }
+      }
+    });
 
     function toast(msg){
       el.toast.textContent = String(msg ?? '');
@@ -1624,6 +1717,7 @@
     checkClipboard();
     setInterval(checkClipboard, 500);
 
+    if(el.modelTag) el.modelTag.addEventListener('click', toggleModelDropdown);
     if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
     if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
     if(settingsCloseBtn) settingsCloseBtn.addEventListener('click', () => setSettingsVisible(false));
