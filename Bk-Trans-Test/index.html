@@ -412,7 +412,7 @@
       max-width: 860px;
       margin:0 auto;
       background: var(--inputBg);
-      border: none;
+      border: 1px solid rgba(255,255,255,.14);
       border-radius: 18px;
       box-shadow: 0 6px 24px rgba(0,0,0,.4);
       display:flex;
@@ -423,7 +423,7 @@
 
     #input{
       width:100%;
-      min-height:46px;
+      min-height:60px;
       max-height:240px;
       padding: 14px 16px;
       border-radius: 18px;
@@ -506,7 +506,7 @@
       .bubble{font-size: calc(16px * var(--textScale))}
       .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
       .composerInner{border-radius:16px}
-      #input{padding: 12px 16px; min-height:44px}
+      #input{padding: 12px 16px; min-height:56px}
     }
   </style>
 </head>
@@ -1801,11 +1801,12 @@
       if(!window.visualViewport) return;
       const vv = window.visualViewport;
       const bottomOffset = window.innerHeight - vv.height - vv.offsetTop;
+      const extraLift = 40;
       if(composerEl){
-        composerEl.style.bottom = Math.max(0, bottomOffset) + 'px';
+        composerEl.style.bottom = Math.max(0, bottomOffset + extraLift) + 'px';
       }
       if(el.main){
-        el.main.style.paddingBottom = (Math.max(0, bottomOffset) + 82) + 'px';
+        el.main.style.paddingBottom = (Math.max(0, bottomOffset + extraLift) + 82) + 'px';
       }
       scrollToBottom('instant');
     }
