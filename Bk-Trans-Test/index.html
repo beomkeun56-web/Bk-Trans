@@ -61,8 +61,8 @@
 
     header{
       position:sticky; top:0; z-index:30;
-      padding: 0 10px;
-      padding-top: env(safe-area-inset-top);
+      padding: 8px 10px 0;
+      padding-top: calc(8px + env(safe-area-inset-top));
       background: transparent;
     }
     .headerInner{
@@ -490,7 +490,7 @@
     .hidden{display:none !important}
 
     @media (max-width: 520px){
-      header{padding: 0 6px; padding-top: env(safe-area-inset-top);}
+      header{padding: 6px 6px 0; padding-top: calc(6px + env(safe-area-inset-top));}
       .headerInner{border-radius:14px; padding:0;}
       .topbar{gap:4px; padding: 0 10px;}
       .title{font-size: calc(12px * var(--textScale)); gap:4px}
