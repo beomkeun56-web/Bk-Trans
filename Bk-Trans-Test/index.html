@@ -1237,7 +1237,7 @@
       return s.includes('anthropic/') || s.includes('claude');
     }
 
-    async function callOpenRouter(userText){
+    async function callOpenRouterStream(userText, onChunk){
       const apiKey = el.apiKey.value.trim();
       if(!apiKey) throw new Error('API Key가 비어 있습니다.');
 
@@ -1249,19 +1249,21 @@
       const maxTokensRaw = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 32000, 'max_tokens'));
       const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
 
-      const messages = [{ role: 'user', content: userText }];
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userText }
+      ];
 
       const payload = {
         model,
         messages,
-        temperature
+        temperature,
+        stream: true
       };
 
       if(isAnthropicModel(model)){
-        messages.unshift({ role: 'system', content: systemPrompt });
         payload.max_tokens = Math.min(maxTokensRaw, 4096);
       } else {
-        messages.unshift({ role: 'system', content: systemPrompt });
         payload.max_tokens = maxTokensRaw;
       }
 
@@ -1285,10 +1287,37 @@
         throw new Error('HTTP ' + res.status + ': ' + msg);
       }
 
-      const json = await res.json();
-      const choice = json.choices && json.choices[0];
-      if(!choice) throw new Error('응답에 choices가 없습니다: ' + JSON.stringify(json).slice(0, 200));
-      return choice.message ? choice.message.content : (choice.text || '');
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let full = '';
+      let buf = '';
+
+      while(true){
+        const { done, value } = await reader.read();
+        if(done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() || '';
+        for(const line of lines){
+          const trimmed = line.trim();
+          if(!trimmed || !trimmed.startsWith('data:')) continue;
+          const data = trimmed.slice(5).trim();
+          if(data === '[DONE]') break;
+          try{
+            const j = JSON.parse(data);
+            const delta = j.choices && j.choices[0] && j.choices[0].delta;
+            if(delta && delta.content){
+              full += delta.content;
+              onChunk(full);
+            }
+          } catch{}
+        }
+      }
+      return full;
+    }
+
+    async function callOpenRouter(userText){
+      return callOpenRouterStream(userText, () => {});
     }
 
     function renderChat(){
@@ -1342,8 +1371,20 @@
       el.input.value = '';
       setConnState('busy');
 
+      const streamRow = document.createElement('div');
+      streamRow.className = 'msg assistant';
+      const streamBubble = document.createElement('div');
+      streamBubble.className = 'bubble';
+      streamBubble.textContent = '';
+      streamRow.appendChild(streamBubble);
+      el.chat.appendChild(streamRow);
+      scrollToBottom('smooth');
+
       try{
-        const translatedRaw = await callOpenRouter(userText);
+        const translatedRaw = await callOpenRouterStream(userText, (partial) => {
+          streamBubble.textContent = partial;
+          scrollToBottom('instant');
+        });
         const translated = normalizeOutput(userText, translatedRaw);
 
         chat.push({ role:'assistant', text: translated, ts: Date.now() });
@@ -1369,6 +1410,7 @@
         setConnState('ok');
       } catch(err){
         const msg = (err && err.message) ? err.message : String(err);
+        if(streamRow.parentNode) streamRow.remove();
         chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
 
         trimChatToMaxInputs();
