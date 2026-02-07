@@ -295,11 +295,40 @@
       outline:none;
       border-radius: 10px;
       padding: 8px 10px;
-      font-size: calc(12px * var(--textScale));
+      font-size: calc(11px * var(--textScale));
       font-family: 'Courier New', monospace;
-      text-transform: uppercase;
+      text-transform: none;
       flex:1;
       min-width:0;
+    }
+    .opacitySlider{
+      width:100%;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: linear-gradient(to right, transparent, var(--blue));
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+    .opacitySlider::-webkit-slider-thumb{
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--text);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,.3);
+    }
+    .opacitySlider::-moz-range-thumb{
+      width: 16px;
+      height: 16px;
+      background: var(--text);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,.3);
     }
     textarea{min-height:120px; resize:vertical; line-height:1.5}
     .hint{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.45}
@@ -540,7 +569,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title">BK Trans <span class="ver" id="appVer">v2.8T</span></div>
+        <div class="title">BK Trans <span class="ver" id="appVer">v2.9T</span></div>
 
         <div class="rightBtns">
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -663,160 +692,152 @@
             <div class="hint" style="margin-bottom:4px;">전체배경</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorBg" type="color" value="#050505" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorBg" />
+              <input id="colorBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorBg" data-opacity="opacityBg" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
+              <input id="opacityBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorBg" />
+              <span id="opacityBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
             </div>
             <div class="colorSwatches" data-target="colorBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
               <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
-              <button class="cSwatch" type="button" data-color="#0a0a0a" style="background:#0a0a0a"></button>
               <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
               <button class="cSwatch" type="button" data-color="#0f172a" style="background:#0f172a"></button>
               <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
               <button class="cSwatch" type="button" data-color="#1a1a2e" style="background:#1a1a2e"></button>
-              <button class="cSwatch" type="button" data-color="#0c0614" style="background:#0c0614"></button>
-              <button class="cSwatch" type="button" data-color="#090c10" style="background:#090c10"></button>
-              <button class="cSwatch" type="button" data-color="#050a08" style="background:#050a08"></button>
             </div>
           </div>
           <div class="colorItem">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <div class="hint">채팅배경</div>
-              <label style="display:flex; align-items:center; gap:4px; font-size:calc(11px * var(--textScale)); color:var(--muted); cursor:pointer;">
-                <input id="chatBgTransparent" type="checkbox" style="width:14px; height:14px; accent-color:var(--blue); cursor:pointer;" />
-                <span>반투명</span>
-              </label>
-            </div>
+            <div class="hint" style="margin-bottom:4px;">채팅배경</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorChatBg" type="color" value="#0e1420" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorChatBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorChatBg" />
+              <input id="colorChatBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorChatBg" data-opacity="opacityChatBg" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
+              <input id="opacityChatBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorChatBg" />
+              <span id="opacityChatBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
             </div>
             <div class="colorSwatches" data-target="colorChatBg">
               <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
-              <button class="cSwatch" type="button" data-color="#070c18" style="background:#070c18"></button>
               <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
               <button class="cSwatch" type="button" data-color="#0e1420" style="background:#0e1420"></button>
               <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
               <button class="cSwatch" type="button" data-color="#131a2a" style="background:#131a2a"></button>
               <button class="cSwatch" type="button" data-color="#1b1026" style="background:#1b1026"></button>
-              <button class="cSwatch" type="button" data-color="#071b14" style="background:#071b14"></button>
-              <button class="cSwatch" type="button" data-color="#140f0b" style="background:#140f0b"></button>
-              <button class="cSwatch" type="button" data-color="#111111" style="background:#111111"></button>
             </div>
           </div>
           <div class="colorItem">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <div class="hint">입력창</div>
-              <label style="display:flex; align-items:center; gap:4px; font-size:calc(11px * var(--textScale)); color:var(--muted); cursor:pointer;">
-                <input id="inputBgTransparent" type="checkbox" style="width:14px; height:14px; accent-color:var(--blue); cursor:pointer;" />
-                <span>반투명</span>
-              </label>
-            </div>
+            <div class="hint" style="margin-bottom:4px;">입력창</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorInputBg" type="color" value="#2e3440" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorInputBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorInputBg" />
+              <input id="colorInputBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorInputBg" data-opacity="opacityInputBg" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
+              <input id="opacityInputBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorInputBg" />
+              <span id="opacityInputBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
             </div>
             <div class="colorSwatches" data-target="colorInputBg">
               <button class="cSwatch" type="button" data-color="#161b22" style="background:#161b22"></button>
               <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
-              <button class="cSwatch" type="button" data-color="#22304a" style="background:#22304a"></button>
               <button class="cSwatch" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
               <button class="cSwatch" type="button" data-color="#2e3440" style="background:#2e3440"></button>
               <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
               <button class="cSwatch" type="button" data-color="#2d2240" style="background:#2d2240"></button>
-              <button class="cSwatch" type="button" data-color="#1f3a30" style="background:#1f3a30"></button>
-              <button class="cSwatch" type="button" data-color="#3a2a22" style="background:#3a2a22"></button>
-              <button class="cSwatch" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
             </div>
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">입력말풍선</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorUserBubbleBg" type="color" value="#2e3440" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorUserBubbleBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorUserBubbleBg" />
+              <input id="colorUserBubbleBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorUserBubbleBg" data-opacity="opacityUserBubbleBg" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
+              <input id="opacityUserBubbleBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorUserBubbleBg" />
+              <span id="opacityUserBubbleBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
             </div>
             <div class="colorSwatches" data-target="colorUserBubbleBg">
               <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
-              <button class="cSwatch" type="button" data-color="#1b1b1b" style="background:#1b1b1b"></button>
               <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
               <button class="cSwatch" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
               <button class="cSwatch" type="button" data-color="#2e3440" style="background:#2e3440"></button>
               <button class="cSwatch" type="button" data-color="#334155" style="background:#334155"></button>
               <button class="cSwatch" type="button" data-color="#3b4252" style="background:#3b4252"></button>
-              <button class="cSwatch" type="button" data-color="#22304a" style="background:#22304a"></button>
-              <button class="cSwatch" type="button" data-color="#2d2240" style="background:#2d2240"></button>
-              <button class="cSwatch" type="button" data-color="#30363d" style="background:#30363d"></button>
             </div>
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">출력말풍선</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorAssistantBubbleBg" type="color" value="#000000" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorAssistantBubbleBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorAssistantBubbleBg" />
+              <input id="colorAssistantBubbleBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorAssistantBubbleBg" data-opacity="opacityAssistantBubbleBg" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
+              <input id="opacityAssistantBubbleBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorAssistantBubbleBg" />
+              <span id="opacityAssistantBubbleBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
             </div>
             <div class="colorSwatches" data-target="colorAssistantBubbleBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
               <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
-              <button class="cSwatch" type="button" data-color="#0a0a0a" style="background:#0a0a0a"></button>
               <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
               <button class="cSwatch" type="button" data-color="#0e1420" style="background:#0e1420"></button>
               <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
               <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
-              <button class="cSwatch" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
-              <button class="cSwatch" type="button" data-color="#161b22" style="background:#161b22"></button>
-              <button class="cSwatch" type="button" data-color="#1a1a1a" style="background:#1a1a1a"></button>
             </div>
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">전송버튼</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorSendBtnBg" type="color" value="#2d6bff" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorSendBtnBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorSendBtnBg" />
+              <input id="colorSendBtnBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorSendBtnBg" data-opacity="opacitySendBtnBg" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
+              <input id="opacitySendBtnBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorSendBtnBg" />
+              <span id="opacitySendBtnBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
             </div>
             <div class="colorSwatches" data-target="colorSendBtnBg">
               <button class="cSwatch" type="button" data-color="#1d4ed8" style="background:#1d4ed8"></button>
               <button class="cSwatch" type="button" data-color="#2d6bff" style="background:#2d6bff"></button>
-              <button class="cSwatch" type="button" data-color="#4f7cff" style="background:#4f7cff"></button>
               <button class="cSwatch" type="button" data-color="#0ea5e9" style="background:#0ea5e9"></button>
               <button class="cSwatch" type="button" data-color="#14b8a6" style="background:#14b8a6"></button>
-              <button class="cSwatch" type="button" data-color="#22c55e" style="background:#22c55e"></button>
               <button class="cSwatch" type="button" data-color="#8b5cf6" style="background:#8b5cf6"></button>
-              <button class="cSwatch" type="button" data-color="#a855f7" style="background:#a855f7"></button>
               <button class="cSwatch" type="button" data-color="#f59e0b" style="background:#f59e0b"></button>
-              <button class="cSwatch" type="button" data-color="#ef4444" style="background:#ef4444"></button>
-              <button class="cSwatch" type="button" data-color="#ec4899" style="background:#ec4899"></button>
-              <button class="cSwatch" type="button" data-color="#ffffff" style="background:#ffffff"></button>
             </div>
           </div>
           <div class="colorItem">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <div class="hint">상단바</div>
-              <label style="display:flex; align-items:center; gap:4px; font-size:calc(11px * var(--textScale)); color:var(--muted); cursor:pointer;">
-                <input id="headerBgTransparent" type="checkbox" style="width:14px; height:14px; accent-color:var(--blue); cursor:pointer;" />
-                <span>반투명</span>
-              </label>
-            </div>
+            <div class="hint" style="margin-bottom:4px;">상단바</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorHeaderBg" type="color" value="#141820" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorHeaderBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorHeaderBg" />
+              <input id="colorHeaderBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorHeaderBg" data-opacity="opacityHeaderBg" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
+              <input id="opacityHeaderBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorHeaderBg" />
+              <span id="opacityHeaderBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
             </div>
             <div class="colorSwatches" data-target="colorHeaderBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
-              <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
               <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
               <button class="cSwatch" type="button" data-color="#141820" style="background:#141820"></button>
               <button class="cSwatch" type="button" data-color="#1a1f2e" style="background:#1a1f2e"></button>
               <button class="cSwatch" type="button" data-color="#1e293b" style="background:#1e293b"></button>
               <button class="cSwatch" type="button" data-color="#1b1026" style="background:#1b1026"></button>
-              <button class="cSwatch" type="button" data-color="#0a1a14" style="background:#0a1a14"></button>
-              <button class="cSwatch" type="button" data-color="#1a1410" style="background:#1a1410"></button>
-              <button class="cSwatch" type="button" data-color="#1a1a1a" style="background:#1a1a1a"></button>
             </div>
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">복사버튼</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorCopyBtnBg" type="color" value="#1a1f2a" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorCopyBtnBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorCopyBtnBg" />
+              <input id="colorCopyBtnBgText" type="text" placeholder="#000000 or rgba(0,0,0,1)" class="colorTextInput" data-target="colorCopyBtnBg" data-opacity="opacityCopyBtnBg" />
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:calc(11px * var(--textScale)); color:var(--muted); white-space:nowrap;">투명도</span>
+              <input id="opacityCopyBtnBg" type="range" min="0" max="100" value="100" class="opacitySlider" data-target="colorCopyBtnBg" />
+              <span id="opacityCopyBtnBgValue" style="font-size:calc(11px * var(--textScale)); color:var(--muted); min-width:32px;">100%</span>
             </div>
             <div class="colorSwatches" data-target="colorCopyBtnBg">
               <button class="cSwatch" type="button" data-color="#111111" style="background:#111111"></button>
@@ -825,10 +846,6 @@
               <button class="cSwatch" type="button" data-color="#222832" style="background:#222832"></button>
               <button class="cSwatch" type="button" data-color="#2e3440" style="background:#2e3440"></button>
               <button class="cSwatch" type="button" data-color="#162038" style="background:#162038"></button>
-              <button class="cSwatch" type="button" data-color="#221832" style="background:#221832"></button>
-              <button class="cSwatch" type="button" data-color="#122a20" style="background:#122a20"></button>
-              <button class="cSwatch" type="button" data-color="#261c16" style="background:#261c16"></button>
-              <button class="cSwatch" type="button" data-color="#1e1e1e" style="background:#1e1e1e"></button>
             </div>
           </div>
         </div>
@@ -876,7 +893,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v2.8T';
+    const APP_VERSION = 'v2.9T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1150,46 +1167,43 @@
     }
 
     function applyColorsFromStorage(){
-      const savedBg = localStorage.getItem(LS.colorBg);
-      if(el.colorBg) el.colorBg.value = savedBg || COLOR_DEFAULTS.bg;
-      if(savedBg) document.documentElement.style.setProperty('--bg', savedBg);
+      const loadColorWithOpacity = (colorKey, opacityKey, colorPickerId, opacitySliderId, cssVar, defaultColor, defaultOpacity = 100) => {
+        const savedColor = localStorage.getItem(colorKey);
+        const savedOpacity = localStorage.getItem(opacityKey);
+        const colorPicker = document.getElementById(colorPickerId);
+        const opacitySlider = document.getElementById(opacitySliderId);
+        const opacityValue = document.getElementById(opacitySliderId + 'Value');
 
-      const savedChat = localStorage.getItem(LS.colorChatBg);
-      const chatTransparent = localStorage.getItem(LS.chatBgTransparent) === '1';
-      if(el.colorChatBg) el.colorChatBg.value = savedChat || COLOR_DEFAULTS.chatBg;
-      const chatBgCheckbox = document.getElementById('chatBgTransparent');
-      if(chatBgCheckbox) chatBgCheckbox.checked = chatTransparent;
-      if(savedChat) applyColorWithTransparency(savedChat, '--chatBg', chatTransparent);
+        // Handle rgba default colors
+        let hexColor = defaultColor;
+        let opacity = defaultOpacity;
+        if(defaultColor.startsWith('rgba')){
+          const rgba = parseRgba(defaultColor);
+          if(rgba){
+            hexColor = rgbToHex(rgba.r, rgba.g, rgba.b);
+            opacity = Math.round(rgba.a * 100);
+          }
+        }
 
-      const savedInput = localStorage.getItem(LS.colorInputBg);
-      const inputTransparent = localStorage.getItem(LS.inputBgTransparent) === '1';
-      if(el.colorInputBg) el.colorInputBg.value = savedInput || COLOR_DEFAULTS.inputBg;
-      const inputBgCheckbox = document.getElementById('inputBgTransparent');
-      if(inputBgCheckbox) inputBgCheckbox.checked = inputTransparent;
-      if(savedInput) applyColorWithTransparency(savedInput, '--inputBg', inputTransparent);
+        const finalColor = savedColor || hexColor;
+        const finalOpacity = savedOpacity || opacity;
 
-      const savedUserBubble = localStorage.getItem(LS.colorUserBubbleBg);
-      if(el.colorUserBubbleBg) el.colorUserBubbleBg.value = savedUserBubble || COLOR_DEFAULTS.userBubbleBg;
-      if(savedUserBubble) document.documentElement.style.setProperty('--userBubbleBg', savedUserBubble);
+        if(colorPicker) colorPicker.value = finalColor;
+        if(opacitySlider) opacitySlider.value = finalOpacity;
+        if(opacityValue) opacityValue.textContent = finalOpacity + '%';
 
-      const savedAssistantBubble = localStorage.getItem(LS.colorAssistantBubbleBg);
-      if(el.colorAssistantBubbleBg) el.colorAssistantBubbleBg.value = savedAssistantBubble || COLOR_DEFAULTS.assistantBubbleBg;
-      if(savedAssistantBubble) document.documentElement.style.setProperty('--assistantBubbleBg', savedAssistantBubble);
+        const color = hexToRgba(finalColor, (finalOpacity / 100).toFixed(2));
+        document.documentElement.style.setProperty(cssVar, color);
+      };
 
-      const savedSendBtn = localStorage.getItem(LS.colorSendBtnBg);
-      if(el.colorSendBtnBg) el.colorSendBtnBg.value = savedSendBtn || COLOR_DEFAULTS.sendBtnBg;
-      if(savedSendBtn) document.documentElement.style.setProperty('--sendBtnBg', savedSendBtn);
-
-      const savedHeader = localStorage.getItem(LS.colorHeaderBg);
-      const headerTransparent = localStorage.getItem(LS.headerBgTransparent) === '1';
-      if(el.colorHeaderBg) el.colorHeaderBg.value = savedHeader || COLOR_DEFAULTS.headerBg;
-      const headerBgCheckbox = document.getElementById('headerBgTransparent');
-      if(headerBgCheckbox) headerBgCheckbox.checked = headerTransparent;
-      if(savedHeader) applyColorWithTransparency(savedHeader, '--headerBg', headerTransparent);
-
-      const savedCopyBtn = localStorage.getItem(LS.colorCopyBtnBg);
-      if(el.colorCopyBtnBg) el.colorCopyBtnBg.value = savedCopyBtn || COLOR_DEFAULTS.copyBtnBg;
-      if(savedCopyBtn) document.documentElement.style.setProperty('--copyBtnBg', savedCopyBtn);
+      loadColorWithOpacity(LS.colorBg, 'opacityBg', 'colorBg', 'opacityBg', '--bg', COLOR_DEFAULTS.bg);
+      loadColorWithOpacity(LS.colorChatBg, 'opacityChatBg', 'colorChatBg', 'opacityChatBg', '--chatBg', COLOR_DEFAULTS.chatBg);
+      loadColorWithOpacity(LS.colorInputBg, 'opacityInputBg', 'colorInputBg', 'opacityInputBg', '--inputBg', COLOR_DEFAULTS.inputBg);
+      loadColorWithOpacity(LS.colorUserBubbleBg, 'opacityUserBubbleBg', 'colorUserBubbleBg', 'opacityUserBubbleBg', '--userBubbleBg', COLOR_DEFAULTS.userBubbleBg);
+      loadColorWithOpacity(LS.colorAssistantBubbleBg, 'opacityAssistantBubbleBg', 'colorAssistantBubbleBg', 'opacityAssistantBubbleBg', '--assistantBubbleBg', COLOR_DEFAULTS.assistantBubbleBg);
+      loadColorWithOpacity(LS.colorSendBtnBg, 'opacitySendBtnBg', 'colorSendBtnBg', 'opacitySendBtnBg', '--sendBtnBg', COLOR_DEFAULTS.sendBtnBg);
+      loadColorWithOpacity(LS.colorHeaderBg, 'opacityHeaderBg', 'colorHeaderBg', 'opacityHeaderBg', '--headerBg', COLOR_DEFAULTS.headerBg);
+      loadColorWithOpacity(LS.colorCopyBtnBg, 'opacityCopyBtnBg', 'colorCopyBtnBg', 'opacityCopyBtnBg', '--copyBtnBg', COLOR_DEFAULTS.copyBtnBg);
     }
 
     function bindColorPicker(inputEl, lsKey, cssVar){
@@ -1197,7 +1211,8 @@
       inputEl.addEventListener('input', (e) => {
         const v = String(e.target.value || '').trim();
         if(!v) return;
-        document.documentElement.style.setProperty(cssVar, v);
+        // Only save to localStorage, don't set CSS var directly
+        // The opacity slider handles applying the color with opacity
         try{ localStorage.setItem(lsKey, v); } catch {}
       });
     }
@@ -1891,20 +1906,69 @@
       return /^#[0-9A-Fa-f]{6}$/.test(str);
     }
 
+    function parseRgba(str){
+      const match = str.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/i);
+      if(!match) return null;
+      const r = parseInt(match[1]);
+      const g = parseInt(match[2]);
+      const b = parseInt(match[3]);
+      const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+      if(r > 255 || g > 255 || b > 255 || a < 0 || a > 1) return null;
+      return { r, g, b, a };
+    }
+
+    function rgbToHex(r, g, b){
+      return '#' + [r, g, b].map(x => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      }).join('');
+    }
+
+    function hexToRgba(hex, alpha){
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
     function syncColorTextInputs(){
       document.querySelectorAll('.colorTextInput').forEach(textInput => {
         const targetId = textInput.getAttribute('data-target');
+        const opacityId = textInput.getAttribute('data-opacity');
         const colorPicker = document.getElementById(targetId);
-        if(!colorPicker) return;
+        const opacitySlider = document.getElementById(opacityId);
+        if(!colorPicker || !opacitySlider) return;
 
-        textInput.value = colorPicker.value.toUpperCase();
+        const updateTextInput = () => {
+          const hex = colorPicker.value;
+          const opacity = parseInt(opacitySlider.value) / 100;
+          if(opacity < 1){
+            textInput.value = hexToRgba(hex, opacity.toFixed(2));
+          } else {
+            textInput.value = hex.toUpperCase();
+          }
+        };
 
-        colorPicker.addEventListener('input', () => {
-          textInput.value = colorPicker.value.toUpperCase();
-        });
+        updateTextInput();
+
+        colorPicker.addEventListener('input', updateTextInput);
+        opacitySlider.addEventListener('input', updateTextInput);
 
         textInput.addEventListener('input', (e) => {
-          let val = e.target.value.trim().toUpperCase();
+          let val = e.target.value.trim();
+
+          // Try parsing as rgba
+          const rgba = parseRgba(val);
+          if(rgba){
+            const hex = rgbToHex(rgba.r, rgba.g, rgba.b);
+            colorPicker.value = hex;
+            opacitySlider.value = Math.round(rgba.a * 100);
+            colorPicker.dispatchEvent(new Event('input', { bubbles: true }));
+            opacitySlider.dispatchEvent(new Event('input', { bubbles: true }));
+            return;
+          }
+
+          // Try parsing as hex
           if(!val.startsWith('#')) val = '#' + val;
           if(isValidHex(val)){
             colorPicker.value = val;
@@ -1916,26 +1980,33 @@
 
     syncColorTextInputs();
 
-    function setupTransparencyCheckbox(checkboxId, colorPickerId, cssVar, lsKey){
-      const checkbox = document.getElementById(checkboxId);
+    function setupOpacitySlider(opacityId, colorPickerId, cssVar, lsKey){
+      const slider = document.getElementById(opacityId);
+      const valueDisplay = document.getElementById(opacityId + 'Value');
       const colorPicker = document.getElementById(colorPickerId);
-      if(!checkbox || !colorPicker) return;
+      if(!slider || !colorPicker || !valueDisplay) return;
 
-      checkbox.addEventListener('change', () => {
-        const color = colorPicker.value;
-        applyColorWithTransparency(color, cssVar, checkbox.checked);
-        localStorage.setItem(lsKey, checkbox.checked ? '1' : '0');
-      });
+      const applyColor = () => {
+        const hex = colorPicker.value;
+        const opacity = parseInt(slider.value) / 100;
+        const color = hexToRgba(hex, opacity.toFixed(2));
+        document.documentElement.style.setProperty(cssVar, color);
+        valueDisplay.textContent = slider.value + '%';
+        try{ localStorage.setItem(lsKey, slider.value); } catch {}
+      };
 
-      colorPicker.addEventListener('input', () => {
-        const color = colorPicker.value;
-        applyColorWithTransparency(color, cssVar, checkbox.checked);
-      });
+      slider.addEventListener('input', applyColor);
+      colorPicker.addEventListener('input', applyColor);
     }
 
-    setupTransparencyCheckbox('headerBgTransparent', 'colorHeaderBg', '--headerBg', LS.headerBgTransparent);
-    setupTransparencyCheckbox('inputBgTransparent', 'colorInputBg', '--inputBg', LS.inputBgTransparent);
-    setupTransparencyCheckbox('chatBgTransparent', 'colorChatBg', '--chatBg', LS.chatBgTransparent);
+    setupOpacitySlider('opacityBg', 'colorBg', '--bg', 'opacityBg');
+    setupOpacitySlider('opacityChatBg', 'colorChatBg', '--chatBg', 'opacityChatBg');
+    setupOpacitySlider('opacityInputBg', 'colorInputBg', '--inputBg', 'opacityInputBg');
+    setupOpacitySlider('opacityUserBubbleBg', 'colorUserBubbleBg', '--userBubbleBg', 'opacityUserBubbleBg');
+    setupOpacitySlider('opacityAssistantBubbleBg', 'colorAssistantBubbleBg', '--assistantBubbleBg', 'opacityAssistantBubbleBg');
+    setupOpacitySlider('opacitySendBtnBg', 'colorSendBtnBg', '--sendBtnBg', 'opacitySendBtnBg');
+    setupOpacitySlider('opacityHeaderBg', 'colorHeaderBg', '--headerBg', 'opacityHeaderBg');
+    setupOpacitySlider('opacityCopyBtnBg', 'colorCopyBtnBg', '--copyBtnBg', 'opacityCopyBtnBg');
 
     const composerEl = document.querySelector('.composer');
     function adjustForKeyboard(){
