@@ -389,7 +389,7 @@
       display:inline-flex; align-items:center; justify-content:center;
       padding:0;
     }
-    .miniIconBtn svg{width:18px; height:18px; fill: currentColor}
+    .miniIconBtn svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
@@ -783,7 +783,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.7T';
+    const APP_VERSION = 'v1.8T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1495,7 +1495,7 @@
           copyBtn.className = 'miniIconBtn';
           copyBtn.type = 'button';
           copyBtn.setAttribute('aria-label', '복사');
-          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
+          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
           copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
           actions.appendChild(copyBtn);
         }
@@ -1567,7 +1567,7 @@
         copyBtn.className = 'miniIconBtn';
         copyBtn.type = 'button';
         copyBtn.setAttribute('aria-label', '복사');
-        copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
+        copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
         copyBtn.addEventListener('click', async () => { await copyToClipboard(translated, false); });
         actions.appendChild(copyBtn);
         streamRow.appendChild(actions);
