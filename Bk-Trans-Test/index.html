@@ -1202,6 +1202,11 @@
       return v;
     }
 
+    function isAnthropicModel(m){
+      const s = String(m || '').toLowerCase();
+      return s.includes('anthropic/') || s.includes('claude');
+    }
+
     async function callOpenRouter(userText){
       const apiKey = el.apiKey.value.trim();
       if(!apiKey) throw new Error('API Key가 비어 있습니다.');
@@ -1211,18 +1216,24 @@
 
       const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
       const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
-      const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
+      const maxTokensRaw = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 32000, 'max_tokens'));
       const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
+
+      const messages = [{ role: 'user', content: userText }];
 
       const payload = {
         model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userText }
-        ],
-        temperature,
-        max_tokens
+        messages,
+        temperature
       };
+
+      if(isAnthropicModel(model)){
+        messages.unshift({ role: 'system', content: systemPrompt });
+        payload.max_tokens = Math.min(maxTokensRaw, 4096);
+      } else {
+        messages.unshift({ role: 'system', content: systemPrompt });
+        payload.max_tokens = maxTokensRaw;
+      }
 
       if(top_p < 1) payload.top_p = top_p;
 
@@ -1245,7 +1256,9 @@
       }
 
       const json = await res.json();
-      return json.choices[0].message.content;
+      const choice = json.choices && json.choices[0];
+      if(!choice) throw new Error('응답에 choices가 없습니다: ' + JSON.stringify(json).slice(0, 200));
+      return choice.message ? choice.message.content : (choice.text || '');
     }
 
     function renderChat(){
