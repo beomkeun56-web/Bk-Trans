@@ -1378,21 +1378,41 @@
       streamBubble.textContent = '';
       streamRow.appendChild(streamBubble);
       el.chat.appendChild(streamRow);
-      scrollToBottom('smooth');
+
+      let _scrollRaf = 0;
+      function scrollThrottled(){
+        if(_scrollRaf) return;
+        _scrollRaf = requestAnimationFrame(() => {
+          _scrollRaf = 0;
+          el.main.scrollTop = el.main.scrollHeight;
+        });
+      }
+      scrollThrottled();
 
       try{
         const translatedRaw = await callOpenRouterStream(userText, (partial) => {
           streamBubble.textContent = partial;
-          scrollToBottom('instant');
+          scrollThrottled();
         });
         const translated = normalizeOutput(userText, translatedRaw);
 
         chat.push({ role:'assistant', text: translated, ts: Date.now() });
-
         trimChatToMaxInputs();
-        renderChat();
 
-        scrollToBottom('smooth');
+        streamBubble.textContent = translated;
+
+        const actions = document.createElement('div');
+        actions.className = 'actionsRow';
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'miniIconBtn';
+        copyBtn.type = 'button';
+        copyBtn.setAttribute('aria-label', '복사');
+        copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
+        copyBtn.addEventListener('click', async () => { await copyToClipboard(translated, false); });
+        actions.appendChild(copyBtn);
+        streamRow.appendChild(actions);
+
+        scrollThrottled();
 
         if(el.autoCopy.checked && hasChinese(translated)){
           const ok = await copyToClipboard(translated, true);
@@ -1474,13 +1494,13 @@
 
         updateLastClipboard(trimmed);
         el.input.value = trimmed;
-        setTimeout(() => send(), 150);
+        send();
       } catch(err){
       }
     }
 
     checkClipboard();
-    setInterval(checkClipboard, 2000);
+    setInterval(checkClipboard, 500);
 
     if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
     if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
