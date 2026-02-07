@@ -284,6 +284,20 @@
       padding: 12px 12px;
       font-size: calc(14px * var(--textScale));
     }
+    .colorTextInput{
+      width:100%;
+      background: rgba(0,0,0,.35);
+      color: var(--text);
+      border:none;
+      outline:none;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: calc(12px * var(--textScale));
+      font-family: 'Courier New', monospace;
+      text-transform: uppercase;
+      flex:1;
+      min-width:0;
+    }
     textarea{min-height:120px; resize:vertical; line-height:1.5}
     .hint{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.45}
 
@@ -611,7 +625,10 @@
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">전체배경</div>
-            <input id="colorBg" type="color" value="#050505" />
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorBg" type="color" value="#050505" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorBg" />
+            </div>
             <div class="colorSwatches" data-target="colorBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
               <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
@@ -627,7 +644,10 @@
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">채팅배경</div>
-            <input id="colorChatBg" type="color" value="#0e1420" />
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorChatBg" type="color" value="#0e1420" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorChatBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorChatBg" />
+            </div>
             <div class="colorSwatches" data-target="colorChatBg">
               <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
               <button class="cSwatch" type="button" data-color="#070c18" style="background:#070c18"></button>
@@ -643,7 +663,10 @@
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">입력창</div>
-            <input id="colorInputBg" type="color" value="#2e3440" />
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorInputBg" type="color" value="#2e3440" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorInputBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorInputBg" />
+            </div>
             <div class="colorSwatches" data-target="colorInputBg">
               <button class="cSwatch" type="button" data-color="#161b22" style="background:#161b22"></button>
               <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
@@ -659,7 +682,10 @@
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">입력말풍선</div>
-            <input id="colorUserBubbleBg" type="color" value="#2e3440" />
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorUserBubbleBg" type="color" value="#2e3440" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorUserBubbleBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorUserBubbleBg" />
+            </div>
             <div class="colorSwatches" data-target="colorUserBubbleBg">
               <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
               <button class="cSwatch" type="button" data-color="#1b1b1b" style="background:#1b1b1b"></button>
@@ -675,7 +701,10 @@
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">출력말풍선</div>
-            <input id="colorAssistantBubbleBg" type="color" value="#000000" />
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorAssistantBubbleBg" type="color" value="#000000" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAssistantBubbleBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorAssistantBubbleBg" />
+            </div>
             <div class="colorSwatches" data-target="colorAssistantBubbleBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
               <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
@@ -691,7 +720,10 @@
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">전송버튼</div>
-            <input id="colorSendBtnBg" type="color" value="#2d6bff" />
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorSendBtnBg" type="color" value="#2d6bff" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorSendBtnBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorSendBtnBg" />
+            </div>
             <div class="colorSwatches" data-target="colorSendBtnBg">
               <button class="cSwatch" type="button" data-color="#1d4ed8" style="background:#1d4ed8"></button>
               <button class="cSwatch" type="button" data-color="#2d6bff" style="background:#2d6bff"></button>
@@ -709,7 +741,10 @@
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">상단바</div>
-            <input id="colorHeaderBg" type="color" value="#141820" />
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorHeaderBg" type="color" value="#141820" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorHeaderBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorHeaderBg" />
+            </div>
             <div class="colorSwatches" data-target="colorHeaderBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
               <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
@@ -725,7 +760,10 @@
           </div>
           <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">복사버튼</div>
-            <input id="colorCopyBtnBg" type="color" value="#1a1f2a" />
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorCopyBtnBg" type="color" value="#1a1f2a" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorCopyBtnBgText" type="text" placeholder="#000000" maxlength="7" class="colorTextInput" data-target="colorCopyBtnBg" />
+            </div>
             <div class="colorSwatches" data-target="colorCopyBtnBg">
               <button class="cSwatch" type="button" data-color="#111111" style="background:#111111"></button>
               <button class="cSwatch" type="button" data-color="#1a1f2a" style="background:#1a1f2a"></button>
@@ -1128,7 +1166,11 @@
       if(!p) return;
 
       const setOne = (inputEl, lsKey, cssVar, val) => {
-        if(inputEl) inputEl.value = val;
+        if(inputEl) {
+          inputEl.value = val;
+          const textInput = document.querySelector('.colorTextInput[data-target="' + inputEl.id + '"]');
+          if(textInput) textInput.value = val.toUpperCase();
+        }
         document.documentElement.style.setProperty(cssVar, val);
         try{ localStorage.setItem(lsKey, val); } catch {}
       };
@@ -1788,6 +1830,35 @@
     bindColorPicker(el.colorCopyBtnBg, LS.colorCopyBtnBg, '--copyBtnBg');
 
     initColorChips();
+
+    function isValidHex(str){
+      return /^#[0-9A-Fa-f]{6}$/.test(str);
+    }
+
+    function syncColorTextInputs(){
+      document.querySelectorAll('.colorTextInput').forEach(textInput => {
+        const targetId = textInput.getAttribute('data-target');
+        const colorPicker = document.getElementById(targetId);
+        if(!colorPicker) return;
+
+        textInput.value = colorPicker.value.toUpperCase();
+
+        colorPicker.addEventListener('input', () => {
+          textInput.value = colorPicker.value.toUpperCase();
+        });
+
+        textInput.addEventListener('input', (e) => {
+          let val = e.target.value.trim().toUpperCase();
+          if(!val.startsWith('#')) val = '#' + val;
+          if(isValidHex(val)){
+            colorPicker.value = val;
+            colorPicker.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        });
+      });
+    }
+
+    syncColorTextInputs();
 
     document.querySelectorAll('[data-preset]').forEach(btn => {
       btn.addEventListener('click', () => {
