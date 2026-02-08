@@ -58,6 +58,8 @@
       --chatBottomPadding: 4px;
       --composerBlur: 12px;
       --keyboardSpacing: 8px;
+      --chatTopBlur: 4px;
+      --chatTopFadeHeight: 24px;
     }
 
     @font-face{
@@ -262,10 +264,10 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 40px;
+      height: var(--chatTopFadeHeight);
       background: linear-gradient(to bottom, var(--chatBg), transparent);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(var(--chatTopBlur));
+      -webkit-backdrop-filter: blur(var(--chatTopBlur));
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.3s;
@@ -585,7 +587,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.7T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.8T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -1013,6 +1015,15 @@
           </div>
         </div>
 
+        <div style="margin-bottom:24px;">
+          <label for="chatTopBlurSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">채팅창 상단 스크롤 블러</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="chatTopBlurSlider" type="range" min="0" max="20" step="1" value="4" style="flex:1 1 auto;" />
+            <div id="chatTopBlurVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">4px</div>
+            <button id="chatTopBlurResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
         <div style="display:flex; gap:10px;">
           <button id="layoutSaveBtn" class="btn" type="button" style="flex:1; font-weight:600;">저장</button>
           <button id="layoutCloseBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
@@ -1048,7 +1059,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v4.7T';
+    const APP_VERSION = 'v4.8T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1929,6 +1940,10 @@
       localStorage.setItem(LS_LAST_CLIP, text);
     }
 
+    function isChatDuplicate(text){
+      return chat.some(m => m.role === 'user' && m.text === text);
+    }
+
     async function checkClipboard(){
       try{
         if(_isBusy) return;
@@ -1945,6 +1960,9 @@
         if(isEnglishLongText(trimmed)) return;
 
         updateLastClipboard(trimmed);
+
+        if(isChatDuplicate(trimmed)) return;
+
         el.input.value = trimmed;
         send();
       } catch(err){
@@ -2494,6 +2512,33 @@
       });
     }
 
+    // 채팅창 상단 블러 조정
+    const chatTopBlurSlider = document.getElementById('chatTopBlurSlider');
+    const chatTopBlurVal = document.getElementById('chatTopBlurVal');
+    const chatTopBlurResetBtn = document.getElementById('chatTopBlurResetBtn');
+
+    function applyChatTopBlur(val){
+      val = Number(val);
+      document.documentElement.style.setProperty('--chatTopBlur', val + 'px');
+      document.documentElement.style.setProperty('--chatTopFadeHeight', Math.max(val * 3, 12) + 'px');
+      if(chatTopBlurSlider) chatTopBlurSlider.value = val;
+      if(chatTopBlurVal) chatTopBlurVal.textContent = val + 'px';
+    }
+
+    if(chatTopBlurSlider){
+      chatTopBlurSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyChatTopBlur(v);
+        localStorage.setItem('bk_tr_chatTopBlur', v);
+      });
+    }
+    if(chatTopBlurResetBtn){
+      chatTopBlurResetBtn.addEventListener('click', () => {
+        applyChatTopBlur(4);
+        localStorage.setItem('bk_tr_chatTopBlur', '4');
+      });
+    }
+
     // Load layout settings
     function loadLayoutSettings(){
       const menuScale = localStorage.getItem('bk_tr_test_menuScale') || '1';
@@ -2514,6 +2559,7 @@
       const chatBP = localStorage.getItem('bk_tr_chatBottomPadding') || '4';
       const composerB = localStorage.getItem('bk_tr_composerBlur') || '12';
       const keyboardS = localStorage.getItem('bk_tr_keyboardSpacing') || '8';
+      const chatTopB = localStorage.getItem('bk_tr_chatTopBlur') || '4';
 
       applyMenuFontScale(menuScale);
       applyChatFontScale(chatScale);
@@ -2532,6 +2578,7 @@
       applyChatBottomPadding(chatBP);
       applyComposerBlur(composerB);
       applyKeyboardSpacing(keyboardS);
+      applyChatTopBlur(chatTopB);
 
       setTimeout(updateMainPaddingBottom, 100);
     }
