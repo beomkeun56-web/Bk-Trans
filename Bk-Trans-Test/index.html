@@ -51,6 +51,8 @@
       --inputMaxWidth: 860px;
       --composerPadding: 10px;
       --chatBottomPadding: 4px;
+      --composerBlur: 12px;
+      --keyboardSpacing: 8px;
     }
 
     @font-face{
@@ -421,8 +423,10 @@
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 0 var(--composerPadding) calc(8px + env(safe-area-inset-bottom));
-      background: transparent;
+      padding: 0 var(--composerPadding) calc(var(--keyboardSpacing) + env(safe-area-inset-bottom));
+      background: rgba(5,5,5,0.75);
+      backdrop-filter: blur(var(--composerBlur));
+      -webkit-backdrop-filter: blur(var(--composerBlur));
       pointer-events:none;
     }
     .composerFade{
@@ -553,7 +557,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.3T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.4T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -932,6 +936,24 @@
           </div>
         </div>
 
+        <div style="margin-bottom:24px;">
+          <label for="composerBlurSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">입력창 블러 효과</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="composerBlurSlider" type="range" min="0" max="40" step="2" value="12" style="flex:1 1 auto;" />
+            <div id="composerBlurVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">12px</div>
+            <button id="composerBlurResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="keyboardSpacingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">키보드 간격</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="keyboardSpacingSlider" type="range" min="0" max="30" step="2" value="8" style="flex:1 1 auto;" />
+            <div id="keyboardSpacingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">8px</div>
+            <button id="keyboardSpacingResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
         <div style="display:flex; gap:10px;">
           <button id="layoutSaveBtn" class="btn" type="button" style="flex:1; font-weight:600;">저장</button>
           <button id="layoutCloseBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
@@ -966,7 +988,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v4.3T';
+    const APP_VERSION = 'v4.4T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2269,6 +2291,59 @@
       });
     }
 
+    // Composer blur effect
+    const composerBlurSlider = document.getElementById('composerBlurSlider');
+    const composerBlurVal = document.getElementById('composerBlurVal');
+    const composerBlurResetBtn = document.getElementById('composerBlurResetBtn');
+
+    function applyComposerBlur(px){
+      const val = Number(px) || 12;
+      document.documentElement.style.setProperty('--composerBlur', val + 'px');
+      if(composerBlurSlider) composerBlurSlider.value = val;
+      if(composerBlurVal) composerBlurVal.textContent = val + 'px';
+    }
+
+    if(composerBlurSlider){
+      composerBlurSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyComposerBlur(v);
+        localStorage.setItem('bk_tr_composerBlur', v);
+      });
+    }
+    if(composerBlurResetBtn){
+      composerBlurResetBtn.addEventListener('click', () => {
+        applyComposerBlur(12);
+        localStorage.setItem('bk_tr_composerBlur', '12');
+      });
+    }
+
+    // Keyboard spacing
+    const keyboardSpacingSlider = document.getElementById('keyboardSpacingSlider');
+    const keyboardSpacingVal = document.getElementById('keyboardSpacingVal');
+    const keyboardSpacingResetBtn = document.getElementById('keyboardSpacingResetBtn');
+
+    function applyKeyboardSpacing(px){
+      const val = Number(px) || 8;
+      document.documentElement.style.setProperty('--keyboardSpacing', val + 'px');
+      if(keyboardSpacingSlider) keyboardSpacingSlider.value = val;
+      if(keyboardSpacingVal) keyboardSpacingVal.textContent = val + 'px';
+      setTimeout(updateMainPaddingBottom, 50);
+    }
+
+    if(keyboardSpacingSlider){
+      keyboardSpacingSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyKeyboardSpacing(v);
+        localStorage.setItem('bk_tr_keyboardSpacing', v);
+      });
+    }
+    if(keyboardSpacingResetBtn){
+      keyboardSpacingResetBtn.addEventListener('click', () => {
+        applyKeyboardSpacing(8);
+        localStorage.setItem('bk_tr_keyboardSpacing', '8');
+      });
+    }
+
     // Load layout settings
     function loadLayoutSettings(){
       const menuScale = localStorage.getItem('bk_tr_test_menuScale') || '1';
@@ -2283,6 +2358,8 @@
       const inputMaxW = localStorage.getItem('bk_tr_inputMaxWidth') || '860';
       const composerP = localStorage.getItem('bk_tr_composerPadding') || '10';
       const chatBP = localStorage.getItem('bk_tr_chatBottomPadding') || '4';
+      const composerB = localStorage.getItem('bk_tr_composerBlur') || '12';
+      const keyboardS = localStorage.getItem('bk_tr_keyboardSpacing') || '8';
 
       applyMenuFontScale(menuScale);
       applyChatFontScale(chatScale);
@@ -2296,6 +2373,8 @@
       applyInputMaxWidth(inputMaxW);
       applyComposerPadding(composerP);
       applyChatBottomPadding(chatBP);
+      applyComposerBlur(composerB);
+      applyKeyboardSpacing(keyboardS);
 
       setTimeout(updateMainPaddingBottom, 100);
     }
