@@ -44,6 +44,12 @@
       --sendBtnBg: #2d6bff;
       --headerBg: #0b0f14;
       --copyBtnBg: #1a1f2a;
+
+      --inputMinHeight: 72px;
+      --inputMaxHeight: 240px;
+      --inputMaxWidth: 860px;
+      --composerHPadding: 10px;
+      --chatBottomGap: 4px;
     }
 
     @font-face{
@@ -217,7 +223,7 @@
       padding-top: var(--headerSpacing);
       padding-left: var(--chatSpacing);
       padding-right: var(--chatSpacing);
-      padding-bottom: var(--inputSpacing);
+      padding-bottom: calc(var(--inputMinHeight) + 16px + var(--chatBottomGap) + env(safe-area-inset-bottom));
       display:flex;
       flex-direction:column;
     }
@@ -241,7 +247,6 @@
       display:flex;
       flex-direction:column;
       min-height:0;
-      max-height: 65vh;
     }
     .panelHead{
       display:flex;
@@ -356,7 +361,7 @@
 
     .chat{
       padding: 14px;
-      padding-bottom: 4px;
+      padding-bottom: var(--chatBottomGap);
       display:flex;
       flex-direction:column;
       gap: 16px;
@@ -415,7 +420,7 @@
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 0 10px 0;
+      padding: 0 var(--composerHPadding) 0;
       padding-bottom: calc(8px + env(safe-area-inset-bottom));
       background: transparent;
       pointer-events:none;
@@ -438,7 +443,7 @@
       position: relative;
     }
     .composerInner{
-      max-width: 860px;
+      max-width: var(--inputMaxWidth);
       margin:0 auto;
       background: var(--inputBg);
       border: 1px solid rgba(255,255,255,.15);
@@ -452,8 +457,8 @@
 
     #input{
       width:100%;
-      min-height:72px;
-      max-height:240px;
+      min-height: var(--inputMinHeight);
+      max-height: var(--inputMaxHeight);
       padding: 20px 16px;
       border-radius: 18px;
       border:none;
@@ -533,7 +538,7 @@
       .bubble{font-size: calc(16px * var(--chatScale))}
       .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
       .composerInner{border-radius:16px}
-      #input{padding: 20px 16px; min-height:56px}
+      #input{padding: 20px 16px; min-height: var(--inputMinHeight)}
     }
   </style>
 </head>
@@ -548,7 +553,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.1T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.2T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -878,6 +883,55 @@
           </div>
         </div>
 
+        <div style="margin-bottom:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08);">
+          <div style="font-size:calc(14px * var(--menuScale)); font-weight:700; margin-bottom:16px; color:var(--text);">입력창 커스터마이징</div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="inputMinHeightSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">입력창 최소 높이</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="inputMinHeightSlider" type="range" min="48" max="120" step="4" value="72" style="flex:1 1 auto;" />
+            <div id="inputMinHeightVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">72px</div>
+            <button id="inputMinHeightResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="inputMaxHeightSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">입력창 최대 높이</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="inputMaxHeightSlider" type="range" min="120" max="400" step="20" value="240" style="flex:1 1 auto;" />
+            <div id="inputMaxHeightVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">240px</div>
+            <button id="inputMaxHeightResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="inputMaxWidthSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">입력창 최대 가로 길이</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="inputMaxWidthSlider" type="range" min="500" max="1200" step="20" value="860" style="flex:1 1 auto;" />
+            <div id="inputMaxWidthVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">860px</div>
+            <button id="inputMaxWidthResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="composerHPaddingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">입력창 좌우 여백</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="composerHPaddingSlider" type="range" min="4" max="30" step="2" value="10" style="flex:1 1 auto;" />
+            <div id="composerHPaddingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">10px</div>
+            <button id="composerHPaddingResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="chatBottomGapSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">채팅 하단 여백</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="chatBottomGapSlider" type="range" min="0" max="20" step="2" value="4" style="flex:1 1 auto;" />
+            <div id="chatBottomGapVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">4px</div>
+            <button id="chatBottomGapResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
         <div style="display:flex; gap:10px;">
           <button id="layoutSaveBtn" class="btn" type="button" style="flex:1; font-weight:600;">저장</button>
           <button id="layoutCloseBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
@@ -912,7 +966,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v4.1T';
+    const APP_VERSION = 'v4.2T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2069,13 +2123,139 @@
       });
     }
 
+    // Input min height
+    const inputMinHeightSlider = document.getElementById('inputMinHeightSlider');
+    const inputMinHeightVal = document.getElementById('inputMinHeightVal');
+    const inputMinHeightResetBtn = document.getElementById('inputMinHeightResetBtn');
+
+    function applyInputMinHeight(px){
+      document.documentElement.style.setProperty('--inputMinHeight', px + 'px');
+      if(inputMinHeightSlider) inputMinHeightSlider.value = String(px);
+      if(inputMinHeightVal) inputMinHeightVal.textContent = px + 'px';
+    }
+
+    if(inputMinHeightSlider){
+      inputMinHeightSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyInputMinHeight(v);
+        try{ localStorage.setItem('bk_tr_test_inputMinHeight', String(v)); } catch {}
+      });
+    }
+    if(inputMinHeightResetBtn){
+      inputMinHeightResetBtn.addEventListener('click', () => {
+        applyInputMinHeight(72);
+        try{ localStorage.setItem('bk_tr_test_inputMinHeight', '72'); } catch {}
+      });
+    }
+
+    // Input max height
+    const inputMaxHeightSlider = document.getElementById('inputMaxHeightSlider');
+    const inputMaxHeightVal = document.getElementById('inputMaxHeightVal');
+    const inputMaxHeightResetBtn = document.getElementById('inputMaxHeightResetBtn');
+
+    function applyInputMaxHeight(px){
+      document.documentElement.style.setProperty('--inputMaxHeight', px + 'px');
+      if(inputMaxHeightSlider) inputMaxHeightSlider.value = String(px);
+      if(inputMaxHeightVal) inputMaxHeightVal.textContent = px + 'px';
+    }
+
+    if(inputMaxHeightSlider){
+      inputMaxHeightSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyInputMaxHeight(v);
+        try{ localStorage.setItem('bk_tr_test_inputMaxHeight', String(v)); } catch {}
+      });
+    }
+    if(inputMaxHeightResetBtn){
+      inputMaxHeightResetBtn.addEventListener('click', () => {
+        applyInputMaxHeight(240);
+        try{ localStorage.setItem('bk_tr_test_inputMaxHeight', '240'); } catch {}
+      });
+    }
+
+    // Input max width
+    const inputMaxWidthSlider = document.getElementById('inputMaxWidthSlider');
+    const inputMaxWidthVal = document.getElementById('inputMaxWidthVal');
+    const inputMaxWidthResetBtn = document.getElementById('inputMaxWidthResetBtn');
+
+    function applyInputMaxWidth(px){
+      document.documentElement.style.setProperty('--inputMaxWidth', px + 'px');
+      if(inputMaxWidthSlider) inputMaxWidthSlider.value = String(px);
+      if(inputMaxWidthVal) inputMaxWidthVal.textContent = px + 'px';
+    }
+
+    if(inputMaxWidthSlider){
+      inputMaxWidthSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyInputMaxWidth(v);
+        try{ localStorage.setItem('bk_tr_test_inputMaxWidth', String(v)); } catch {}
+      });
+    }
+    if(inputMaxWidthResetBtn){
+      inputMaxWidthResetBtn.addEventListener('click', () => {
+        applyInputMaxWidth(860);
+        try{ localStorage.setItem('bk_tr_test_inputMaxWidth', '860'); } catch {}
+      });
+    }
+
+    // Composer horizontal padding
+    const composerHPaddingSlider = document.getElementById('composerHPaddingSlider');
+    const composerHPaddingVal = document.getElementById('composerHPaddingVal');
+    const composerHPaddingResetBtn = document.getElementById('composerHPaddingResetBtn');
+
+    function applyComposerHPadding(px){
+      document.documentElement.style.setProperty('--composerHPadding', px + 'px');
+      if(composerHPaddingSlider) composerHPaddingSlider.value = String(px);
+      if(composerHPaddingVal) composerHPaddingVal.textContent = px + 'px';
+    }
+
+    if(composerHPaddingSlider){
+      composerHPaddingSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyComposerHPadding(v);
+        try{ localStorage.setItem('bk_tr_test_composerHPadding', String(v)); } catch {}
+      });
+    }
+    if(composerHPaddingResetBtn){
+      composerHPaddingResetBtn.addEventListener('click', () => {
+        applyComposerHPadding(10);
+        try{ localStorage.setItem('bk_tr_test_composerHPadding', '10'); } catch {}
+      });
+    }
+
+    // Chat bottom gap
+    const chatBottomGapSlider = document.getElementById('chatBottomGapSlider');
+    const chatBottomGapVal = document.getElementById('chatBottomGapVal');
+    const chatBottomGapResetBtn = document.getElementById('chatBottomGapResetBtn');
+
+    function applyChatBottomGap(px){
+      document.documentElement.style.setProperty('--chatBottomGap', px + 'px');
+      if(chatBottomGapSlider) chatBottomGapSlider.value = String(px);
+      if(chatBottomGapVal) chatBottomGapVal.textContent = px + 'px';
+    }
+
+    if(chatBottomGapSlider){
+      chatBottomGapSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyChatBottomGap(v);
+        try{ localStorage.setItem('bk_tr_test_chatBottomGap', String(v)); } catch {}
+      });
+    }
+    if(chatBottomGapResetBtn){
+      chatBottomGapResetBtn.addEventListener('click', () => {
+        applyChatBottomGap(4);
+        try{ localStorage.setItem('bk_tr_test_chatBottomGap', '4'); } catch {}
+      });
+    }
+
     // Load layout settings
     function loadLayoutSettings(){
-      // Force reset for v4.1T+ - clear old large spacing values
+      // Force reset for v4.2T+ - clear old values and set new defaults
       const lastVersion = localStorage.getItem('bk_tr_app_version');
-      if(!lastVersion || lastVersion !== 'v4.1T'){
+      if(!lastVersion || lastVersion !== 'v4.2T'){
         localStorage.setItem('bk_tr_test_inputSpacing', '4');
-        localStorage.setItem('bk_tr_app_version', 'v4.1T');
+        localStorage.setItem('bk_tr_test_chatBottomGap', '4');
+        localStorage.setItem('bk_tr_app_version', 'v4.2T');
       }
 
       const menuScale = localStorage.getItem('bk_tr_test_menuScale') || '1';
@@ -2084,6 +2264,11 @@
       const cSpacing = localStorage.getItem('bk_tr_test_chatSpacing') || '16';
       const iSpacing = localStorage.getItem('bk_tr_test_inputSpacing') || '4';
       const mWidth = localStorage.getItem('bk_tr_test_maxWidth') || '860';
+      const inputMinH = localStorage.getItem('bk_tr_test_inputMinHeight') || '72';
+      const inputMaxH = localStorage.getItem('bk_tr_test_inputMaxHeight') || '240';
+      const inputMaxW = localStorage.getItem('bk_tr_test_inputMaxWidth') || '860';
+      const composerHP = localStorage.getItem('bk_tr_test_composerHPadding') || '10';
+      const chatBGap = localStorage.getItem('bk_tr_test_chatBottomGap') || '4';
 
       applyMenuFontScale(menuScale);
       applyChatFontScale(chatScale);
@@ -2091,6 +2276,11 @@
       applyChatSpacing(cSpacing);
       applyInputSpacing(iSpacing);
       applyMaxWidth(mWidth);
+      applyInputMinHeight(inputMinH);
+      applyInputMaxHeight(inputMaxH);
+      applyInputMaxWidth(inputMaxW);
+      applyComposerHPadding(composerHP);
+      applyChatBottomGap(chatBGap);
     }
 
     loadLayoutSettings();
