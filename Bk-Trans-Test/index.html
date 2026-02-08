@@ -29,7 +29,12 @@
 
       --fontMain: system-ui;
 
-      --textScale: 1;
+      --menuScale: 1;
+      --chatScale: 1;
+
+      --verticalSpacing: 16px;
+      --maxWidth: 860px;
+      --horizontalPadding: 16px;
 
       --chatBg: #0e1420;
       --inputBg: #2e3440;
@@ -208,13 +213,13 @@
     main{
       flex:1;
       overflow:hidden;
-      padding: 16px;
-      padding-bottom: 16px;
+      padding: var(--horizontalPadding);
+      padding-bottom: var(--verticalSpacing);
       display:flex;
       flex-direction:column;
     }
     .wrap{
-      max-width: 860px;
+      max-width: var(--maxWidth);
       margin:0 auto;
       flex:1;
       display:flex;
@@ -535,7 +540,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title">BK Trans <span class="ver" id="appVer">v3.2T</span></div>
+        <div class="title">BK Trans <span class="ver" id="appVer">v3.3T</span></div>
 
         <div class="rightBtns">
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -819,7 +824,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v3.2T';
+    const APP_VERSION = 'v3.3T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
