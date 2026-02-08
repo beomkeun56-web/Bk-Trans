@@ -31,11 +31,13 @@
 
       --textScale: 1;
 
-      --chatBg: linear-gradient(180deg, rgba(14,20,32,.92), rgba(8,12,18,.92));
+      --chatBg: #0e1420;
       --inputBg: #2e3440;
-      --userBubbleBg: rgba(46, 52, 64, .92);
-      --assistantBubbleBg: transparent;
-      --sendBtnBg: rgba(45,107,255,.18);
+      --userBubbleBg: #2e3440;
+      --assistantBubbleBg: #1e2430;
+      --sendBtnBg: #2d6bff;
+      --headerBg: #0b0f14;
+      --copyBtnBg: #1a1f2a;
     }
 
     @font-face{
@@ -50,7 +52,7 @@
       margin:0;
       background:var(--bg);
       color:var(--text);
-      font-family: var(--fontMain), "BKRepoFont", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial;
+      font-family: var(--fontMain), "BKRepoFont", "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Arial;
       -webkit-font-smoothing:antialiased;
       display:flex;
       flex-direction:column;
@@ -59,97 +61,179 @@
 
     header{
       position:sticky; top:0; z-index:30;
-      padding: 10px 10px calc(10px + env(safe-area-inset-top));
-      background: rgba(5,5,5,.92);
-      backdrop-filter: blur(10px);
+      padding: 10px 10px 0;
+      padding-top: calc(10px + env(safe-area-inset-top));
+      background: var(--bg);
+    }
+    .headerInner{
+      background: var(--headerBg);
+      border-radius: 16px;
+      border: none;
+      padding: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+      position:relative;
     }
     .topbar{
       max-width: 860px;
       margin:0 auto;
-      display:flex; align-items:center; gap:10px;
+      display:flex; align-items:center; gap:6px;
+      height:64px;
+      padding: 0 14px;
     }
     .title{
       font-weight:800;
-      letter-spacing:.2px;
+      letter-spacing:.3px;
       font-size: calc(14px * var(--textScale));
-      margin-right:4px;
       display:flex;
       align-items:center;
-      gap:8px;
+      gap:6px;
       white-space:nowrap;
+      min-width:0;
+      overflow:hidden;
     }
     .ver{
-      font-size: calc(12px * var(--textScale));
-      font-weight:800;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      color: rgba(230,237,243,.92);
+      font-size: calc(10px * var(--textScale));
+      font-weight:600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,.06);
+      color: rgba(230,237,243,.7);
       cursor:pointer;
       user-select:none;
+      flex-shrink:0;
+      letter-spacing:.3px;
     }
+    #modelTag{
+      padding: 5px 12px;
+      border-radius: 8px;
+      background: var(--sendBtnBg);
+      color: #ffffff;
+      font-size: calc(14px * var(--textScale));
+      font-weight:700;
+      display:inline-block;
+      vertical-align:middle;
+      letter-spacing:.2px;
+      white-space:normal;
+      word-break:keep-all;
+      line-height:1.3;
+      cursor:pointer;
+      transition: background .15s, transform .15s;
+    }
+    #modelTag:hover{filter: brightness(1.15)}
+    #modelTag:active{transform:scale(.97)}
+
+    .modelDropdown{
+      display:none;
+      position:absolute;
+      top:100%;
+      left:10px;
+      margin-top:6px;
+      min-width:240px;
+      max-width:320px;
+      background: var(--panel2);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      box-shadow: 0 12px 36px rgba(0,0,0,.55);
+      padding:6px;
+      z-index:50;
+    }
+    .modelDropdown.show{display:block}
+    .modelDropdownItem{
+      display:block;
+      width:100%;
+      padding:10px 12px;
+      border:none;
+      background:transparent;
+      color:var(--text);
+      font-size:calc(13px * var(--textScale));
+      font-family:inherit;
+      text-align:left;
+      border-radius:10px;
+      cursor:pointer;
+      transition:background .12s;
+    }
+    .modelDropdownItem:hover{background:rgba(255,255,255,.08)}
+    .modelDropdownItem:active{transform:scale(.98)}
+    .modelDropdownItem.active{background:rgba(45,107,255,.2); color:#ffffff;}
+    .modelDropdownItem .mdName{font-weight:700}
+    .modelDropdownItem .mdId{font-size:calc(11px * var(--textScale)); color:var(--muted); margin-top:2px}
 
     .iconBtn{
       width:36px; height:36px;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      border-radius:12px;
+      border-radius:10px;
       border:none;
-      background: #070707;
-      box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      background: transparent;
       cursor:pointer;
-      color: rgba(230,237,243,.88);
+      color: rgba(230,237,243,.6);
       padding:0;
       flex: 0 0 36px;
+      transition: background .15s, color .15s;
     }
-    .iconBtn:active{transform:scale(.98)}
-    .iconBtn svg{width:18px; height:18px; fill: currentColor}
+    .iconBtn:hover{background:rgba(255,255,255,.06); color:rgba(230,237,243,.9)}
+    .iconBtn:active{transform:scale(.93)}
+    .iconBtn svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
 
     .rightBtns{
       display:flex;
       align-items:center;
-      gap:10px;
+      gap:2px;
     }
 
     .statusBtn{
       width:36px; height:36px;
-      border-radius:12px;
+      border-radius:10px;
       border:none;
-      background:#070707;
-      box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      background:transparent;
       cursor:pointer;
       padding:0;
       display:inline-flex;
       align-items:center;
       justify-content:center;
       flex: 0 0 36px;
+      transition: background .15s;
     }
-    .statusBtn:active{transform:scale(.98)}
+    .statusBtn:hover{background:rgba(255,255,255,.06)}
+    .statusBtn:active{transform:scale(.93)}
     .statusCircle{
-      width:14px; height:14px;
+      width:10px; height:10px;
       border-radius:999px;
       background: var(--warn);
-      box-shadow: 0 0 0 2px rgba(5,5,5,.95);
+      box-shadow: 0 0 6px rgba(247,201,72,.4);
+      transition: background .3s, box-shadow .3s;
     }
 
     main{
       flex:1;
-      overflow:auto;
-      padding: 10px;
-      padding-bottom: 92px;
+      overflow:hidden;
+      padding: 16px;
+      padding-bottom: 16px;
+      display:flex;
+      flex-direction:column;
     }
     .wrap{
       max-width: 860px;
       margin:0 auto;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      width:100%;
     }
 
     .panel{
       background: var(--chatBg);
-      border:none;
+      border: none;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      max-height: 65vh;
     }
     .panelHead{
       display:flex;
@@ -162,15 +246,32 @@
     .panelHead .h{font-weight:800; font-size: calc(13px * var(--textScale))}
     .panelHead .s{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.35}
 
+    .settingsOverlay{
+      display:none;
+      position:fixed; top:0; left:0; right:0; bottom:0;
+      z-index:100;
+      background: rgba(0,0,0,.75);
+      align-items:center; justify-content:center;
+      padding: 20px;
+    }
+    .settingsOverlay.show{
+      display:flex;
+    }
     .settings{
-      margin-bottom:10px;
-      padding: 12px 14px 14px;
-      background: rgba(10,14,20,.92);
+      width:100%; max-width:580px;
+      max-height: calc(100vh - 40px);
+      overflow-y:auto;
+      padding: 16px 16px 20px;
+      background: rgba(10,14,20,.97);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      box-shadow: 0 20px 60px rgba(0,0,0,.7);
+      position:relative;
     }
     .settings .row{display:flex; gap:10px; flex-wrap:wrap}
     label{font-size: calc(12px * var(--textScale)); color:var(--muted); display:block; margin:10px 0 6px}
+    input, textarea, select, button{
+      font-family: inherit;
+    }
     input[type="password"], input[type="text"], textarea{
       width:100%;
       background: rgba(0,0,0,.35);
@@ -180,6 +281,20 @@
       border-radius: 14px;
       padding: 12px 12px;
       font-size: calc(14px * var(--textScale));
+    }
+    .colorTextInput{
+      width:100%;
+      background: rgba(0,0,0,.35);
+      color: var(--text);
+      border:none;
+      outline:none;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: calc(11px * var(--textScale));
+      font-family: 'Courier New', monospace;
+      text-transform: none;
+      flex:1;
+      min-width:0;
     }
     textarea{min-height:120px; resize:vertical; line-height:1.5}
     .hint{font-size: calc(12px * var(--textScale)); color:var(--muted); line-height:1.45}
@@ -198,49 +313,50 @@
     .btn.secondary{background: rgba(255,255,255,.06)}
     .btn.danger{background: rgba(255,107,107,.14)}
 
-    .swatchBtn{
-      border:none;
-      border-radius: 14px;
-      padding: 10px 12px;
-      cursor:pointer;
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      box-shadow: 0 8px 18px rgba(0,0,0,.25);
-      font-size: calc(13px * var(--textScale));
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
+    .colorItem{
+      min-width:0;
     }
-    .swatchDot{
-      width:14px; height:14px;
-      border-radius:999px;
-      box-shadow: 0 0 0 2px rgba(5,5,5,.9);
-      flex: 0 0 14px;
+    .colorItem input[type="color"]{
+      width:100%; height:36px; padding:0; border:none;
+      border-radius:10px; background:rgba(0,0,0,.35); cursor:pointer;
     }
-
-    .chipRow{
-      margin-top:8px;
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
+    .colorSwatches{
+      display:flex; gap:5px; flex-wrap:wrap; margin-top:6px;
     }
-    .colorChip{
-      width:22px; height:22px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: transparent;
-      padding:0;
-      cursor:pointer;
-      box-shadow: 0 8px 18px rgba(0,0,0,.20);
+    .cSwatch{
+      width:24px; height:24px; border-radius:7px; border:1.5px solid rgba(255,255,255,.08);
+      padding:0; cursor:pointer; transition: transform .1s, border-color .15s;
     }
-    .colorChip:active{transform:scale(.98)}
+    .cSwatch:hover{border-color:rgba(255,255,255,.3)}
+    .cSwatch:active{transform:scale(.9)}
+    .presetGrid{
+      display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px;
+    }
+    .presetBtn{
+      border:none; border-radius:12px; padding:10px 0;
+      cursor:pointer; background:rgba(255,255,255,.04);
+      color:var(--text); font-size:calc(12px * var(--textScale));
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      transition: background .15s;
+    }
+    .presetBtn:hover{background:rgba(255,255,255,.08)}
+    .presetBtn:active{transform:scale(.97)}
+    .presetDot{
+      width:20px; height:20px; border-radius:999px;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.08);
+    }
 
     .chat{
       padding: 14px;
+      padding-bottom: 20px;
       display:flex;
       flex-direction:column;
       gap: 16px;
+      flex:1;
+      overflow-y:auto;
+      min-height:0;
+      scroll-padding-top: 14px;
+      scroll-padding-bottom: 20px;
     }
     .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
     .msg.user{align-items:flex-end}
@@ -267,83 +383,77 @@
     .msg.assistant .bubble{
       background: var(--assistantBubbleBg);
       color: rgba(230,237,243,.92);
-      box-shadow: none;
-      padding: 0;
-      border-radius: 0;
+      box-shadow: 0 10px 22px rgba(0,0,0,.35);
+      border-bottom-left-radius: 10px;
       max-width: 92%;
     }
 
     .actionsRow{
-      display:flex; gap:8px; align-items:center;
-      opacity:.9;
+      display:flex; gap:6px; align-items:center;
     }
-    .miniIconBtn{
-      width:32px; height:32px;
+    .copyPill{
       border:none;
-      background: rgba(255,255,255,.06);
-      border-radius: 12px;
-      box-shadow: 0 8px 18px rgba(0,0,0,.25);
+      background: var(--copyBtnBg);
+      border-radius: 10px;
+      padding: 4px 10px;
       cursor:pointer;
-      color: rgba(230,237,243,.9);
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:0;
+      color: rgba(230,237,243,.6);
+      font-size: calc(11px * var(--textScale));
+      font-family:inherit;
+      font-weight:600;
+      letter-spacing:.3px;
+      transition: background .15s, color .15s;
     }
-    .miniIconBtn svg{width:18px; height:18px; fill: currentColor}
+    .copyPill:hover{background:rgba(255,255,255,.14); color:rgba(230,237,243,.9)}
+    .copyPill:active{transform:scale(.95)}
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
-      background: rgba(5,5,5,.92);
-      backdrop-filter: blur(10px);
+      padding: 10px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      background: transparent;
+      pointer-events:none;
+    }
+    .composerFade{
+      height:24px;
+      background: linear-gradient(to bottom, transparent, var(--bg));
+      pointer-events:none;
+      opacity:0;
+      transition: opacity 0.2s;
+    }
+    .composer:focus-within .composerFade{
+      opacity:1;
     }
     .composerInner{
       max-width: 860px;
       margin:0 auto;
+      background: var(--inputBg);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 18px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
       display:flex;
-      gap:10px;
-      align-items:center;
+      flex-direction:column;
+      position:relative;
+      pointer-events:auto;
     }
 
     #input{
-      height:44px;
-      line-height:44px;
-      flex: 0 1 440px;
-      min-width: 160px;
-      max-width: 520px;
-      padding: 0 12px;
-      border-radius: 16px;
+      width:100%;
+      min-height:72px;
+      max-height:240px;
+      padding: 20px 16px;
+      border-radius: 18px;
       border:none;
-
-      background: var(--inputBg);
+      background: transparent;
       color: #ffffff;
-
       outline:none;
       font-size: calc(15px * var(--textScale));
+      font-family:inherit;
+      line-height:1.5;
+      resize:none;
+      overflow-y:auto;
     }
 
-    .sendBtn{
-      height:44px;
-      min-width: 54px;
-      border-radius: 16px;
-      border:none;
-      background: var(--sendBtnBg);
-      color: #ffffff;
-      box-shadow: 0 10px 22px rgba(0,0,0,.35);
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:0 14px;
-    }
-    .sendBtn:active{transform:scale(.98)}
-    .sendBtn svg{
-      width:20px; height:20px;
-      fill:none;
-      stroke:#ffffff;
-      stroke-width:2.8;
-      stroke-linecap:round;
-      stroke-linejoin:round;
-    }
 
     .toast{
       position:fixed;
@@ -394,288 +504,310 @@
     .hidden{display:none !important}
 
     @media (max-width: 520px){
-      .title{font-size: calc(13px * var(--textScale))}
-      .iconBtn{width:36px; height:36px}
-      .statusBtn{width:36px; height:36px}
-      main{padding:10px; padding-bottom: 96px;}
+      header{padding: 10px 6px 0; padding-top: calc(10px + env(safe-area-inset-top));}
+      .headerInner{border-radius:14px; padding:0;}
+      .topbar{gap:4px; padding: 0 10px;}
+      .title{font-size: calc(12px * var(--textScale)); gap:4px}
+      .ver{font-size: calc(9px * var(--textScale)); padding:2px 6px}
+      .topbar{height:56px}
+      #modelTag{font-size: calc(12px * var(--textScale))}
+      .modelDropdown{left:6px; min-width:220px; max-width:280px}
+      .iconBtn{width:32px; height:32px; flex:0 0 32px}
+      .iconBtn svg{width:18px; height:18px}
+      .statusBtn{width:32px; height:32px; flex:0 0 32px}
+      .rightBtns{gap:0}
+      main{padding:16px; padding-bottom: 16px;}
       .bubble{font-size: calc(16px * var(--textScale))}
-      #input{
-        flex: 1 1 auto;
-        max-width: none;
-        height:46px;
-        line-height:46px;
-      }
-      .sendBtn{
-        height:46px;
-        min-width: 56px;
-      }
+      .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
+      .composerInner{border-radius:16px}
+      #input{padding: 20px 16px; min-height:56px}
     }
   </style>
 </head>
 
 <body>
   <header>
-    <div class="topbar">
-      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.24</span></div>
+    <div class="headerInner">
+      <div class="topbar">
+        <span class="ver" id="modelTag">Model</span>
 
-      <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-      </button>
+        <div id="modelDropdown" class="modelDropdown"></div>
 
-      <div style="flex:1"></div>
+        <div style="flex:1"></div>
 
-      <div class="rightBtns">
-        <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 18.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"></path>
-            <path d="M2.3 9.9a14 14 0 0 1 19.4 0l-1.4 1.4a12 12 0 0 0-16.6 0L2.3 9.9z"></path>
-            <path d="M5.8 13.4a9 9 0 0 1 12.4 0l-1.4 1.4a7 7 0 0 0-9.6 0l-1.4-1.4z"></path>
-            <path d="M9.3 16.9a4 4 0 0 1 5.4 0l-1.4 1.4a2 2 0 0 0-2.6 0l-1.4-1.4z"></path>
-          </svg>
-        </button>
+        <div class="title">BK Trans <span class="ver" id="appVer">v3.1T</span></div>
 
-        <button id="topClearBtn" class="iconBtn" type="button" aria-label="Clear(대화 삭제)">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></svg>
-        </button>
+        <div class="rightBtns">
+          <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
 
-        <button id="connBtn" class="statusBtn" type="button" aria-label="연결 상태">
-          <span id="statusCircle" class="statusCircle"></span>
-        </button>
+          <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none"></path>
+            </svg>
+          </button>
+
+          <button id="topClearBtn" class="iconBtn" type="button" aria-label="Clear(대화 삭제)">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
+
+          <button id="connBtn" class="statusBtn" type="button" aria-label="연결 상태">
+            <span id="statusCircle" class="statusCircle"></span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
 
-  <main id="main">
-    <div class="wrap">
+  <!-- API 설정 패널 -->
+  <div id="apiSettingsOverlay" class="settingsOverlay">
+    <section id="apiSettingsPanel" class="settings">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,.08);">
+        <h2 style="margin:0; font-size:calc(18px * var(--textScale)); font-weight:700; color:var(--text);">API 및 프롬프트 설정</h2>
+        <button id="apiSettingsCloseBtn" class="iconBtn" type="button" aria-label="닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
 
-      <section id="settingsPanel" class="settings hidden">
-        <div class="hint" style="margin-bottom:8px;">
-          OpenRouter(Gemini) 설정 · 프롬프트 · 폰트(폰 업로드)
+        <div style="margin-bottom:20px;">
+          <label for="apiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">OpenRouter API Key</label>
+          <input id="apiKey" type="password" placeholder="sk-or-v1-..." autocomplete="off" />
+
         </div>
 
-        <label for="apiKey">OpenRouter API Key</label>
-        <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
-
-        <div class="row">
-          <div style="flex:1 1 240px;">
-            <label for="model">모델</label>
-            <input id="model" type="text" value="google/gemini-3-flash-preview" />
-          </div>
-          <div style="flex:1 1 140px;">
-            <label for="temperature">temperature</label>
-            <input id="temperature" type="text" value="0.2" />
-          </div>
-          <div style="flex:1 1 140px;">
-            <label for="top_p">top_p</label>
-            <input id="top_p" type="text" value="1" />
-          </div>
-          <div style="flex:1 1 140px;">
-            <label for="maxTokens">max_tokens</label>
-            <input id="maxTokens" type="text" value="800" />
+        <div style="margin-bottom:20px;">
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">모델 파라미터</label>
+          <div class="row" style="gap:12px;">
+            <div style="flex:1 1 240px;">
+              <label for="model" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">모델</label>
+              <input id="model" type="text" value="google/gemini-3-flash-preview" list="modelList" />
+              <datalist id="modelList">
+                <option value="google/gemini-3-flash-preview">Gemini 3 Flash</option>
+                <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
+                <option value="anthropic/claude-sonnet-4.5">Claude Sonnet 4.5</option>
+                <option value="openai/gpt-5.2">GPT 5.2</option>
+                <option value="openai/gpt-5.2-chat">GPT 5.2 Chat</option>
+              </datalist>
+            </div>
+            <div style="flex:1 1 120px;">
+              <label for="temperature" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Temperature</label>
+              <input id="temperature" type="text" value="0.2" />
+            </div>
+            <div style="flex:1 1 120px;">
+              <label for="top_p" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Top P</label>
+              <input id="top_p" type="text" value="1" />
+            </div>
+            <div style="flex:1 1 120px;">
+              <label for="maxTokens" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Max Tokens</label>
+              <input id="maxTokens" type="text" value="800" />
+            </div>
           </div>
         </div>
 
-        <label for="systemPrompt">프롬프트(시스템/규칙)</label>
-        <textarea id="systemPrompt" placeholder="여기에 본인 프롬프트를 붙여넣으세요."></textarea>
+        <div style="margin-bottom:20px;">
+          <label for="systemPrompt" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">시스템 프롬프트</label>
+          <textarea id="systemPrompt" placeholder="여기에 시스템 프롬프트를 입력하세요..." style="min-height:140px;"></textarea>
+        </div>
 
-        <div class="row" style="align-items:center; margin-top:10px;">
-          <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text);">
-            <input id="autoCopy" type="checkbox" style="width:18px; height:18px; accent-color: var(--blue);" />
-            번역 완료 시 자동 복사(Chrome 모바일)
+        <div style="margin-bottom:24px;">
+          <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text); cursor:pointer; padding:12px; background:rgba(255,255,255,.03); border-radius:12px;">
+            <input id="autoCopy" type="checkbox" style="width:18px; height:18px; accent-color: var(--blue); cursor:pointer;" />
+            <span style="font-size:calc(13px * var(--textScale));">번역 완료 시 자동 복사 (Chrome 모바일)</span>
           </label>
         </div>
 
-        <label for="fontScale">글자 크기</label>
-        <div class="row" style="align-items:center;">
-          <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
-          <div id="fontScaleVal" class="hint" style="min-width:64px; text-align:right;">100%</div>
-          <button id="fontScaleResetBtn" class="btn secondary" type="button">초기화</button>
+        <div style="display:flex; gap:10px;">
+          <button id="apiSaveBtn" class="btn" type="button" style="flex:1; font-weight:600;">저장</button>
+          <button id="apiCloseBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
         </div>
+    </section>
+  </div>
 
-        <label>색상</label>
-        <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end;">
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">전체배경</div>
-            <input id="colorBg" type="color" value="#050505" list="darkPaletteBg" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorBg">
-              <button class="colorChip" type="button" data-color="#000000" style="background:#000000"></button>
-              <button class="colorChip" type="button" data-color="#050505" style="background:#050505"></button>
-              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
-              <button class="colorChip" type="button" data-color="#0f172a" style="background:#0f172a"></button>
-              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
-              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
-              <button class="colorChip" type="button" data-color="#111111" style="background:#111111"></button>
-              <button class="colorChip" type="button" data-color="#090c10" style="background:#090c10"></button>
-            </div>
-          </div>
+  <!-- 색상 설정 패널 -->
+  <div id="colorSettingsOverlay" class="settingsOverlay">
+    <section id="colorSettingsPanel" class="settings">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,.08);">
+        <h2 style="margin:0; font-size:calc(18px * var(--textScale)); font-weight:700; color:var(--text);">외관 및 색상 설정</h2>
+        <button id="colorSettingsCloseBtn" class="iconBtn" type="button" aria-label="닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
 
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">채팅배경</div>
-            <input id="colorChatBg" type="color" value="#0e1420" list="darkPaletteChat" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorChatBg">
-              <button class="colorChip" type="button" data-color="#070c18" style="background:#070c18"></button>
-              <button class="colorChip" type="button" data-color="#0b1220" style="background:#0b1220"></button>
-              <button class="colorChip" type="button" data-color="#0e1420" style="background:#0e1420"></button>
-              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
-              <button class="colorChip" type="button" data-color="#131a2a" style="background:#131a2a"></button>
-              <button class="colorChip" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
-              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
-              <button class="colorChip" type="button" data-color="#0c1320" style="background:#0c1320"></button>
-            </div>
-          </div>
-
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">입력창</div>
-            <input id="colorInputBg" type="color" value="#2e3440" list="darkPaletteInput" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorInputBg">
-              <button class="colorChip" type="button" data-color="#1e2430" style="background:#1e2430"></button>
-              <button class="colorChip" type="button" data-color="#232832" style="background:#232832"></button>
-              <button class="colorChip" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
-              <button class="colorChip" type="button" data-color="#2e3440" style="background:#2e3440"></button>
-              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
-              <button class="colorChip" type="button" data-color="#3a3f4b" style="background:#3a3f4b"></button>
-              <button class="colorChip" type="button" data-color="#161b22" style="background:#161b22"></button>
-              <button class="colorChip" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
-            </div>
-          </div>
-
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">입력말풍선</div>
-            <input id="colorUserBubbleBg" type="color" value="#2e3440" list="darkPaletteBubble" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorUserBubbleBg">
-              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
-              <button class="colorChip" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
-              <button class="colorChip" type="button" data-color="#2e3440" style="background:#2e3440"></button>
-              <button class="colorChip" type="button" data-color="#334155" style="background:#334155"></button>
-              <button class="colorChip" type="button" data-color="#3b4252" style="background:#3b4252"></button>
-              <button class="colorChip" type="button" data-color="#2a2a2a" style="background:#2a2a2a"></button>
-              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
-              <button class="colorChip" type="button" data-color="#30363d" style="background:#30363d"></button>
-            </div>
-          </div>
-
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">출력말풍선</div>
-            <input id="colorAssistantBubbleBg" type="color" value="#000000" list="darkPaletteAssistant" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorAssistantBubbleBg">
-              <button class="colorChip" type="button" data-color="#000000" style="background:#000000"></button>
-              <button class="colorChip" type="button" data-color="#050505" style="background:#050505"></button>
-              <button class="colorChip" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
-              <button class="colorChip" type="button" data-color="#0e1420" style="background:#0e1420"></button>
-              <button class="colorChip" type="button" data-color="#111827" style="background:#111827"></button>
-              <button class="colorChip" type="button" data-color="#1f2937" style="background:#1f2937"></button>
-              <button class="colorChip" type="button" data-color="#0a0f1a" style="background:#0a0f1a"></button>
-              <button class="colorChip" type="button" data-color="#161b22" style="background:#161b22"></button>
-            </div>
-          </div>
-
-          <div style="flex:1 1 140px; min-width:140px;">
-            <div class="hint" style="margin-bottom:6px;">전송버튼</div>
-            <input id="colorSendBtnBg" type="color" value="#2d6bff" list="darkPaletteAccent" style="width:100%; height:44px; padding:0; border:none; border-radius:14px; background: rgba(0,0,0,.35);" />
-            <div class="chipRow" data-target="colorSendBtnBg">
-              <button class="colorChip" type="button" data-color="#1d4ed8" style="background:#1d4ed8"></button>
-              <button class="colorChip" type="button" data-color="#2d6bff" style="background:#2d6bff"></button>
-              <button class="colorChip" type="button" data-color="#0ea5e9" style="background:#0ea5e9"></button>
-              <button class="colorChip" type="button" data-color="#22c55e" style="background:#22c55e"></button>
-              <button class="colorChip" type="button" data-color="#f59e0b" style="background:#f59e0b"></button>
-              <button class="colorChip" type="button" data-color="#ef4444" style="background:#ef4444"></button>
-              <button class="colorChip" type="button" data-color="#a855f7" style="background:#a855f7"></button>
-              <button class="colorChip" type="button" data-color="#14b8a6" style="background:#14b8a6"></button>
-            </div>
+        <div style="margin-bottom:24px;">
+          <label for="fontScale" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">글자 크기</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
+            <div id="fontScaleVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--textScale));">100%</div>
+            <button id="fontScaleResetBtn" class="btn secondary" type="button">초기화</button>
           </div>
         </div>
 
-        <datalist id="darkPaletteBg">
-          <option value="#000000"></option><option value="#050505"></option><option value="#0b0f14"></option><option value="#0f172a"></option>
-          <option value="#111827"></option><option value="#1f2937"></option><option value="#111111"></option><option value="#090c10"></option>
-        </datalist>
-        <datalist id="darkPaletteChat">
-          <option value="#070c18"></option><option value="#0b1220"></option><option value="#0e1420"></option><option value="#111827"></option>
-          <option value="#131a2a"></option><option value="#0a0f1a"></option><option value="#0b0f14"></option><option value="#0c1320"></option>
-        </datalist>
-        <datalist id="darkPaletteInput">
-          <option value="#1e2430"></option><option value="#232832"></option><option value="#2b2f3a"></option><option value="#2e3440"></option>
-          <option value="#1f2937"></option><option value="#3a3f4b"></option><option value="#161b22"></option><option value="#2a2a2a"></option>
-        </datalist>
-        <datalist id="darkPaletteBubble">
-          <option value="#1f2937"></option><option value="#2b2f3a"></option><option value="#2e3440"></option><option value="#334155"></option>
-          <option value="#3b4252"></option><option value="#2a2a2a"></option><option value="#111827"></option><option value="#30363d"></option>
-        </datalist>
-        <datalist id="darkPaletteAssistant">
-          <option value="#000000"></option><option value="#050505"></option><option value="#0b0f14"></option><option value="#0e1420"></option>
-          <option value="#111827"></option><option value="#1f2937"></option><option value="#0a0f1a"></option><option value="#161b22"></option>
-        </datalist>
-        <datalist id="darkPaletteAccent">
-          <option value="#1d4ed8"></option><option value="#2d6bff"></option><option value="#0ea5e9"></option><option value="#22c55e"></option>
-          <option value="#f59e0b"></option><option value="#ef4444"></option><option value="#a855f7"></option><option value="#14b8a6"></option>
-        </datalist>
-
-        <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap;">
-          <button class="swatchBtn" type="button" data-preset="oled">
-            <span class="swatchDot" style="background:#000000"></span> OLED Black
-          </button>
-          <button class="swatchBtn" type="button" data-preset="slate">
-            <span class="swatchDot" style="background:#0b0f14"></span> Slate
-          </button>
-          <button class="swatchBtn" type="button" data-preset="navy">
-            <span class="swatchDot" style="background:#070c18"></span> Navy
-          </button>
-          <button class="swatchBtn" type="button" data-preset="purple">
-            <span class="swatchDot" style="background:#1b1026"></span> Purple
-          </button>
-          <button class="swatchBtn" type="button" data-preset="emerald">
-            <span class="swatchDot" style="background:#071b14"></span> Emerald
-          </button>
-          <button class="swatchBtn" type="button" data-preset="warm">
-            <span class="swatchDot" style="background:#140f0b"></span> Warm
-          </button>
-          <button class="swatchBtn" type="button" data-preset="mono">
-            <span class="swatchDot" style="background:#111111"></span> Mono
-          </button>
-          <button class="swatchBtn" type="button" data-preset="reset">
-            <span class="swatchDot" style="background:#2d6bff"></spana> 기본
-          </button>
+        <div style="margin-bottom:24px;">
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">색상 설정</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">전체배경</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorBg" type="color" value="#050505" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorBg">
+              <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="cSwatch" type="button" data-color="#0f172a" style="background:#0f172a"></button>
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#1a1a2e" style="background:#1a1a2e"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">채팅배경</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorChatBg" type="color" value="#0e1420" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorChatBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorChatBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorChatBg">
+              <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="cSwatch" type="button" data-color="#0e1420" style="background:#0e1420"></button>
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#131a2a" style="background:#131a2a"></button>
+              <button class="cSwatch" type="button" data-color="#1b1026" style="background:#1b1026"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">입력창</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorInputBg" type="color" value="#2e3440" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorInputBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorInputBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorInputBg">
+              <button class="cSwatch" type="button" data-color="#161b22" style="background:#161b22"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+              <button class="cSwatch" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
+              <button class="cSwatch" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="cSwatch" type="button" data-color="#2d2240" style="background:#2d2240"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">입력말풍선</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorUserBubbleBg" type="color" value="#2e3440" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorUserBubbleBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorUserBubbleBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorUserBubbleBg">
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+              <button class="cSwatch" type="button" data-color="#2b2f3a" style="background:#2b2f3a"></button>
+              <button class="cSwatch" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="cSwatch" type="button" data-color="#334155" style="background:#334155"></button>
+              <button class="cSwatch" type="button" data-color="#3b4252" style="background:#3b4252"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">출력말풍선</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorAssistantBubbleBg" type="color" value="#1e2430" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAssistantBubbleBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAssistantBubbleBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorAssistantBubbleBg">
+              <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="cSwatch" type="button" data-color="#0e1420" style="background:#0e1420"></button>
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">모델명 배경</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorSendBtnBg" type="color" value="#2d6bff" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorSendBtnBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorSendBtnBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorSendBtnBg">
+              <button class="cSwatch" type="button" data-color="#1d4ed8" style="background:#1d4ed8"></button>
+              <button class="cSwatch" type="button" data-color="#2d6bff" style="background:#2d6bff"></button>
+              <button class="cSwatch" type="button" data-color="#0ea5e9" style="background:#0ea5e9"></button>
+              <button class="cSwatch" type="button" data-color="#14b8a6" style="background:#14b8a6"></button>
+              <button class="cSwatch" type="button" data-color="#8b5cf6" style="background:#8b5cf6"></button>
+              <button class="cSwatch" type="button" data-color="#f59e0b" style="background:#f59e0b"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">상단바</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorHeaderBg" type="color" value="#0b0f14" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorHeaderBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorHeaderBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorHeaderBg">
+              <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+              <button class="cSwatch" type="button" data-color="#141820" style="background:#141820"></button>
+              <button class="cSwatch" type="button" data-color="#1a1f2e" style="background:#1a1f2e"></button>
+              <button class="cSwatch" type="button" data-color="#1e293b" style="background:#1e293b"></button>
+              <button class="cSwatch" type="button" data-color="#1b1026" style="background:#1b1026"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">복사버튼</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorCopyBtnBg" type="color" value="#1a1f2a" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorCopyBtnBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorCopyBtnBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorCopyBtnBg">
+              <button class="cSwatch" type="button" data-color="#111111" style="background:#111111"></button>
+              <button class="cSwatch" type="button" data-color="#1a1f2a" style="background:#1a1f2a"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+              <button class="cSwatch" type="button" data-color="#222832" style="background:#222832"></button>
+              <button class="cSwatch" type="button" data-color="#2e3440" style="background:#2e3440"></button>
+              <button class="cSwatch" type="button" data-color="#162038" style="background:#162038"></button>
+            </div>
+          </div>
         </div>
 
-        <label>폰트(폰에서 업로드)</label>
-        <div class="row" style="align-items:center;">
-          <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" />
-          <button id="clearFontBtn" class="btn secondary" type="button">폰트 초기화</button>
-          <button id="saveBtn" class="btn" type="button">저장</button>
+        <div style="margin-bottom:24px;">
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">커스텀 폰트</label>
+          <div class="row" style="align-items:center; gap:10px;">
+            <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" style="flex:1;" />
+            <button id="clearFontBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+          <div class="hint" style="margin-top:8px;">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
         </div>
-        <div class="hint">현재 폰트: <span id="fontStatus">기본(레포 woff2 우선)</span></div>
-      </section>
+
+        <div style="display:flex; gap:10px;">
+          <button id="colorSaveBtn" class="btn" type="button" style="flex:1; font-weight:600;">저장</button>
+          <button id="colorCloseBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
+        </div>
+    </section>
+  </div>
+
+  <main id="main">
+    <div class="wrap">
 
       <section class="panel">
-        <div class="panelHead">
-          <div class="left">
-            <div class="h">Chat</div>
-          </div>
+        <div id="chat" class="chat">
+          <div id="bottomAnchor" style="height:1px;"></div>
         </div>
-        <div id="chat" class="chat"></div>
-        <div id="bottomAnchor" style="height:1px;"></div>
       </section>
 
     </div>
   </main>
 
   <div class="composer">
+    <div class="composerFade"></div>
     <div class="composerInner">
-      <button id="sendBtnL" class="sendBtn" type="button" aria-label="전송(좌)">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 19V5"></path>
-          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
-        </svg>
-      </button>
-
-      <input id="input" type="text" placeholder="" autocomplete="off" />
-
-      <button id="sendBtnR" class="sendBtn" type="button" aria-label="전송(우)">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 19V5"></path>
-          <path d="M5.5 11.5L12 5l6.5 6.5"></path>
-        </svg>
-      </button>
+      <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
     </div>
   </div>
 
@@ -687,30 +819,37 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.24';
+    const APP_VERSION = 'v3.1T';
 
     const LS = {
-      apiKey: 'bk_tr_apiKey',
-      model: 'bk_tr_model',
-      temp: 'bk_tr_temp',
-      top_p: 'bk_tr_top_p',
-      maxTokens: 'bk_tr_maxTokens',
-      system: 'bk_tr_systemPrompt',
-      autoCopy: 'bk_tr_autoCopy',
-      fontScale: 'bk_tr_fontScale',
+      apiKey: 'bk_tr_test_apiKey',
+      model: 'bk_tr_test_model',
+      temp: 'bk_tr_test_temp',
+      top_p: 'bk_tr_test_top_p',
+      maxTokens: 'bk_tr_test_maxTokens',
+      system: 'bk_tr_test_systemPrompt',
+      autoCopy: 'bk_tr_test_autoCopy',
+      fontScale: 'bk_tr_test_fontScale',
 
-      colorBg: 'bk_tr_color_bg',
-      colorChatBg: 'bk_tr_color_chat_bg',
-      colorInputBg: 'bk_tr_color_input_bg',
-      colorUserBubbleBg: 'bk_tr_color_user_bubble_bg',
-      colorAssistantBubbleBg: 'bk_tr_color_assistant_bubble_bg',
-      colorSendBtnBg: 'bk_tr_color_send_btn_bg'
+      colorBg: 'bk_tr_test_color_bg',
+      colorChatBg: 'bk_tr_test_color_chat_bg',
+      colorInputBg: 'bk_tr_test_color_input_bg',
+      colorUserBubbleBg: 'bk_tr_test_color_user_bubble_bg',
+      colorAssistantBubbleBg: 'bk_tr_test_color_assistant_bubble_bg',
+      colorSendBtnBg: 'bk_tr_test_color_send_btn_bg',
+      colorHeaderBg: 'bk_tr_test_color_header_bg',
+      colorCopyBtnBg: 'bk_tr_test_color_copy_btn_bg',
+      headerBgTransparent: 'bk_tr_test_header_bg_transparent',
+      inputBgTransparent: 'bk_tr_test_input_bg_transparent',
+      chatBgTransparent: 'bk_tr_test_chat_bg_transparent',
+      chatHistory: 'bk_tr_test_chatHistory'
     };
 
     const el = {
       main: document.getElementById('main'),
       appVer: document.getElementById('appVer'),
       modelTag: document.getElementById('modelTag'),
+      modelDropdown: document.getElementById('modelDropdown'),
 
       settingsToggleBtn: document.getElementById('settingsToggleBtn'),
       settingsPanel: document.getElementById('settingsPanel'),
@@ -733,8 +872,6 @@
       bottomAnchor: document.getElementById('bottomAnchor'),
 
       input: document.getElementById('input'),
-      sendBtnL: document.getElementById('sendBtnL'),
-      sendBtnR: document.getElementById('sendBtnR'),
 
       copyBar: document.getElementById('copyBar'),
       copyBarBtn: document.getElementById('copyBarBtn'),
@@ -754,6 +891,8 @@
       colorUserBubbleBg: document.getElementById('colorUserBubbleBg'),
       colorAssistantBubbleBg: document.getElementById('colorAssistantBubbleBg'),
       colorSendBtnBg: document.getElementById('colorSendBtnBg'),
+      colorHeaderBg: document.getElementById('colorHeaderBg'),
+      colorCopyBtnBg: document.getElementById('colorCopyBtnBg'),
     };
 
     if(el.appVer) el.appVer.textContent = APP_VERSION;
@@ -766,7 +905,7 @@
       return cleaned.split('-').filter(Boolean).map(t => {
         if(/^\d+(\.\d+)?$/.test(t)) return t;
         return t.charAt(0).toUpperCase() + t.slice(1);
-      }).join(' ');
+      }).filter(word => word.toLowerCase() !== 'preview').join(' ');
     }
 
     function getCurrentModelId(){
@@ -779,6 +918,53 @@
       document.title = pretty + ' BK Trans ' + APP_VERSION;
     }
 
+    const MODEL_OPTIONS = [
+      { id:'google/gemini-3-flash-preview', name:'Gemini 3 Flash' },
+      { id:'anthropic/claude-haiku-4.5', name:'Claude Haiku 4.5' },
+      { id:'anthropic/claude-sonnet-4.5', name:'Claude Sonnet 4.5' },
+      { id:'openai/gpt-5.2', name:'GPT 5.2' },
+      { id:'openai/gpt-5.2-chat', name:'GPT 5.2 Chat' }
+    ];
+
+    function renderModelDropdown(){
+      if(!el.modelDropdown) return;
+      const currentId = getCurrentModelId();
+      el.modelDropdown.innerHTML = '';
+      MODEL_OPTIONS.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'modelDropdownItem' + (m.id === currentId ? ' active' : '');
+        btn.type = 'button';
+        btn.innerHTML = '<div class="mdName">' + m.name + '</div><div class="mdId">' + m.id + '</div>';
+        btn.addEventListener('click', () => {
+          if(el.model) el.model.value = m.id;
+          localStorage.setItem(LS.model, m.id);
+          updateModelTag();
+          closeModelDropdown();
+          toast(m.name + ' 선택');
+        });
+        el.modelDropdown.appendChild(btn);
+      });
+    }
+
+    function toggleModelDropdown(){
+      if(!el.modelDropdown) return;
+      const isOpen = el.modelDropdown.classList.contains('show');
+      if(isOpen){ closeModelDropdown(); }
+      else { renderModelDropdown(); el.modelDropdown.classList.add('show'); }
+    }
+
+    function closeModelDropdown(){
+      if(el.modelDropdown) el.modelDropdown.classList.remove('show');
+    }
+
+    document.addEventListener('click', (e) => {
+      if(el.modelDropdown && el.modelDropdown.classList.contains('show')){
+        if(!el.modelTag.contains(e.target) && !el.modelDropdown.contains(e.target)){
+          closeModelDropdown();
+        }
+      }
+    });
+
     function toast(msg){
       el.toast.textContent = String(msg ?? '');
       el.toast.classList.add('show');
@@ -788,10 +974,10 @@
 
     function scrollToBottom(behavior){
       const b = behavior || 'smooth';
+      const scroller = el.chat;
       try{
         el.bottomAnchor.scrollIntoView({behavior: (b === 'instant' ? 'auto' : b), block:'end'});
       } catch {}
-      const scroller = el.main;
       const doScroll = () => {
         if(b === 'instant'){
           scroller.scrollTop = scroller.scrollHeight;
@@ -888,45 +1074,43 @@
       chatBg: '#0e1420',
       inputBg: '#2e3440',
       userBubbleBg: '#2e3440',
-      assistantBubbleBg: '#000000',
-      sendBtnBg: '#2d6bff'
+      assistantBubbleBg: '#1e2430',
+      sendBtnBg: '#2d6bff',
+      headerBg: '#0b0f14',
+      copyBtnBg: '#1a1f2a'
     };
 
-    const COLOR_PRESETS = {
-      oled:      { bg:'#000000', chatBg:'#050505', inputBg:'#111111', userBubbleBg:'#1b1b1b', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      slate:     { bg:'#050505', chatBg:'#0b0f14', inputBg:'#2e3440', userBubbleBg:'#2e3440', assistantBubbleBg:'#000000', sendBtnBg:'#2d6bff' },
-      navy:      { bg:'#05070f', chatBg:'#070c18', inputBg:'#22304a', userBubbleBg:'#22304a', assistantBubbleBg:'#000000', sendBtnBg:'#4f7cff' },
-      purple:    { bg:'#0c0614', chatBg:'#1b1026', inputBg:'#2d2240', userBubbleBg:'#2d2240', assistantBubbleBg:'#000000', sendBtnBg:'#8b5cf6' },
-      emerald:   { bg:'#050a08', chatBg:'#071b14', inputBg:'#1f3a30', userBubbleBg:'#1f3a30', assistantBubbleBg:'#000000', sendBtnBg:'#22c55e' },
-      warm:      { bg:'#090604', chatBg:'#140f0b', inputBg:'#3a2a22', userBubbleBg:'#3a2a22', assistantBubbleBg:'#000000', sendBtnBg:'#f59e0b' },
-      mono:      { bg:'#0a0a0a', chatBg:'#111111', inputBg:'#2a2a2a', userBubbleBg:'#2a2a2a', assistantBubbleBg:'#000000', sendBtnBg:'#ffffff' },
-      reset:     { ...COLOR_DEFAULTS }
-    };
+    function hexToRgba(hex, alpha){
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function applyColorWithTransparency(color, cssVar, isTransparent){
+      const finalColor = isTransparent ? hexToRgba(color, 0.5) : color;
+      document.documentElement.style.setProperty(cssVar, finalColor);
+    }
 
     function applyColorsFromStorage(){
-      const savedBg = localStorage.getItem(LS.colorBg);
-      if(el.colorBg) el.colorBg.value = savedBg || COLOR_DEFAULTS.bg;
-      if(savedBg) document.documentElement.style.setProperty('--bg', savedBg);
+      const loadColor = (colorKey, colorPickerId, cssVar, defaultColor) => {
+        const savedColor = localStorage.getItem(colorKey);
+        const colorPicker = document.getElementById(colorPickerId);
 
-      const savedChat = localStorage.getItem(LS.colorChatBg);
-      if(el.colorChatBg) el.colorChatBg.value = savedChat || COLOR_DEFAULTS.chatBg;
-      if(savedChat) document.documentElement.style.setProperty('--chatBg', savedChat);
+        const finalColor = savedColor || defaultColor;
 
-      const savedInput = localStorage.getItem(LS.colorInputBg);
-      if(el.colorInputBg) el.colorInputBg.value = savedInput || COLOR_DEFAULTS.inputBg;
-      if(savedInput) document.documentElement.style.setProperty('--inputBg', savedInput);
+        if(colorPicker) colorPicker.value = finalColor;
+        document.documentElement.style.setProperty(cssVar, finalColor);
+      };
 
-      const savedUserBubble = localStorage.getItem(LS.colorUserBubbleBg);
-      if(el.colorUserBubbleBg) el.colorUserBubbleBg.value = savedUserBubble || COLOR_DEFAULTS.userBubbleBg;
-      if(savedUserBubble) document.documentElement.style.setProperty('--userBubbleBg', savedUserBubble);
-
-      const savedAssistantBubble = localStorage.getItem(LS.colorAssistantBubbleBg);
-      if(el.colorAssistantBubbleBg) el.colorAssistantBubbleBg.value = savedAssistantBubble || COLOR_DEFAULTS.assistantBubbleBg;
-      if(savedAssistantBubble) document.documentElement.style.setProperty('--assistantBubbleBg', savedAssistantBubble);
-
-      const savedSendBtn = localStorage.getItem(LS.colorSendBtnBg);
-      if(el.colorSendBtnBg) el.colorSendBtnBg.value = savedSendBtn || COLOR_DEFAULTS.sendBtnBg;
-      if(savedSendBtn) document.documentElement.style.setProperty('--sendBtnBg', savedSendBtn);
+      loadColor(LS.colorBg, 'colorBg', '--bg', COLOR_DEFAULTS.bg);
+      loadColor(LS.colorChatBg, 'colorChatBg', '--chatBg', COLOR_DEFAULTS.chatBg);
+      loadColor(LS.colorInputBg, 'colorInputBg', '--inputBg', COLOR_DEFAULTS.inputBg);
+      loadColor(LS.colorUserBubbleBg, 'colorUserBubbleBg', '--userBubbleBg', COLOR_DEFAULTS.userBubbleBg);
+      loadColor(LS.colorAssistantBubbleBg, 'colorAssistantBubbleBg', '--assistantBubbleBg', COLOR_DEFAULTS.assistantBubbleBg);
+      loadColor(LS.colorSendBtnBg, 'colorSendBtnBg', '--sendBtnBg', COLOR_DEFAULTS.sendBtnBg);
+      loadColor(LS.colorHeaderBg, 'colorHeaderBg', '--headerBg', COLOR_DEFAULTS.headerBg);
+      loadColor(LS.colorCopyBtnBg, 'colorCopyBtnBg', '--copyBtnBg', COLOR_DEFAULTS.copyBtnBg);
     }
 
     function bindColorPicker(inputEl, lsKey, cssVar){
@@ -934,34 +1118,16 @@
       inputEl.addEventListener('input', (e) => {
         const v = String(e.target.value || '').trim();
         if(!v) return;
-        document.documentElement.style.setProperty(cssVar, v);
         try{ localStorage.setItem(lsKey, v); } catch {}
+        document.documentElement.style.setProperty(cssVar, v);
       });
     }
 
-    function applyPreset(presetKey){
-      const p = COLOR_PRESETS[presetKey];
-      if(!p) return;
-
-      const setOne = (inputEl, lsKey, cssVar, val) => {
-        if(inputEl) inputEl.value = val;
-        document.documentElement.style.setProperty(cssVar, val);
-        try{ localStorage.setItem(lsKey, val); } catch {}
-      };
-
-      setOne(el.colorBg, LS.colorBg, '--bg', p.bg);
-      setOne(el.colorChatBg, LS.colorChatBg, '--chatBg', p.chatBg);
-      setOne(el.colorInputBg, LS.colorInputBg, '--inputBg', p.inputBg);
-      setOne(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg', p.userBubbleBg);
-      setOne(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg', p.assistantBubbleBg);
-      setOne(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg', p.sendBtnBg);
-    }
-
     function initColorChips(){
-      document.querySelectorAll('.chipRow').forEach(row => {
+      document.querySelectorAll('.colorSwatches').forEach(row => {
         const targetId = row.getAttribute('data-target');
         if(!targetId) return;
-        row.querySelectorAll('.colorChip').forEach(btn => {
+        row.querySelectorAll('.cSwatch').forEach(btn => {
           btn.addEventListener('click', () => {
             const c = btn.getAttribute('data-color');
             const input = document.getElementById(targetId);
@@ -973,7 +1139,7 @@
       });
     }
 
-    const DB_NAME = 'bk_tr_db';
+    const DB_NAME = 'bk_tr_test_db_test';
     const DB_STORE = 'kv';
     let _fontBlobUrl = null;
 
@@ -1081,7 +1247,18 @@
     }
 
     let chat = [];
-    const MAX_INPUTS_PER_PAGE = 4;
+    const MAX_INPUTS_PER_PAGE = 6;
+    const MAX_MESSAGES = 30;
+
+    function saveChatHistory(){
+      try{ localStorage.setItem(LS.chatHistory, JSON.stringify(chat)); } catch{}
+    }
+    function loadChatHistory(){
+      try{
+        const saved = localStorage.getItem(LS.chatHistory);
+        if(saved){ chat = JSON.parse(saved); }
+      } catch{ chat = []; }
+    }
 
     function countUserInputs(arr){
       let c = 0;
@@ -1100,6 +1277,9 @@
         } else {
           chat.shift();
         }
+      }
+      while(chat.length > MAX_MESSAGES){
+        chat.shift();
       }
     }
 
@@ -1130,7 +1310,7 @@
       updateModelTag();
     }
 
-    function saveSettings(){
+    function saveApiSettings(){
       localStorage.setItem(LS.apiKey, el.apiKey.value.trim());
       localStorage.setItem(LS.model, el.model.value.trim());
       localStorage.setItem(LS.temp, el.temperature.value.trim());
@@ -1138,31 +1318,63 @@
       localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
       localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
       localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
-      localStorage.setItem(LS.fontScale, String(el.fontScale ? el.fontScale.value : '1'));
       updateModelTag();
-      toast('저장 완료');
-      setSettingsVisible(false);
+      toast('API 설정 저장 완료');
+      setApiSettingsVisible(false);
     }
 
-    function setSettingsVisible(v){
-      el.settingsPanel.classList.toggle('hidden', !v);
+    function saveColorSettings(){
+      localStorage.setItem(LS.fontScale, String(el.fontScale ? el.fontScale.value : '1'));
+
+      const headerBgCheckbox = document.getElementById('headerBgTransparent');
+      const inputBgCheckbox = document.getElementById('inputBgTransparent');
+      const chatBgCheckbox = document.getElementById('chatBgTransparent');
+
+      if(headerBgCheckbox) localStorage.setItem(LS.headerBgTransparent, headerBgCheckbox.checked ? '1' : '0');
+      if(inputBgCheckbox) localStorage.setItem(LS.inputBgTransparent, inputBgCheckbox.checked ? '1' : '0');
+      if(chatBgCheckbox) localStorage.setItem(LS.chatBgTransparent, chatBgCheckbox.checked ? '1' : '0');
+
+      toast('외관 설정 저장 완료');
+      setColorSettingsVisible(false);
+    }
+
+    const apiSettingsOverlay = document.getElementById('apiSettingsOverlay');
+    const colorSettingsOverlay = document.getElementById('colorSettingsOverlay');
+
+    function setApiSettingsVisible(v){
       if(v){
-        requestAnimationFrame(() => el.settingsPanel.scrollIntoView({behavior:'smooth', block:'start'}));
+        apiSettingsOverlay.classList.add('show');
+      } else {
+        apiSettingsOverlay.classList.remove('show');
       }
     }
 
-    function toggleSettings(){
-      const isHidden = el.settingsPanel.classList.contains('hidden');
-      setSettingsVisible(isHidden);
+    function setColorSettingsVisible(v){
+      if(v){
+        colorSettingsOverlay.classList.add('show');
+      } else {
+        colorSettingsOverlay.classList.remove('show');
+      }
+    }
+
+    function toggleApiSettings(){
+      const isVisible = apiSettingsOverlay.classList.contains('show');
+      setApiSettingsVisible(!isVisible);
+    }
+
+    function toggleColorSettings(){
+      const isVisible = colorSettingsOverlay.classList.contains('show');
+      setColorSettingsVisible(!isVisible);
     }
 
     let _isBusy = false;
     function setConnState(state){
       _isBusy = (state === 'busy');
-      if(state === 'ok') el.statusCircle.style.background = 'var(--ok)';
-      else if(state === 'busy') el.statusCircle.style.background = 'var(--warn)';
-      else if(state === 'err') el.statusCircle.style.background = 'var(--danger)';
-      else el.statusCircle.style.background = 'var(--warn)';
+      const s = el.statusCircle.style;
+      if(state === 'ok'){ s.background = 'var(--ok)'; s.boxShadow = '0 0 8px rgba(51,209,122,.5)'; }
+      else if(state === 'busy'){ s.background = 'var(--warn)'; s.boxShadow = '0 0 8px rgba(247,201,72,.4)'; }
+      else if(state === 'err'){ s.background = 'var(--danger)'; s.boxShadow = '0 0 8px rgba(255,107,107,.5)'; }
+      else { s.background = 'var(--warn)'; s.boxShadow = '0 0 6px rgba(247,201,72,.3)'; }
     }
 
     function normalizeNewlines(s){
@@ -1196,7 +1408,18 @@
       return v;
     }
 
-    async function callOpenRouter(userText){
+    function isAnthropicModel(m){
+      const s = String(m || '').toLowerCase();
+      return s.includes('anthropic/') || s.includes('claude');
+    }
+
+    let _currentAbort = null;
+
+    function abortCurrentRequest(){
+      if(_currentAbort){ _currentAbort.abort(); _currentAbort = null; }
+    }
+
+    async function callOpenRouterStream(userText, onChunk){
       const apiKey = el.apiKey.value.trim();
       if(!apiKey) throw new Error('API Key가 비어 있습니다.');
 
@@ -1205,31 +1428,49 @@
 
       const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
       const top_p = validateNumber(el.top_p.value.trim(), 0, 1, 'top_p');
-      const max_tokens = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 8000, 'max_tokens'));
+      const maxTokensRaw = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 32000, 'max_tokens'));
       const systemPrompt = el.systemPrompt.value || defaultSystemPrompt();
+
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userText }
+      ];
 
       const payload = {
         model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userText }
-        ],
+        messages,
         temperature,
-        max_tokens
+        stream: true
       };
+
+      if(isAnthropicModel(model)){
+        payload.max_tokens = Math.min(maxTokensRaw, 4096);
+      } else {
+        payload.max_tokens = maxTokensRaw;
+      }
 
       if(top_p < 1) payload.top_p = top_p;
 
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey
-        },
-        body: JSON.stringify(payload),
-        cache: 'no-store',
-        mode: 'cors'
-      });
+      const ac = new AbortController();
+      _currentAbort = ac;
+      const timeout = setTimeout(() => ac.abort(), 30000);
+
+      let res;
+      try{
+        res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey
+          },
+          body: JSON.stringify(payload),
+          cache: 'no-store',
+          mode: 'cors',
+          signal: ac.signal
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
 
       if(!res.ok){
         const text = await res.text();
@@ -1238,17 +1479,43 @@
         throw new Error('HTTP ' + res.status + ': ' + msg);
       }
 
-      const json = await res.json();
-      return json.choices[0].message.content;
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let full = '';
+      let buf = '';
+
+      while(true){
+        const { done, value } = await reader.read();
+        if(done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() || '';
+        for(const line of lines){
+          const trimmed = line.trim();
+          if(!trimmed || !trimmed.startsWith('data:')) continue;
+          const data = trimmed.slice(5).trim();
+          if(data === '[DONE]') break;
+          try{
+            const j = JSON.parse(data);
+            const delta = j.choices && j.choices[0] && j.choices[0].delta;
+            if(delta && delta.content){
+              full += delta.content;
+              onChunk(full);
+            }
+          } catch{}
+        }
+      }
+      return full;
+    }
+
+    async function callOpenRouter(userText){
+      return callOpenRouterStream(userText, () => {});
     }
 
     function renderChat(){
       el.chat.innerHTML = '';
       if(chat.length === 0){
-        const empty = document.createElement('div');
-        empty.className = 'hint';
-        empty.textContent = '대화가 없습니다. 아래 입력창에 문장을 입력하세요.';
-        el.chat.appendChild(empty);
+        el.chat.appendChild(el.bottomAnchor);
         scrollToBottom('instant');
         return;
       }
@@ -1267,10 +1534,9 @@
 
         if(m.role === 'assistant'){
           const copyBtn = document.createElement('button');
-          copyBtn.className = 'miniIconBtn';
+          copyBtn.className = 'copyPill';
           copyBtn.type = 'button';
-          copyBtn.setAttribute('aria-label', '복사');
-          copyBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 18H8V7h11v16z"/></svg>';
+          copyBtn.textContent = 'Copy';
           copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
           actions.appendChild(copyBtn);
         }
@@ -1281,10 +1547,14 @@
 
         el.chat.appendChild(row);
       }
+      el.chat.appendChild(el.bottomAnchor);
       scrollToBottom('instant');
     }
 
+
     async function send(){
+      if(_isBusy){ abortCurrentRequest(); return; }
+
       const userText = el.input.value.trim();
       if(!userText) return;
 
@@ -1292,21 +1562,57 @@
 
       chat.push({ role:'user', text:userText, ts:Date.now() });
       renderChat();
-      scrollToBottom('smooth');
 
       el.input.value = '';
+      autoResizeInput();
+      if(document.activeElement === el.input) el.input.blur();
       setConnState('busy');
 
+      const streamRow = document.createElement('div');
+      streamRow.className = 'msg assistant';
+      const streamBubble = document.createElement('div');
+      streamBubble.className = 'bubble';
+      streamBubble.textContent = '번역 중...';
+      streamBubble.style.opacity = '0.5';
+      streamRow.appendChild(streamBubble);
+      el.chat.insertBefore(streamRow, el.bottomAnchor);
+
+      let _scrollRaf = 0;
+      function scrollThrottled(){
+        if(_scrollRaf) return;
+        _scrollRaf = requestAnimationFrame(() => {
+          _scrollRaf = 0;
+          el.chat.scrollTop = el.chat.scrollHeight;
+        });
+      }
+      scrollThrottled();
+
       try{
-        const translatedRaw = await callOpenRouter(userText);
+        const translatedRaw = await callOpenRouterStream(userText, (partial) => {
+          streamBubble.style.opacity = '1';
+          streamBubble.textContent = partial;
+          scrollThrottled();
+        });
         const translated = normalizeOutput(userText, translatedRaw);
 
         chat.push({ role:'assistant', text: translated, ts: Date.now() });
-
         trimChatToMaxInputs();
-        renderChat();
+        saveChatHistory();
 
-        scrollToBottom('smooth');
+        streamBubble.textContent = translated;
+        streamBubble.style.opacity = '1';
+
+        const actions = document.createElement('div');
+        actions.className = 'actionsRow';
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copyPill';
+        copyBtn.type = 'button';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', async () => { await copyToClipboard(translated, false); });
+        actions.appendChild(copyBtn);
+        streamRow.appendChild(actions);
+
+        scrollThrottled();
 
         if(el.autoCopy.checked && hasChinese(translated)){
           const ok = await copyToClipboard(translated, true);
@@ -1324,13 +1630,22 @@
         setConnState('ok');
       } catch(err){
         const msg = (err && err.message) ? err.message : String(err);
-        chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
+        const isAbort = (err && err.name === 'AbortError');
+        if(streamRow.parentNode) streamRow.remove();
 
-        trimChatToMaxInputs();
+        if(isAbort){
+          toast('번역 취소됨');
+          chat.pop();
+        } else {
+          chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
+          trimChatToMaxInputs();
+          toast('요청 실패: ' + msg);
+        }
+        saveChatHistory();
         renderChat();
-
-        setConnState('err');
-        toast('요청 실패: ' + msg);
+        setConnState(isAbort ? 'warn' : 'err');
+      } finally {
+        _currentAbort = null;
       }
     }
 
@@ -1349,6 +1664,7 @@
     function clearChatOnly(){
       if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
+      saveChatHistory();
       hideCopyBar();
       renderChat();
       scrollToBottom('smooth');
@@ -1357,11 +1673,13 @@
 
     loadSettings();
     loadCustomFont();
+    loadChatHistory();
     renderChat();
-    setSettingsVisible(false);
+    setApiSettingsVisible(false);
+    setColorSettingsVisible(false);
     setConnState('warn');
 
-    const LS_LAST_CLIP = 'bk_tr_lastClip';
+    const LS_LAST_CLIP = 'bk_tr_test_lastClip';
     let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
     const AUTO_TRANSLATE_MAX_LEN = 300;
 
@@ -1387,36 +1705,62 @@
 
         updateLastClipboard(trimmed);
         el.input.value = trimmed;
-        setTimeout(() => send(), 150);
+        send();
       } catch(err){
       }
     }
 
     checkClipboard();
-    setInterval(checkClipboard, 2000);
+    setInterval(checkClipboard, 500);
 
-    if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleSettings);
-    if(el.appVer) el.appVer.addEventListener('click', toggleSettings);
+    if(el.modelTag) el.modelTag.addEventListener('click', toggleModelDropdown);
+    if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleColorSettings);
+    if(el.appVer) el.appVer.addEventListener('click', toggleApiSettings);
+
+    const apiSettingsCloseBtn = document.getElementById('apiSettingsCloseBtn');
+    const apiSaveBtn = document.getElementById('apiSaveBtn');
+    const apiCloseBtnBottom = document.getElementById('apiCloseBtnBottom');
+    if(apiSettingsCloseBtn) apiSettingsCloseBtn.addEventListener('click', () => setApiSettingsVisible(false));
+    if(apiSaveBtn) apiSaveBtn.addEventListener('click', saveApiSettings);
+    if(apiCloseBtnBottom) apiCloseBtnBottom.addEventListener('click', () => setApiSettingsVisible(false));
+    if(apiSettingsOverlay) apiSettingsOverlay.addEventListener('click', (e) => {
+      if(e.target === apiSettingsOverlay) setApiSettingsVisible(false);
+    });
+
+    const colorSettingsCloseBtn = document.getElementById('colorSettingsCloseBtn');
+    const colorSaveBtn = document.getElementById('colorSaveBtn');
+    const colorCloseBtnBottom = document.getElementById('colorCloseBtnBottom');
+    if(colorSettingsCloseBtn) colorSettingsCloseBtn.addEventListener('click', () => setColorSettingsVisible(false));
+    if(colorSaveBtn) colorSaveBtn.addEventListener('click', saveColorSettings);
+    if(colorCloseBtnBottom) colorCloseBtnBottom.addEventListener('click', () => setColorSettingsVisible(false));
+    if(colorSettingsOverlay) colorSettingsOverlay.addEventListener('click', (e) => {
+      if(e.target === colorSettingsOverlay) setColorSettingsVisible(false);
+    });
 
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
-    if(el.saveBtn) el.saveBtn.addEventListener('click', saveSettings);
 
     if(el.model) el.model.addEventListener('input', updateModelTag);
 
-    if(el.sendBtnL) el.sendBtnL.addEventListener('click', send);
-    if(el.sendBtnR) el.sendBtnR.addEventListener('click', send);
+
+    function autoResizeInput(){
+      if(!el.input) return;
+      el.input.style.height = 'auto';
+      el.input.style.height = Math.min(el.input.scrollHeight, 240) + 'px';
+    }
 
     if(el.input){
       el.input.addEventListener('keydown', (e) => {
-        if(e.key === 'Enter'){
+        if(e.key === 'Enter' && !e.shiftKey){
           e.preventDefault();
           send();
         }
         if(e.key === 'Escape'){
           el.input.value = '';
+          autoResizeInput();
         }
       });
+      el.input.addEventListener('input', autoResizeInput);
     }
 
     if(el.copyBar) el.copyBar.addEventListener('click', async () => {
@@ -1459,19 +1803,94 @@
     bindColorPicker(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg');
     bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
     bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
+    bindColorPicker(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg');
+    bindColorPicker(el.colorCopyBtnBg, LS.colorCopyBtnBg, '--copyBtnBg');
 
     initColorChips();
 
-    document.querySelectorAll('[data-preset]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.getAttribute('data-preset');
-        applyPreset(key);
-      });
-    });
+    function isValidHex(str){
+      return /^#[0-9A-Fa-f]{6}$/.test(str);
+    }
 
-    if(el.input) el.input.addEventListener('focus', () => scrollToBottom('smooth'));
+    function parseRgba(str){
+      const match = str.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/i);
+      if(!match) return null;
+      const r = parseInt(match[1]);
+      const g = parseInt(match[2]);
+      const b = parseInt(match[3]);
+      const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+      if(r > 255 || g > 255 || b > 255 || a < 0 || a > 1) return null;
+      return { r, g, b, a };
+    }
+
+    function rgbToHex(r, g, b){
+      return '#' + [r, g, b].map(x => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      }).join('');
+    }
+
+    function hexToRgba(hex, alpha){
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function syncColorTextInputs(){
+      document.querySelectorAll('.colorTextInput').forEach(textInput => {
+        const targetId = textInput.getAttribute('data-target');
+        const colorPicker = document.getElementById(targetId);
+        if(!colorPicker) return;
+
+        const updateTextInput = () => {
+          const hex = colorPicker.value;
+          textInput.value = hex.toUpperCase();
+        };
+
+        updateTextInput();
+
+        colorPicker.addEventListener('input', updateTextInput);
+
+        textInput.addEventListener('input', (e) => {
+          let val = e.target.value.trim();
+
+          // Try parsing as hex
+          if(!val.startsWith('#')) val = '#' + val;
+          if(isValidHex(val)){
+            colorPicker.value = val;
+            colorPicker.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        });
+      });
+    }
+
+    syncColorTextInputs();
+
+
+
+    const composerEl = document.querySelector('.composer');
+    function adjustForKeyboard(){
+      if(!window.visualViewport) return;
+      const vv = window.visualViewport;
+      const bottomOffset = window.innerHeight - vv.height - vv.offsetTop;
+      const extraLift = bottomOffset > 0 ? 15 : 0;
+      if(composerEl){
+        composerEl.style.bottom = Math.max(0, bottomOffset + extraLift) + 'px';
+      }
+      if(el.main){
+        el.main.style.paddingBottom = (Math.max(0, bottomOffset + extraLift) + 82) + 'px';
+      }
+      scrollToBottom('instant');
+    }
+    if(el.input) el.input.addEventListener('focus', () => { adjustForKeyboard(); scrollToBottom('smooth'); });
+    if(el.input) el.input.addEventListener('blur', () => {
+      if(composerEl) composerEl.style.bottom = '0';
+      if(el.main) el.main.style.paddingBottom = '';
+    });
     if(window.visualViewport){
-      window.visualViewport.addEventListener('resize', () => scrollToBottom('smooth'));
+      window.visualViewport.addEventListener('resize', adjustForKeyboard);
+      window.visualViewport.addEventListener('scroll', adjustForKeyboard);
     }
 
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
