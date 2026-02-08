@@ -541,7 +541,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.7T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.8T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -905,7 +905,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v3.7T';
+    const APP_VERSION = 'v3.8T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2064,19 +2064,19 @@
 
     // Load layout settings
     function loadLayoutSettings(){
-      const menuScale = localStorage.getItem('bk_tr_test_menuScale');
-      const chatScale = localStorage.getItem('bk_tr_test_chatScale');
-      const hSpacing = localStorage.getItem('bk_tr_test_headerSpacing');
-      const cSpacing = localStorage.getItem('bk_tr_test_chatSpacing');
-      const iSpacing = localStorage.getItem('bk_tr_test_inputSpacing');
-      const mWidth = localStorage.getItem('bk_tr_test_maxWidth');
+      const menuScale = localStorage.getItem('bk_tr_test_menuScale') || '1';
+      const chatScale = localStorage.getItem('bk_tr_test_chatScale') || '1';
+      const hSpacing = localStorage.getItem('bk_tr_test_headerSpacing') || '10';
+      const cSpacing = localStorage.getItem('bk_tr_test_chatSpacing') || '16';
+      const iSpacing = localStorage.getItem('bk_tr_test_inputSpacing') || '4';
+      const mWidth = localStorage.getItem('bk_tr_test_maxWidth') || '860';
 
-      if(menuScale) applyMenuFontScale(menuScale);
-      if(chatScale) applyChatFontScale(chatScale);
-      if(hSpacing) applyHeaderSpacing(hSpacing);
-      if(cSpacing) applyChatSpacing(cSpacing);
-      if(iSpacing) applyInputSpacing(iSpacing);
-      if(mWidth) applyMaxWidth(mWidth);
+      applyMenuFontScale(menuScale);
+      applyChatFontScale(chatScale);
+      applyHeaderSpacing(hSpacing);
+      applyChatSpacing(cSpacing);
+      applyInputSpacing(iSpacing);
+      applyMaxWidth(mWidth);
     }
 
     loadLayoutSettings();
