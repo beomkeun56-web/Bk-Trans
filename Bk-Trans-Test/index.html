@@ -36,6 +36,11 @@
       --userBubbleBg: rgba(46, 52, 64, .92);
       --assistantBubbleBg: transparent;
       --sendBtnBg: rgba(45,107,255,.18);
+
+      --inputHeight: 44px;
+      --inputMaxWidth: 520px;
+      --inputHorizontalSpacing: 10px;
+      --chatBottomGap: 8px;
     }
 
     @font-face{
@@ -137,7 +142,7 @@
       flex:1;
       overflow:auto;
       padding: 10px;
-      padding-bottom: 68px;
+      padding-bottom: calc(var(--inputHeight) + var(--inputHorizontalSpacing) * 2 + var(--chatBottomGap) + env(safe-area-inset-bottom));
     }
     .wrap{
       max-width: 860px;
@@ -238,7 +243,7 @@
 
     .chat{
       padding: 14px;
-      padding-bottom: 4px;
+      padding-bottom: var(--chatBottomGap);
       display:flex;
       flex-direction:column;
       gap: 16px;
@@ -293,7 +298,7 @@
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+      padding: var(--inputHorizontalSpacing) var(--inputHorizontalSpacing) calc(var(--inputHorizontalSpacing) + env(safe-area-inset-bottom));
       background: rgba(5,5,5,.92);
       backdrop-filter: blur(10px);
     }
@@ -306,11 +311,11 @@
     }
 
     #input{
-      height:44px;
-      line-height:44px;
+      height: var(--inputHeight);
+      line-height: var(--inputHeight);
       flex: 0 1 440px;
       min-width: 160px;
-      max-width: 520px;
+      max-width: var(--inputMaxWidth);
       padding: 0 12px;
       border-radius: 16px;
       border:none;
@@ -323,7 +328,7 @@
     }
 
     .sendBtn{
-      height:44px;
+      height: var(--inputHeight);
       min-width: 54px;
       border-radius: 16px;
       border:none;
@@ -398,16 +403,16 @@
       .title{font-size: calc(13px * var(--textScale))}
       .iconBtn{width:36px; height:36px}
       .statusBtn{width:36px; height:36px}
-      main{padding:10px; padding-bottom: 70px;}
+      main{padding:10px; padding-bottom: calc(var(--inputHeight) + var(--inputHorizontalSpacing) * 2 + var(--chatBottomGap) + env(safe-area-inset-bottom) + 4px);}
       .bubble{font-size: calc(16px * var(--textScale))}
       #input{
         flex: 1 1 auto;
         max-width: none;
-        height:46px;
-        line-height:46px;
+        height: var(--inputHeight);
+        line-height: var(--inputHeight);
       }
       .sendBtn{
-        height:46px;
+        height: var(--inputHeight);
         min-width: 56px;
       }
     }
@@ -417,7 +422,7 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.25T</span></div>
+      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.26T</span></div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
@@ -638,6 +643,43 @@
           </button>
         </div>
 
+        <label>레이아웃 조정</label>
+        <div style="margin-bottom:14px;">
+          <div class="hint" style="margin-bottom:6px;">입력창 높이 (px)</div>
+          <div class="row" style="align-items:center;">
+            <input id="inputHeightSlider" type="range" min="36" max="64" step="2" value="44" style="flex:1 1 auto;" />
+            <div id="inputHeightVal" class="hint" style="min-width:64px; text-align:right;">44px</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div class="hint" style="margin-bottom:6px;">입력창 최대 가로 길이 (px)</div>
+          <div class="row" style="align-items:center;">
+            <input id="inputMaxWidthSlider" type="range" min="320" max="800" step="20" value="520" style="flex:1 1 auto;" />
+            <div id="inputMaxWidthVal" class="hint" style="min-width:64px; text-align:right;">520px</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div class="hint" style="margin-bottom:6px;">입력창 좌우 여백 (px)</div>
+          <div class="row" style="align-items:center;">
+            <input id="inputHorizontalSpacingSlider" type="range" min="4" max="30" step="2" value="10" style="flex:1 1 auto;" />
+            <div id="inputHorizontalSpacingVal" class="hint" style="min-width:64px; text-align:right;">10px</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div class="hint" style="margin-bottom:6px;">채팅창과 입력창 간격 (px)</div>
+          <div class="row" style="align-items:center;">
+            <input id="chatBottomGapSlider" type="range" min="0" max="30" step="2" value="8" style="flex:1 1 auto;" />
+            <div id="chatBottomGapVal" class="hint" style="min-width:64px; text-align:right;">8px</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-bottom:14px;">
+          <button id="resetLayoutBtn" class="btn secondary" type="button">레이아웃 초기화</button>
+        </div>
+
         <label>폰트(폰에서 업로드)</label>
         <div class="row" style="align-items:center;">
           <input id="fontFile" type="file" accept=".ttf,.otf,.woff2" />
@@ -688,7 +730,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.25T';
+    const APP_VERSION = 'v1.26T';
 
     const LS = {
       apiKey: 'bk_tr_apiKey',
@@ -705,7 +747,12 @@
       colorInputBg: 'bk_tr_color_input_bg',
       colorUserBubbleBg: 'bk_tr_color_user_bubble_bg',
       colorAssistantBubbleBg: 'bk_tr_color_assistant_bubble_bg',
-      colorSendBtnBg: 'bk_tr_color_send_btn_bg'
+      colorSendBtnBg: 'bk_tr_color_send_btn_bg',
+
+      inputHeight: 'bk_tr_input_height',
+      inputMaxWidth: 'bk_tr_input_max_width',
+      inputHorizontalSpacing: 'bk_tr_input_h_spacing',
+      chatBottomGap: 'bk_tr_chat_bottom_gap'
     };
 
     const el = {
@@ -755,6 +802,16 @@
       colorUserBubbleBg: document.getElementById('colorUserBubbleBg'),
       colorAssistantBubbleBg: document.getElementById('colorAssistantBubbleBg'),
       colorSendBtnBg: document.getElementById('colorSendBtnBg'),
+
+      inputHeightSlider: document.getElementById('inputHeightSlider'),
+      inputHeightVal: document.getElementById('inputHeightVal'),
+      inputMaxWidthSlider: document.getElementById('inputMaxWidthSlider'),
+      inputMaxWidthVal: document.getElementById('inputMaxWidthVal'),
+      inputHorizontalSpacingSlider: document.getElementById('inputHorizontalSpacingSlider'),
+      inputHorizontalSpacingVal: document.getElementById('inputHorizontalSpacingVal'),
+      chatBottomGapSlider: document.getElementById('chatBottomGapSlider'),
+      chatBottomGapVal: document.getElementById('chatBottomGapVal'),
+      resetLayoutBtn: document.getElementById('resetLayoutBtn'),
     };
 
     if(el.appVer) el.appVer.textContent = APP_VERSION;
@@ -878,10 +935,64 @@
       if(el.fontScaleVal) el.fontScaleVal.textContent = Math.round(s * 100) + '%';
     }
 
+    function applyInputHeight(px){
+      let val = Number(px);
+      if(!Number.isFinite(val) || val < 36) val = 44;
+      if(val > 64) val = 64;
+      document.documentElement.style.setProperty('--inputHeight', val + 'px');
+      if(el.inputHeightSlider) el.inputHeightSlider.value = String(val);
+      if(el.inputHeightVal) el.inputHeightVal.textContent = val + 'px';
+    }
+
+    function applyInputMaxWidth(px){
+      let val = Number(px);
+      if(!Number.isFinite(val) || val < 320) val = 520;
+      if(val > 800) val = 800;
+      document.documentElement.style.setProperty('--inputMaxWidth', val + 'px');
+      if(el.inputMaxWidthSlider) el.inputMaxWidthSlider.value = String(val);
+      if(el.inputMaxWidthVal) el.inputMaxWidthVal.textContent = val + 'px';
+    }
+
+    function applyInputHorizontalSpacing(px){
+      let val = Number(px);
+      if(!Number.isFinite(val) || val < 4) val = 10;
+      if(val > 30) val = 30;
+      document.documentElement.style.setProperty('--inputHorizontalSpacing', val + 'px');
+      if(el.inputHorizontalSpacingSlider) el.inputHorizontalSpacingSlider.value = String(val);
+      if(el.inputHorizontalSpacingVal) el.inputHorizontalSpacingVal.textContent = val + 'px';
+    }
+
+    function applyChatBottomGap(px){
+      let val = Number(px);
+      if(!Number.isFinite(val) || val < 0) val = 8;
+      if(val > 30) val = 30;
+      document.documentElement.style.setProperty('--chatBottomGap', val + 'px');
+      if(el.chatBottomGapSlider) el.chatBottomGapSlider.value = String(val);
+      if(el.chatBottomGapVal) el.chatBottomGapVal.textContent = val + 'px';
+    }
+
     function initFontScale(){
       const saved = localStorage.getItem(LS.fontScale);
       const v = saved ? Number(saved) : 1;
       applyFontScale(v);
+    }
+
+    function initLayoutSettings(){
+      const savedHeight = localStorage.getItem(LS.inputHeight);
+      const height = savedHeight ? Number(savedHeight) : 44;
+      applyInputHeight(height);
+
+      const savedWidth = localStorage.getItem(LS.inputMaxWidth);
+      const width = savedWidth ? Number(savedWidth) : 520;
+      applyInputMaxWidth(width);
+
+      const savedSpacing = localStorage.getItem(LS.inputHorizontalSpacing);
+      const spacing = savedSpacing ? Number(savedSpacing) : 10;
+      applyInputHorizontalSpacing(spacing);
+
+      const savedGap = localStorage.getItem(LS.chatBottomGap);
+      const gap = savedGap ? Number(savedGap) : 8;
+      applyChatBottomGap(gap);
     }
 
     const COLOR_DEFAULTS = {
@@ -1127,6 +1238,7 @@
       el.autoCopy.checked = (localStorage.getItem(LS.autoCopy) || '0') === '1';
 
       initFontScale();
+      initLayoutSettings();
       applyColorsFromStorage();
       updateModelTag();
     }
@@ -1450,6 +1562,53 @@
       el.fontScaleResetBtn.addEventListener('click', () => {
         applyFontScale(1);
         try{ localStorage.setItem(LS.fontScale, '1'); } catch {}
+      });
+    }
+
+    if(el.inputHeightSlider){
+      el.inputHeightSlider.addEventListener('input', (e) => {
+        const v = e.target && e.target.value ? e.target.value : '44';
+        applyInputHeight(v);
+        try{ localStorage.setItem(LS.inputHeight, String(v)); } catch {}
+      });
+    }
+
+    if(el.inputMaxWidthSlider){
+      el.inputMaxWidthSlider.addEventListener('input', (e) => {
+        const v = e.target && e.target.value ? e.target.value : '520';
+        applyInputMaxWidth(v);
+        try{ localStorage.setItem(LS.inputMaxWidth, String(v)); } catch {}
+      });
+    }
+
+    if(el.inputHorizontalSpacingSlider){
+      el.inputHorizontalSpacingSlider.addEventListener('input', (e) => {
+        const v = e.target && e.target.value ? e.target.value : '10';
+        applyInputHorizontalSpacing(v);
+        try{ localStorage.setItem(LS.inputHorizontalSpacing, String(v)); } catch {}
+      });
+    }
+
+    if(el.chatBottomGapSlider){
+      el.chatBottomGapSlider.addEventListener('input', (e) => {
+        const v = e.target && e.target.value ? e.target.value : '8';
+        applyChatBottomGap(v);
+        try{ localStorage.setItem(LS.chatBottomGap, String(v)); } catch {}
+      });
+    }
+
+    if(el.resetLayoutBtn){
+      el.resetLayoutBtn.addEventListener('click', () => {
+        applyInputHeight(44);
+        applyInputMaxWidth(520);
+        applyInputHorizontalSpacing(10);
+        applyChatBottomGap(8);
+        try{
+          localStorage.setItem(LS.inputHeight, '44');
+          localStorage.setItem(LS.inputMaxWidth, '520');
+          localStorage.setItem(LS.inputHorizontalSpacing, '10');
+          localStorage.setItem(LS.chatBottomGap, '8');
+        } catch {}
       });
     }
 
