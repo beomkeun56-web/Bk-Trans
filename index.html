@@ -255,6 +255,25 @@
       display:flex;
       flex-direction:column;
       min-height:0;
+      position:relative;
+    }
+    .chatTopFade{
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--chatBg), transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 10;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .chatTopFade.visible{
+      opacity: 1;
     }
     .panelHead{
       display:flex;
@@ -566,7 +585,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.6T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.7T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -1005,6 +1024,7 @@
     <div class="wrap">
 
       <section class="panel">
+        <div class="chatTopFade" id="chatTopFade"></div>
         <div id="chat" class="chat">
           <div id="bottomAnchor" style="height:1px;"></div>
         </div>
@@ -1028,7 +1048,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v4.6T';
+    const APP_VERSION = 'v4.7T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1200,6 +1220,18 @@
       } else {
         requestAnimationFrame(() => { doScroll(); requestAnimationFrame(doScroll); });
       }
+    }
+
+    // 채팅창 스크롤 시 상단 블러 효과
+    const chatTopFade = document.getElementById('chatTopFade');
+    if(el.chat && chatTopFade){
+      el.chat.addEventListener('scroll', () => {
+        if(el.chat.scrollTop > 20){
+          chatTopFade.classList.add('visible');
+        } else {
+          chatTopFade.classList.remove('visible');
+        }
+      });
     }
 
     async function copyToClipboard(text, silent){
