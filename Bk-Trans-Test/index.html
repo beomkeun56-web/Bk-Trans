@@ -214,7 +214,9 @@
     main{
       flex:1;
       overflow:hidden;
-      padding: var(--chatSpacing);
+      padding-top: var(--headerSpacing);
+      padding-left: var(--chatSpacing);
+      padding-right: var(--chatSpacing);
       padding-bottom: var(--inputSpacing);
       display:flex;
       flex-direction:column;
@@ -522,7 +524,7 @@
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
       .rightBtns{gap:0}
-      main{padding: var(--chatSpacing); padding-bottom: var(--inputSpacing);}
+      main{padding-top: var(--headerSpacing); padding-left: var(--chatSpacing); padding-right: var(--chatSpacing); padding-bottom: var(--inputSpacing);}
       .bubble{font-size: calc(16px * var(--chatScale))}
       .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
       .composerInner{border-radius:16px}
@@ -541,7 +543,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.4T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.5T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -905,7 +907,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v3.4T';
+    const APP_VERSION = 'v3.5T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
