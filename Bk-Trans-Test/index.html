@@ -37,6 +37,11 @@
       --inputSpacing: 4px;
       --maxWidth: 860px;
 
+      /* 상단바 커스터마이징 */
+      --topbarHeight: 64px;
+      --topbarHPadding: 14px;
+      --headerHPadding: 16px;
+
       --chatBg: #0e1420;
       --inputBg: #2e3440;
       --userBubbleBg: #2e3440;
@@ -76,7 +81,7 @@
 
     header{
       position:sticky; top:0; z-index:30;
-      padding: var(--chatSpacing) var(--chatSpacing) 0;
+      padding: 0 var(--headerHPadding) 0;
       padding-top: calc(var(--headerSpacing) + env(safe-area-inset-top));
       background: var(--bg);
     }
@@ -92,8 +97,8 @@
       max-width: 860px;
       margin:0 auto;
       display:flex; align-items:center; gap:6px;
-      height:64px;
-      padding: 0 14px;
+      height: var(--topbarHeight);
+      padding: 0 var(--topbarHPadding);
     }
     .title{
       font-weight:800;
@@ -561,7 +566,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.5T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.6T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -855,6 +860,37 @@
           </div>
         </div>
 
+        <div style="margin-bottom:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08);">
+          <div style="font-size:calc(14px * var(--menuScale)); font-weight:700; margin-bottom:16px; color:var(--text);">상단바 커스터마이징</div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="topbarHeightSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">상단바 높이</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="topbarHeightSlider" type="range" min="48" max="88" step="4" value="64" style="flex:1 1 auto;" />
+            <div id="topbarHeightVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">64px</div>
+            <button id="topbarHeightResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="topbarHPaddingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">상단바 내부 좌우 여백</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="topbarHPaddingSlider" type="range" min="8" max="32" step="2" value="14" style="flex:1 1 auto;" />
+            <div id="topbarHPaddingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">14px</div>
+            <button id="topbarHPaddingResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="headerHPaddingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">상단바 외부 좌우 간격</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="headerHPaddingSlider" type="range" min="8" max="32" step="2" value="16" style="flex:1 1 auto;" />
+            <div id="headerHPaddingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">16px</div>
+            <button id="headerHPaddingResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
         <div style="margin-bottom:24px;">
           <label for="headerSpacingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">상단바 아래 간격</label>
           <div class="row" style="align-items:center; gap:12px;">
@@ -992,7 +1028,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v4.5T';
+    const APP_VERSION = 'v4.6T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2052,6 +2088,84 @@
       });
     }
 
+    // Topbar height
+    const topbarHeightSlider = document.getElementById('topbarHeightSlider');
+    const topbarHeightVal = document.getElementById('topbarHeightVal');
+    const topbarHeightResetBtn = document.getElementById('topbarHeightResetBtn');
+
+    function applyTopbarHeight(px){
+      const val = Number(px) || 64;
+      document.documentElement.style.setProperty('--topbarHeight', val + 'px');
+      if(topbarHeightSlider) topbarHeightSlider.value = val;
+      if(topbarHeightVal) topbarHeightVal.textContent = val + 'px';
+    }
+
+    if(topbarHeightSlider){
+      topbarHeightSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyTopbarHeight(v);
+        localStorage.setItem('bk_tr_topbarHeight', v);
+      });
+    }
+    if(topbarHeightResetBtn){
+      topbarHeightResetBtn.addEventListener('click', () => {
+        applyTopbarHeight(64);
+        localStorage.setItem('bk_tr_topbarHeight', '64');
+      });
+    }
+
+    // Topbar horizontal padding
+    const topbarHPaddingSlider = document.getElementById('topbarHPaddingSlider');
+    const topbarHPaddingVal = document.getElementById('topbarHPaddingVal');
+    const topbarHPaddingResetBtn = document.getElementById('topbarHPaddingResetBtn');
+
+    function applyTopbarHPadding(px){
+      const val = Number(px) || 14;
+      document.documentElement.style.setProperty('--topbarHPadding', val + 'px');
+      if(topbarHPaddingSlider) topbarHPaddingSlider.value = val;
+      if(topbarHPaddingVal) topbarHPaddingVal.textContent = val + 'px';
+    }
+
+    if(topbarHPaddingSlider){
+      topbarHPaddingSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyTopbarHPadding(v);
+        localStorage.setItem('bk_tr_topbarHPadding', v);
+      });
+    }
+    if(topbarHPaddingResetBtn){
+      topbarHPaddingResetBtn.addEventListener('click', () => {
+        applyTopbarHPadding(14);
+        localStorage.setItem('bk_tr_topbarHPadding', '14');
+      });
+    }
+
+    // Header horizontal padding
+    const headerHPaddingSlider = document.getElementById('headerHPaddingSlider');
+    const headerHPaddingVal = document.getElementById('headerHPaddingVal');
+    const headerHPaddingResetBtn = document.getElementById('headerHPaddingResetBtn');
+
+    function applyHeaderHPadding(px){
+      const val = Number(px) || 16;
+      document.documentElement.style.setProperty('--headerHPadding', val + 'px');
+      if(headerHPaddingSlider) headerHPaddingSlider.value = val;
+      if(headerHPaddingVal) headerHPaddingVal.textContent = val + 'px';
+    }
+
+    if(headerHPaddingSlider){
+      headerHPaddingSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyHeaderHPadding(v);
+        localStorage.setItem('bk_tr_headerHPadding', v);
+      });
+    }
+    if(headerHPaddingResetBtn){
+      headerHPaddingResetBtn.addEventListener('click', () => {
+        applyHeaderHPadding(16);
+        localStorage.setItem('bk_tr_headerHPadding', '16');
+      });
+    }
+
     // Header spacing
     const headerSpacingSlider = document.getElementById('headerSpacingSlider');
     const headerSpacingVal = document.getElementById('headerSpacingVal');
@@ -2357,6 +2471,10 @@
       const iSpacing = localStorage.getItem('bk_tr_test_inputSpacing') || '4';
       const mWidth = localStorage.getItem('bk_tr_test_maxWidth') || '860';
 
+      const topbarH = localStorage.getItem('bk_tr_topbarHeight') || '64';
+      const topbarHP = localStorage.getItem('bk_tr_topbarHPadding') || '14';
+      const headerHP = localStorage.getItem('bk_tr_headerHPadding') || '16';
+
       const inputMinH = localStorage.getItem('bk_tr_inputMinHeight') || '72';
       const inputMaxH = localStorage.getItem('bk_tr_inputMaxHeight') || '240';
       const inputMaxW = localStorage.getItem('bk_tr_inputMaxWidth') || '860';
@@ -2367,6 +2485,9 @@
 
       applyMenuFontScale(menuScale);
       applyChatFontScale(chatScale);
+      applyTopbarHeight(topbarH);
+      applyTopbarHPadding(topbarHP);
+      applyHeaderHPadding(headerHP);
       applyHeaderSpacing(hSpacing);
       applyChatSpacing(cSpacing);
       applyInputSpacing(iSpacing);
