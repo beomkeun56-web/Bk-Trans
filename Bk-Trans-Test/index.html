@@ -421,14 +421,21 @@
       pointer-events:none;
     }
     .composerFade{
-      height:24px;
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      height: 24px;
       background: linear-gradient(to bottom, transparent, var(--bg));
-      pointer-events:none;
-      opacity:0;
+      pointer-events: none;
+      opacity: 0;
       transition: opacity 0.2s;
     }
     .composer:focus-within .composerFade{
-      opacity:1;
+      opacity: 1;
+    }
+    .composerInner{
+      position: relative;
     }
     .composerInner{
       max-width: 860px;
@@ -541,7 +548,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.8T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.9T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -905,7 +912,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v3.8T';
+    const APP_VERSION = 'v3.9T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
