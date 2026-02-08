@@ -424,10 +424,14 @@
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
       padding: 0 var(--composerPadding) calc(var(--keyboardSpacing) + env(safe-area-inset-bottom));
+      background: transparent;
+      pointer-events:none;
+      transition: background 0.3s, backdrop-filter 0.3s;
+    }
+    .composer.keyboard-visible{
       background: rgba(5,5,5,0.75);
       backdrop-filter: blur(var(--composerBlur));
       -webkit-backdrop-filter: blur(var(--composerBlur));
-      pointer-events:none;
     }
     .composerFade{
       position: absolute;
@@ -557,7 +561,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.4T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.5T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -988,7 +992,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v4.4T';
+    const APP_VERSION = 'v4.5T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2459,18 +2463,28 @@
       if(!window.visualViewport) return;
       const vv = window.visualViewport;
       const bottomOffset = window.innerHeight - vv.height - vv.offsetTop;
-      const extraLift = bottomOffset > 0 ? 15 : 0;
+
+      // 키보드가 올라왔을 때만 블러 효과 적용
       if(composerEl){
-        composerEl.style.bottom = Math.max(0, bottomOffset + extraLift) + 'px';
+        composerEl.style.bottom = Math.max(0, bottomOffset) + 'px';
+        if(bottomOffset > 50){
+          composerEl.classList.add('keyboard-visible');
+        } else {
+          composerEl.classList.remove('keyboard-visible');
+        }
       }
+
       if(el.main){
-        el.main.style.paddingBottom = (Math.max(0, bottomOffset + extraLift) + 82) + 'px';
+        el.main.style.paddingBottom = (Math.max(0, bottomOffset) + 82) + 'px';
       }
       scrollToBottom('instant');
     }
     if(el.input) el.input.addEventListener('focus', () => { adjustForKeyboard(); scrollToBottom('smooth'); });
     if(el.input) el.input.addEventListener('blur', () => {
-      if(composerEl) composerEl.style.bottom = '0';
+      if(composerEl){
+        composerEl.style.bottom = '0';
+        composerEl.classList.remove('keyboard-visible');
+      }
       if(el.main) el.main.style.paddingBottom = '';
       setTimeout(updateMainPaddingBottom, 10);
     });
