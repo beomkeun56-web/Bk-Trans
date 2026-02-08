@@ -265,7 +265,7 @@
       left: 0;
       right: 0;
       height: var(--chatTopFadeHeight);
-      background: linear-gradient(to bottom, var(--chatBg), transparent);
+      background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
       backdrop-filter: blur(var(--chatTopBlur));
       -webkit-backdrop-filter: blur(var(--chatTopBlur));
       pointer-events: none;
@@ -587,7 +587,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.8T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.9T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -1059,7 +1059,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v4.8T';
+    const APP_VERSION = 'v4.9T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
