@@ -34,7 +34,7 @@
 
       --headerSpacing: 10px;
       --chatSpacing: 16px;
-      --inputSpacing: 16px;
+      --inputSpacing: 4px;
       --maxWidth: 860px;
 
       --chatBg: #0e1420;
@@ -214,7 +214,9 @@
     main{
       flex:1;
       overflow:hidden;
-      padding: var(--chatSpacing);
+      padding-top: var(--headerSpacing);
+      padding-left: var(--chatSpacing);
+      padding-right: var(--chatSpacing);
       padding-bottom: var(--inputSpacing);
       display:flex;
       flex-direction:column;
@@ -353,15 +355,13 @@
 
     .chat{
       padding: 14px;
-      padding-bottom: 20px;
+      padding-bottom: 4px;
       display:flex;
       flex-direction:column;
       gap: 16px;
       flex:1;
       overflow-y:auto;
       min-height:0;
-      scroll-padding-top: 14px;
-      scroll-padding-bottom: 20px;
     }
     .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
     .msg.user{align-items:flex-end}
@@ -414,20 +414,27 @@
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 10px;
-      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      padding: 0 10px 0;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
       background: transparent;
       pointer-events:none;
     }
     .composerFade{
-      height:24px;
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      height: 24px;
       background: linear-gradient(to bottom, transparent, var(--bg));
-      pointer-events:none;
-      opacity:0;
+      pointer-events: none;
+      opacity: 0;
       transition: opacity 0.2s;
     }
     .composer:focus-within .composerFade{
-      opacity:1;
+      opacity: 1;
+    }
+    .composerInner{
+      position: relative;
     }
     .composerInner{
       max-width: 860px;
@@ -521,7 +528,7 @@
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
       .rightBtns{gap:0}
-      main{padding: var(--chatSpacing); padding-bottom: var(--inputSpacing);}
+      main{padding-top: var(--headerSpacing); padding-left: var(--chatSpacing); padding-right: var(--chatSpacing); padding-bottom: var(--inputSpacing);}
       .bubble{font-size: calc(16px * var(--chatScale))}
       .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
       .composerInner{border-radius:16px}
@@ -540,7 +547,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.4T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.0T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -855,8 +862,8 @@
         <div style="margin-bottom:24px;">
           <label for="inputSpacingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">채팅창-입력창 간격</label>
           <div class="row" style="align-items:center; gap:12px;">
-            <input id="inputSpacingSlider" type="range" min="4" max="24" step="2" value="16" style="flex:1 1 auto;" />
-            <div id="inputSpacingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">16px</div>
+            <input id="inputSpacingSlider" type="range" min="4" max="24" step="2" value="4" style="flex:1 1 auto;" />
+            <div id="inputSpacingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">4px</div>
             <button id="inputSpacingResetBtn" class="btn secondary" type="button">초기화</button>
           </div>
         </div>
@@ -904,7 +911,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v3.4T';
+    const APP_VERSION = 'v4.0T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2031,8 +2038,8 @@
     }
     if(inputSpacingResetBtn){
       inputSpacingResetBtn.addEventListener('click', () => {
-        applyInputSpacing(16);
-        try{ localStorage.setItem('bk_tr_test_inputSpacing', '16'); } catch {}
+        applyInputSpacing(4);
+        try{ localStorage.setItem('bk_tr_test_inputSpacing', '4'); } catch {}
       });
     }
 
@@ -2063,19 +2070,26 @@
 
     // Load layout settings
     function loadLayoutSettings(){
-      const menuScale = localStorage.getItem('bk_tr_test_menuScale');
-      const chatScale = localStorage.getItem('bk_tr_test_chatScale');
-      const hSpacing = localStorage.getItem('bk_tr_test_headerSpacing');
-      const cSpacing = localStorage.getItem('bk_tr_test_chatSpacing');
-      const iSpacing = localStorage.getItem('bk_tr_test_inputSpacing');
-      const mWidth = localStorage.getItem('bk_tr_test_maxWidth');
+      // Force reset for v4.0T+ - clear old large spacing values
+      const lastVersion = localStorage.getItem('bk_tr_app_version');
+      if(!lastVersion || lastVersion !== 'v4.0T'){
+        localStorage.setItem('bk_tr_test_inputSpacing', '4');
+        localStorage.setItem('bk_tr_app_version', 'v4.0T');
+      }
 
-      if(menuScale) applyMenuFontScale(menuScale);
-      if(chatScale) applyChatFontScale(chatScale);
-      if(hSpacing) applyHeaderSpacing(hSpacing);
-      if(cSpacing) applyChatSpacing(cSpacing);
-      if(iSpacing) applyInputSpacing(iSpacing);
-      if(mWidth) applyMaxWidth(mWidth);
+      const menuScale = localStorage.getItem('bk_tr_test_menuScale') || '1';
+      const chatScale = localStorage.getItem('bk_tr_test_chatScale') || '1';
+      const hSpacing = localStorage.getItem('bk_tr_test_headerSpacing') || '10';
+      const cSpacing = localStorage.getItem('bk_tr_test_chatSpacing') || '16';
+      const iSpacing = localStorage.getItem('bk_tr_test_inputSpacing') || '4';
+      const mWidth = localStorage.getItem('bk_tr_test_maxWidth') || '860';
+
+      applyMenuFontScale(menuScale);
+      applyChatFontScale(chatScale);
+      applyHeaderSpacing(hSpacing);
+      applyChatSpacing(cSpacing);
+      applyInputSpacing(iSpacing);
+      applyMaxWidth(mWidth);
     }
 
     loadLayoutSettings();
