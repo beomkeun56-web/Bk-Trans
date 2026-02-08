@@ -32,9 +32,10 @@
       --menuScale: 1;
       --chatScale: 1;
 
-      --verticalSpacing: 16px;
+      --headerSpacing: 10px;
+      --chatSpacing: 16px;
+      --inputSpacing: 16px;
       --maxWidth: 860px;
-      --horizontalPadding: 16px;
 
       --chatBg: #0e1420;
       --inputBg: #2e3440;
@@ -66,8 +67,8 @@
 
     header{
       position:sticky; top:0; z-index:30;
-      padding: 10px 10px 0;
-      padding-top: calc(10px + env(safe-area-inset-top));
+      padding: var(--chatSpacing) var(--chatSpacing) 0;
+      padding-top: calc(var(--headerSpacing) + env(safe-area-inset-top));
       background: var(--bg);
     }
     .headerInner{
@@ -213,8 +214,8 @@
     main{
       flex:1;
       overflow:hidden;
-      padding: var(--horizontalPadding);
-      padding-bottom: var(--verticalSpacing);
+      padding: var(--chatSpacing);
+      padding-bottom: var(--inputSpacing);
       display:flex;
       flex-direction:column;
     }
@@ -521,7 +522,7 @@
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
       .rightBtns{gap:0}
-      main{padding: var(--horizontalPadding); padding-bottom: var(--verticalSpacing);}
+      main{padding: var(--chatSpacing); padding-bottom: var(--inputSpacing);}
       .bubble{font-size: calc(16px * var(--chatScale))}
       .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
       .composerInner{border-radius:16px}
@@ -540,9 +541,18 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.3T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.4T</span></div>
 
         <div class="rightBtns">
+          <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+          </button>
+
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="3"></circle>
@@ -826,11 +836,29 @@
         </div>
 
         <div style="margin-bottom:24px;">
-          <label for="verticalSpacingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">세로 간격</label>
+          <label for="headerSpacingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">상단바 아래 간격</label>
           <div class="row" style="align-items:center; gap:12px;">
-            <input id="verticalSpacingSlider" type="range" min="8" max="32" step="2" value="16" style="flex:1 1 auto;" />
-            <div id="verticalSpacingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">16px</div>
-            <button id="verticalSpacingResetBtn" class="btn secondary" type="button">초기화</button>
+            <input id="headerSpacingSlider" type="range" min="4" max="24" step="2" value="10" style="flex:1 1 auto;" />
+            <div id="headerSpacingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">10px</div>
+            <button id="headerSpacingResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="chatSpacingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">채팅창 좌우 간격</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="chatSpacingSlider" type="range" min="8" max="32" step="2" value="16" style="flex:1 1 auto;" />
+            <div id="chatSpacingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">16px</div>
+            <button id="chatSpacingResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="inputSpacingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">채팅창-입력창 간격</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="inputSpacingSlider" type="range" min="4" max="24" step="2" value="16" style="flex:1 1 auto;" />
+            <div id="inputSpacingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">16px</div>
+            <button id="inputSpacingResetBtn" class="btn secondary" type="button">초기화</button>
           </div>
         </div>
 
@@ -840,15 +868,6 @@
             <input id="maxWidthSlider" type="range" min="600" max="1200" step="20" value="860" style="flex:1 1 auto;" />
             <div id="maxWidthVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">860px</div>
             <button id="maxWidthResetBtn" class="btn secondary" type="button">초기화</button>
-          </div>
-        </div>
-
-        <div style="margin-bottom:24px;">
-          <label for="horizontalPaddingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">좌우 여백</label>
-          <div class="row" style="align-items:center; gap:12px;">
-            <input id="horizontalPaddingSlider" type="range" min="8" max="32" step="2" value="16" style="flex:1 1 auto;" />
-            <div id="horizontalPaddingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">16px</div>
-            <button id="horizontalPaddingResetBtn" class="btn secondary" type="button">초기화</button>
           </div>
         </div>
 
@@ -886,7 +905,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v3.3T';
+    const APP_VERSION = 'v3.4T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1866,13 +1885,15 @@
     // Layout settings
     const layoutSettingsOverlay = document.getElementById('layoutSettingsOverlay');
     const appTitle = document.getElementById('appTitle');
+    const layoutToggleBtn = document.getElementById('layoutToggleBtn');
 
     function setLayoutSettingsVisible(v){
       if(v) layoutSettingsOverlay.classList.add('show');
       else layoutSettingsOverlay.classList.remove('show');
     }
 
-    if(appTitle) appTitle.addEventListener('click', () => setLayoutSettingsVisible(true));
+    if(appTitle) appTitle.addEventListener('click', toggleApiSettings);
+    if(layoutToggleBtn) layoutToggleBtn.addEventListener('click', () => setLayoutSettingsVisible(true));
 
     const layoutSettingsCloseBtn = document.getElementById('layoutSettingsCloseBtn');
     const layoutSaveBtn = document.getElementById('layoutSaveBtn');
@@ -1941,28 +1962,78 @@
       });
     }
 
-    // Vertical spacing
-    const verticalSpacingSlider = document.getElementById('verticalSpacingSlider');
-    const verticalSpacingVal = document.getElementById('verticalSpacingVal');
-    const verticalSpacingResetBtn = document.getElementById('verticalSpacingResetBtn');
+    // Header spacing
+    const headerSpacingSlider = document.getElementById('headerSpacingSlider');
+    const headerSpacingVal = document.getElementById('headerSpacingVal');
+    const headerSpacingResetBtn = document.getElementById('headerSpacingResetBtn');
 
-    function applyVerticalSpacing(px){
-      document.documentElement.style.setProperty('--verticalSpacing', px + 'px');
-      if(verticalSpacingSlider) verticalSpacingSlider.value = String(px);
-      if(verticalSpacingVal) verticalSpacingVal.textContent = px + 'px';
+    function applyHeaderSpacing(px){
+      document.documentElement.style.setProperty('--headerSpacing', px + 'px');
+      if(headerSpacingSlider) headerSpacingSlider.value = String(px);
+      if(headerSpacingVal) headerSpacingVal.textContent = px + 'px';
     }
 
-    if(verticalSpacingSlider){
-      verticalSpacingSlider.addEventListener('input', (e) => {
+    if(headerSpacingSlider){
+      headerSpacingSlider.addEventListener('input', (e) => {
         const v = e.target.value;
-        applyVerticalSpacing(v);
-        try{ localStorage.setItem('bk_tr_test_verticalSpacing', String(v)); } catch {}
+        applyHeaderSpacing(v);
+        try{ localStorage.setItem('bk_tr_test_headerSpacing', String(v)); } catch {}
       });
     }
-    if(verticalSpacingResetBtn){
-      verticalSpacingResetBtn.addEventListener('click', () => {
-        applyVerticalSpacing(16);
-        try{ localStorage.setItem('bk_tr_test_verticalSpacing', '16'); } catch {}
+    if(headerSpacingResetBtn){
+      headerSpacingResetBtn.addEventListener('click', () => {
+        applyHeaderSpacing(10);
+        try{ localStorage.setItem('bk_tr_test_headerSpacing', '10'); } catch {}
+      });
+    }
+
+    // Chat spacing
+    const chatSpacingSlider = document.getElementById('chatSpacingSlider');
+    const chatSpacingVal = document.getElementById('chatSpacingVal');
+    const chatSpacingResetBtn = document.getElementById('chatSpacingResetBtn');
+
+    function applyChatSpacing(px){
+      document.documentElement.style.setProperty('--chatSpacing', px + 'px');
+      if(chatSpacingSlider) chatSpacingSlider.value = String(px);
+      if(chatSpacingVal) chatSpacingVal.textContent = px + 'px';
+    }
+
+    if(chatSpacingSlider){
+      chatSpacingSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyChatSpacing(v);
+        try{ localStorage.setItem('bk_tr_test_chatSpacing', String(v)); } catch {}
+      });
+    }
+    if(chatSpacingResetBtn){
+      chatSpacingResetBtn.addEventListener('click', () => {
+        applyChatSpacing(16);
+        try{ localStorage.setItem('bk_tr_test_chatSpacing', '16'); } catch {}
+      });
+    }
+
+    // Input spacing
+    const inputSpacingSlider = document.getElementById('inputSpacingSlider');
+    const inputSpacingVal = document.getElementById('inputSpacingVal');
+    const inputSpacingResetBtn = document.getElementById('inputSpacingResetBtn');
+
+    function applyInputSpacing(px){
+      document.documentElement.style.setProperty('--inputSpacing', px + 'px');
+      if(inputSpacingSlider) inputSpacingSlider.value = String(px);
+      if(inputSpacingVal) inputSpacingVal.textContent = px + 'px';
+    }
+
+    if(inputSpacingSlider){
+      inputSpacingSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyInputSpacing(v);
+        try{ localStorage.setItem('bk_tr_test_inputSpacing', String(v)); } catch {}
+      });
+    }
+    if(inputSpacingResetBtn){
+      inputSpacingResetBtn.addEventListener('click', () => {
+        applyInputSpacing(16);
+        try{ localStorage.setItem('bk_tr_test_inputSpacing', '16'); } catch {}
       });
     }
 
@@ -1991,44 +2062,21 @@
       });
     }
 
-    // Horizontal padding
-    const horizontalPaddingSlider = document.getElementById('horizontalPaddingSlider');
-    const horizontalPaddingVal = document.getElementById('horizontalPaddingVal');
-    const horizontalPaddingResetBtn = document.getElementById('horizontalPaddingResetBtn');
-
-    function applyHorizontalPadding(px){
-      document.documentElement.style.setProperty('--horizontalPadding', px + 'px');
-      if(horizontalPaddingSlider) horizontalPaddingSlider.value = String(px);
-      if(horizontalPaddingVal) horizontalPaddingVal.textContent = px + 'px';
-    }
-
-    if(horizontalPaddingSlider){
-      horizontalPaddingSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyHorizontalPadding(v);
-        try{ localStorage.setItem('bk_tr_test_horizontalPadding', String(v)); } catch {}
-      });
-    }
-    if(horizontalPaddingResetBtn){
-      horizontalPaddingResetBtn.addEventListener('click', () => {
-        applyHorizontalPadding(16);
-        try{ localStorage.setItem('bk_tr_test_horizontalPadding', '16'); } catch {}
-      });
-    }
-
     // Load layout settings
     function loadLayoutSettings(){
       const menuScale = localStorage.getItem('bk_tr_test_menuScale');
       const chatScale = localStorage.getItem('bk_tr_test_chatScale');
-      const vSpacing = localStorage.getItem('bk_tr_test_verticalSpacing');
+      const hSpacing = localStorage.getItem('bk_tr_test_headerSpacing');
+      const cSpacing = localStorage.getItem('bk_tr_test_chatSpacing');
+      const iSpacing = localStorage.getItem('bk_tr_test_inputSpacing');
       const mWidth = localStorage.getItem('bk_tr_test_maxWidth');
-      const hPadding = localStorage.getItem('bk_tr_test_horizontalPadding');
 
       if(menuScale) applyMenuFontScale(menuScale);
       if(chatScale) applyChatFontScale(chatScale);
-      if(vSpacing) applyVerticalSpacing(vSpacing);
+      if(hSpacing) applyHeaderSpacing(hSpacing);
+      if(cSpacing) applyChatSpacing(cSpacing);
+      if(iSpacing) applyInputSpacing(iSpacing);
       if(mWidth) applyMaxWidth(mWidth);
-      if(hPadding) applyHorizontalPadding(hPadding);
     }
 
     loadLayoutSettings();
