@@ -374,7 +374,7 @@
       white-space: pre-wrap;
       word-break: break-word;
       line-height: 1.6;
-      font-size: calc(15px * var(--textScale));
+      font-size: calc(15px * var(--chatScale));
     }
 
     .msg.user .bubble{
@@ -452,7 +452,7 @@
       background: transparent;
       color: #ffffff;
       outline:none;
-      font-size: calc(15px * var(--textScale));
+      font-size: calc(15px * var(--chatScale));
       font-family:inherit;
       line-height:1.5;
       resize:none;
@@ -521,8 +521,8 @@
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
       .rightBtns{gap:0}
-      main{padding:16px; padding-bottom: 16px;}
-      .bubble{font-size: calc(16px * var(--textScale))}
+      main{padding: var(--horizontalPadding); padding-bottom: var(--verticalSpacing);}
+      .bubble{font-size: calc(16px * var(--chatScale))}
       .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
       .composerInner{border-radius:16px}
       #input{padding: 20px 16px; min-height:56px}
@@ -540,7 +540,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title">BK Trans <span class="ver" id="appVer">v3.3T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.3T</span></div>
 
         <div class="rightBtns">
           <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
@@ -793,6 +793,68 @@
         <div style="display:flex; gap:10px;">
           <button id="colorSaveBtn" class="btn" type="button" style="flex:1; font-weight:600;">저장</button>
           <button id="colorCloseBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
+        </div>
+    </section>
+  </div>
+
+  <!-- 레이아웃 설정 패널 -->
+  <div id="layoutSettingsOverlay" class="settingsOverlay">
+    <section id="layoutSettingsPanel" class="settings">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,.08);">
+        <h2 style="margin:0; font-size:calc(18px * var(--menuScale)); font-weight:700; color:var(--text);">레이아웃 & 크기 설정</h2>
+        <button id="layoutSettingsCloseBtn" class="iconBtn" type="button" aria-label="닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="menuFontScale" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">메뉴 글자 크기</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="menuFontScale" type="range" min="0.85" max="1.5" step="0.05" value="1" style="flex:1 1 auto;" />
+            <div id="menuFontScaleVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">100%</div>
+            <button id="menuFontScaleResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="chatFontScale" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">채팅창 & 입력창 글자 크기</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="chatFontScale" type="range" min="0.85" max="1.5" step="0.05" value="1" style="flex:1 1 auto;" />
+            <div id="chatFontScaleVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">100%</div>
+            <button id="chatFontScaleResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="verticalSpacingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">세로 간격</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="verticalSpacingSlider" type="range" min="8" max="32" step="2" value="16" style="flex:1 1 auto;" />
+            <div id="verticalSpacingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">16px</div>
+            <button id="verticalSpacingResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="maxWidthSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">최대 가로 크기</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="maxWidthSlider" type="range" min="600" max="1200" step="20" value="860" style="flex:1 1 auto;" />
+            <div id="maxWidthVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">860px</div>
+            <button id="maxWidthResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label for="horizontalPaddingSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">좌우 여백</label>
+          <div class="row" style="align-items:center; gap:12px;">
+            <input id="horizontalPaddingSlider" type="range" min="8" max="32" step="2" value="16" style="flex:1 1 auto;" />
+            <div id="horizontalPaddingVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">16px</div>
+            <button id="horizontalPaddingResetBtn" class="btn secondary" type="button">초기화</button>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+          <button id="layoutSaveBtn" class="btn" type="button" style="flex:1; font-weight:600;">저장</button>
+          <button id="layoutCloseBtnBottom" class="btn secondary" type="button" style="flex:1;">닫기</button>
         </div>
     </section>
   </div>
@@ -1800,6 +1862,176 @@
         try{ localStorage.setItem(LS.fontScale, '1'); } catch {}
       });
     }
+
+    // Layout settings
+    const layoutSettingsOverlay = document.getElementById('layoutSettingsOverlay');
+    const appTitle = document.getElementById('appTitle');
+
+    function setLayoutSettingsVisible(v){
+      if(v) layoutSettingsOverlay.classList.add('show');
+      else layoutSettingsOverlay.classList.remove('show');
+    }
+
+    if(appTitle) appTitle.addEventListener('click', () => setLayoutSettingsVisible(true));
+
+    const layoutSettingsCloseBtn = document.getElementById('layoutSettingsCloseBtn');
+    const layoutSaveBtn = document.getElementById('layoutSaveBtn');
+    const layoutCloseBtnBottom = document.getElementById('layoutCloseBtnBottom');
+
+    if(layoutSettingsCloseBtn) layoutSettingsCloseBtn.addEventListener('click', () => setLayoutSettingsVisible(false));
+    if(layoutSaveBtn) layoutSaveBtn.addEventListener('click', () => { setLayoutSettingsVisible(false); toast('레이아웃 설정 저장 완료'); });
+    if(layoutCloseBtnBottom) layoutCloseBtnBottom.addEventListener('click', () => setLayoutSettingsVisible(false));
+    if(layoutSettingsOverlay) layoutSettingsOverlay.addEventListener('click', (e) => {
+      if(e.target === layoutSettingsOverlay) setLayoutSettingsVisible(false);
+    });
+
+    // Menu font scale
+    const menuFontScale = document.getElementById('menuFontScale');
+    const menuFontScaleVal = document.getElementById('menuFontScaleVal');
+    const menuFontScaleResetBtn = document.getElementById('menuFontScaleResetBtn');
+
+    function applyMenuFontScale(scale){
+      let s = Number(scale);
+      if(!Number.isFinite(s)) s = 1;
+      s = Math.max(0.85, Math.min(1.5, s));
+      document.documentElement.style.setProperty('--menuScale', String(s));
+      if(menuFontScale) menuFontScale.value = String(s);
+      if(menuFontScaleVal) menuFontScaleVal.textContent = Math.round(s * 100) + '%';
+    }
+
+    if(menuFontScale){
+      menuFontScale.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyMenuFontScale(v);
+        try{ localStorage.setItem('bk_tr_test_menuScale', String(v)); } catch {}
+      });
+    }
+    if(menuFontScaleResetBtn){
+      menuFontScaleResetBtn.addEventListener('click', () => {
+        applyMenuFontScale(1);
+        try{ localStorage.setItem('bk_tr_test_menuScale', '1'); } catch {}
+      });
+    }
+
+    // Chat font scale
+    const chatFontScale = document.getElementById('chatFontScale');
+    const chatFontScaleVal = document.getElementById('chatFontScaleVal');
+    const chatFontScaleResetBtn = document.getElementById('chatFontScaleResetBtn');
+
+    function applyChatFontScale(scale){
+      let s = Number(scale);
+      if(!Number.isFinite(s)) s = 1;
+      s = Math.max(0.85, Math.min(1.5, s));
+      document.documentElement.style.setProperty('--chatScale', String(s));
+      if(chatFontScale) chatFontScale.value = String(s);
+      if(chatFontScaleVal) chatFontScaleVal.textContent = Math.round(s * 100) + '%';
+    }
+
+    if(chatFontScale){
+      chatFontScale.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyChatFontScale(v);
+        try{ localStorage.setItem('bk_tr_test_chatScale', String(v)); } catch {}
+      });
+    }
+    if(chatFontScaleResetBtn){
+      chatFontScaleResetBtn.addEventListener('click', () => {
+        applyChatFontScale(1);
+        try{ localStorage.setItem('bk_tr_test_chatScale', '1'); } catch {}
+      });
+    }
+
+    // Vertical spacing
+    const verticalSpacingSlider = document.getElementById('verticalSpacingSlider');
+    const verticalSpacingVal = document.getElementById('verticalSpacingVal');
+    const verticalSpacingResetBtn = document.getElementById('verticalSpacingResetBtn');
+
+    function applyVerticalSpacing(px){
+      document.documentElement.style.setProperty('--verticalSpacing', px + 'px');
+      if(verticalSpacingSlider) verticalSpacingSlider.value = String(px);
+      if(verticalSpacingVal) verticalSpacingVal.textContent = px + 'px';
+    }
+
+    if(verticalSpacingSlider){
+      verticalSpacingSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyVerticalSpacing(v);
+        try{ localStorage.setItem('bk_tr_test_verticalSpacing', String(v)); } catch {}
+      });
+    }
+    if(verticalSpacingResetBtn){
+      verticalSpacingResetBtn.addEventListener('click', () => {
+        applyVerticalSpacing(16);
+        try{ localStorage.setItem('bk_tr_test_verticalSpacing', '16'); } catch {}
+      });
+    }
+
+    // Max width
+    const maxWidthSlider = document.getElementById('maxWidthSlider');
+    const maxWidthVal = document.getElementById('maxWidthVal');
+    const maxWidthResetBtn = document.getElementById('maxWidthResetBtn');
+
+    function applyMaxWidth(px){
+      document.documentElement.style.setProperty('--maxWidth', px + 'px');
+      if(maxWidthSlider) maxWidthSlider.value = String(px);
+      if(maxWidthVal) maxWidthVal.textContent = px + 'px';
+    }
+
+    if(maxWidthSlider){
+      maxWidthSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyMaxWidth(v);
+        try{ localStorage.setItem('bk_tr_test_maxWidth', String(v)); } catch {}
+      });
+    }
+    if(maxWidthResetBtn){
+      maxWidthResetBtn.addEventListener('click', () => {
+        applyMaxWidth(860);
+        try{ localStorage.setItem('bk_tr_test_maxWidth', '860'); } catch {}
+      });
+    }
+
+    // Horizontal padding
+    const horizontalPaddingSlider = document.getElementById('horizontalPaddingSlider');
+    const horizontalPaddingVal = document.getElementById('horizontalPaddingVal');
+    const horizontalPaddingResetBtn = document.getElementById('horizontalPaddingResetBtn');
+
+    function applyHorizontalPadding(px){
+      document.documentElement.style.setProperty('--horizontalPadding', px + 'px');
+      if(horizontalPaddingSlider) horizontalPaddingSlider.value = String(px);
+      if(horizontalPaddingVal) horizontalPaddingVal.textContent = px + 'px';
+    }
+
+    if(horizontalPaddingSlider){
+      horizontalPaddingSlider.addEventListener('input', (e) => {
+        const v = e.target.value;
+        applyHorizontalPadding(v);
+        try{ localStorage.setItem('bk_tr_test_horizontalPadding', String(v)); } catch {}
+      });
+    }
+    if(horizontalPaddingResetBtn){
+      horizontalPaddingResetBtn.addEventListener('click', () => {
+        applyHorizontalPadding(16);
+        try{ localStorage.setItem('bk_tr_test_horizontalPadding', '16'); } catch {}
+      });
+    }
+
+    // Load layout settings
+    function loadLayoutSettings(){
+      const menuScale = localStorage.getItem('bk_tr_test_menuScale');
+      const chatScale = localStorage.getItem('bk_tr_test_chatScale');
+      const vSpacing = localStorage.getItem('bk_tr_test_verticalSpacing');
+      const mWidth = localStorage.getItem('bk_tr_test_maxWidth');
+      const hPadding = localStorage.getItem('bk_tr_test_horizontalPadding');
+
+      if(menuScale) applyMenuFontScale(menuScale);
+      if(chatScale) applyChatFontScale(chatScale);
+      if(vSpacing) applyVerticalSpacing(vSpacing);
+      if(mWidth) applyMaxWidth(mWidth);
+      if(hPadding) applyHorizontalPadding(hPadding);
+    }
+
+    loadLayoutSettings();
 
     applyColorsFromStorage();
     bindColorPicker(el.colorBg, LS.colorBg, '--bg');
