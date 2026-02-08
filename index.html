@@ -137,7 +137,7 @@
       flex:1;
       overflow:auto;
       padding: 10px;
-      padding-bottom: 92px;
+      padding-bottom: 68px;
     }
     .wrap{
       max-width: 860px;
@@ -238,6 +238,7 @@
 
     .chat{
       padding: 14px;
+      padding-bottom: 4px;
       display:flex;
       flex-direction:column;
       gap: 16px;
@@ -397,7 +398,7 @@
       .title{font-size: calc(13px * var(--textScale))}
       .iconBtn{width:36px; height:36px}
       .statusBtn{width:36px; height:36px}
-      main{padding:10px; padding-bottom: 96px;}
+      main{padding:10px; padding-bottom: 70px;}
       .bubble{font-size: calc(16px * var(--textScale))}
       #input{
         flex: 1 1 auto;
@@ -416,7 +417,7 @@
 <body>
   <header>
     <div class="topbar">
-      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.24</span></div>
+      <div class="title"><span class="ver" id="modelTag">Model</span> BK Trans <span class="ver" id="appVer">v1.25T</span></div>
 
       <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
@@ -687,7 +688,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v1.24';
+    const APP_VERSION = 'v1.25T';
 
     const LS = {
       apiKey: 'bk_tr_apiKey',
