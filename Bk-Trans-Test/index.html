@@ -45,11 +45,12 @@
       --headerBg: #0b0f14;
       --copyBtnBg: #1a1f2a;
 
+      /* 입력창 커스터마이징 */
       --inputMinHeight: 72px;
       --inputMaxHeight: 240px;
       --inputMaxWidth: 860px;
-      --composerHPadding: 10px;
-      --chatBottomGap: 4px;
+      --composerPadding: 10px;
+      --chatBottomPadding: 4px;
     }
 
     @font-face{
@@ -223,7 +224,7 @@
       padding-top: var(--headerSpacing);
       padding-left: var(--chatSpacing);
       padding-right: var(--chatSpacing);
-      padding-bottom: calc(var(--inputMinHeight) + 16px + var(--chatBottomGap) + env(safe-area-inset-bottom));
+      padding-bottom: 100px;
       display:flex;
       flex-direction:column;
     }
@@ -361,7 +362,7 @@
 
     .chat{
       padding: 14px;
-      padding-bottom: var(--chatBottomGap);
+      padding-bottom: var(--chatBottomPadding);
       display:flex;
       flex-direction:column;
       gap: 16px;
@@ -420,8 +421,7 @@
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 0 var(--composerHPadding) 0;
-      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      padding: 0 var(--composerPadding) calc(8px + env(safe-area-inset-bottom));
       background: transparent;
       pointer-events:none;
     }
@@ -553,7 +553,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.2T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.3T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -966,7 +966,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v4.2T';
+    const APP_VERSION = 'v4.3T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1894,6 +1894,9 @@
       if(!el.input) return;
       el.input.style.height = 'auto';
       el.input.style.height = Math.min(el.input.scrollHeight, 240) + 'px';
+      if(typeof updateMainPaddingBottom === 'function'){
+        setTimeout(updateMainPaddingBottom, 10);
+      }
     }
 
     if(el.input){
@@ -2123,28 +2126,41 @@
       });
     }
 
+    // 입력창 커스터마이징 - 완전히 새로 작성
+    function updateMainPaddingBottom(){
+      const composer = document.querySelector('.composer');
+      if(!composer) return;
+      const composerHeight = composer.offsetHeight;
+      const mainEl = document.getElementById('main');
+      if(mainEl){
+        mainEl.style.paddingBottom = (composerHeight + 10) + 'px';
+      }
+    }
+
     // Input min height
     const inputMinHeightSlider = document.getElementById('inputMinHeightSlider');
     const inputMinHeightVal = document.getElementById('inputMinHeightVal');
     const inputMinHeightResetBtn = document.getElementById('inputMinHeightResetBtn');
 
     function applyInputMinHeight(px){
-      document.documentElement.style.setProperty('--inputMinHeight', px + 'px');
-      if(inputMinHeightSlider) inputMinHeightSlider.value = String(px);
-      if(inputMinHeightVal) inputMinHeightVal.textContent = px + 'px';
+      const val = Number(px) || 72;
+      document.documentElement.style.setProperty('--inputMinHeight', val + 'px');
+      if(inputMinHeightSlider) inputMinHeightSlider.value = val;
+      if(inputMinHeightVal) inputMinHeightVal.textContent = val + 'px';
+      setTimeout(updateMainPaddingBottom, 50);
     }
 
     if(inputMinHeightSlider){
       inputMinHeightSlider.addEventListener('input', (e) => {
         const v = e.target.value;
         applyInputMinHeight(v);
-        try{ localStorage.setItem('bk_tr_test_inputMinHeight', String(v)); } catch {}
+        localStorage.setItem('bk_tr_inputMinHeight', v);
       });
     }
     if(inputMinHeightResetBtn){
       inputMinHeightResetBtn.addEventListener('click', () => {
         applyInputMinHeight(72);
-        try{ localStorage.setItem('bk_tr_test_inputMinHeight', '72'); } catch {}
+        localStorage.setItem('bk_tr_inputMinHeight', '72');
       });
     }
 
@@ -2154,22 +2170,23 @@
     const inputMaxHeightResetBtn = document.getElementById('inputMaxHeightResetBtn');
 
     function applyInputMaxHeight(px){
-      document.documentElement.style.setProperty('--inputMaxHeight', px + 'px');
-      if(inputMaxHeightSlider) inputMaxHeightSlider.value = String(px);
-      if(inputMaxHeightVal) inputMaxHeightVal.textContent = px + 'px';
+      const val = Number(px) || 240;
+      document.documentElement.style.setProperty('--inputMaxHeight', val + 'px');
+      if(inputMaxHeightSlider) inputMaxHeightSlider.value = val;
+      if(inputMaxHeightVal) inputMaxHeightVal.textContent = val + 'px';
     }
 
     if(inputMaxHeightSlider){
       inputMaxHeightSlider.addEventListener('input', (e) => {
         const v = e.target.value;
         applyInputMaxHeight(v);
-        try{ localStorage.setItem('bk_tr_test_inputMaxHeight', String(v)); } catch {}
+        localStorage.setItem('bk_tr_inputMaxHeight', v);
       });
     }
     if(inputMaxHeightResetBtn){
       inputMaxHeightResetBtn.addEventListener('click', () => {
         applyInputMaxHeight(240);
-        try{ localStorage.setItem('bk_tr_test_inputMaxHeight', '240'); } catch {}
+        localStorage.setItem('bk_tr_inputMaxHeight', '240');
       });
     }
 
@@ -2179,96 +2196,93 @@
     const inputMaxWidthResetBtn = document.getElementById('inputMaxWidthResetBtn');
 
     function applyInputMaxWidth(px){
-      document.documentElement.style.setProperty('--inputMaxWidth', px + 'px');
-      if(inputMaxWidthSlider) inputMaxWidthSlider.value = String(px);
-      if(inputMaxWidthVal) inputMaxWidthVal.textContent = px + 'px';
+      const val = Number(px) || 860;
+      document.documentElement.style.setProperty('--inputMaxWidth', val + 'px');
+      if(inputMaxWidthSlider) inputMaxWidthSlider.value = val;
+      if(inputMaxWidthVal) inputMaxWidthVal.textContent = val + 'px';
     }
 
     if(inputMaxWidthSlider){
       inputMaxWidthSlider.addEventListener('input', (e) => {
         const v = e.target.value;
         applyInputMaxWidth(v);
-        try{ localStorage.setItem('bk_tr_test_inputMaxWidth', String(v)); } catch {}
+        localStorage.setItem('bk_tr_inputMaxWidth', v);
       });
     }
     if(inputMaxWidthResetBtn){
       inputMaxWidthResetBtn.addEventListener('click', () => {
         applyInputMaxWidth(860);
-        try{ localStorage.setItem('bk_tr_test_inputMaxWidth', '860'); } catch {}
+        localStorage.setItem('bk_tr_inputMaxWidth', '860');
       });
     }
 
-    // Composer horizontal padding
+    // Composer padding
     const composerHPaddingSlider = document.getElementById('composerHPaddingSlider');
     const composerHPaddingVal = document.getElementById('composerHPaddingVal');
     const composerHPaddingResetBtn = document.getElementById('composerHPaddingResetBtn');
 
-    function applyComposerHPadding(px){
-      document.documentElement.style.setProperty('--composerHPadding', px + 'px');
-      if(composerHPaddingSlider) composerHPaddingSlider.value = String(px);
-      if(composerHPaddingVal) composerHPaddingVal.textContent = px + 'px';
+    function applyComposerPadding(px){
+      const val = Number(px) || 10;
+      document.documentElement.style.setProperty('--composerPadding', val + 'px');
+      if(composerHPaddingSlider) composerHPaddingSlider.value = val;
+      if(composerHPaddingVal) composerHPaddingVal.textContent = val + 'px';
+      setTimeout(updateMainPaddingBottom, 50);
     }
 
     if(composerHPaddingSlider){
       composerHPaddingSlider.addEventListener('input', (e) => {
         const v = e.target.value;
-        applyComposerHPadding(v);
-        try{ localStorage.setItem('bk_tr_test_composerHPadding', String(v)); } catch {}
+        applyComposerPadding(v);
+        localStorage.setItem('bk_tr_composerPadding', v);
       });
     }
     if(composerHPaddingResetBtn){
       composerHPaddingResetBtn.addEventListener('click', () => {
-        applyComposerHPadding(10);
-        try{ localStorage.setItem('bk_tr_test_composerHPadding', '10'); } catch {}
+        applyComposerPadding(10);
+        localStorage.setItem('bk_tr_composerPadding', '10');
       });
     }
 
-    // Chat bottom gap
+    // Chat bottom padding
     const chatBottomGapSlider = document.getElementById('chatBottomGapSlider');
     const chatBottomGapVal = document.getElementById('chatBottomGapVal');
     const chatBottomGapResetBtn = document.getElementById('chatBottomGapResetBtn');
 
-    function applyChatBottomGap(px){
-      document.documentElement.style.setProperty('--chatBottomGap', px + 'px');
-      if(chatBottomGapSlider) chatBottomGapSlider.value = String(px);
-      if(chatBottomGapVal) chatBottomGapVal.textContent = px + 'px';
+    function applyChatBottomPadding(px){
+      const val = Number(px) || 4;
+      document.documentElement.style.setProperty('--chatBottomPadding', val + 'px');
+      if(chatBottomGapSlider) chatBottomGapSlider.value = val;
+      if(chatBottomGapVal) chatBottomGapVal.textContent = val + 'px';
     }
 
     if(chatBottomGapSlider){
       chatBottomGapSlider.addEventListener('input', (e) => {
         const v = e.target.value;
-        applyChatBottomGap(v);
-        try{ localStorage.setItem('bk_tr_test_chatBottomGap', String(v)); } catch {}
+        applyChatBottomPadding(v);
+        localStorage.setItem('bk_tr_chatBottomPadding', v);
       });
     }
     if(chatBottomGapResetBtn){
       chatBottomGapResetBtn.addEventListener('click', () => {
-        applyChatBottomGap(4);
-        try{ localStorage.setItem('bk_tr_test_chatBottomGap', '4'); } catch {}
+        applyChatBottomPadding(4);
+        localStorage.setItem('bk_tr_chatBottomPadding', '4');
       });
     }
 
     // Load layout settings
     function loadLayoutSettings(){
-      // Force reset for v4.2T+ - clear old values and set new defaults
-      const lastVersion = localStorage.getItem('bk_tr_app_version');
-      if(!lastVersion || lastVersion !== 'v4.2T'){
-        localStorage.setItem('bk_tr_test_inputSpacing', '4');
-        localStorage.setItem('bk_tr_test_chatBottomGap', '4');
-        localStorage.setItem('bk_tr_app_version', 'v4.2T');
-      }
-
       const menuScale = localStorage.getItem('bk_tr_test_menuScale') || '1';
       const chatScale = localStorage.getItem('bk_tr_test_chatScale') || '1';
       const hSpacing = localStorage.getItem('bk_tr_test_headerSpacing') || '10';
       const cSpacing = localStorage.getItem('bk_tr_test_chatSpacing') || '16';
       const iSpacing = localStorage.getItem('bk_tr_test_inputSpacing') || '4';
       const mWidth = localStorage.getItem('bk_tr_test_maxWidth') || '860';
-      const inputMinH = localStorage.getItem('bk_tr_test_inputMinHeight') || '72';
-      const inputMaxH = localStorage.getItem('bk_tr_test_inputMaxHeight') || '240';
-      const inputMaxW = localStorage.getItem('bk_tr_test_inputMaxWidth') || '860';
-      const composerHP = localStorage.getItem('bk_tr_test_composerHPadding') || '10';
-      const chatBGap = localStorage.getItem('bk_tr_test_chatBottomGap') || '4';
+
+      const inputMinH = localStorage.getItem('bk_tr_inputMinHeight') || '72';
+      const inputMaxH = localStorage.getItem('bk_tr_inputMaxHeight') || '240';
+      const inputMaxW = localStorage.getItem('bk_tr_inputMaxWidth') || '860';
+      const composerP = localStorage.getItem('bk_tr_composerPadding') || '10';
+      const chatBP = localStorage.getItem('bk_tr_chatBottomPadding') || '4';
 
       applyMenuFontScale(menuScale);
       applyChatFontScale(chatScale);
@@ -2276,11 +2290,14 @@
       applyChatSpacing(cSpacing);
       applyInputSpacing(iSpacing);
       applyMaxWidth(mWidth);
+
       applyInputMinHeight(inputMinH);
       applyInputMaxHeight(inputMaxH);
       applyInputMaxWidth(inputMaxW);
-      applyComposerHPadding(composerHP);
-      applyChatBottomGap(chatBGap);
+      applyComposerPadding(composerP);
+      applyChatBottomPadding(chatBP);
+
+      setTimeout(updateMainPaddingBottom, 100);
     }
 
     loadLayoutSettings();
@@ -2376,11 +2393,13 @@
     if(el.input) el.input.addEventListener('blur', () => {
       if(composerEl) composerEl.style.bottom = '0';
       if(el.main) el.main.style.paddingBottom = '';
+      setTimeout(updateMainPaddingBottom, 10);
     });
     if(window.visualViewport){
       window.visualViewport.addEventListener('resize', adjustForKeyboard);
       window.visualViewport.addEventListener('scroll', adjustForKeyboard);
     }
+    window.addEventListener('resize', () => setTimeout(updateMainPaddingBottom, 100));
 
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
       toast('권장: HTTPS에서 사용하세요(키 보안)');
