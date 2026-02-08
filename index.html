@@ -548,7 +548,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v3.9T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v4.0T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -912,7 +912,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v3.9T';
+    const APP_VERSION = 'v4.0T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2071,6 +2071,13 @@
 
     // Load layout settings
     function loadLayoutSettings(){
+      // Force reset for v4.0T+ - clear old large spacing values
+      const lastVersion = localStorage.getItem('bk_tr_app_version');
+      if(!lastVersion || lastVersion !== 'v4.0T'){
+        localStorage.setItem('bk_tr_test_inputSpacing', '4');
+        localStorage.setItem('bk_tr_app_version', 'v4.0T');
+      }
+
       const menuScale = localStorage.getItem('bk_tr_test_menuScale') || '1';
       const chatScale = localStorage.getItem('bk_tr_test_chatScale') || '1';
       const hSpacing = localStorage.getItem('bk_tr_test_headerSpacing') || '10';
