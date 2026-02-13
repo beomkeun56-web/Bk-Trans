@@ -587,7 +587,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.0T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.1T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -609,6 +609,14 @@
           <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none"></path>
+            </svg>
+          </button>
+
+          <button id="topSaveBtn" class="iconBtn" type="button" aria-label="대화 저장">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
           </button>
 
@@ -1055,7 +1063,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v5.0T';
+    const APP_VERSION = 'v5.1T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1091,6 +1099,7 @@
       settingsPanel: document.getElementById('settingsPanel'),
 
       topTestBtn: document.getElementById('topTestBtn'),
+      topSaveBtn: document.getElementById('topSaveBtn'),
       topClearBtn: document.getElementById('topClearBtn'),
       connBtn: document.getElementById('connBtn'),
       statusCircle: document.getElementById('statusCircle'),
@@ -1242,6 +1251,7 @@
 
     async function copyToClipboard(text, silent){
       const t = String(text ?? '');
+      updateLastClipboard(t);
       try{
         if(navigator.clipboard && window.isSecureContext){
           await navigator.clipboard.writeText(t);
@@ -1906,6 +1916,27 @@
       }
     }
 
+    function exportChat(){
+      if(chat.length === 0){ toast('저장할 대화가 없습니다'); return; }
+      let text = '';
+      for(const m of chat){
+        const label = m.role === 'user' ? '[원문]' : '[번역]';
+        text += label + ' ' + m.text + '\n';
+      }
+      const now = new Date();
+      const ts = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
+      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'BkTrans_' + ts + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('대화 저장 완료');
+    }
+
     function clearChatOnly(){
       if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
@@ -1934,7 +1965,7 @@
     }
 
     function isChatDuplicate(text){
-      return chat.some(m => m.role === 'user' && m.text === text);
+      return chat.some(m => m.text === text);
     }
 
     async function checkClipboard(){
@@ -1990,6 +2021,7 @@
     });
 
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
+    if(el.topSaveBtn) el.topSaveBtn.addEventListener('click', exportChat);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
 
     if(el.model) el.model.addEventListener('input', updateModelTag);
