@@ -587,7 +587,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.1T</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.2T</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -1063,7 +1063,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v5.1T';
+    const APP_VERSION = 'v5.2T';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1503,9 +1503,17 @@
       toast('폰트 초기화 완료');
     }
 
+    const CONFIG = {
+      MAX_INPUTS_PER_PAGE: 6,
+      MAX_MESSAGES: 30,
+      AUTO_TRANSLATE_MAX_LEN: 300,
+      REQUEST_TIMEOUT_MS: 30000,
+      CLIPBOARD_DEBOUNCE_MS: 150,
+    };
+
     let chat = [];
-    const MAX_INPUTS_PER_PAGE = 6;
-    const MAX_MESSAGES = 30;
+    const MAX_INPUTS_PER_PAGE = CONFIG.MAX_INPUTS_PER_PAGE;
+    const MAX_MESSAGES = CONFIG.MAX_MESSAGES;
 
     function saveChatHistory(){
       try{ localStorage.setItem(LS.chatHistory, JSON.stringify(chat)); } catch{}
@@ -1708,7 +1716,7 @@
 
       const ac = new AbortController();
       _currentAbort = ac;
-      const timeout = setTimeout(() => ac.abort(), 30000);
+      const timeout = setTimeout(() => ac.abort(), CONFIG.REQUEST_TIMEOUT_MS);
 
       let res;
       try{
@@ -1957,7 +1965,6 @@
 
     const LS_LAST_CLIP = 'bk_tr_test_lastClip';
     let _lastClipboardText = localStorage.getItem(LS_LAST_CLIP) || '';
-    const AUTO_TRANSLATE_MAX_LEN = 300;
 
     function updateLastClipboard(text){
       _lastClipboardText = text;
@@ -1968,33 +1975,67 @@
       return chat.some(m => m.text === text);
     }
 
+    let _autoSending = false;
+    let _clipboardCheckTimer = 0;
+    let _lastLongTextWarn = '';
+
     async function checkClipboard(){
       try{
-        if(_isBusy) return;
+        if(_isBusy || _autoSending) return;
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
+        if(!document.hasFocus || !document.hasFocus()) return;
 
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
         if(!trimmed) return;
 
-        if(trimmed.length >= AUTO_TRANSLATE_MAX_LEN) return;
         if(_lastClipboardText === trimmed) return;
-
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
         if(isEnglishLongText(trimmed)) return;
 
-        updateLastClipboard(trimmed);
+        if(trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN){
+          if(_lastLongTextWarn !== trimmed){
+            _lastLongTextWarn = trimmed;
+            toast('긴 텍스트(' + trimmed.length + '자) 자동 번역 생략 - 직접 입력하세요');
+          }
+          updateLastClipboard(trimmed);
+          return;
+        }
 
+        updateLastClipboard(trimmed);
         if(isChatDuplicate(trimmed)) return;
 
-        el.input.value = trimmed;
-        send();
+        _autoSending = true;
+        try{
+          el.input.value = trimmed;
+          await send();
+        } finally {
+          _autoSending = false;
+        }
       } catch(err){
       }
     }
 
+    function scheduleClipboardCheck(){
+      if(_clipboardCheckTimer) clearTimeout(_clipboardCheckTimer);
+      _clipboardCheckTimer = setTimeout(() => {
+        _clipboardCheckTimer = 0;
+        checkClipboard();
+      }, CONFIG.CLIPBOARD_DEBOUNCE_MS);
+    }
+
     checkClipboard();
-    setInterval(checkClipboard, 500);
+    window.addEventListener('focus', scheduleClipboardCheck);
+    document.addEventListener('visibilitychange', () => {
+      if(!document.hidden) scheduleClipboardCheck();
+    });
+    if(el.input){
+      el.input.addEventListener('focus', scheduleClipboardCheck);
+      el.input.addEventListener('paste', scheduleClipboardCheck);
+    }
+    if(el.chat){
+      el.chat.addEventListener('click', scheduleClipboardCheck);
+    }
 
     if(el.modelTag) el.modelTag.addEventListener('click', toggleModelDropdown);
     if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleColorSettings);
@@ -2163,185 +2204,6 @@
       });
     }
 
-    // Topbar height
-    const topbarHeightSlider = document.getElementById('topbarHeightSlider');
-    const topbarHeightVal = document.getElementById('topbarHeightVal');
-    const topbarHeightResetBtn = document.getElementById('topbarHeightResetBtn');
-
-    function applyTopbarHeight(px){
-      const val = Number(px) || 64;
-      document.documentElement.style.setProperty('--topbarHeight', val + 'px');
-      if(topbarHeightSlider) topbarHeightSlider.value = val;
-      if(topbarHeightVal) topbarHeightVal.textContent = val + 'px';
-    }
-
-    if(topbarHeightSlider){
-      topbarHeightSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyTopbarHeight(v);
-        localStorage.setItem('bk_tr_topbarHeight', v);
-      });
-    }
-    if(topbarHeightResetBtn){
-      topbarHeightResetBtn.addEventListener('click', () => {
-        applyTopbarHeight(64);
-        localStorage.setItem('bk_tr_topbarHeight', '64');
-      });
-    }
-
-    // Topbar horizontal padding
-    const topbarHPaddingSlider = document.getElementById('topbarHPaddingSlider');
-    const topbarHPaddingVal = document.getElementById('topbarHPaddingVal');
-    const topbarHPaddingResetBtn = document.getElementById('topbarHPaddingResetBtn');
-
-    function applyTopbarHPadding(px){
-      const val = Number(px) || 14;
-      document.documentElement.style.setProperty('--topbarHPadding', val + 'px');
-      if(topbarHPaddingSlider) topbarHPaddingSlider.value = val;
-      if(topbarHPaddingVal) topbarHPaddingVal.textContent = val + 'px';
-    }
-
-    if(topbarHPaddingSlider){
-      topbarHPaddingSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyTopbarHPadding(v);
-        localStorage.setItem('bk_tr_topbarHPadding', v);
-      });
-    }
-    if(topbarHPaddingResetBtn){
-      topbarHPaddingResetBtn.addEventListener('click', () => {
-        applyTopbarHPadding(14);
-        localStorage.setItem('bk_tr_topbarHPadding', '14');
-      });
-    }
-
-    // Header horizontal padding
-    const headerHPaddingSlider = document.getElementById('headerHPaddingSlider');
-    const headerHPaddingVal = document.getElementById('headerHPaddingVal');
-    const headerHPaddingResetBtn = document.getElementById('headerHPaddingResetBtn');
-
-    function applyHeaderHPadding(px){
-      const val = Number(px) || 16;
-      document.documentElement.style.setProperty('--headerHPadding', val + 'px');
-      if(headerHPaddingSlider) headerHPaddingSlider.value = val;
-      if(headerHPaddingVal) headerHPaddingVal.textContent = val + 'px';
-    }
-
-    if(headerHPaddingSlider){
-      headerHPaddingSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyHeaderHPadding(v);
-        localStorage.setItem('bk_tr_headerHPadding', v);
-      });
-    }
-    if(headerHPaddingResetBtn){
-      headerHPaddingResetBtn.addEventListener('click', () => {
-        applyHeaderHPadding(16);
-        localStorage.setItem('bk_tr_headerHPadding', '16');
-      });
-    }
-
-    // Header spacing
-    const headerSpacingSlider = document.getElementById('headerSpacingSlider');
-    const headerSpacingVal = document.getElementById('headerSpacingVal');
-    const headerSpacingResetBtn = document.getElementById('headerSpacingResetBtn');
-
-    function applyHeaderSpacing(px){
-      document.documentElement.style.setProperty('--headerSpacing', px + 'px');
-      if(headerSpacingSlider) headerSpacingSlider.value = String(px);
-      if(headerSpacingVal) headerSpacingVal.textContent = px + 'px';
-    }
-
-    if(headerSpacingSlider){
-      headerSpacingSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyHeaderSpacing(v);
-        try{ localStorage.setItem('bk_tr_test_headerSpacing', String(v)); } catch {}
-      });
-    }
-    if(headerSpacingResetBtn){
-      headerSpacingResetBtn.addEventListener('click', () => {
-        applyHeaderSpacing(10);
-        try{ localStorage.setItem('bk_tr_test_headerSpacing', '10'); } catch {}
-      });
-    }
-
-    // Chat spacing
-    const chatSpacingSlider = document.getElementById('chatSpacingSlider');
-    const chatSpacingVal = document.getElementById('chatSpacingVal');
-    const chatSpacingResetBtn = document.getElementById('chatSpacingResetBtn');
-
-    function applyChatSpacing(px){
-      document.documentElement.style.setProperty('--chatSpacing', px + 'px');
-      if(chatSpacingSlider) chatSpacingSlider.value = String(px);
-      if(chatSpacingVal) chatSpacingVal.textContent = px + 'px';
-    }
-
-    if(chatSpacingSlider){
-      chatSpacingSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyChatSpacing(v);
-        try{ localStorage.setItem('bk_tr_test_chatSpacing', String(v)); } catch {}
-      });
-    }
-    if(chatSpacingResetBtn){
-      chatSpacingResetBtn.addEventListener('click', () => {
-        applyChatSpacing(16);
-        try{ localStorage.setItem('bk_tr_test_chatSpacing', '16'); } catch {}
-      });
-    }
-
-    // Input spacing
-    const inputSpacingSlider = document.getElementById('inputSpacingSlider');
-    const inputSpacingVal = document.getElementById('inputSpacingVal');
-    const inputSpacingResetBtn = document.getElementById('inputSpacingResetBtn');
-
-    function applyInputSpacing(px){
-      document.documentElement.style.setProperty('--inputSpacing', px + 'px');
-      if(inputSpacingSlider) inputSpacingSlider.value = String(px);
-      if(inputSpacingVal) inputSpacingVal.textContent = px + 'px';
-    }
-
-    if(inputSpacingSlider){
-      inputSpacingSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyInputSpacing(v);
-        try{ localStorage.setItem('bk_tr_test_inputSpacing', String(v)); } catch {}
-      });
-    }
-    if(inputSpacingResetBtn){
-      inputSpacingResetBtn.addEventListener('click', () => {
-        applyInputSpacing(4);
-        try{ localStorage.setItem('bk_tr_test_inputSpacing', '4'); } catch {}
-      });
-    }
-
-    // Max width
-    const maxWidthSlider = document.getElementById('maxWidthSlider');
-    const maxWidthVal = document.getElementById('maxWidthVal');
-    const maxWidthResetBtn = document.getElementById('maxWidthResetBtn');
-
-    function applyMaxWidth(px){
-      document.documentElement.style.setProperty('--maxWidth', px + 'px');
-      if(maxWidthSlider) maxWidthSlider.value = String(px);
-      if(maxWidthVal) maxWidthVal.textContent = px + 'px';
-    }
-
-    if(maxWidthSlider){
-      maxWidthSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyMaxWidth(v);
-        try{ localStorage.setItem('bk_tr_test_maxWidth', String(v)); } catch {}
-      });
-    }
-    if(maxWidthResetBtn){
-      maxWidthResetBtn.addEventListener('click', () => {
-        applyMaxWidth(860);
-        try{ localStorage.setItem('bk_tr_test_maxWidth', '860'); } catch {}
-      });
-    }
-
-    // 입력창 커스터마이징 - 완전히 새로 작성
     function updateMainPaddingBottom(){
       const composer = document.querySelector('.composer');
       if(!composer) return;
@@ -2352,217 +2214,58 @@
       }
     }
 
-    // Input min height
-    const inputMinHeightSlider = document.getElementById('inputMinHeightSlider');
-    const inputMinHeightVal = document.getElementById('inputMinHeightVal');
-    const inputMinHeightResetBtn = document.getElementById('inputMinHeightResetBtn');
+    function bindPxSlider(opts){
+      const slider = document.getElementById(opts.sliderId);
+      const valEl = document.getElementById(opts.valId);
+      const resetBtn = document.getElementById(opts.resetId);
+      const cssVar = opts.cssVar;
+      const lsKey = opts.lsKey;
+      const def = opts.defaultVal;
+      const suffix = opts.suffix != null ? opts.suffix : 'px';
+      const onApply = opts.onApply;
+      const extraCssVars = opts.extraCssVars;
 
-    function applyInputMinHeight(px){
-      const val = Number(px) || 72;
-      document.documentElement.style.setProperty('--inputMinHeight', val + 'px');
-      if(inputMinHeightSlider) inputMinHeightSlider.value = val;
-      if(inputMinHeightVal) inputMinHeightVal.textContent = val + 'px';
-      setTimeout(updateMainPaddingBottom, 50);
-    }
+      function apply(v){
+        const num = Number(v);
+        const val = Number.isFinite(num) ? num : def;
+        document.documentElement.style.setProperty(cssVar, val + suffix);
+        if(extraCssVars) extraCssVars(val);
+        if(slider) slider.value = val;
+        if(valEl) valEl.textContent = val + suffix;
+        if(onApply) onApply(val);
+      }
 
-    if(inputMinHeightSlider){
-      inputMinHeightSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyInputMinHeight(v);
-        localStorage.setItem('bk_tr_inputMinHeight', v);
-      });
-    }
-    if(inputMinHeightResetBtn){
-      inputMinHeightResetBtn.addEventListener('click', () => {
-        applyInputMinHeight(72);
-        localStorage.setItem('bk_tr_inputMinHeight', '72');
-      });
-    }
-
-    // Input max height
-    const inputMaxHeightSlider = document.getElementById('inputMaxHeightSlider');
-    const inputMaxHeightVal = document.getElementById('inputMaxHeightVal');
-    const inputMaxHeightResetBtn = document.getElementById('inputMaxHeightResetBtn');
-
-    function applyInputMaxHeight(px){
-      const val = Number(px) || 240;
-      document.documentElement.style.setProperty('--inputMaxHeight', val + 'px');
-      if(inputMaxHeightSlider) inputMaxHeightSlider.value = val;
-      if(inputMaxHeightVal) inputMaxHeightVal.textContent = val + 'px';
+      if(slider){
+        slider.addEventListener('input', (e) => {
+          const v = e.target.value;
+          apply(v);
+          try{ localStorage.setItem(lsKey, String(v)); } catch {}
+        });
+      }
+      if(resetBtn){
+        resetBtn.addEventListener('click', () => {
+          apply(def);
+          try{ localStorage.setItem(lsKey, String(def)); } catch {}
+        });
+      }
+      return apply;
     }
 
-    if(inputMaxHeightSlider){
-      inputMaxHeightSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyInputMaxHeight(v);
-        localStorage.setItem('bk_tr_inputMaxHeight', v);
-      });
-    }
-    if(inputMaxHeightResetBtn){
-      inputMaxHeightResetBtn.addEventListener('click', () => {
-        applyInputMaxHeight(240);
-        localStorage.setItem('bk_tr_inputMaxHeight', '240');
-      });
-    }
-
-    // Input max width
-    const inputMaxWidthSlider = document.getElementById('inputMaxWidthSlider');
-    const inputMaxWidthVal = document.getElementById('inputMaxWidthVal');
-    const inputMaxWidthResetBtn = document.getElementById('inputMaxWidthResetBtn');
-
-    function applyInputMaxWidth(px){
-      const val = Number(px) || 860;
-      document.documentElement.style.setProperty('--inputMaxWidth', val + 'px');
-      if(inputMaxWidthSlider) inputMaxWidthSlider.value = val;
-      if(inputMaxWidthVal) inputMaxWidthVal.textContent = val + 'px';
-    }
-
-    if(inputMaxWidthSlider){
-      inputMaxWidthSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyInputMaxWidth(v);
-        localStorage.setItem('bk_tr_inputMaxWidth', v);
-      });
-    }
-    if(inputMaxWidthResetBtn){
-      inputMaxWidthResetBtn.addEventListener('click', () => {
-        applyInputMaxWidth(860);
-        localStorage.setItem('bk_tr_inputMaxWidth', '860');
-      });
-    }
-
-    // Composer padding
-    const composerHPaddingSlider = document.getElementById('composerHPaddingSlider');
-    const composerHPaddingVal = document.getElementById('composerHPaddingVal');
-    const composerHPaddingResetBtn = document.getElementById('composerHPaddingResetBtn');
-
-    function applyComposerPadding(px){
-      const val = Number(px) || 10;
-      document.documentElement.style.setProperty('--composerPadding', val + 'px');
-      if(composerHPaddingSlider) composerHPaddingSlider.value = val;
-      if(composerHPaddingVal) composerHPaddingVal.textContent = val + 'px';
-      setTimeout(updateMainPaddingBottom, 50);
-    }
-
-    if(composerHPaddingSlider){
-      composerHPaddingSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyComposerPadding(v);
-        localStorage.setItem('bk_tr_composerPadding', v);
-      });
-    }
-    if(composerHPaddingResetBtn){
-      composerHPaddingResetBtn.addEventListener('click', () => {
-        applyComposerPadding(10);
-        localStorage.setItem('bk_tr_composerPadding', '10');
-      });
-    }
-
-    // Chat bottom padding
-    const chatBottomGapSlider = document.getElementById('chatBottomGapSlider');
-    const chatBottomGapVal = document.getElementById('chatBottomGapVal');
-    const chatBottomGapResetBtn = document.getElementById('chatBottomGapResetBtn');
-
-    function applyChatBottomPadding(px){
-      const val = Number(px) || 4;
-      document.documentElement.style.setProperty('--chatBottomPadding', val + 'px');
-      if(chatBottomGapSlider) chatBottomGapSlider.value = val;
-      if(chatBottomGapVal) chatBottomGapVal.textContent = val + 'px';
-    }
-
-    if(chatBottomGapSlider){
-      chatBottomGapSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyChatBottomPadding(v);
-        localStorage.setItem('bk_tr_chatBottomPadding', v);
-      });
-    }
-    if(chatBottomGapResetBtn){
-      chatBottomGapResetBtn.addEventListener('click', () => {
-        applyChatBottomPadding(4);
-        localStorage.setItem('bk_tr_chatBottomPadding', '4');
-      });
-    }
-
-    // Composer blur effect
-    const composerBlurSlider = document.getElementById('composerBlurSlider');
-    const composerBlurVal = document.getElementById('composerBlurVal');
-    const composerBlurResetBtn = document.getElementById('composerBlurResetBtn');
-
-    function applyComposerBlur(px){
-      const val = Number(px) || 12;
-      document.documentElement.style.setProperty('--composerBlur', val + 'px');
-      if(composerBlurSlider) composerBlurSlider.value = val;
-      if(composerBlurVal) composerBlurVal.textContent = val + 'px';
-    }
-
-    if(composerBlurSlider){
-      composerBlurSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyComposerBlur(v);
-        localStorage.setItem('bk_tr_composerBlur', v);
-      });
-    }
-    if(composerBlurResetBtn){
-      composerBlurResetBtn.addEventListener('click', () => {
-        applyComposerBlur(12);
-        localStorage.setItem('bk_tr_composerBlur', '12');
-      });
-    }
-
-    // Keyboard spacing
-    const keyboardSpacingSlider = document.getElementById('keyboardSpacingSlider');
-    const keyboardSpacingVal = document.getElementById('keyboardSpacingVal');
-    const keyboardSpacingResetBtn = document.getElementById('keyboardSpacingResetBtn');
-
-    function applyKeyboardSpacing(px){
-      const val = Number(px) || 8;
-      document.documentElement.style.setProperty('--keyboardSpacing', val + 'px');
-      if(keyboardSpacingSlider) keyboardSpacingSlider.value = val;
-      if(keyboardSpacingVal) keyboardSpacingVal.textContent = val + 'px';
-      setTimeout(updateMainPaddingBottom, 50);
-    }
-
-    if(keyboardSpacingSlider){
-      keyboardSpacingSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyKeyboardSpacing(v);
-        localStorage.setItem('bk_tr_keyboardSpacing', v);
-      });
-    }
-    if(keyboardSpacingResetBtn){
-      keyboardSpacingResetBtn.addEventListener('click', () => {
-        applyKeyboardSpacing(8);
-        localStorage.setItem('bk_tr_keyboardSpacing', '8');
-      });
-    }
-
-    // 채팅창 상단 블러 조정
-    const chatTopBlurSlider = document.getElementById('chatTopBlurSlider');
-    const chatTopBlurVal = document.getElementById('chatTopBlurVal');
-    const chatTopBlurResetBtn = document.getElementById('chatTopBlurResetBtn');
-
-    function applyChatTopBlur(val){
-      val = Number(val);
-      document.documentElement.style.setProperty('--chatTopBlur', val + 'px');
-      document.documentElement.style.setProperty('--chatTopFadeHeight', Math.max(val * 3, 12) + 'px');
-      if(chatTopBlurSlider) chatTopBlurSlider.value = val;
-      if(chatTopBlurVal) chatTopBlurVal.textContent = val + 'px';
-    }
-
-    if(chatTopBlurSlider){
-      chatTopBlurSlider.addEventListener('input', (e) => {
-        const v = e.target.value;
-        applyChatTopBlur(v);
-        localStorage.setItem('bk_tr_chatTopBlur', v);
-      });
-    }
-    if(chatTopBlurResetBtn){
-      chatTopBlurResetBtn.addEventListener('click', () => {
-        applyChatTopBlur(4);
-        localStorage.setItem('bk_tr_chatTopBlur', '4');
-      });
-    }
+    const applyTopbarHeight = bindPxSlider({sliderId:'topbarHeightSlider', valId:'topbarHeightVal', resetId:'topbarHeightResetBtn', cssVar:'--topbarHeight', lsKey:'bk_tr_topbarHeight', defaultVal:64});
+    const applyTopbarHPadding = bindPxSlider({sliderId:'topbarHPaddingSlider', valId:'topbarHPaddingVal', resetId:'topbarHPaddingResetBtn', cssVar:'--topbarHPadding', lsKey:'bk_tr_topbarHPadding', defaultVal:14});
+    const applyHeaderHPadding = bindPxSlider({sliderId:'headerHPaddingSlider', valId:'headerHPaddingVal', resetId:'headerHPaddingResetBtn', cssVar:'--headerHPadding', lsKey:'bk_tr_headerHPadding', defaultVal:16});
+    const applyHeaderSpacing = bindPxSlider({sliderId:'headerSpacingSlider', valId:'headerSpacingVal', resetId:'headerSpacingResetBtn', cssVar:'--headerSpacing', lsKey:'bk_tr_test_headerSpacing', defaultVal:10});
+    const applyChatSpacing = bindPxSlider({sliderId:'chatSpacingSlider', valId:'chatSpacingVal', resetId:'chatSpacingResetBtn', cssVar:'--chatSpacing', lsKey:'bk_tr_test_chatSpacing', defaultVal:16});
+    const applyInputSpacing = bindPxSlider({sliderId:'inputSpacingSlider', valId:'inputSpacingVal', resetId:'inputSpacingResetBtn', cssVar:'--inputSpacing', lsKey:'bk_tr_test_inputSpacing', defaultVal:4});
+    const applyMaxWidth = bindPxSlider({sliderId:'maxWidthSlider', valId:'maxWidthVal', resetId:'maxWidthResetBtn', cssVar:'--maxWidth', lsKey:'bk_tr_test_maxWidth', defaultVal:860});
+    const applyInputMinHeight = bindPxSlider({sliderId:'inputMinHeightSlider', valId:'inputMinHeightVal', resetId:'inputMinHeightResetBtn', cssVar:'--inputMinHeight', lsKey:'bk_tr_inputMinHeight', defaultVal:72, onApply:() => setTimeout(updateMainPaddingBottom, 50)});
+    const applyInputMaxHeight = bindPxSlider({sliderId:'inputMaxHeightSlider', valId:'inputMaxHeightVal', resetId:'inputMaxHeightResetBtn', cssVar:'--inputMaxHeight', lsKey:'bk_tr_inputMaxHeight', defaultVal:240});
+    const applyInputMaxWidth = bindPxSlider({sliderId:'inputMaxWidthSlider', valId:'inputMaxWidthVal', resetId:'inputMaxWidthResetBtn', cssVar:'--inputMaxWidth', lsKey:'bk_tr_inputMaxWidth', defaultVal:860});
+    const applyComposerPadding = bindPxSlider({sliderId:'composerHPaddingSlider', valId:'composerHPaddingVal', resetId:'composerHPaddingResetBtn', cssVar:'--composerPadding', lsKey:'bk_tr_composerPadding', defaultVal:10, onApply:() => setTimeout(updateMainPaddingBottom, 50)});
+    const applyChatBottomPadding = bindPxSlider({sliderId:'chatBottomGapSlider', valId:'chatBottomGapVal', resetId:'chatBottomGapResetBtn', cssVar:'--chatBottomPadding', lsKey:'bk_tr_chatBottomPadding', defaultVal:4});
+    const applyComposerBlur = bindPxSlider({sliderId:'composerBlurSlider', valId:'composerBlurVal', resetId:'composerBlurResetBtn', cssVar:'--composerBlur', lsKey:'bk_tr_composerBlur', defaultVal:12});
+    const applyKeyboardSpacing = bindPxSlider({sliderId:'keyboardSpacingSlider', valId:'keyboardSpacingVal', resetId:'keyboardSpacingResetBtn', cssVar:'--keyboardSpacing', lsKey:'bk_tr_keyboardSpacing', defaultVal:8, onApply:() => setTimeout(updateMainPaddingBottom, 50)});
+    const applyChatTopBlur = bindPxSlider({sliderId:'chatTopBlurSlider', valId:'chatTopBlurVal', resetId:'chatTopBlurResetBtn', cssVar:'--chatTopBlur', lsKey:'bk_tr_chatTopBlur', defaultVal:4, extraCssVars:(v) => document.documentElement.style.setProperty('--chatTopFadeHeight', Math.max(v * 3, 12) + 'px')});
 
     // Load layout settings
     function loadLayoutSettings(){
