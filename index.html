@@ -180,6 +180,44 @@
     .modelDropdownItem .mdName{font-weight:700}
     .modelDropdownItem .mdId{font-size:calc(11px * var(--textScale)); color:var(--muted); margin-top:2px}
 
+    .menuDropdownWrap{position:relative; display:inline-block;}
+    .menuDropdown{
+      display:none;
+      position:absolute;
+      top:100%;
+      right:0;
+      margin-top:6px;
+      min-width:200px;
+      background: var(--panel2);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      box-shadow: 0 12px 36px rgba(0,0,0,.55);
+      padding:6px;
+      z-index:50;
+    }
+    .menuDropdown.show{display:block}
+    .menuDropdownItem{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      width:100%;
+      padding:10px 12px;
+      border:none;
+      background:transparent;
+      color:var(--text);
+      font-size:calc(13px * var(--textScale));
+      font-family:inherit;
+      text-align:left;
+      border-radius:10px;
+      cursor:pointer;
+      transition:background .12s;
+    }
+    .menuDropdownItem:hover{background:rgba(255,255,255,.08)}
+    .menuDropdownItem:active{transform:scale(.98)}
+    .menuDropdownItem svg{width:18px; height:18px; flex:0 0 18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; color:var(--muted);}
+    .menuDropdownItem.danger{color:var(--danger, #ff6b6b);}
+    .menuDropdownItem.danger svg{color:var(--danger, #ff6b6b);}
+
     .iconBtn{
       width:36px; height:36px;
       display:inline-flex;
@@ -587,36 +625,48 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.4t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.5t</span></div>
 
         <div class="rightBtns">
-          <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-              <rect x="14" y="14" width="7" height="7" rx="1"></rect>
-              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-            </svg>
-          </button>
-
-          <button id="settingsToggleBtn" class="iconBtn" type="button" aria-label="설정">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-          </button>
+          <div class="menuDropdownWrap">
+            <button id="topMenuBtn" class="iconBtn" type="button" aria-label="메뉴" aria-haspopup="true" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
+            <div id="topMenuDropdown" class="menuDropdown" role="menu">
+              <button id="layoutToggleBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                  <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                  <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                  <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                </svg>
+                <span>레이아웃</span>
+              </button>
+              <button id="settingsToggleBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span>색상 · 폰트</span>
+              </button>
+              <button id="topSaveBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>대화 저장</span>
+              </button>
+            </div>
+          </div>
 
           <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="none"></path>
-            </svg>
-          </button>
-
-          <button id="topSaveBtn" class="iconBtn" type="button" aria-label="대화 저장">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
           </button>
 
@@ -1064,7 +1114,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v5.4t';
+    const APP_VERSION = 'v5.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2133,6 +2183,31 @@
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
     if(el.topSaveBtn) el.topSaveBtn.addEventListener('click', exportChat);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
+
+    const topMenuBtn = document.getElementById('topMenuBtn');
+    const topMenuDropdown = document.getElementById('topMenuDropdown');
+    function setTopMenuOpen(open){
+      if(!topMenuDropdown || !topMenuBtn) return;
+      if(open){ topMenuDropdown.classList.add('show'); topMenuBtn.setAttribute('aria-expanded','true'); }
+      else { topMenuDropdown.classList.remove('show'); topMenuBtn.setAttribute('aria-expanded','false'); }
+    }
+    if(topMenuBtn){
+      topMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setTopMenuOpen(!topMenuDropdown.classList.contains('show'));
+      });
+    }
+    if(topMenuDropdown){
+      topMenuDropdown.addEventListener('click', (e) => {
+        if(e.target.closest('.menuDropdownItem')) setTopMenuOpen(false);
+      });
+    }
+    document.addEventListener('click', (e) => {
+      if(!topMenuDropdown || !topMenuDropdown.classList.contains('show')) return;
+      if(topMenuBtn && topMenuBtn.contains(e.target)) return;
+      if(topMenuDropdown.contains(e.target)) return;
+      setTopMenuOpen(false);
+    });
 
     if(el.model) el.model.addEventListener('input', updateModelTag);
 
