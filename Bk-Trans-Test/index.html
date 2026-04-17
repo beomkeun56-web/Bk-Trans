@@ -587,7 +587,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.2t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.3t</span></div>
 
         <div class="rightBtns">
           <button id="layoutToggleBtn" class="iconBtn" type="button" aria-label="레이아웃">
@@ -1063,7 +1063,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v5.2t';
+    const APP_VERSION = 'v5.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1521,7 +1521,7 @@
       MAX_INPUTS_PER_PAGE: 6,
       MAX_MESSAGES: 30,
       AUTO_TRANSLATE_MAX_LEN: 300,
-      REQUEST_TIMEOUT_MS: 15000,
+      REQUEST_TIMEOUT_MS: 20000,
       CLIPBOARD_DEBOUNCE_MS: 150,
     };
 
@@ -1564,27 +1564,9 @@
 
     function defaultSystemPrompt(){
       return [
-        "You are a professional Korean<->Simplified Chinese translation engine for business/IT chat.",
-        "Rules:",
-        "- Output ONLY the translated text. No explanations, no prefixes like '번역:' or '译文:'.",
-        "- If input starts with '#', remove it and translate Korean -> Simplified Chinese.",
-        "- Otherwise translate Simplified Chinese -> Korean.",
-        "- Preserve line breaks, numbers, URLs, code, product names as-is.",
-        "- Use natural, context-appropriate tone (business polite by default).",
-        "- Use full-width Chinese punctuation (，。？！) in Chinese output.",
-        "",
-        "Examples:",
-        "Input: #오늘 회의는 3시에 시작합니다.",
-        "Output: 今天的会议3点开始。",
-        "",
-        "Input: #서버 배포가 완료되었습니다. 확인 부탁드립니다.",
-        "Output: 服务器部署已完成，请确认。",
-        "",
-        "Input: 明天交付物清单请在下班前发给我。",
-        "Output: 내일 납품물 목록을 퇴근 전까지 저에게 보내주세요.",
-        "",
-        "Input: 这个bug修复后需要重新测试。",
-        "Output: 이 버그 수정 후 다시 테스트해야 합니다."
+        "KO<->zh-CN business chat translator. Output ONLY translated text.",
+        "Rules: input starts with '#' => Korean->Simplified Chinese; else Chinese->Korean.",
+        "Keep line breaks, numbers, URLs, code as-is. Business polite tone. Use full-width Chinese punctuation (，。？！)."
       ].join("\n");
     }
 
@@ -1747,27 +1729,10 @@
 
     function buildContextMessages(userText){
       const sys = el.systemPrompt.value || defaultSystemPrompt();
-      const msgs = [];
-      const model = el.model.value.trim();
-
-      if(isAnthropicModel(model)){
-        msgs.push({ role: 'system', content: [{ type: 'text', text: sys, cache_control: { type: 'ephemeral' } }] });
-      } else {
-        msgs.push({ role: 'system', content: sys });
-      }
-
-      const recent = [];
-      for(let i = chat.length - 1; i >= 0 && recent.length < 4; i--){
-        const m = chat[i];
-        if(!m || !m.text) continue;
-        if(m.text.startsWith('오류:')) continue;
-        recent.unshift(m);
-      }
-      for(const m of recent){
-        msgs.push({ role: m.role, content: m.text });
-      }
-      msgs.push({ role: 'user', content: userText });
-      return msgs;
+      return [
+        { role: 'system', content: sys },
+        { role: 'user', content: userText }
+      ];
     }
 
     function calcDynamicMaxTokens(userText, cap){
