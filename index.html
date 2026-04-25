@@ -1827,7 +1827,9 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + apiKey
+            'Authorization': 'Bearer ' + apiKey,
+            'HTTP-Referer': location.href,
+            'X-Title': 'Bk-Trans'
           },
           body: JSON.stringify(payload),
           cache: 'no-store',
