@@ -768,7 +768,14 @@
         <div style="margin-bottom:20px;">
           <label for="apiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">OpenRouter API Key</label>
           <input id="apiKey" type="password" placeholder="sk-or-v1-..." autocomplete="off" />
+        </div>
 
+        <div style="margin-bottom:20px;">
+          <label for="apiBaseUrl" style="font-size:calc(12px * var(--textScale)); font-weight:600; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            API URL (403 에러 시)
+            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">비워두면 기본값 사용</span>
+          </label>
+          <input id="apiBaseUrl" type="text" placeholder="https://openrouter.ai/api/v1/chat/completions" autocomplete="off" style="font-size:calc(12px * var(--textScale));" />
         </div>
 
         <div style="margin-bottom:20px;">
@@ -1199,7 +1206,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v9.5t';
+    const APP_VERSION = 'v9.6t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1226,7 +1233,8 @@
       chatBgTransparent: 'bk_tr_test_chat_bg_transparent',
       chatHistory: 'bk_tr_test_chatHistory',
       enhancedPrompt: 'bk_tr_test_enhancedPrompt',
-      useEnhanced: 'bk_tr_test_useEnhanced'
+      useEnhanced: 'bk_tr_test_useEnhanced',
+      apiBaseUrl: 'bk_tr_test_apiBaseUrl'
     };
 
     const el = {
@@ -1245,6 +1253,7 @@
       statusCircle: document.getElementById('statusCircle'),
 
       apiKey: document.getElementById('apiKey'),
+      apiBaseUrl: document.getElementById('apiBaseUrl'),
       model: document.getElementById('model'),
       temperature: document.getElementById('temperature'),
       topP: document.getElementById('topP'),
@@ -1716,6 +1725,7 @@
 
     function loadSettings(){
       el.apiKey.value = localStorage.getItem(LS.apiKey) || '';
+      el.apiBaseUrl.value = localStorage.getItem(LS.apiBaseUrl) || '';
       const savedModel = localStorage.getItem(LS.model);
       if(savedModel) el.model.value = savedModel;
 
@@ -1734,6 +1744,7 @@
 
     function saveApiSettings(){
       localStorage.setItem(LS.apiKey, el.apiKey.value.trim());
+      localStorage.setItem(LS.apiBaseUrl, el.apiBaseUrl.value.trim());
       localStorage.setItem(LS.model, el.model.value.trim());
       localStorage.setItem(LS.temp, el.temperature.value.trim());
       localStorage.setItem(LS.topP, el.topP.value.trim());
@@ -1864,6 +1875,12 @@
       return v;
     }
 
+    const DEFAULT_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+    function getApiUrl(){
+      const custom = el.apiBaseUrl && el.apiBaseUrl.value.trim();
+      return custom || DEFAULT_API_URL;
+    }
+
     let _currentAbort = null;
 
     function abortCurrentRequest(){
@@ -1916,7 +1933,7 @@
 
       let res;
       try{
-        res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        res = await fetch(getApiUrl(), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2229,6 +2246,14 @@
       }
     }
 
+    async function checkMyIP(){
+      try{
+        const r = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(5000) });
+        const j = await r.json();
+        return j.country_name + ' (' + j.ip + ')';
+      } catch{ return null; }
+    }
+
     async function testConnection(){
       setConnState('busy');
       try{
@@ -2237,7 +2262,13 @@
         toast('연결 테스트 성공');
       } catch(err){
         setConnState('err');
-        toast('연결 테스트 실패: ' + (err && err.message ? err.message : err));
+        let msg = err && err.message ? err.message : String(err);
+        if(err && err.status === 403){
+          toast('403 에러 — IP 지역 확인 중...');
+          const ipInfo = await checkMyIP();
+          if(ipInfo) msg += '\n현재 IP: ' + ipInfo;
+        }
+        toast('연결 테스트 실패: ' + msg);
       }
     }
 
@@ -2411,7 +2442,7 @@
       if(!apiKey){ toast('API Key가 필요합니다'); return; }
 
       try{
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const res = await fetch(getApiUrl(), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
