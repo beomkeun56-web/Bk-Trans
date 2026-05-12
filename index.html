@@ -649,19 +649,6 @@
       #input{padding: 20px 50px 20px 16px; min-height: var(--inputMinHeight)}
     }
   </style>
-  <script>
-  (function(){
-    if(location.search.indexOf('apk=1')===-1)return;
-    function fit(){
-      var w=window.innerWidth||document.documentElement.clientWidth||screen.width;
-      if(w>400){document.documentElement.style.zoom=String(360/w);}
-      else{document.documentElement.style.zoom='1';}
-    }
-    if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',fit);}
-    else{fit();}
-    window.addEventListener('resize',fit);
-  })();
-  </script>
 </head>
 
 <body>
