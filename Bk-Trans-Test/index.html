@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.9t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.0t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -692,6 +692,13 @@
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
                 <span>대화 저장</span>
+              </button>
+              <button id="topQualityBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 11l3 3L22 4"></path>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                <span>품질점검</span>
               </button>
             </div>
           </div>
@@ -1146,7 +1153,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v6.9t';
+    const APP_VERSION = 'v7.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2149,6 +2156,69 @@
       toast('대화 저장 완료');
     }
 
+    const QA_KO = [
+      '#오늘 회의 자료 준비됐나요?',
+      '#내일 오전 10시에 거래처 방문 예정입니다.',
+      '#이번 분기 매출이 전년 대비 15% 증가했습니다.',
+      '#계약서 초안을 검토해 주시기 바랍니다.',
+      '#출장 경비 정산서를 제출해 주세요.',
+      '#다음 주 월요일까지 보고서를 완성하겠습니다.',
+      '#고객님의 불만 사항을 즉시 처리하겠습니다.',
+      '#신제품 출시 일정이 2주 연기되었습니다.',
+      '#물류 배송 지연으로 인해 납기일 조정이 필요합니다.',
+      '#프로젝트 진행 상황을 공유해 주시면 감사하겠습니다.',
+      '#가격 협상을 위해 다음 주에 미팅을 잡겠습니다.',
+      '#재고 현황을 확인 후 회신 드리겠습니다.',
+      '#금일 퇴근 후 회식이 있으니 참석 부탁드립니다.',
+      '#이번 달 실적 목표 달성률은 92%입니다.',
+      '#시스템 점검으로 인해 오후 2시부터 서비스가 중단됩니다.'
+    ];
+    const QA_ZH = [
+      '请尽快把合同发给我确认。',
+      '这个方案的可行性需要进一步评估。',
+      '下周三下午有一个重要的客户会议。',
+      '我们需要调整一下生产计划以满足订单需求。',
+      '请把最新的财务报表发到我邮箱。',
+      '供应商那边的报价比上次高了10%。',
+      '新员工培训将在下个月初开始。',
+      '系统升级后操作流程会有一些变化。',
+      '质量检测报告显示产品合格率为98.5%。',
+      '希望能在本周内收到贵方的正式答复。',
+      '由于原材料涨价，我们需要重新核算成本。',
+      '请安排一下明天上午的视频会议。',
+      '本次展会我们共接待了200多位客户。',
+      '运输途中货物出现了轻微损坏，需要索赔处理。',
+      '感谢贵公司长期以来的合作与支持。'
+    ];
+
+    function shuffleArray(arr){
+      const a = arr.slice();
+      for(let i = a.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    async function runQualityTest(){
+      if(_isBusy){ toast('번역 진행 중입니다'); return; }
+      const modelName = prettifyModelName(getCurrentModelId());
+      if(!confirm(modelName + ' 모델로 품질점검(20문장)을 시작합니다.')) return;
+
+      const koSamples = shuffleArray(QA_KO).slice(0, 10);
+      const zhSamples = shuffleArray(QA_ZH).slice(0, 10);
+      const allSamples = [...koSamples, ...zhSamples];
+
+      toast('품질점검 시작 (' + modelName + ')');
+      for(let i = 0; i < allSamples.length; i++){
+        if(_isBusy) await new Promise(r => { const iv = setInterval(() => { if(!_isBusy){ clearInterval(iv); r(); } }, 200); });
+        el.input.value = allSamples[i];
+        await send();
+        await new Promise(r => setTimeout(r, 500));
+      }
+      toast('품질점검 완료 (' + allSamples.length + '문장)');
+    }
+
     function clearChatOnly(){
       if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
@@ -2267,6 +2337,8 @@
 
     if(el.topTestBtn) el.topTestBtn.addEventListener('click', testConnection);
     if(el.topSaveBtn) el.topSaveBtn.addEventListener('click', exportChat);
+    const topQualityBtn = document.getElementById('topQualityBtn');
+    if(topQualityBtn) topQualityBtn.addEventListener('click', runQualityTest);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
 
     const topMenuBtn = document.getElementById('topMenuBtn');
