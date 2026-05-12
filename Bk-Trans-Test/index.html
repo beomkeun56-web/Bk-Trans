@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.5t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.6t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1153,7 +1153,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v7.5t';
+    const APP_VERSION = 'v7.6t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1996,7 +1996,7 @@
 
         if(m.role === 'user'){
           const retranBtn = document.createElement('button');
-          retranBtn.className = 'retryPill';
+          retranBtn.className = 'copyPill';
           retranBtn.type = 'button';
           retranBtn.textContent = '재번역';
           retranBtn.addEventListener('click', () => { el.input.value = m.text; send(); });
