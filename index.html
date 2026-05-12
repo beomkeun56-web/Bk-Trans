@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.0t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.1t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -762,7 +762,7 @@
             </div>
             <div style="flex:1 1 120px;">
               <label for="maxTokens" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Max Tokens</label>
-              <input id="maxTokens" type="text" value="800" />
+              <input id="maxTokens" type="text" value="2048" />
             </div>
           </div>
         </div>
@@ -1152,7 +1152,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v8.0t';
+    const APP_VERSION = 'v8.1t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1827,8 +1827,8 @@
     }
 
     function calcDynamicMaxTokens(userText, cap){
-      const estimate = Math.ceil(userText.length * 3) + 64;
-      return Math.max(64, Math.min(cap, estimate));
+      const estimate = Math.ceil(userText.length * 5) + 128;
+      return Math.max(128, Math.min(cap, estimate));
     }
 
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
