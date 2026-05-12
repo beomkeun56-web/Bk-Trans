@@ -662,7 +662,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.7t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.8t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1195,7 +1195,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v8.7t';
+    const APP_VERSION = 'v8.8t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2090,6 +2090,13 @@
           copyBtn.textContent = '복사';
           copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
           actions.appendChild(copyBtn);
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'copyPill';
+          editBtn.type = 'button';
+          editBtn.textContent = '수정';
+          editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
+          actions.appendChild(editBtn);
         }
 
         if(actions.children.length > 0){
