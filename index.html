@@ -1199,7 +1199,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v9.4t';
+    const APP_VERSION = 'v9.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1923,8 +1923,6 @@
             'Authorization': 'Bearer ' + apiKey
           },
           body: JSON.stringify(payload),
-          cache: 'no-store',
-          mode: 'cors',
           signal: ac.signal
         });
       } finally {
@@ -1935,37 +1933,59 @@
         const text = await res.text();
         let msg = text;
         try { msg = JSON.parse(text).error.message; } catch{}
+        if(res.status === 403){
+          msg += '\n(VPN 연결 확인 / 브라우저 데이터절약 모드 OFF 필요)';
+        }
         const err = new Error('HTTP ' + res.status + ': ' + msg);
         err.status = res.status;
         throw err;
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
       let full = '';
-      let buf = '';
 
-      while(true){
-        const { done, value } = await reader.read();
-        if(done) break;
-        buf += decoder.decode(value, { stream: true });
-        const lines = buf.split('\n');
-        buf = lines.pop() || '';
+      if(res.body && res.body.getReader){
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        while(true){
+          const { done, value } = await reader.read();
+          if(done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() || '';
+          for(const line of lines){
+            const trimmed = line.trim();
+            if(!trimmed || !trimmed.startsWith('data:')) continue;
+            const data = trimmed.slice(5).trim();
+            if(data === '[DONE]') break;
+            try{
+              const j = JSON.parse(data);
+              const delta = j.choices && j.choices[0] && j.choices[0].delta;
+              if(delta && delta.content){
+                full += delta.content;
+                const visible = stripThinkingTags(full);
+                if(visible) onChunk(visible);
+              }
+            } catch{}
+          }
+        }
+      } else {
+        const text = await res.text();
+        const lines = text.split('\n');
         for(const line of lines){
           const trimmed = line.trim();
           if(!trimmed || !trimmed.startsWith('data:')) continue;
           const data = trimmed.slice(5).trim();
-          if(data === '[DONE]') break;
+          if(data === '[DONE]') continue;
           try{
             const j = JSON.parse(data);
             const delta = j.choices && j.choices[0] && j.choices[0].delta;
-            if(delta && delta.content){
-              full += delta.content;
-              const visible = stripThinkingTags(full);
-              if(visible) onChunk(visible);
-            }
+            if(delta && delta.content) full += delta.content;
+            const msg = j.choices && j.choices[0] && j.choices[0].message;
+            if(msg && msg.content) full += msg.content;
           } catch{}
         }
+        onChunk(stripThinkingTags(full));
       }
       return stripThinkingTags(full);
     }
