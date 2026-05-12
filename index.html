@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.4t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.5t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -743,12 +743,10 @@
               <input id="model" type="text" value="google/gemini-3-flash-preview" list="modelList" />
               <datalist id="modelList">
                 <option value="google/gemini-3-flash-preview">Gemini 3 Flash</option>
-                <option value="qwen/qwen3-235b-a22b-thinking-2507">Qwen3 235B Thinking</option>
+                <option value="qwen/qwen3-235b-a22b-2507">Q3 235B</option>
+                <option value="qwen/qwen3-vl-235b-a22b-instruct">Q3 VL 235B</option>
+                <option value="qwen/qwen3.5-flash-02-23">Q3.5 Flash</option>
                 <option value="openai/gpt-5.5">GPT 5.5</option>
-                <option value="qwen/qwen3.6-plus">Qwen 3.6 Plus</option>
-                <option value="qwen/qwen-plus">Qwen Plus</option>
-                <option value="qwen/qwen3.5-plus-20260420">Qwen 3.5 Plus</option>
-                <option value="qwen/qwen-plus-2025-07-28">Qwen Plus 0728</option>
               </datalist>
             </div>
             <div style="flex:1 1 120px;">
@@ -1147,7 +1145,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v6.4t';
+    const APP_VERSION = 'v6.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1248,12 +1246,10 @@
 
     const MODEL_OPTIONS = [
       { id:'google/gemini-3-flash-preview', name:'Gemini 3 Flash' },
-      { id:'qwen/qwen3-235b-a22b-thinking-2507', name:'Qwen3 235B Thinking' },
-      { id:'openai/gpt-5.5', name:'GPT 5.5' },
-      { id:'qwen/qwen3.6-plus', name:'Qwen 3.6 Plus' },
-      { id:'qwen/qwen-plus', name:'Qwen Plus' },
-      { id:'qwen/qwen3.5-plus-20260420', name:'Qwen 3.5 Plus' },
-      { id:'qwen/qwen-plus-2025-07-28', name:'Qwen Plus 0728' }
+      { id:'qwen/qwen3-235b-a22b-2507', name:'Q3 235B' },
+      { id:'qwen/qwen3-vl-235b-a22b-instruct', name:'Q3 VL 235B' },
+      { id:'qwen/qwen3.5-flash-02-23', name:'Q3.5 Flash' },
+      { id:'openai/gpt-5.5', name:'GPT 5.5' }
     ];
 
     function renderModelDropdown(){
