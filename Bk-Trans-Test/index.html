@@ -662,7 +662,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.8t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.9t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1183,6 +1183,7 @@
     <div class="composerFade"></div>
     <div class="composerInner">
       <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
+      <button id="inputCopyBtn" type="button" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); border:none; background:rgba(255,255,255,.1); color:rgba(230,237,243,.6); border-radius:8px; padding:4px 10px; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit;">복사</button>
     </div>
   </div>
 
@@ -1195,7 +1196,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v8.8t';
+    const APP_VERSION = 'v8.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2667,8 +2668,18 @@
           autoResizeInput();
         }
       });
-      el.input.addEventListener('input', autoResizeInput);
+      el.input.addEventListener('input', () => { autoResizeInput(); updateInputCopyBtn(); });
     }
+
+    const inputCopyBtn = document.getElementById('inputCopyBtn');
+    function updateInputCopyBtn(){
+      if(!inputCopyBtn || !el.input) return;
+      inputCopyBtn.style.display = el.input.value.trim() ? '' : 'none';
+    }
+    if(inputCopyBtn){
+      inputCopyBtn.addEventListener('click', async () => { await copyToClipboard(el.input.value.trim(), false); });
+    }
+    updateInputCopyBtn();
 
     if(el.copyBar) el.copyBar.addEventListener('click', async () => {
       if(!_pendingCopyText) return;
