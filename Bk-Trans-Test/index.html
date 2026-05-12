@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.6t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.7t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1153,7 +1153,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v7.6t';
+    const APP_VERSION = 'v7.7t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2027,7 +2027,7 @@
           const copyBtn = document.createElement('button');
           copyBtn.className = 'copyPill';
           copyBtn.type = 'button';
-          copyBtn.textContent = 'Copy';
+          copyBtn.textContent = '복사';
           copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
           actions.appendChild(copyBtn);
         }
@@ -2098,7 +2098,7 @@
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copyPill';
         copyBtn.type = 'button';
-        copyBtn.textContent = 'Copy';
+        copyBtn.textContent = '복사';
         copyBtn.addEventListener('click', async () => { await copyToClipboard(translated, false); });
         actions.appendChild(copyBtn);
         streamRow.appendChild(actions);
