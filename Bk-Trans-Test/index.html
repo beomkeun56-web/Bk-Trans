@@ -655,7 +655,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.2t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.3t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -746,6 +746,7 @@
                 <option value="qwen/qwen3.6-plus">Qwen 3.6 Plus</option>
                 <option value="qwen/qwen-plus">Qwen Plus</option>
                 <option value="qwen/qwen3.5-plus-20260420">Qwen 3.5 Plus</option>
+                <option value="qwen/qwen-plus-2025-07-28">Qwen Plus 0728</option>
               </datalist>
             </div>
             <div style="flex:1 1 120px;">
@@ -1144,7 +1145,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v6.2t';
+    const APP_VERSION = 'v6.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1249,7 +1250,8 @@
       { id:'openai/gpt-5.5', name:'GPT 5.5' },
       { id:'qwen/qwen3.6-plus', name:'Qwen 3.6 Plus' },
       { id:'qwen/qwen-plus', name:'Qwen Plus' },
-      { id:'qwen/qwen3.5-plus-20260420', name:'Qwen 3.5 Plus' }
+      { id:'qwen/qwen3.5-plus-20260420', name:'Qwen 3.5 Plus' },
+      { id:'qwen/qwen-plus-2025-07-28', name:'Qwen Plus 0728' }
     ];
 
     function renderModelDropdown(){
