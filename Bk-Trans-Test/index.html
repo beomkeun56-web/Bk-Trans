@@ -234,6 +234,11 @@
       flex: 0 0 36px;
       transition: background .15s, color .15s;
     }
+    .iconBtn.newActive{
+      opacity:1 !important;
+      color:#4af;
+      font-weight:700;
+    }
     .iconBtn:hover{background:rgba(255,255,255,.06); color:rgba(230,237,243,.9)}
     .iconBtn:active{transform:scale(.93)}
     .iconBtn svg{width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
@@ -657,7 +662,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.4t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.5t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -700,8 +705,16 @@
                 </svg>
                 <span>품질점검</span>
               </button>
+              <button id="topEnhanceBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"></path>
+                </svg>
+                <span>품질강화</span>
+              </button>
             </div>
           </div>
+
+          <button id="newPromptToggle" class="iconBtn" type="button" aria-label="New 프롬프트 토글" style="opacity:0.4;">New</button>
 
           <button id="topTestBtn" class="iconBtn" type="button" aria-label="연결 테스트">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1160,7 +1173,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v8.4t';
+    const APP_VERSION = 'v8.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1185,7 +1198,9 @@
       headerBgTransparent: 'bk_tr_test_header_bg_transparent',
       inputBgTransparent: 'bk_tr_test_input_bg_transparent',
       chatBgTransparent: 'bk_tr_test_chat_bg_transparent',
-      chatHistory: 'bk_tr_test_chatHistory'
+      chatHistory: 'bk_tr_test_chatHistory',
+      enhancedPrompt: 'bk_tr_test_enhancedPrompt',
+      useEnhanced: 'bk_tr_test_useEnhanced'
     };
 
     const el = {
@@ -1830,7 +1845,11 @@
     }
 
     function buildContextMessages(userText){
-      const sys = el.systemPrompt.value || defaultSystemPrompt();
+      let sys = el.systemPrompt.value || defaultSystemPrompt();
+      if(_useEnhancedPrompt){
+        const enhanced = localStorage.getItem(LS.enhancedPrompt);
+        if(enhanced) sys = enhanced;
+      }
       return [
         { role: 'system', content: sys },
         { role: 'user', content: userText }
@@ -2269,6 +2288,106 @@
       toast('품질점검 완료 (' + allSamples.length + '문장)');
     }
 
+    let _useEnhancedPrompt = localStorage.getItem(LS.useEnhanced) === 'true';
+    const newPromptToggle = document.getElementById('newPromptToggle');
+
+    function updateNewToggleUI(){
+      if(!newPromptToggle) return;
+      const hasEnhanced = !!localStorage.getItem(LS.enhancedPrompt);
+      if(_useEnhancedPrompt && hasEnhanced){
+        newPromptToggle.classList.add('newActive');
+        newPromptToggle.style.opacity = '';
+      } else {
+        newPromptToggle.classList.remove('newActive');
+        newPromptToggle.style.opacity = '0.4';
+        _useEnhancedPrompt = false;
+      }
+    }
+
+    if(newPromptToggle){
+      newPromptToggle.addEventListener('click', () => {
+        const hasEnhanced = !!localStorage.getItem(LS.enhancedPrompt);
+        if(!hasEnhanced){ toast('품질강화를 먼저 실행하세요'); return; }
+        _useEnhancedPrompt = !_useEnhancedPrompt;
+        localStorage.setItem(LS.useEnhanced, _useEnhancedPrompt);
+        updateNewToggleUI();
+        toast(_useEnhancedPrompt ? '수정 프롬프트 적용' : '기본 프롬프트 적용');
+      });
+    }
+    updateNewToggleUI();
+
+    async function enhanceQuality(){
+      const pairs = [];
+      for(let i = 0; i < chat.length - 1; i++){
+        if(chat[i].role === 'user' && chat[i+1] && chat[i+1].role === 'assistant' && !chat[i+1].text.startsWith('오류:')){
+          pairs.push({ src: chat[i].text, tgt: chat[i+1].text });
+        }
+      }
+      if(pairs.length < 3){ toast('품질점검을 먼저 실행하세요 (최소 3쌍 필요)'); return; }
+      if(!confirm('Opus 4.7로 번역 품질을 분석하고 프롬프트를 보강합니다.\nAPI 호출 1회 발생합니다.')) return;
+
+      toast('품질 분석 중...');
+
+      const samplePairs = shuffleArray(pairs).slice(0, 10);
+      let pairText = '';
+      samplePairs.forEach((p, i) => {
+        pairText += (i+1) + '. 원문: ' + p.src + '\n   번역: ' + p.tgt + '\n';
+      });
+
+      const currentPrompt = el.systemPrompt.value || defaultSystemPrompt();
+      const analyzePrompt = '당신은 한국어↔중국어 번역 품질 전문가입니다.\n\n' +
+        '현재 시스템 프롬프트:\n' + currentPrompt + '\n\n' +
+        '아래 번역 결과를 분석하세요:\n' + pairText + '\n' +
+        '작업:\n' +
+        '1. 오역, 누락, 어색한 표현, 톤 불일치를 찾으세요\n' +
+        '2. 현재 프롬프트에 추가할 보완 규칙을 생성하세요\n\n' +
+        '출력 형식: 보완 규칙만 3줄 이내로 출력. 기존 프롬프트 내용 반복 금지. 설명 금지. 규칙만 출력.\n' +
+        '예시: "구어체는 구어체로, 경어는 경어로 톤 유지."';
+
+      const apiKey = el.apiKey.value.trim();
+      if(!apiKey){ toast('API Key가 필요합니다'); return; }
+
+      try{
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+            'HTTP-Referer': location.href,
+            'X-Title': 'Bk-Trans'
+          },
+          body: JSON.stringify({
+            model: 'anthropic/claude-opus-4.7',
+            messages: [{ role: 'user', content: analyzePrompt }],
+            temperature: 0.1,
+            max_tokens: 512
+          })
+        });
+        if(!res.ok){
+          const t = await res.text();
+          let msg = t; try{ msg = JSON.parse(t).error.message; }catch{}
+          toast('분석 실패: ' + msg); return;
+        }
+        const json = await res.json();
+        const rules = (json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content || '').trim();
+        if(!rules){ toast('보완 규칙 생성 실패'); return; }
+
+        const enhanced = currentPrompt + '\n' + rules;
+        localStorage.setItem(LS.enhancedPrompt, enhanced);
+        _useEnhancedPrompt = true;
+        localStorage.setItem(LS.useEnhanced, 'true');
+        updateNewToggleUI();
+
+        chat.push({ role:'user', text:'[품질강화 분석 결과]', ts:Date.now() });
+        chat.push({ role:'assistant', text: rules, ts:Date.now(), model:'Opus 4.7 분석' });
+        saveChatHistory();
+        renderChat();
+        toast('품질강화 완료 — New 프롬프트 자동 적용');
+      } catch(err){
+        toast('품질강화 오류: ' + (err.message || err));
+      }
+    }
+
     function clearChatOnly(){
       if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
@@ -2389,6 +2508,8 @@
     if(el.topSaveBtn) el.topSaveBtn.addEventListener('click', exportChat);
     const topQualityBtn = document.getElementById('topQualityBtn');
     if(topQualityBtn) topQualityBtn.addEventListener('click', runQualityTest);
+    const topEnhanceBtn = document.getElementById('topEnhanceBtn');
+    if(topEnhanceBtn) topEnhanceBtn.addEventListener('click', enhanceQuality);
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
 
     const topMenuBtn = document.getElementById('topMenuBtn');
