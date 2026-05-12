@@ -158,6 +158,8 @@
       box-shadow: 0 12px 36px rgba(0,0,0,.55);
       padding:6px;
       z-index:50;
+      max-height:60vh;
+      overflow-y:auto;
     }
     .modelDropdown.show{display:block}
     .modelDropdownItem{
@@ -655,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.3t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.4t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1145,7 +1147,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v6.3t';
+    const APP_VERSION = 'v6.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
