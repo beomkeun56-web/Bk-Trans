@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.6t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.7t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1146,7 +1146,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v6.6t';
+    const APP_VERSION = 'v6.7t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1902,12 +1902,17 @@
             const delta = j.choices && j.choices[0] && j.choices[0].delta;
             if(delta && delta.content){
               full += delta.content;
-              onChunk(full);
+              const visible = stripThinkingTags(full);
+              if(visible) onChunk(visible);
             }
           } catch{}
         }
       }
-      return full;
+      return stripThinkingTags(full);
+    }
+
+    function stripThinkingTags(s){
+      return s.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     }
 
     async function callOpenRouterStream(userText, onChunk){
