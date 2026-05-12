@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.3t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.4t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -759,6 +759,14 @@
             <div style="flex:1 1 120px;">
               <label for="temperature" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Temperature</label>
               <input id="temperature" type="text" value="0.1" />
+            </div>
+            <div style="flex:1 1 120px;">
+              <label for="topP" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Top P</label>
+              <input id="topP" type="text" value="0.9" />
+            </div>
+            <div style="flex:1 1 120px;">
+              <label for="topK" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Top K</label>
+              <input id="topK" type="text" value="40" />
             </div>
             <div style="flex:1 1 120px;">
               <label for="maxTokens" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Max Tokens</label>
@@ -1152,12 +1160,14 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v8.3t';
+    const APP_VERSION = 'v8.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
       model: 'bk_tr_test_model',
       temp: 'bk_tr_test_temp',
+      topP: 'bk_tr_test_topP',
+      topK: 'bk_tr_test_topK',
 
       maxTokens: 'bk_tr_test_maxTokens',
       system: 'bk_tr_test_systemPrompt',
@@ -1196,6 +1206,8 @@
       apiKey: document.getElementById('apiKey'),
       model: document.getElementById('model'),
       temperature: document.getElementById('temperature'),
+      topP: document.getElementById('topP'),
+      topK: document.getElementById('topK'),
       maxTokens: document.getElementById('maxTokens'),
       systemPrompt: document.getElementById('systemPrompt'),
       autoCopy: document.getElementById('autoCopy'),
@@ -1667,6 +1679,8 @@
       if(savedModel) el.model.value = savedModel;
 
       el.temperature.value = localStorage.getItem(LS.temp) || el.temperature.value;
+      el.topP.value = localStorage.getItem(LS.topP) || el.topP.value;
+      el.topK.value = localStorage.getItem(LS.topK) || el.topK.value;
 
       el.maxTokens.value = localStorage.getItem(LS.maxTokens) || el.maxTokens.value;
       el.systemPrompt.value = localStorage.getItem(LS.system) || defaultSystemPrompt();
@@ -1681,6 +1695,8 @@
       localStorage.setItem(LS.apiKey, el.apiKey.value.trim());
       localStorage.setItem(LS.model, el.model.value.trim());
       localStorage.setItem(LS.temp, el.temperature.value.trim());
+      localStorage.setItem(LS.topP, el.topP.value.trim());
+      localStorage.setItem(LS.topK, el.topK.value.trim());
 
       localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
       localStorage.setItem(LS.system, el.systemPrompt.value || defaultSystemPrompt());
@@ -1830,6 +1846,8 @@
 
       const isPing = userText === 'ping';
       const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
+      const topP = validateNumber(el.topP.value.trim(), 0, 1, 'top_p');
+      const topK = Math.floor(validateNumber(el.topK.value.trim(), 1, 200, 'top_k'));
       const maxTokensRaw = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 32000, 'max_tokens'));
       const dynMax = isPing ? 16 : maxTokensRaw;
 
@@ -1841,6 +1859,8 @@
         model,
         messages,
         temperature,
+        top_p: topP,
+        top_k: topK,
         stream: true,
         max_tokens: dynMax
       };
