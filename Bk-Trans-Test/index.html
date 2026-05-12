@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.1t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.2t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -762,7 +762,7 @@
             </div>
             <div style="flex:1 1 120px;">
               <label for="maxTokens" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Max Tokens</label>
-              <input id="maxTokens" type="text" value="2048" />
+              <input id="maxTokens" type="text" value="4096" />
             </div>
           </div>
         </div>
@@ -1152,7 +1152,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v8.1t';
+    const APP_VERSION = 'v8.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1807,11 +1807,6 @@
       return v;
     }
 
-    function isAnthropicModel(m){
-      const s = String(m || '').toLowerCase();
-      return s.includes('anthropic/') || s.includes('claude');
-    }
-
     let _currentAbort = null;
 
     function abortCurrentRequest(){
@@ -1826,11 +1821,6 @@
       ];
     }
 
-    function calcDynamicMaxTokens(userText, cap){
-      const estimate = Math.ceil(userText.length * 5) + 128;
-      return Math.max(128, Math.min(cap, estimate));
-    }
-
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
       const apiKey = el.apiKey.value.trim();
       if(!apiKey) throw new Error('API Key가 비어 있습니다.');
@@ -1841,8 +1831,7 @@
       const isPing = userText === 'ping';
       const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
       const maxTokensRaw = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 32000, 'max_tokens'));
-      const cap = isAnthropicModel(model) ? Math.min(maxTokensRaw, 4096) : maxTokensRaw;
-      const dynMax = isPing ? 16 : calcDynamicMaxTokens(userText, cap);
+      const dynMax = isPing ? 16 : maxTokensRaw;
 
       const messages = isPing
         ? [{ role: 'user', content: 'ping' }]
