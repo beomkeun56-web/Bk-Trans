@@ -646,7 +646,7 @@
       .bubble{font-size: calc(16px * var(--chatScale))}
       .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
       .composerInner{border-radius:16px}
-      #input{padding: 20px 16px; min-height: var(--inputMinHeight)}
+      #input{padding: 20px 50px 20px 16px; min-height: var(--inputMinHeight)}
     }
   </style>
 </head>
@@ -662,7 +662,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.9t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v9.0t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1196,7 +1196,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v8.9t';
+    const APP_VERSION = 'v9.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
