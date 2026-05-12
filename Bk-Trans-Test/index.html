@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.8t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.9t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -750,10 +750,8 @@
               <input id="model" type="text" value="google/gemini-3-flash-preview" list="modelList" />
               <datalist id="modelList">
                 <option value="google/gemini-3-flash-preview">Gemini 3 Flash</option>
-                <option value="qwen/qwen3-235b-a22b-2507">Q3 235B</option>
-                <option value="qwen/qwen3-vl-235b-a22b-instruct">Q3 VL 235B</option>
-                <option value="qwen/qwen3.5-flash-02-23">Q3.5 Flash</option>
-                <option value="qwen/qwen-plus">Q Plus</option>
+                <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
+                <option value="anthropic/claude-opus-4.7">Claude Opus 4.7</option>
                 <option value="openai/gpt-5.5">GPT 5.5</option>
               </datalist>
             </div>
@@ -1153,7 +1151,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v7.8t';
+    const APP_VERSION = 'v7.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1256,10 +1254,8 @@
 
     const MODEL_OPTIONS = [
       { id:'google/gemini-3-flash-preview', name:'Gemini 3 Flash' },
-      { id:'qwen/qwen3-235b-a22b-2507', name:'Q3 235B' },
-      { id:'qwen/qwen3-vl-235b-a22b-instruct', name:'Q3 VL 235B' },
-      { id:'qwen/qwen3.5-flash-02-23', name:'Q3.5 Flash' },
-      { id:'qwen/qwen-plus', name:'Q Plus' },
+      { id:'anthropic/claude-haiku-4.5', name:'Claude Haiku 4.5' },
+      { id:'anthropic/claude-opus-4.7', name:'Claude Opus 4.7' },
       { id:'openai/gpt-5.5', name:'GPT 5.5' }
     ];
 
@@ -1828,8 +1824,6 @@
       ];
     }
 
-    function isQwenModel(m){ return String(m).toLowerCase().includes('qwen'); }
-
     function calcDynamicMaxTokens(userText, cap){
       const estimate = Math.ceil(userText.length * 3) + 64;
       return Math.max(64, Math.min(cap, estimate));
@@ -1843,13 +1837,10 @@
       if(!model) throw new Error('모델이 비어 있습니다.');
 
       const isPing = userText === 'ping';
-      const qwen = isQwenModel(model);
-
-      const temperature = qwen ? 0.1 : validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
+      const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
       const maxTokensRaw = Math.floor(validateNumber(el.maxTokens.value.trim(), 1, 32000, 'max_tokens'));
       const cap = isAnthropicModel(model) ? Math.min(maxTokensRaw, 4096) : maxTokensRaw;
-      const qwenMax = Math.max(64, Math.min(cap, Math.ceil(userText.length * 1.5) + 64));
-      const dynMax = isPing ? 16 : (qwen ? qwenMax : calcDynamicMaxTokens(userText, cap));
+      const dynMax = isPing ? 16 : calcDynamicMaxTokens(userText, cap);
 
       const messages = isPing
         ? [{ role: 'user', content: 'ping' }]
@@ -1862,12 +1853,6 @@
         stream: true,
         max_tokens: dynMax
       };
-
-      if(qwen){
-        payload.top_p = 0.7;
-        payload.top_k = 20;
-        payload.repetition_penalty = 1.05;
-      }
 
       const ac = new AbortController();
       _currentAbort = ac;
