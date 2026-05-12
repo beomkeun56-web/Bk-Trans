@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.8t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v6.9t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1146,7 +1146,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v6.8t';
+    const APP_VERSION = 'v6.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1603,7 +1603,7 @@
 
     const CONFIG = {
       MAX_INPUTS_PER_PAGE: 6,
-      MAX_MESSAGES: 30,
+      MAX_MESSAGES: 50,
       AUTO_TRANSLATE_MAX_LEN: 300,
       REQUEST_TIMEOUT_MS: 20000,
       CLIPBOARD_DEBOUNCE_MS: 150,
@@ -2058,7 +2058,7 @@
         });
         const translated = normalizeOutput(userText, translatedRaw);
 
-        chat.push({ role:'assistant', text: translated, ts: Date.now() });
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: prettifyModelName(model) });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -2100,7 +2100,7 @@
           toast('번역 취소됨');
           chat.pop();
         } else {
-          chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now() });
+          chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now(), model: prettifyModelName(getCurrentModelId()) });
           trimChatToMaxInputs();
           toast('요청 실패: ' + msg);
         }
@@ -2128,8 +2128,12 @@
       if(chat.length === 0){ toast('저장할 대화가 없습니다'); return; }
       let text = '';
       for(const m of chat){
-        const label = m.role === 'user' ? '[원문]' : '[번역]';
-        text += label + ' ' + m.text + '\n';
+        if(m.role === 'user'){
+          text += '[원문] ' + m.text + '\n';
+        } else {
+          const modelStr = m.model ? ' (' + m.model + ')' : '';
+          text += '[번역]' + modelStr + ' ' + m.text + '\n';
+        }
       }
       const now = new Date();
       const ts = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
