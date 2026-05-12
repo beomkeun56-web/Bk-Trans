@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.7t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.8t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1153,7 +1153,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v7.7t';
+    const APP_VERSION = 'v7.8t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1234,6 +1234,8 @@
     function prettifyModelName(modelId){
       const raw = String(modelId || '').trim();
       if(!raw) return 'Model';
+      const found = MODEL_OPTIONS.find(m => m.id === raw);
+      if(found) return found.name;
       const short = raw.split('/').pop() || raw;
       const cleaned = short.replace(/[_]+/g,'-').replace(/-+/g,'-');
       return cleaned.split('-').filter(Boolean).map(t => {
