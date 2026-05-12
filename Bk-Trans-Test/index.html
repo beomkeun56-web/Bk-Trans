@@ -483,6 +483,21 @@
     .actionsRow{
       display:flex; gap:6px; align-items:center;
     }
+    .retryPill{
+      border:none;
+      background: rgba(220,80,60,.7);
+      border-radius: 10px;
+      padding: 5px 12px;
+      cursor:pointer;
+      color: #fff;
+      font-size: calc(12px * var(--textScale));
+      font-family:inherit;
+      font-weight:600;
+      letter-spacing:.3px;
+      transition: background .15s;
+    }
+    .retryPill:hover{background: rgba(220,80,60,.9)}
+
     .copyPill{
       border:none;
       background: var(--copyBtnBg);
@@ -640,7 +655,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.7t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v5.8t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -729,8 +744,7 @@
                 <option value="anthropic/claude-haiku-4.5">Claude Haiku 4.5</option>
                 <option value="anthropic/claude-sonnet-4.5">Claude Sonnet 4.5</option>
                 <option value="anthropic/claude-sonnet-4.6">Claude Sonnet 4.6</option>
-                <option value="openai/gpt-5.2">GPT 5.2</option>
-                <option value="openai/gpt-5.2-chat">GPT 5.2 Chat</option>
+                <option value="openai/gpt-5.5">GPT 5.5</option>
               </datalist>
             </div>
             <div style="flex:1 1 120px;">
@@ -1129,7 +1143,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v5.7t';
+    const APP_VERSION = 'v5.8t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1233,8 +1247,7 @@
       { id:'anthropic/claude-haiku-4.5', name:'Claude Haiku 4.5' },
       { id:'anthropic/claude-sonnet-4.5', name:'Claude Sonnet 4.5' },
       { id:'anthropic/claude-sonnet-4.6', name:'Claude Sonnet 4.6' },
-      { id:'openai/gpt-5.2', name:'GPT 5.2' },
-      { id:'openai/gpt-5.2-chat', name:'GPT 5.2 Chat' }
+      { id:'openai/gpt-5.5', name:'GPT 5.5' }
     ];
 
     function renderModelDropdown(){
@@ -1919,6 +1932,16 @@
     }
     focusOverlay.addEventListener('click', () => focusOverlay.classList.remove('active'));
 
+    function retryTranslate(userText){
+      if(_isBusy || !userText) return;
+      const lastErr = chat.length > 0 && chat[chat.length - 1];
+      if(lastErr && lastErr.role === 'assistant' && lastErr.text.startsWith('오류:')) chat.pop();
+      const lastUsr = chat.length > 0 && chat[chat.length - 1];
+      if(lastUsr && lastUsr.role === 'user' && lastUsr.text === userText) chat.pop();
+      el.input.value = userText;
+      send();
+    }
+
     function renderChat(){
       el.chat.innerHTML = '';
       if(chat.length === 0){
@@ -1927,7 +1950,10 @@
         return;
       }
 
+      let lastUserText = '';
       for(const m of chat){
+        if(m.role === 'user') lastUserText = m.text;
+
         const row = document.createElement('div');
         row.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
 
@@ -1941,7 +1967,15 @@
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
 
-        if(m.role === 'assistant'){
+        if(m.role === 'assistant' && m.text.startsWith('오류:')){
+          const srcText = lastUserText;
+          const retryBtn = document.createElement('button');
+          retryBtn.className = 'retryPill';
+          retryBtn.type = 'button';
+          retryBtn.textContent = '재번역';
+          retryBtn.addEventListener('click', () => retryTranslate(srcText));
+          actions.appendChild(retryBtn);
+        } else if(m.role === 'assistant'){
           const copyBtn = document.createElement('button');
           copyBtn.className = 'copyPill';
           copyBtn.type = 'button';
