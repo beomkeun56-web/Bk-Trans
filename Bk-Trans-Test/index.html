@@ -662,7 +662,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.5t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.6t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -710,6 +710,22 @@
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01z"></path>
                 </svg>
                 <span>품질강화</span>
+              </button>
+              <button id="topExportPromptBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>프롬프트 내보내기</span>
+              </button>
+              <button id="topImportPromptBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>프롬프트 가져오기</span>
               </button>
             </div>
           </div>
@@ -1171,9 +1187,10 @@
   </div>
 
   <div id="toast" class="toast"></div>
+  <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v8.5t';
+    const APP_VERSION = 'v8.6t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2388,6 +2405,68 @@
       }
     }
 
+    function exportPrompt(){
+      const base = el.systemPrompt.value || defaultSystemPrompt();
+      const enhanced = localStorage.getItem(LS.enhancedPrompt) || '';
+      let text = '=== 기본 프롬프트 ===\n' + base + '\n';
+      if(enhanced){
+        text += '\n=== 수정 프롬프트 ===\n' + enhanced + '\n';
+      }
+      const now = new Date();
+      const ts = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0');
+      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'BkTrans_Prompt_' + ts + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast('프롬프트 내보내기 완료');
+    }
+
+    function importPrompt(file){
+      const reader = new FileReader();
+      reader.onload = function(e){
+        const text = e.target.result;
+        const baseMark = '=== 기본 프롬프트 ===';
+        const enhMark = '=== 수정 프롬프트 ===';
+        const baseIdx = text.indexOf(baseMark);
+        const enhIdx = text.indexOf(enhMark);
+
+        if(baseIdx === -1){ toast('올바른 프롬프트 파일이 아닙니다'); return; }
+
+        let basePrompt, enhPrompt;
+        if(enhIdx !== -1){
+          basePrompt = text.substring(baseIdx + baseMark.length, enhIdx).trim();
+          enhPrompt = text.substring(enhIdx + enhMark.length).trim();
+        } else {
+          basePrompt = text.substring(baseIdx + baseMark.length).trim();
+          enhPrompt = '';
+        }
+
+        if(basePrompt) el.systemPrompt.value = basePrompt;
+        if(enhPrompt){
+          localStorage.setItem(LS.enhancedPrompt, enhPrompt);
+          _useEnhancedPrompt = true;
+          localStorage.setItem(LS.useEnhanced, 'true');
+        }
+        saveSettings();
+        updateNewToggleUI();
+        toast('프롬프트 가져오기 완료' + (enhPrompt ? ' (수정 프롬프트 적용)' : ''));
+      };
+      reader.readAsText(file);
+    }
+
+    const importPromptFile = document.getElementById('importPromptFile');
+    if(importPromptFile){
+      importPromptFile.addEventListener('change', (e) => {
+        if(e.target.files && e.target.files[0]) importPrompt(e.target.files[0]);
+        e.target.value = '';
+      });
+    }
+
     function clearChatOnly(){
       if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
       chat = [];
@@ -2510,6 +2589,10 @@
     if(topQualityBtn) topQualityBtn.addEventListener('click', runQualityTest);
     const topEnhanceBtn = document.getElementById('topEnhanceBtn');
     if(topEnhanceBtn) topEnhanceBtn.addEventListener('click', enhanceQuality);
+    const topExportPromptBtn = document.getElementById('topExportPromptBtn');
+    if(topExportPromptBtn) topExportPromptBtn.addEventListener('click', exportPrompt);
+    const topImportPromptBtn = document.getElementById('topImportPromptBtn');
+    if(topImportPromptBtn) topImportPromptBtn.addEventListener('click', () => { if(importPromptFile) importPromptFile.click(); });
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
 
     const topMenuBtn = document.getElementById('topMenuBtn');
