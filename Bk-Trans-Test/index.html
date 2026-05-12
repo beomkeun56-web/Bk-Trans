@@ -662,7 +662,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.6t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v8.7t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -805,8 +805,13 @@
         </div>
 
         <div style="margin-bottom:20px;">
-          <label for="systemPrompt" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">시스템 프롬프트</label>
+          <label for="systemPrompt" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">시스템 프롬프트 (기본)</label>
           <textarea id="systemPrompt" placeholder="여기에 시스템 프롬프트를 입력하세요..." style="min-height:140px;"></textarea>
+        </div>
+
+        <div id="enhancedPromptWrap" style="margin-bottom:20px; display:none;">
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; color:#4af;">수정 프롬프트 (품질강화 적용)</label>
+          <textarea id="enhancedPromptView" readonly style="min-height:100px; opacity:0.8; background:rgba(68,170,255,.05); border:1px solid rgba(68,170,255,.2);"></textarea>
         </div>
 
         <div style="margin-bottom:24px;">
@@ -1190,7 +1195,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v8.6t';
+    const APP_VERSION = 'v8.7t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2308,9 +2313,13 @@
     let _useEnhancedPrompt = localStorage.getItem(LS.useEnhanced) === 'true';
     const newPromptToggle = document.getElementById('newPromptToggle');
 
+    const enhancedPromptWrap = document.getElementById('enhancedPromptWrap');
+    const enhancedPromptView = document.getElementById('enhancedPromptView');
+
     function updateNewToggleUI(){
       if(!newPromptToggle) return;
-      const hasEnhanced = !!localStorage.getItem(LS.enhancedPrompt);
+      const enhanced = localStorage.getItem(LS.enhancedPrompt);
+      const hasEnhanced = !!enhanced;
       if(_useEnhancedPrompt && hasEnhanced){
         newPromptToggle.classList.add('newActive');
         newPromptToggle.style.opacity = '';
@@ -2318,6 +2327,14 @@
         newPromptToggle.classList.remove('newActive');
         newPromptToggle.style.opacity = '0.4';
         _useEnhancedPrompt = false;
+      }
+      if(enhancedPromptWrap && enhancedPromptView){
+        if(hasEnhanced){
+          enhancedPromptWrap.style.display = '';
+          enhancedPromptView.value = enhanced;
+        } else {
+          enhancedPromptWrap.style.display = 'none';
+        }
       }
     }
 
