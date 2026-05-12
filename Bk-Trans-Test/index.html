@@ -662,7 +662,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v9.3t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v9.4t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1199,7 +1199,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v9.3t';
+    const APP_VERSION = 'v9.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1920,9 +1920,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + apiKey,
-            'HTTP-Referer': location.href,
-            'X-Title': 'Bk-Trans'
+            'Authorization': 'Bearer ' + apiKey
           },
           body: JSON.stringify(payload),
           cache: 'no-store',
@@ -2397,9 +2395,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + apiKey,
-            'HTTP-Referer': location.href,
-            'X-Title': 'Bk-Trans'
+            'Authorization': 'Bearer ' + apiKey
           },
           body: JSON.stringify({
             model: 'anthropic/claude-opus-4.7',
