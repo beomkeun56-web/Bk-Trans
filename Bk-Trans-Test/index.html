@@ -657,7 +657,7 @@
 
         <div style="flex:1"></div>
 
-        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.2t</span></div>
+        <div class="title" id="appTitle" style="cursor:pointer;">BK Trans <span class="ver" id="appVer">v7.3t</span></div>
 
         <div class="rightBtns">
           <div class="menuDropdownWrap">
@@ -1153,7 +1153,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const APP_VERSION = 'v7.2t';
+    const APP_VERSION = 'v7.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1994,7 +1994,14 @@
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
 
-        if(m.role === 'assistant' && m.text.startsWith('오류:')){
+        if(m.role === 'user'){
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'copyPill';
+          copyBtn.type = 'button';
+          copyBtn.textContent = 'Copy';
+          copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
+          actions.appendChild(copyBtn);
+        } else if(m.role === 'assistant' && m.text.startsWith('오류:')){
           const srcText = lastUserText;
           const retryBtn = document.createElement('button');
           retryBtn.className = 'retryPill';
