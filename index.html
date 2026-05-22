@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v11.3t';
+    const APP_VERSION = 'v11.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2134,13 +2134,13 @@
     }
 
     function useChunkedAudio(text, lang){
-      var le = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
-      var chunks = splitTts(text, 18);
+      var tl = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko' : 'en';
+      var chunks = splitTts(text, 180);
 
       _ttsPool = chunks.map(function(chunk){
         var a = new Audio();
         a.preload = 'auto';
-        a.src = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=' + le;
+        a.src = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' + tl + '&q=' + encodeURIComponent(chunk);
         return a;
       });
       _ttsPoolIdx = 0;
