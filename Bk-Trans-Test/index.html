@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v12.4t';
+    const APP_VERSION = 'v12.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2241,14 +2241,14 @@
           const retranBtn = document.createElement('button');
           retranBtn.className = 'copyPill';
           retranBtn.type = 'button';
-          retranBtn.textContent = '재번역';
+          retranBtn.textContent = 'Retry';
           retranBtn.addEventListener('click', () => showRetranslatePopup(m.text));
           actions.appendChild(retranBtn);
 
           const editBtn = document.createElement('button');
           editBtn.className = 'copyPill';
           editBtn.type = 'button';
-          editBtn.textContent = '수정';
+          editBtn.textContent = 'Edit';
           editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
           actions.appendChild(editBtn);
         } else if(m.role === 'assistant' && m.text.startsWith('오류:')){
@@ -2256,7 +2256,7 @@
           const retryBtn = document.createElement('button');
           retryBtn.className = 'retryPill';
           retryBtn.type = 'button';
-          retryBtn.textContent = '재번역';
+          retryBtn.textContent = 'Retry';
           retryBtn.addEventListener('click', () => retryTranslate(srcText));
           actions.appendChild(retryBtn);
         } else if(m.role === 'assistant'){
@@ -2265,14 +2265,14 @@
           const copyBtn = document.createElement('button');
           copyBtn.className = 'copyPill';
           copyBtn.type = 'button';
-          copyBtn.textContent = '복사';
+          copyBtn.textContent = 'Copy';
           copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
           actions.appendChild(copyBtn);
 
           const editBtn = document.createElement('button');
           editBtn.className = 'copyPill';
           editBtn.type = 'button';
-          editBtn.textContent = '수정';
+          editBtn.textContent = 'Edit';
           editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
           actions.appendChild(editBtn);
         }
@@ -2346,7 +2346,7 @@
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copyPill';
         copyBtn.type = 'button';
-        copyBtn.textContent = '복사';
+        copyBtn.textContent = 'Copy';
         copyBtn.addEventListener('click', async () => { await copyToClipboard(translated, false); });
         actions.appendChild(copyBtn);
         streamRow.appendChild(actions);
