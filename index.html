@@ -1226,7 +1226,7 @@
 
   <script src="https://js.puter.com/v2/"></script>
   <script>
-    const APP_VERSION = 'v11.5t';
+    const APP_VERSION = 'v11.6t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2086,6 +2086,7 @@
         try{ _ttsAudio.pause(); }catch(e){}
         _ttsAudio = null;
       }
+      if('speechSynthesis' in window) speechSynthesis.cancel();
       document.querySelectorAll('.ttsBtn.speaking').forEach(function(b){ b.classList.remove('speaking'); });
     }
 
@@ -2095,29 +2096,19 @@
       if(_ttsBtn) _ttsBtn.classList.remove('speaking');
     }
 
-    function speakText(text, btn){
-      if(_ttsBusy){
-        stopTts();
-        if(_ttsBtn === btn) return;
-      }
-      _ttsBusy = true;
-      _ttsCancelled = false;
-      _ttsBtn = btn;
+    // TTS 1: Puter.js (Microsoft Edge TTS)
+    function speakPuter(text, btn){
+      if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
+      _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
       if(btn) btn.classList.add('speaking');
-
       var lang = detectDominantLang(text);
       var voice = lang === 'zh' ? 'zh-CN-XiaoxiaoNeural' : lang === 'ko' ? 'ko-KR-SunHiNeural' : 'en-US-JennyNeural';
-
       _ttsChunks = splitTts(text, 500);
       _ttsChunkIdx = 0;
       playPuterChunk(voice);
     }
-
     function playPuterChunk(voice){
-      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){
-        ttsFinish();
-        return;
-      }
+      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
       var chunk = _ttsChunks[_ttsChunkIdx++];
       puter.ai.txt2speech(chunk, voice).then(function(audio){
         if(_ttsCancelled || !_ttsBusy){ ttsFinish(); return; }
@@ -2127,22 +2118,108 @@
         audio.play().catch(function(){ playPuterChunk(voice); });
       }).catch(function(err){
         console.warn('Puter TTS error:', err);
-        if(_ttsChunkIdx <= 1){
-          ttsFinish();
-          showToast('TTS 재생 실패');
-        } else {
-          playPuterChunk(voice);
-        }
+        ttsFinish(); showToast('TTS1 실패');
       });
     }
 
+    // TTS 2: Google Translate TTS (직접 URL)
+    function speakGoogle(text, btn){
+      if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
+      _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
+      if(btn) btn.classList.add('speaking');
+      var lang = detectDominantLang(text);
+      var tl = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko' : 'en';
+      _ttsChunks = splitTts(text, 180);
+      _ttsChunkIdx = 0;
+      playGoogleChunk(tl);
+    }
+    function playGoogleChunk(tl){
+      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
+      var chunk = _ttsChunks[_ttsChunkIdx++];
+      var a = new Audio();
+      a.src = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' + tl + '&q=' + encodeURIComponent(chunk);
+      _ttsAudio = a;
+      a.onended = function(){ playGoogleChunk(tl); };
+      a.onerror = function(){ ttsFinish(); showToast('TTS2 실패'); };
+      a.play().catch(function(){ ttsFinish(); showToast('TTS2 실패'); });
+    }
+
+    // TTS 3: SoundOfText API (Google 기반, POST→GET)
+    function speakSoundOfText(text, btn){
+      if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
+      _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
+      if(btn) btn.classList.add('speaking');
+      var lang = detectDominantLang(text);
+      var voice = lang === 'zh' ? 'cmn-Hant-TW' : lang === 'ko' ? 'ko-KR' : 'en-US';
+      _ttsChunks = splitTts(text, 200);
+      _ttsChunkIdx = 0;
+      playSotChunk(voice);
+    }
+    function playSotChunk(voice){
+      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
+      var chunk = _ttsChunks[_ttsChunkIdx++];
+      fetch('https://api.soundoftext.com/sounds', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({engine:'Google', data:{text:chunk, voice:voice}})
+      }).then(function(r){ return r.json(); }).then(function(d){
+        if(!d.success){ throw new Error('create fail'); }
+        var sid = d.id;
+        var poll = function(tries){
+          if(_ttsCancelled || !_ttsBusy){ ttsFinish(); return; }
+          fetch('https://api.soundoftext.com/sounds/' + sid).then(function(r){ return r.json(); }).then(function(s){
+            if(s.status === 'Done' && s.location){
+              var a = new Audio(s.location);
+              _ttsAudio = a;
+              a.onended = function(){ playSotChunk(voice); };
+              a.onerror = function(){ playSotChunk(voice); };
+              a.play().catch(function(){ playSotChunk(voice); });
+            } else if(tries < 10){
+              setTimeout(function(){ poll(tries+1); }, 1000);
+            } else { ttsFinish(); showToast('TTS3 시간초과'); }
+          }).catch(function(){ ttsFinish(); showToast('TTS3 실패'); });
+        };
+        poll(0);
+      }).catch(function(err){
+        console.warn('SoundOfText error:', err);
+        ttsFinish(); showToast('TTS3 실패');
+      });
+    }
+
+    // TTS 4: speechSynthesis (네이티브 브라우저)
+    function speakNative(text, btn){
+      if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
+      _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
+      if(btn) btn.classList.add('speaking');
+      if(!('speechSynthesis' in window)){ ttsFinish(); showToast('TTS4: speechSynthesis 없음'); return; }
+      var lang = detectDominantLang(text);
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko-KR' : 'en-US';
+      u.rate = 0.9;
+      u.onend = function(){ ttsFinish(); };
+      u.onerror = function(){ ttsFinish(); showToast('TTS4 실패'); };
+      speechSynthesis.speak(u);
+    }
+
+    var ttsSpkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+
     function createTtsBtn(text){
-      const btn = document.createElement('button');
-      btn.className = 'ttsBtn';
-      btn.type = 'button';
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
-      btn.addEventListener('click', () => speakText(text, btn));
-      return btn;
+      var frag = document.createDocumentFragment();
+      var methods = [
+        {label:'1', fn:speakPuter},
+        {label:'2', fn:speakGoogle},
+        {label:'3', fn:speakSoundOfText},
+        {label:'4', fn:speakNative}
+      ];
+      methods.forEach(function(m){
+        var btn = document.createElement('button');
+        btn.className = 'ttsBtn';
+        btn.type = 'button';
+        btn.innerHTML = ttsSpkIcon + m.label;
+        btn.addEventListener('click', function(){ m.fn(text, btn); });
+        frag.appendChild(btn);
+      });
+      return frag;
     }
 
     const focusOverlay = document.getElementById('focusOverlay');
