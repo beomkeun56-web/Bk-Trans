@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v10.5t';
+    const APP_VERSION = 'v10.6t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2117,7 +2117,7 @@
       var lang = detectDominantLang(text);
       _ttsTl = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
 
-      _ttsChunks = splitTtsChunks(text, 80);
+      _ttsChunks = splitTtsChunks(text, 200);
       _ttsIdx = 0;
       playNextChunk();
     }
