@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v9.8t';
+    const APP_VERSION = 'v9.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2252,9 +2252,12 @@
 
         streamBubble.textContent = translated;
         streamBubble.style.opacity = '1';
+        streamBubble.style.cursor = 'pointer';
+        streamBubble.addEventListener('click', () => showFocusOverlay(translated));
 
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
+        actions.appendChild(createTtsBtn(translated));
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copyPill';
         copyBtn.type = 'button';
