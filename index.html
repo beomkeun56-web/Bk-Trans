@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v10.4t';
+    const APP_VERSION = 'v10.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2050,7 +2050,9 @@
       return callOpenRouterStream(userText, () => {});
     }
 
-    var _ttsAudio = null;
+    var _ttsEl = document.createElement('audio');
+    _ttsEl.setAttribute('playsinline','');
+    _ttsEl.setAttribute('webkit-playsinline','');
     var _ttsBusy = false;
     var _ttsChunks = [];
     var _ttsIdx = 0;
@@ -2081,35 +2083,33 @@
       _ttsBusy = false;
       _ttsChunks = [];
       _ttsIdx = 0;
-      if(_ttsAudio){
-        _ttsAudio.onended = null;
-        _ttsAudio.onerror = null;
-        _ttsAudio.pause();
-        try{ _ttsAudio.src = ''; }catch(e){}
-        _ttsAudio = null;
-      }
+      _ttsEl.onended = null;
+      _ttsEl.onerror = null;
+      _ttsEl.pause();
+      _ttsEl.removeAttribute('src');
+      _ttsEl.load();
       document.querySelectorAll('.ttsBtn.speaking').forEach(function(b){ b.classList.remove('speaking'); });
     }
 
     function playNextChunk(){
       if(!_ttsBusy || _ttsIdx >= _ttsChunks.length){
         _ttsBusy = false;
-        _ttsAudio = null;
         if(_ttsBtn) _ttsBtn.classList.remove('speaking');
         return;
       }
       var chunk = _ttsChunks[_ttsIdx++];
       var url = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=' + _ttsTl;
-      var audio = new Audio();
-      _ttsAudio = audio;
-      audio.onended = function(){ playNextChunk(); };
-      audio.onerror = function(){ stopTts(); };
-      audio.src = url;
-      audio.play().catch(function(){ stopTts(); });
+      _ttsEl.onended = function(){ playNextChunk(); };
+      _ttsEl.onerror = function(){ stopTts(); };
+      _ttsEl.src = url;
+      _ttsEl.play().catch(function(){ stopTts(); });
     }
 
     function speakText(text, btn){
-      stopTts();
+      if(_ttsBusy){
+        stopTts();
+        if(_ttsBtn === btn) return;
+      }
       _ttsBusy = true;
       _ttsBtn = btn;
       if(btn) btn.classList.add('speaking');
