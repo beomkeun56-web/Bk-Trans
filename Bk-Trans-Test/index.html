@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v9.9t';
+    const APP_VERSION = 'v10.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2050,24 +2050,59 @@
       return callOpenRouterStream(userText, () => {});
     }
 
-    let _currentUtterance = null;
-    function speakText(text, btn){
-      if(!('speechSynthesis' in window)){ toast('TTS를 지원하지 않는 브라우저입니다'); return; }
-      if(_currentUtterance && speechSynthesis.speaking){
-        speechSynthesis.cancel();
-        document.querySelectorAll('.ttsBtn.speaking').forEach(b => b.classList.remove('speaking'));
-        _currentUtterance = null;
+    let _ttsAudio = null;
+    let _ttsQueue = [];
+    let _ttsBusy = false;
+
+    function splitTtsChunks(text, max){
+      if(text.length <= max) return [text];
+      const chunks = [];
+      let rest = text;
+      while(rest.length > 0){
+        if(rest.length <= max){ chunks.push(rest); break; }
+        let i = rest.lastIndexOf('。', max);
+        if(i < max * 0.3) i = rest.lastIndexOf('.', max);
+        if(i < max * 0.3) i = rest.lastIndexOf('!', max);
+        if(i < max * 0.3) i = rest.lastIndexOf('?', max);
+        if(i < max * 0.3) i = rest.lastIndexOf(' ', max);
+        if(i < max * 0.3) i = max;
+        chunks.push(rest.substring(0, i + 1).trim());
+        rest = rest.substring(i + 1).trim();
+      }
+      return chunks.filter(c => c.length > 0);
+    }
+
+    function stopTts(){
+      _ttsQueue = [];
+      _ttsBusy = false;
+      if(_ttsAudio){ _ttsAudio.pause(); _ttsAudio = null; }
+      document.querySelectorAll('.ttsBtn.speaking').forEach(b => b.classList.remove('speaking'));
+    }
+
+    function playNextChunk(tl, btn){
+      if(_ttsQueue.length === 0){
+        _ttsBusy = false;
+        _ttsAudio = null;
+        if(btn) btn.classList.remove('speaking');
         return;
       }
+      const chunk = _ttsQueue.shift();
+      const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' + encodeURIComponent(tl) + '&q=' + encodeURIComponent(chunk);
+      const audio = new Audio(url);
+      _ttsAudio = audio;
+      audio.onended = () => playNextChunk(tl, btn);
+      audio.onerror = () => { stopTts(); toast('TTS 재생 실패'); };
+      audio.play().catch(() => { stopTts(); toast('TTS 재생 실패'); });
+    }
+
+    function speakText(text, btn){
+      if(_ttsBusy){ stopTts(); return; }
       const lang = detectDominantLang(text);
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko-KR' : 'en-US';
-      u.rate = 0.95;
+      const tl = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko' : 'en';
+      _ttsQueue = splitTtsChunks(text, 150);
+      _ttsBusy = true;
       if(btn) btn.classList.add('speaking');
-      u.onend = () => { if(btn) btn.classList.remove('speaking'); _currentUtterance = null; };
-      u.onerror = () => { if(btn) btn.classList.remove('speaking'); _currentUtterance = null; };
-      _currentUtterance = u;
-      speechSynthesis.speak(u);
+      playNextChunk(tl, btn);
     }
 
     function createTtsBtn(text){
