@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v11.0t';
+    const APP_VERSION = 'v11.1t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2091,7 +2091,7 @@
 
     function ttsUrl(chunk, lang){
       var le = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
-      return 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=' + le;
+      return 'https://tts.youdao.com/fanyivoice?word=' + encodeURIComponent(chunk) + '&le=' + le + '&keyfrom=speaker-target';
     }
 
     function playNextChunk(){
@@ -2119,7 +2119,7 @@
       var lang = detectDominantLang(text);
       _ttsTl = lang;
 
-      _ttsChunks = splitTtsChunks(text, 30);
+      _ttsChunks = splitTtsChunks(text, 200);
       _ttsIdx = 0;
       playNextChunk();
     }
