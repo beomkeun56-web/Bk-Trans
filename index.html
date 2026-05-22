@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v10.8t';
+    const APP_VERSION = 'v10.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2092,12 +2092,8 @@
     }
 
     function ttsUrl(chunk, lang){
-      if(lang === 'zh'){
-        return 'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent(chunk) + '&spd=5&source=web';
-      } else if(lang === 'ko'){
-        return 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=ko';
-      }
-      return 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=en';
+      var lan = lang === 'zh' ? 'zh' : lang === 'ko' ? 'kor' : 'en';
+      return 'https://fanyi.baidu.com/gettts?lan=' + lan + '&text=' + encodeURIComponent(chunk) + '&spd=5&source=web';
     }
 
     function playNextChunk(){
@@ -2126,7 +2122,7 @@
 
       var lang = detectDominantLang(text);
       _ttsTl = lang;
-      var maxChunk = lang === 'zh' ? 150 : 50;
+      var maxChunk = 150;
 
       _ttsChunks = splitTtsChunks(text, maxChunk);
       _ttsIdx = 0;
