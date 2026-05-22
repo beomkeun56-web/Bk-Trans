@@ -1213,8 +1213,8 @@
     <div class="composerInner">
       <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
       <div id="inputBtnWrap" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); flex-direction:column; gap:4px;">
-        <button id="inputCopyBtn" type="button" style="border:none; background:rgba(255,255,255,.12); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">복사</button>
-        <button id="inputClearBtn" type="button" style="border:none; background:rgba(255,255,255,.12); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">삭제</button>
+        <button id="inputCopyBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Copy</button>
+        <button id="inputClearBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Delete</button>
       </div>
     </div>
   </div>
@@ -1228,7 +1228,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v13.5t';
+    const APP_VERSION = 'v13.6t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
