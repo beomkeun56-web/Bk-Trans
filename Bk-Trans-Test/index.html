@@ -1224,8 +1224,9 @@
   <div id="toast" class="toast"></div>
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
+  <script src="https://js.puter.com/v2/"></script>
   <script>
-    const APP_VERSION = 'v11.4t';
+    const APP_VERSION = 'v11.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2050,18 +2051,12 @@
       return callOpenRouterStream(userText, () => {});
     }
 
-    var _ttsEl = document.createElement('audio');
-    _ttsEl.setAttribute('playsinline','');
     var _ttsBusy = false;
     var _ttsBtn = null;
-    var _ttsTimer = null;
-    var _ttsPool = [];
-    var _ttsPoolIdx = 0;
-
-    if('speechSynthesis' in window){
-      speechSynthesis.getVoices();
-      speechSynthesis.addEventListener('voiceschanged', function(){ speechSynthesis.getVoices(); });
-    }
+    var _ttsAudio = null;
+    var _ttsChunks = [];
+    var _ttsChunkIdx = 0;
+    var _ttsCancelled = false;
 
     function splitTts(text, max){
       if(text.length <= max) return [text];
@@ -2084,20 +2079,19 @@
 
     function stopTts(){
       _ttsBusy = false;
-      if(_ttsTimer){ clearTimeout(_ttsTimer); _ttsTimer = null; }
-      _ttsPool.forEach(function(a){ a.pause(); a.onended=null; a.onerror=null; });
-      _ttsPool = [];
-      _ttsPoolIdx = 0;
-      _ttsEl.onended = null;
-      _ttsEl.onerror = null;
-      _ttsEl.pause();
-      if('speechSynthesis' in window) speechSynthesis.cancel();
+      _ttsCancelled = true;
+      _ttsChunks = [];
+      _ttsChunkIdx = 0;
+      if(_ttsAudio){
+        try{ _ttsAudio.pause(); }catch(e){}
+        _ttsAudio = null;
+      }
       document.querySelectorAll('.ttsBtn.speaking').forEach(function(b){ b.classList.remove('speaking'); });
     }
 
     function ttsFinish(){
       _ttsBusy = false;
-      _ttsPool = [];
+      _ttsChunks = [];
       if(_ttsBtn) _ttsBtn.classList.remove('speaking');
     }
 
@@ -2107,52 +2101,39 @@
         if(_ttsBtn === btn) return;
       }
       _ttsBusy = true;
+      _ttsCancelled = false;
       _ttsBtn = btn;
       if(btn) btn.classList.add('speaking');
 
       var lang = detectDominantLang(text);
+      var voice = lang === 'zh' ? 'zh-CN-XiaoxiaoNeural' : lang === 'ko' ? 'ko-KR-SunHiNeural' : 'en-US-JennyNeural';
 
-      if('speechSynthesis' in window){
-        var spoke = false;
-        speechSynthesis.cancel();
-        var u = new SpeechSynthesisUtterance(text);
-        u.lang = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko-KR' : 'en-US';
-        u.rate = 0.9;
-        u.onstart = function(){ spoke = true; if(_ttsTimer){clearTimeout(_ttsTimer);_ttsTimer=null;} };
-        u.onend = function(){ ttsFinish(); };
-        u.onerror = function(){ if(!spoke) useChunkedAudio(text, lang); else ttsFinish(); };
-        speechSynthesis.speak(u);
-        _ttsTimer = setTimeout(function(){
-          if(!spoke && _ttsBusy){
-            speechSynthesis.cancel();
-            useChunkedAudio(text, lang);
-          }
-        }, 2000);
+      _ttsChunks = splitTts(text, 500);
+      _ttsChunkIdx = 0;
+      playPuterChunk(voice);
+    }
+
+    function playPuterChunk(voice){
+      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){
+        ttsFinish();
         return;
       }
-      useChunkedAudio(text, lang);
-    }
-
-    function useChunkedAudio(text, lang){
-      var tl = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko' : 'en';
-      var chunks = splitTts(text, 180);
-
-      _ttsPool = chunks.map(function(chunk){
-        var a = new Audio();
-        a.preload = 'auto';
-        a.src = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' + tl + '&q=' + encodeURIComponent(chunk);
-        return a;
+      var chunk = _ttsChunks[_ttsChunkIdx++];
+      puter.ai.txt2speech(chunk, voice).then(function(audio){
+        if(_ttsCancelled || !_ttsBusy){ ttsFinish(); return; }
+        _ttsAudio = audio;
+        audio.onended = function(){ playPuterChunk(voice); };
+        audio.onerror = function(){ playPuterChunk(voice); };
+        audio.play().catch(function(){ playPuterChunk(voice); });
+      }).catch(function(err){
+        console.warn('Puter TTS error:', err);
+        if(_ttsChunkIdx <= 1){
+          ttsFinish();
+          showToast('TTS 재생 실패');
+        } else {
+          playPuterChunk(voice);
+        }
       });
-      _ttsPoolIdx = 0;
-      playPoolNext();
-    }
-
-    function playPoolNext(){
-      if(!_ttsBusy || _ttsPoolIdx >= _ttsPool.length){ ttsFinish(); return; }
-      var a = _ttsPool[_ttsPoolIdx++];
-      a.onended = function(){ playPoolNext(); };
-      a.onerror = function(){ playPoolNext(); };
-      a.play().catch(function(){ playPoolNext(); });
     }
 
     function createTtsBtn(text){
