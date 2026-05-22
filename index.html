@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v12.3t';
+    const APP_VERSION = 'v12.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2180,6 +2180,36 @@
       });
     }
 
+    function showRetranslatePopup(userText){
+      if(_isBusy) return;
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;';
+      var popup = document.createElement('div');
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;min-width:260px;max-width:90vw;';
+      popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:14px;">모델 선택 후 재번역</div>';
+      var currentId = getCurrentModelId();
+      MODEL_OPTIONS.forEach(function(m){
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:' + (m.id === currentId ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.05)') + ';color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
+        btn.innerHTML = '<div style="font-weight:600;">' + m.name + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">' + m.id + '</div>';
+        btn.addEventListener('click', function(){
+          document.body.removeChild(overlay);
+          retryWithModel(userText, m.id);
+        });
+        popup.appendChild(btn);
+      });
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.style.cssText = 'display:block;width:100%;padding:10px;margin-top:8px;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit;';
+      cancelBtn.textContent = '취소';
+      cancelBtn.addEventListener('click', function(){ document.body.removeChild(overlay); });
+      popup.appendChild(cancelBtn);
+      overlay.appendChild(popup);
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) document.body.removeChild(overlay); });
+      document.body.appendChild(overlay);
+    }
+
     function renderChat(){
       el.chat.innerHTML = '';
       if(chat.length === 0){
@@ -2208,25 +2238,11 @@
         if(m.role === 'user'){
           actions.appendChild(createTtsBtn(m.text));
 
-          const opusBtn = document.createElement('button');
-          opusBtn.className = 'copyPill';
-          opusBtn.type = 'button';
-          opusBtn.textContent = 'Claude';
-          opusBtn.addEventListener('click', () => retryWithModel(m.text, 'anthropic/claude-opus-4.7'));
-          actions.appendChild(opusBtn);
-
-          const proBtn = document.createElement('button');
-          proBtn.className = 'copyPill';
-          proBtn.type = 'button';
-          proBtn.textContent = 'Gemini';
-          proBtn.addEventListener('click', () => retryWithModel(m.text, 'google/gemini-3.1-pro-preview'));
-          actions.appendChild(proBtn);
-
           const retranBtn = document.createElement('button');
           retranBtn.className = 'copyPill';
           retranBtn.type = 'button';
           retranBtn.textContent = '재번역';
-          retranBtn.addEventListener('click', () => { el.input.value = m.text; send(); });
+          retranBtn.addEventListener('click', () => showRetranslatePopup(m.text));
           actions.appendChild(retranBtn);
 
           const editBtn = document.createElement('button');
