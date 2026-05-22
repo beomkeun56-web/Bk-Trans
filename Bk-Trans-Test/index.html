@@ -1224,9 +1224,8 @@
   <div id="toast" class="toast"></div>
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
-  <script src="https://js.puter.com/v2/"></script>
   <script>
-    const APP_VERSION = 'v11.8t';
+    const APP_VERSION = 'v11.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2096,42 +2095,7 @@
       if(_ttsBtn) _ttsBtn.classList.remove('speaking');
     }
 
-    // TTS 1: Baidu fanyi TTS (spd=5 보통속도)
-    function speakBaidu(text, btn){
-      if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
-      _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
-      if(btn) btn.classList.add('speaking');
-      var lang = detectDominantLang(text);
-      var tl = lang === 'zh' ? 'zh' : lang === 'ko' ? 'kor' : 'en';
-      _ttsChunks = splitTts(text, 200);
-      _ttsChunkIdx = 0;
-      playBaiduChunk(tl, 5);
-    }
-    function playBaiduChunk(tl, spd){
-      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
-      var chunk = _ttsChunks[_ttsChunkIdx++];
-      var a = new Audio();
-      a.src = 'https://fanyi.baidu.com/gettts?lan=' + tl + '&text=' + encodeURIComponent(chunk) + '&spd=' + spd + '&source=web';
-      _ttsAudio = a;
-      a.onended = function(){ playBaiduChunk(tl, spd); };
-      a.onerror = function(){ ttsFinish(); showToast('TTS' + spd + ' 실패'); };
-      a.play().catch(function(){ ttsFinish(); showToast('TTS 재생실패'); });
-    }
-
-    // TTS 2: Baidu fanyi TTS (spd=3 느린속도)
-    function speakBaiduSlow(text, btn){
-      if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
-      _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
-      if(btn) btn.classList.add('speaking');
-      var lang = detectDominantLang(text);
-      var tl = lang === 'zh' ? 'zh' : lang === 'ko' ? 'kor' : 'en';
-      _ttsChunks = splitTts(text, 200);
-      _ttsChunkIdx = 0;
-      playBaiduChunk(tl, 3);
-    }
-
-    // TTS: SoundOfText API (Google 기반)
-    function speakSoundOfText(text, btn, rate){
+    function speakText(text, btn){
       if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
       _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
       if(btn) btn.classList.add('speaking');
@@ -2139,9 +2103,9 @@
       var voice = lang === 'zh' ? 'cmn-Hant-TW' : lang === 'ko' ? 'ko-KR' : 'en-US';
       _ttsChunks = splitTts(text, 200);
       _ttsChunkIdx = 0;
-      playSotChunk(voice, rate || 1.3);
+      playSotChunk(voice);
     }
-    function playSotChunk(voice, rate){
+    function playSotChunk(voice){
       if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
       var chunk = _ttsChunks[_ttsChunkIdx++];
       fetch('https://api.soundoftext.com/sounds', {
@@ -2155,67 +2119,30 @@
           fetch('https://api.soundoftext.com/sounds/' + sid).then(function(r){ return r.json(); }).then(function(s){
             if(s.status === 'Done' && s.location){
               var a = new Audio(s.location);
-              a.playbackRate = rate;
+              a.playbackRate = 1.3;
               _ttsAudio = a;
-              a.onended = function(){ playSotChunk(voice, rate); };
-              a.onerror = function(){ playSotChunk(voice, rate); };
-              a.play().catch(function(){ playSotChunk(voice, rate); });
+              a.onended = function(){ playSotChunk(voice); };
+              a.onerror = function(){ playSotChunk(voice); };
+              a.play().catch(function(){ playSotChunk(voice); });
             } else if(tries < 10){
               setTimeout(function(){ poll(tries+1); }, 1000);
-            } else { ttsFinish(); showToast('TTS3 시간초과'); }
-          }).catch(function(){ ttsFinish(); showToast('TTS3 실패'); });
+            } else { ttsFinish(); showToast('TTS 시간초과'); }
+          }).catch(function(){ ttsFinish(); showToast('TTS 실패'); });
         };
         poll(0);
       }).catch(function(err){
         console.warn('SoundOfText error:', err);
-        ttsFinish(); showToast('TTS3 실패');
+        ttsFinish(); showToast('TTS 실패');
       });
     }
-
-    // TTS 4: Puter.js (Microsoft Edge TTS)
-    function speakPuter(text, btn){
-      if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
-      _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
-      if(btn) btn.classList.add('speaking');
-      var lang = detectDominantLang(text);
-      var voice = lang === 'zh' ? 'zh-CN-XiaoxiaoNeural' : lang === 'ko' ? 'ko-KR-SunHiNeural' : 'en-US-JennyNeural';
-      _ttsChunks = splitTts(text, 500);
-      _ttsChunkIdx = 0;
-      playPuterChunk(voice);
-    }
-    function playPuterChunk(voice){
-      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
-      var chunk = _ttsChunks[_ttsChunkIdx++];
-      puter.ai.txt2speech(chunk, voice).then(function(audio){
-        if(_ttsCancelled || !_ttsBusy){ ttsFinish(); return; }
-        _ttsAudio = audio;
-        audio.onended = function(){ playPuterChunk(voice); };
-        audio.onerror = function(){ playPuterChunk(voice); };
-        audio.play().catch(function(){ playPuterChunk(voice); });
-      }).catch(function(err){
-        console.warn('Puter TTS error:', err);
-        ttsFinish(); showToast('TTS4 실패');
-      });
-    }
-
-    var ttsSpkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
 
     function createTtsBtn(text){
-      var frag = document.createDocumentFragment();
-      var methods = [
-        {label:'보통', fn:function(t,b){ speakSoundOfText(t,b,1.3); }},
-        {label:'빠름', fn:function(t,b){ speakSoundOfText(t,b,1.6); }},
-        {label:'느림', fn:function(t,b){ speakSoundOfText(t,b,1.0); }}
-      ];
-      methods.forEach(function(m){
-        var btn = document.createElement('button');
-        btn.className = 'ttsBtn';
-        btn.type = 'button';
-        btn.innerHTML = ttsSpkIcon + m.label;
-        btn.addEventListener('click', function(){ m.fn(text, btn); });
-        frag.appendChild(btn);
-      });
-      return frag;
+      var btn = document.createElement('button');
+      btn.className = 'ttsBtn';
+      btn.type = 'button';
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+      btn.addEventListener('click', function(){ speakText(text, btn); });
+      return btn;
     }
 
     const focusOverlay = document.getElementById('focusOverlay');
