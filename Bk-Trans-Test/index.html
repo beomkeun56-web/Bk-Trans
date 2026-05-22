@@ -1226,7 +1226,7 @@
 
   <script src="https://js.puter.com/v2/"></script>
   <script>
-    const APP_VERSION = 'v11.6t';
+    const APP_VERSION = 'v11.7t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2096,55 +2096,41 @@
       if(_ttsBtn) _ttsBtn.classList.remove('speaking');
     }
 
-    // TTS 1: Puter.js (Microsoft Edge TTS)
-    function speakPuter(text, btn){
+    // TTS 1: Baidu fanyi TTS (spd=5 보통속도)
+    function speakBaidu(text, btn){
       if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
       _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
       if(btn) btn.classList.add('speaking');
       var lang = detectDominantLang(text);
-      var voice = lang === 'zh' ? 'zh-CN-XiaoxiaoNeural' : lang === 'ko' ? 'ko-KR-SunHiNeural' : 'en-US-JennyNeural';
-      _ttsChunks = splitTts(text, 500);
+      var tl = lang === 'zh' ? 'zh' : lang === 'ko' ? 'kor' : 'en';
+      _ttsChunks = splitTts(text, 200);
       _ttsChunkIdx = 0;
-      playPuterChunk(voice);
+      playBaiduChunk(tl, 5);
     }
-    function playPuterChunk(voice){
-      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
-      var chunk = _ttsChunks[_ttsChunkIdx++];
-      puter.ai.txt2speech(chunk, voice).then(function(audio){
-        if(_ttsCancelled || !_ttsBusy){ ttsFinish(); return; }
-        _ttsAudio = audio;
-        audio.onended = function(){ playPuterChunk(voice); };
-        audio.onerror = function(){ playPuterChunk(voice); };
-        audio.play().catch(function(){ playPuterChunk(voice); });
-      }).catch(function(err){
-        console.warn('Puter TTS error:', err);
-        ttsFinish(); showToast('TTS1 실패');
-      });
-    }
-
-    // TTS 2: Google Translate TTS (직접 URL)
-    function speakGoogle(text, btn){
-      if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
-      _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
-      if(btn) btn.classList.add('speaking');
-      var lang = detectDominantLang(text);
-      var tl = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko' : 'en';
-      _ttsChunks = splitTts(text, 180);
-      _ttsChunkIdx = 0;
-      playGoogleChunk(tl);
-    }
-    function playGoogleChunk(tl){
+    function playBaiduChunk(tl, spd){
       if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
       var chunk = _ttsChunks[_ttsChunkIdx++];
       var a = new Audio();
-      a.src = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' + tl + '&q=' + encodeURIComponent(chunk);
+      a.src = 'https://fanyi.baidu.com/gettts?lan=' + tl + '&text=' + encodeURIComponent(chunk) + '&spd=' + spd + '&source=web';
       _ttsAudio = a;
-      a.onended = function(){ playGoogleChunk(tl); };
-      a.onerror = function(){ ttsFinish(); showToast('TTS2 실패'); };
-      a.play().catch(function(){ ttsFinish(); showToast('TTS2 실패'); });
+      a.onended = function(){ playBaiduChunk(tl, spd); };
+      a.onerror = function(){ ttsFinish(); showToast('TTS' + spd + ' 실패'); };
+      a.play().catch(function(){ ttsFinish(); showToast('TTS 재생실패'); });
     }
 
-    // TTS 3: SoundOfText API (Google 기반, POST→GET)
+    // TTS 2: Baidu fanyi TTS (spd=3 느린속도)
+    function speakBaiduSlow(text, btn){
+      if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
+      _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
+      if(btn) btn.classList.add('speaking');
+      var lang = detectDominantLang(text);
+      var tl = lang === 'zh' ? 'zh' : lang === 'ko' ? 'kor' : 'en';
+      _ttsChunks = splitTts(text, 200);
+      _ttsChunkIdx = 0;
+      playBaiduChunk(tl, 3);
+    }
+
+    // TTS 3: SoundOfText API (Google 기반)
     function speakSoundOfText(text, btn){
       if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
       _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
@@ -2185,20 +2171,30 @@
       });
     }
 
-    // TTS 4: speechSynthesis (네이티브 브라우저)
-    function speakNative(text, btn){
+    // TTS 4: Puter.js (Microsoft Edge TTS)
+    function speakPuter(text, btn){
       if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
       _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
       if(btn) btn.classList.add('speaking');
-      if(!('speechSynthesis' in window)){ ttsFinish(); showToast('TTS4: speechSynthesis 없음'); return; }
       var lang = detectDominantLang(text);
-      speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance(text);
-      u.lang = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko-KR' : 'en-US';
-      u.rate = 0.9;
-      u.onend = function(){ ttsFinish(); };
-      u.onerror = function(){ ttsFinish(); showToast('TTS4 실패'); };
-      speechSynthesis.speak(u);
+      var voice = lang === 'zh' ? 'zh-CN-XiaoxiaoNeural' : lang === 'ko' ? 'ko-KR-SunHiNeural' : 'en-US-JennyNeural';
+      _ttsChunks = splitTts(text, 500);
+      _ttsChunkIdx = 0;
+      playPuterChunk(voice);
+    }
+    function playPuterChunk(voice){
+      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
+      var chunk = _ttsChunks[_ttsChunkIdx++];
+      puter.ai.txt2speech(chunk, voice).then(function(audio){
+        if(_ttsCancelled || !_ttsBusy){ ttsFinish(); return; }
+        _ttsAudio = audio;
+        audio.onended = function(){ playPuterChunk(voice); };
+        audio.onerror = function(){ playPuterChunk(voice); };
+        audio.play().catch(function(){ playPuterChunk(voice); });
+      }).catch(function(err){
+        console.warn('Puter TTS error:', err);
+        ttsFinish(); showToast('TTS4 실패');
+      });
     }
 
     var ttsSpkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
@@ -2206,10 +2202,10 @@
     function createTtsBtn(text){
       var frag = document.createDocumentFragment();
       var methods = [
-        {label:'1', fn:speakPuter},
-        {label:'2', fn:speakGoogle},
+        {label:'1', fn:speakBaidu},
+        {label:'2', fn:speakBaiduSlow},
         {label:'3', fn:speakSoundOfText},
-        {label:'4', fn:speakNative}
+        {label:'4', fn:speakPuter}
       ];
       methods.forEach(function(m){
         var btn = document.createElement('button');
