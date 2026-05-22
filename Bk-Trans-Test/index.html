@@ -1228,7 +1228,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v12.8t';
+    const APP_VERSION = 'v12.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1385,29 +1385,67 @@
       var rows = [];
       function addRow(id, name){
         var row = document.createElement('div');
-        row.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;align-items:center;';
-        var idInput = document.createElement('input');
-        idInput.type = 'text'; idInput.value = id || '';
-        idInput.placeholder = 'model ID';
-        idInput.style.cssText = 'flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--text);font-size:12px;font-family:inherit;';
+        row.style.cssText = 'margin-bottom:10px;padding:10px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.03);';
+        row.draggable = true;
+        row.addEventListener('dragstart', function(e){ e.dataTransfer.effectAllowed='move'; dragRow=row; row.style.opacity='0.4'; });
+        row.addEventListener('dragend', function(){ row.style.opacity='1'; dragRow=null; });
+        row.addEventListener('dragover', function(e){ e.preventDefault(); e.dataTransfer.dropEffect='move'; row.style.borderTop='2px solid var(--blue)'; });
+        row.addEventListener('dragleave', function(){ row.style.borderTop='1px solid rgba(255,255,255,.1)'; });
+        row.addEventListener('drop', function(e){
+          e.preventDefault(); row.style.borderTop='1px solid rgba(255,255,255,.1)';
+          if(!dragRow || dragRow===row) return;
+          var fromIdx = rows.indexOf(dragRow), toIdx = rows.indexOf(row);
+          if(fromIdx<0||toIdx<0) return;
+          rows.splice(fromIdx,1); rows.splice(toIdx,0,dragRow);
+          container.innerHTML=''; rows.forEach(function(r){ container.appendChild(r); });
+        });
+
+        var topRow = document.createElement('div');
+        topRow.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:6px;';
+        var upBtn = document.createElement('button');
+        upBtn.type='button'; upBtn.textContent='▲';
+        upBtn.style.cssText = 'border:none;background:rgba(255,255,255,.08);color:var(--muted);border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:10px;flex-shrink:0;';
+        upBtn.addEventListener('click', function(){
+          var idx = rows.indexOf(row); if(idx<=0) return;
+          rows.splice(idx,1); rows.splice(idx-1,0,row);
+          container.innerHTML=''; rows.forEach(function(r){ container.appendChild(r); });
+        });
+        var downBtn = document.createElement('button');
+        downBtn.type='button'; downBtn.textContent='▼';
+        downBtn.style.cssText = 'border:none;background:rgba(255,255,255,.08);color:var(--muted);border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:10px;flex-shrink:0;';
+        downBtn.addEventListener('click', function(){
+          var idx = rows.indexOf(row); if(idx<0||idx>=rows.length-1) return;
+          rows.splice(idx,1); rows.splice(idx+1,0,row);
+          container.innerHTML=''; rows.forEach(function(r){ container.appendChild(r); });
+        });
         var nameInput = document.createElement('input');
         nameInput.type = 'text'; nameInput.value = name || '';
         nameInput.placeholder = '축약명';
-        nameInput.style.cssText = 'width:80px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--text);font-size:12px;font-family:inherit;';
+        nameInput.style.cssText = 'flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--text);font-size:13px;font-weight:600;font-family:inherit;';
         var delBtn = document.createElement('button');
         delBtn.type = 'button';
         delBtn.textContent = '✕';
-        delBtn.style.cssText = 'border:none;background:rgba(255,80,60,.3);color:#ff6b6b;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:14px;';
+        delBtn.style.cssText = 'border:none;background:rgba(255,80,60,.3);color:#ff6b6b;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;flex-shrink:0;';
         delBtn.addEventListener('click', function(){ row.remove(); var idx = rows.indexOf(row); if(idx>=0) rows.splice(idx,1); });
+        topRow.appendChild(upBtn);
+        topRow.appendChild(downBtn);
+        topRow.appendChild(nameInput);
+        topRow.appendChild(delBtn);
+
+        var idInput = document.createElement('input');
+        idInput.type = 'text'; idInput.value = id || '';
+        idInput.placeholder = 'model ID (예: google/gemini-3-flash-preview)';
+        idInput.style.cssText = 'width:100%;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:var(--muted);font-size:11px;font-family:inherit;box-sizing:border-box;';
+
+        row.appendChild(topRow);
         row.appendChild(idInput);
-        row.appendChild(nameInput);
-        row.appendChild(delBtn);
         row._idInput = idInput;
         row._nameInput = nameInput;
         rows.push(row);
         container.appendChild(row);
       }
 
+      var dragRow = null;
       var container = document.createElement('div');
       popup.appendChild(container);
       MODEL_OPTIONS.forEach(function(m){ addRow(m.id, m.name); });
