@@ -520,6 +520,23 @@
     }
     .copyPill:hover{background:rgba(255,255,255,.14); color:rgba(230,237,243,.9)}
     .copyPill:active{transform:scale(.95)}
+    .ttsBtn{
+      border:none;
+      background: var(--copyBtnBg);
+      border-radius: 10px;
+      padding: 4px 8px;
+      cursor:pointer;
+      color: rgba(230,237,243,.6);
+      font-size: calc(13px * var(--textScale));
+      font-family:inherit;
+      display:inline-flex;
+      align-items:center;
+      gap:3px;
+      transition: background .15s, color .15s;
+    }
+    .ttsBtn:hover{background:rgba(255,255,255,.14); color:rgba(230,237,243,.9)}
+    .ttsBtn:active{transform:scale(.95)}
+    .ttsBtn.speaking{color:#4af; background:rgba(45,107,255,.2)}
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
@@ -1208,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v9.7t';
+    const APP_VERSION = 'v9.8t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2033,6 +2050,35 @@
       return callOpenRouterStream(userText, () => {});
     }
 
+    let _currentUtterance = null;
+    function speakText(text, btn){
+      if(!('speechSynthesis' in window)){ toast('TTS를 지원하지 않는 브라우저입니다'); return; }
+      if(_currentUtterance && speechSynthesis.speaking){
+        speechSynthesis.cancel();
+        document.querySelectorAll('.ttsBtn.speaking').forEach(b => b.classList.remove('speaking'));
+        _currentUtterance = null;
+        return;
+      }
+      const lang = detectDominantLang(text);
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko-KR' : 'en-US';
+      u.rate = 0.95;
+      if(btn) btn.classList.add('speaking');
+      u.onend = () => { if(btn) btn.classList.remove('speaking'); _currentUtterance = null; };
+      u.onerror = () => { if(btn) btn.classList.remove('speaking'); _currentUtterance = null; };
+      _currentUtterance = u;
+      speechSynthesis.speak(u);
+    }
+
+    function createTtsBtn(text){
+      const btn = document.createElement('button');
+      btn.className = 'ttsBtn';
+      btn.type = 'button';
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+      btn.addEventListener('click', () => speakText(text, btn));
+      return btn;
+    }
+
     const focusOverlay = document.getElementById('focusOverlay');
     const focusText = document.getElementById('focusText');
     function showFocusOverlay(text){
@@ -2091,6 +2137,8 @@
         actions.className = 'actionsRow';
 
         if(m.role === 'user'){
+          actions.appendChild(createTtsBtn(m.text));
+
           const opusBtn = document.createElement('button');
           opusBtn.className = 'copyPill';
           opusBtn.type = 'button';
@@ -2127,6 +2175,8 @@
           retryBtn.addEventListener('click', () => retryTranslate(srcText));
           actions.appendChild(retryBtn);
         } else if(m.role === 'assistant'){
+          actions.appendChild(createTtsBtn(m.text));
+
           const copyBtn = document.createElement('button');
           copyBtn.className = 'copyPill';
           copyBtn.type = 'button';
