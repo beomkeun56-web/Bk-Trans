@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v12.2t';
+    const APP_VERSION = 'v12.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2119,13 +2119,13 @@
           fetch('https://api.soundoftext.com/sounds/' + sid).then(function(r){ return r.json(); }).then(function(s){
             if(s.status === 'Done' && s.location){
               var a = new Audio(s.location);
+              a.playbackRate = 1.3;
               _ttsAudio = a;
               a.onended = function(){ playSotChunk(voice); };
               a.onerror = function(){ playSotChunk(voice); };
               setTimeout(function(){
                 if(_ttsCancelled || !_ttsBusy){ ttsFinish(); return; }
-                a.playbackRate = 1.3;
-                a.play().then(function(){ a.playbackRate = 1.3; }).catch(function(){ playSotChunk(voice); });
+                a.play().catch(function(){ playSotChunk(voice); });
               }, 300);
             } else if(tries < 10){
               setTimeout(function(){ poll(tries+1); }, 1000);
