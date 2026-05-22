@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v10.7t';
+    const APP_VERSION = 'v10.8t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2091,6 +2091,15 @@
       document.querySelectorAll('.ttsBtn.speaking').forEach(function(b){ b.classList.remove('speaking'); });
     }
 
+    function ttsUrl(chunk, lang){
+      if(lang === 'zh'){
+        return 'https://fanyi.baidu.com/gettts?lan=zh&text=' + encodeURIComponent(chunk) + '&spd=5&source=web';
+      } else if(lang === 'ko'){
+        return 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=ko';
+      }
+      return 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=en';
+    }
+
     function playNextChunk(){
       if(!_ttsBusy || _ttsIdx >= _ttsChunks.length){
         _ttsBusy = false;
@@ -2098,7 +2107,7 @@
         return;
       }
       var chunk = _ttsChunks[_ttsIdx++];
-      var url = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=' + _ttsTl;
+      var url = ttsUrl(chunk, _ttsTl);
       _ttsEl.onended = function(){ playNextChunk(); };
       _ttsEl.onerror = function(){ playNextChunk(); };
       _ttsEl.src = url;
@@ -2116,9 +2125,10 @@
       if(btn) btn.classList.add('speaking');
 
       var lang = detectDominantLang(text);
-      _ttsTl = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
+      _ttsTl = lang;
+      var maxChunk = lang === 'zh' ? 150 : 50;
 
-      _ttsChunks = splitTtsChunks(text, 50);
+      _ttsChunks = splitTtsChunks(text, maxChunk);
       _ttsIdx = 0;
       playNextChunk();
     }
