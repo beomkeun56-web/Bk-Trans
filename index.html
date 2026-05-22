@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v10.6t';
+    const APP_VERSION = 'v10.7t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2100,9 +2100,10 @@
       var chunk = _ttsChunks[_ttsIdx++];
       var url = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=' + _ttsTl;
       _ttsEl.onended = function(){ playNextChunk(); };
-      _ttsEl.onerror = function(){ stopTts(); };
+      _ttsEl.onerror = function(){ playNextChunk(); };
       _ttsEl.src = url;
-      _ttsEl.play().catch(function(){ stopTts(); });
+      _ttsEl.load();
+      _ttsEl.play().catch(function(){ setTimeout(playNextChunk, 100); });
     }
 
     function speakText(text, btn){
@@ -2117,7 +2118,7 @@
       var lang = detectDominantLang(text);
       _ttsTl = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
 
-      _ttsChunks = splitTtsChunks(text, 200);
+      _ttsChunks = splitTtsChunks(text, 50);
       _ttsIdx = 0;
       playNextChunk();
     }
