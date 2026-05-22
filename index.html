@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v12.4t';
+    const APP_VERSION = 'v12.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2123,7 +2123,10 @@
               _ttsAudio = a;
               a.onended = function(){ playSotChunk(voice); };
               a.onerror = function(){ playSotChunk(voice); };
-              a.play().catch(function(){ playSotChunk(voice); });
+              setTimeout(function(){
+                if(_ttsCancelled || !_ttsBusy){ ttsFinish(); return; }
+                a.play().catch(function(){ playSotChunk(voice); });
+              }, 300);
             } else if(tries < 10){
               setTimeout(function(){ poll(tries+1); }, 1000);
             } else { ttsFinish(); showToast('TTS 시간초과'); }
