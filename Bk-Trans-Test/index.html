@@ -1228,7 +1228,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v13.4t';
+    const APP_VERSION = 'v13.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2509,6 +2509,12 @@
         copyBtn.textContent = 'Copy';
         copyBtn.addEventListener('click', async () => { await copyToClipboard(translated, false); });
         actions.appendChild(copyBtn);
+        const editBtn = document.createElement('button');
+        editBtn.className = 'copyPill';
+        editBtn.type = 'button';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', () => { el.input.value = translated; autoResizeInput(); el.input.focus(); });
+        actions.appendChild(editBtn);
         streamRow.appendChild(actions);
 
         scrollThrottled();
