@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v11.2t';
+    const APP_VERSION = 'v11.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2054,17 +2054,40 @@
     _ttsEl.setAttribute('playsinline','');
     var _ttsBusy = false;
     var _ttsBtn = null;
+    var _ttsTimer = null;
+    var _ttsPool = [];
+    var _ttsPoolIdx = 0;
 
-    var _ssVoices = [];
     if('speechSynthesis' in window){
-      _ssVoices = speechSynthesis.getVoices();
-      speechSynthesis.addEventListener('voiceschanged', function(){
-        _ssVoices = speechSynthesis.getVoices();
-      });
+      speechSynthesis.getVoices();
+      speechSynthesis.addEventListener('voiceschanged', function(){ speechSynthesis.getVoices(); });
+    }
+
+    function splitTts(text, max){
+      if(text.length <= max) return [text];
+      var chunks = [], rest = text;
+      while(rest.length > 0){
+        if(rest.length <= max){ chunks.push(rest); break; }
+        var i = rest.lastIndexOf('。', max);
+        if(i < max*0.3) i = rest.lastIndexOf('.', max);
+        if(i < max*0.3) i = rest.lastIndexOf('?', max);
+        if(i < max*0.3) i = rest.lastIndexOf('!', max);
+        if(i < max*0.3) i = rest.lastIndexOf(',', max);
+        if(i < max*0.3) i = rest.lastIndexOf('，', max);
+        if(i < max*0.3) i = rest.lastIndexOf(' ', max);
+        if(i < max*0.3) i = max;
+        chunks.push(rest.substring(0, i+1).trim());
+        rest = rest.substring(i+1).trim();
+      }
+      return chunks.filter(function(c){ return c.length > 0; });
     }
 
     function stopTts(){
       _ttsBusy = false;
+      if(_ttsTimer){ clearTimeout(_ttsTimer); _ttsTimer = null; }
+      _ttsPool.forEach(function(a){ a.pause(); a.onended=null; a.onerror=null; });
+      _ttsPool = [];
+      _ttsPoolIdx = 0;
       _ttsEl.onended = null;
       _ttsEl.onerror = null;
       _ttsEl.pause();
@@ -2074,6 +2097,7 @@
 
     function ttsFinish(){
       _ttsBusy = false;
+      _ttsPool = [];
       if(_ttsBtn) _ttsBtn.classList.remove('speaking');
     }
 
@@ -2088,49 +2112,47 @@
 
       var lang = detectDominantLang(text);
 
-      if(_ssVoices.length > 0){
-        useSpeechSynthesis(text, lang);
+      if('speechSynthesis' in window){
+        var spoke = false;
+        speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(text);
+        u.lang = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko-KR' : 'en-US';
+        u.rate = 0.9;
+        u.onstart = function(){ spoke = true; if(_ttsTimer){clearTimeout(_ttsTimer);_ttsTimer=null;} };
+        u.onend = function(){ ttsFinish(); };
+        u.onerror = function(){ if(!spoke) useChunkedAudio(text, lang); else ttsFinish(); };
+        speechSynthesis.speak(u);
+        _ttsTimer = setTimeout(function(){
+          if(!spoke && _ttsBusy){
+            speechSynthesis.cancel();
+            useChunkedAudio(text, lang);
+          }
+        }, 2000);
         return;
       }
-
-      useAudioTTS(text, lang, 0);
+      useChunkedAudio(text, lang);
     }
 
-    function useSpeechSynthesis(text, lang){
-      speechSynthesis.cancel();
-      var lc = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
-      var u = new SpeechSynthesisUtterance(text);
-      u.lang = lc;
-      u.rate = 0.9;
-      var v = _ssVoices.find(function(x){ return x.lang && x.lang.startsWith(lc); });
-      if(v) u.voice = v;
-      u.onend = function(){ ttsFinish(); };
-      u.onerror = function(){ ttsFinish(); };
-      speechSynthesis.speak(u);
+    function useChunkedAudio(text, lang){
+      var le = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
+      var chunks = splitTts(text, 18);
+
+      _ttsPool = chunks.map(function(chunk){
+        var a = new Audio();
+        a.preload = 'auto';
+        a.src = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=' + le;
+        return a;
+      });
+      _ttsPoolIdx = 0;
+      playPoolNext();
     }
 
-    var _ttsUrls = [
-      function(t,l){
-        var lg = l === 'zh' ? 'zh-CHS' : l === 'ko' ? 'ko' : 'en';
-        return 'https://fanyi.sogou.com/reventondc/synthesis?text=' + encodeURIComponent(t) + '&speed=1&lang=' + lg + '&from=translateweb&speaker=6';
-      },
-      function(t,l){
-        var lg = l === 'zh' ? 'zh' : l === 'ko' ? 'ko' : 'en';
-        return 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(t) + '&le=' + lg + '&type=2';
-      }
-    ];
-
-    function useAudioTTS(text, lang, srcIdx){
-      if(srcIdx >= _ttsUrls.length){
-        ttsFinish();
-        toast('TTS 재생 실패');
-        return;
-      }
-      var url = _ttsUrls[srcIdx](text, lang);
-      _ttsEl.onended = function(){ ttsFinish(); };
-      _ttsEl.onerror = function(){ useAudioTTS(text, lang, srcIdx + 1); };
-      _ttsEl.src = url;
-      _ttsEl.play().catch(function(){ useAudioTTS(text, lang, srcIdx + 1); });
+    function playPoolNext(){
+      if(!_ttsBusy || _ttsPoolIdx >= _ttsPool.length){ ttsFinish(); return; }
+      var a = _ttsPool[_ttsPoolIdx++];
+      a.onended = function(){ playPoolNext(); };
+      a.onerror = function(){ playPoolNext(); };
+      a.play().catch(function(){ playPoolNext(); });
     }
 
     function createTtsBtn(text){
