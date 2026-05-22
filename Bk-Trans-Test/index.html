@@ -1228,7 +1228,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v13.1t';
+    const APP_VERSION = 'v13.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2093,6 +2093,9 @@
         stream: true,
         max_tokens: dynMax
       };
+      if(model === 'google/gemini-3.5-flash'){
+        payload.reasoning = { effort: 'minimal' };
+      }
 
       const ac = new AbortController();
       _currentAbort = ac;
