@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v10.9t';
+    const APP_VERSION = 'v11.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2086,14 +2086,12 @@
       _ttsEl.onended = null;
       _ttsEl.onerror = null;
       _ttsEl.pause();
-      _ttsEl.removeAttribute('src');
-      _ttsEl.load();
       document.querySelectorAll('.ttsBtn.speaking').forEach(function(b){ b.classList.remove('speaking'); });
     }
 
     function ttsUrl(chunk, lang){
-      var lan = lang === 'zh' ? 'zh' : lang === 'ko' ? 'kor' : 'en';
-      return 'https://fanyi.baidu.com/gettts?lan=' + lan + '&text=' + encodeURIComponent(chunk) + '&spd=5&source=web';
+      var le = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
+      return 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=' + le;
     }
 
     function playNextChunk(){
@@ -2103,12 +2101,10 @@
         return;
       }
       var chunk = _ttsChunks[_ttsIdx++];
-      var url = ttsUrl(chunk, _ttsTl);
       _ttsEl.onended = function(){ playNextChunk(); };
       _ttsEl.onerror = function(){ playNextChunk(); };
-      _ttsEl.src = url;
-      _ttsEl.load();
-      _ttsEl.play().catch(function(){ setTimeout(playNextChunk, 100); });
+      _ttsEl.src = ttsUrl(chunk, _ttsTl);
+      _ttsEl.play().catch(function(){ setTimeout(playNextChunk, 200); });
     }
 
     function speakText(text, btn){
@@ -2122,9 +2118,8 @@
 
       var lang = detectDominantLang(text);
       _ttsTl = lang;
-      var maxChunk = 150;
 
-      _ttsChunks = splitTtsChunks(text, maxChunk);
+      _ttsChunks = splitTtsChunks(text, 30);
       _ttsIdx = 0;
       playNextChunk();
     }
