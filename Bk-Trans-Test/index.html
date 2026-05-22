@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v10.3t';
+    const APP_VERSION = 'v10.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2050,22 +2050,20 @@
       return callOpenRouterStream(userText, () => {});
     }
 
-    let _ttsAudio = null;
-    let _ttsBusy = false;
-    let _ttsChunks = [];
-    let _ttsIdx = 0;
-    let _ttsTl = '';
-    let _ttsBtn = null;
-    let _ttsFullText = '';
-    let _ttsLangCode = '';
+    var _ttsAudio = null;
+    var _ttsBusy = false;
+    var _ttsChunks = [];
+    var _ttsIdx = 0;
+    var _ttsTl = '';
+    var _ttsBtn = null;
 
     function splitTtsChunks(text, max){
       if(text.length <= max) return [text];
-      const chunks = [];
-      let rest = text;
+      var chunks = [];
+      var rest = text;
       while(rest.length > 0){
         if(rest.length <= max){ chunks.push(rest); break; }
-        let i = rest.lastIndexOf('。', max);
+        var i = rest.lastIndexOf('。', max);
         if(i < max * 0.3) i = rest.lastIndexOf('.', max);
         if(i < max * 0.3) i = rest.lastIndexOf('!', max);
         if(i < max * 0.3) i = rest.lastIndexOf('?', max);
@@ -2076,70 +2074,48 @@
         chunks.push(rest.substring(0, i + 1).trim());
         rest = rest.substring(i + 1).trim();
       }
-      return chunks.filter(c => c.length > 0);
+      return chunks.filter(function(c){ return c.length > 0; });
     }
 
     function stopTts(){
       _ttsBusy = false;
       _ttsChunks = [];
-      if(_ttsAudio){ _ttsAudio.pause(); _ttsAudio.src = ''; _ttsAudio = null; }
-      if('speechSynthesis' in window) speechSynthesis.cancel();
-      document.querySelectorAll('.ttsBtn.speaking').forEach(b => b.classList.remove('speaking'));
-    }
-
-    var _ttsSources = [
-      function(chunk, lang){ return 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=' + lang; },
-      function(chunk, lang){ var tl = lang === 'zh' ? 'zh-CN' : lang; return 'https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=' + encodeURIComponent(tl) + '&q=' + encodeURIComponent(chunk); },
-      function(chunk, lang){ var tl = lang === 'zh' ? 'zh' : lang === 'ko' ? 'kor' : 'en'; return 'https://fanyi.baidu.com/gettts?lan=' + tl + '&text=' + encodeURIComponent(chunk) + '&spd=5&source=web'; }
-    ];
-    var _ttsSrcIdx = 0;
-
-    function ttsFinish(){
-      _ttsBusy = false;
-      _ttsAudio = null;
-      if(_ttsBtn) _ttsBtn.classList.remove('speaking');
+      _ttsIdx = 0;
+      if(_ttsAudio){
+        _ttsAudio.onended = null;
+        _ttsAudio.onerror = null;
+        _ttsAudio.pause();
+        try{ _ttsAudio.src = ''; }catch(e){}
+        _ttsAudio = null;
+      }
+      document.querySelectorAll('.ttsBtn.speaking').forEach(function(b){ b.classList.remove('speaking'); });
     }
 
     function playNextChunk(){
-      if(!_ttsBusy || _ttsIdx >= _ttsChunks.length){ ttsFinish(); return; }
-      var chunk = _ttsChunks[_ttsIdx++];
-      trySourceForChunk(chunk, _ttsSrcIdx);
-    }
-
-    function trySourceForChunk(chunk, srcIdx){
-      if(srcIdx >= _ttsSources.length){
-        stopTts();
-        toast('TTS 재생 실패');
+      if(!_ttsBusy || _ttsIdx >= _ttsChunks.length){
+        _ttsBusy = false;
+        _ttsAudio = null;
+        if(_ttsBtn) _ttsBtn.classList.remove('speaking');
         return;
       }
-      var url = _ttsSources[srcIdx](chunk, _ttsTl);
+      var chunk = _ttsChunks[_ttsIdx++];
+      var url = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(chunk) + '&le=' + _ttsTl;
       var audio = new Audio();
       _ttsAudio = audio;
       audio.onended = function(){ playNextChunk(); };
-      audio.onerror = function(){
-        _ttsSrcIdx = srcIdx + 1;
-        _ttsIdx--;
-        playNextChunk();
-      };
+      audio.onerror = function(){ stopTts(); };
       audio.src = url;
-      audio.play().catch(function(){
-        _ttsSrcIdx = srcIdx + 1;
-        _ttsIdx--;
-        playNextChunk();
-      });
+      audio.play().catch(function(){ stopTts(); });
     }
 
     function speakText(text, btn){
-      if(_ttsBusy){ stopTts(); return; }
+      stopTts();
       _ttsBusy = true;
       _ttsBtn = btn;
-      _ttsFullText = text;
-      _ttsSrcIdx = 0;
       if(btn) btn.classList.add('speaking');
 
       var lang = detectDominantLang(text);
       _ttsTl = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
-      _ttsLangCode = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko-KR' : 'en-US';
 
       _ttsChunks = splitTtsChunks(text, 80);
       _ttsIdx = 0;
