@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v10.1t';
+    const APP_VERSION = 'v10.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2052,6 +2052,12 @@
 
     let _ttsAudio = null;
     let _ttsBusy = false;
+    let _ttsChunks = [];
+    let _ttsIdx = 0;
+    let _ttsTl = '';
+    let _ttsBtn = null;
+    let _ttsFullText = '';
+    let _ttsLangCode = '';
 
     function splitTtsChunks(text, max){
       if(text.length <= max) return [text];
@@ -2063,6 +2069,8 @@
         if(i < max * 0.3) i = rest.lastIndexOf('.', max);
         if(i < max * 0.3) i = rest.lastIndexOf('!', max);
         if(i < max * 0.3) i = rest.lastIndexOf('?', max);
+        if(i < max * 0.3) i = rest.lastIndexOf(',', max);
+        if(i < max * 0.3) i = rest.lastIndexOf('，', max);
         if(i < max * 0.3) i = rest.lastIndexOf(' ', max);
         if(i < max * 0.3) i = max;
         chunks.push(rest.substring(0, i + 1).trim());
@@ -2073,68 +2081,67 @@
 
     function stopTts(){
       _ttsBusy = false;
-      if(_ttsAudio){ _ttsAudio.pause(); _ttsAudio = null; }
+      _ttsChunks = [];
+      if(_ttsAudio){ _ttsAudio.pause(); _ttsAudio.src = ''; _ttsAudio = null; }
       if('speechSynthesis' in window) speechSynthesis.cancel();
       document.querySelectorAll('.ttsBtn.speaking').forEach(b => b.classList.remove('speaking'));
     }
 
-    function playChunkAudio(url){
-      return new Promise((resolve, reject) => {
-        const audio = new Audio(url);
-        _ttsAudio = audio;
-        audio.onended = resolve;
-        audio.onerror = reject;
-        audio.play().catch(reject);
+    function ttsFinish(){
+      _ttsBusy = false;
+      _ttsAudio = null;
+      if(_ttsBtn) _ttsBtn.classList.remove('speaking');
+    }
+
+    function playNextGoogleChunk(){
+      if(!_ttsBusy || _ttsIdx >= _ttsChunks.length){ ttsFinish(); return; }
+      var chunk = _ttsChunks[_ttsIdx++];
+      var url = 'https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=' + encodeURIComponent(_ttsTl) + '&q=' + encodeURIComponent(chunk);
+      var audio = new Audio();
+      _ttsAudio = audio;
+      audio.onended = function(){ playNextGoogleChunk(); };
+      audio.onerror = function(){
+        trySpeechSynthesis();
+      };
+      audio.src = url;
+      audio.play().catch(function(){
+        trySpeechSynthesis();
       });
     }
 
-    async function playWithFreeTTS(chunks, voice, btn){
-      for(const chunk of chunks){
-        if(!_ttsBusy) break;
-        const res = await fetch('https://freetts.org/api/tts', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({text:chunk, voice:voice, rate:'+0%', pitch:'+0Hz'})
-        });
-        if(!res.ok) throw new Error('API ' + res.status);
-        const data = await res.json();
-        if(!data.file_id) throw new Error('no file');
-        await playChunkAudio('https://freetts.org/api/audio/' + data.file_id);
-      }
-      _ttsBusy = false;
-      _ttsAudio = null;
-      if(btn) btn.classList.remove('speaking');
-    }
-
-    function fallbackSpeechSynthesis(text, langCode, btn){
+    function trySpeechSynthesis(){
       if(!('speechSynthesis' in window)){ stopTts(); toast('TTS 사용 불가'); return; }
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = langCode;
+      var voices = speechSynthesis.getVoices();
+      if(voices.length === 0){
+        stopTts();
+        toast('TTS 음성 없음');
+        return;
+      }
+      var u = new SpeechSynthesisUtterance(_ttsFullText);
+      u.lang = _ttsLangCode;
       u.rate = 0.95;
-      const voices = speechSynthesis.getVoices();
-      const match = voices.find(v => v.lang && v.lang.startsWith(langCode.substring(0,2)));
+      var match = voices.find(function(v){ return v.lang && v.lang.startsWith(_ttsLangCode.substring(0,2)); });
       if(match) u.voice = match;
-      u.onend = () => { if(btn) btn.classList.remove('speaking'); _ttsBusy = false; };
-      u.onerror = () => { stopTts(); toast('TTS 재생 실패'); };
+      u.onend = function(){ ttsFinish(); };
+      u.onerror = function(){ stopTts(); toast('TTS 재생 실패'); };
       speechSynthesis.speak(u);
     }
 
     function speakText(text, btn){
       if(_ttsBusy){ stopTts(); return; }
       _ttsBusy = true;
+      _ttsBtn = btn;
+      _ttsFullText = text;
       if(btn) btn.classList.add('speaking');
 
-      const lang = detectDominantLang(text);
-      let voice, langCode;
-      if(lang === 'zh'){ voice = 'zh-CN-XiaoxiaoNeural'; langCode = 'zh-CN'; }
-      else if(lang === 'ko'){ voice = 'ko-KR-SunHiNeural'; langCode = 'ko-KR'; }
-      else { voice = 'en-US-JennyNeural'; langCode = 'en-US'; }
+      var lang = detectDominantLang(text);
+      _ttsTl = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko' : 'en';
+      _ttsLangCode = lang === 'zh' ? 'zh-CN' : lang === 'ko' ? 'ko-KR' : 'en-US';
 
-      const chunks = splitTtsChunks(text, 900);
-      playWithFreeTTS(chunks, voice, btn).catch(() => {
-        fallbackSpeechSynthesis(text, langCode, btn);
-      });
+      _ttsChunks = splitTtsChunks(text, 100);
+      _ttsIdx = 0;
+      playNextGoogleChunk();
     }
 
     function createTtsBtn(text){
