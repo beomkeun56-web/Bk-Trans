@@ -490,6 +490,11 @@
     .actionsRow{
       display:flex; gap:6px; align-items:center;
     }
+    .actionsRow button{
+      min-width: 48px;
+      text-align:center;
+      justify-content:center;
+    }
     .retryPill{
       border:none;
       background: rgba(220,80,60,.7);
@@ -1225,7 +1230,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v12.5t';
+    const APP_VERSION = 'v12.6t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
