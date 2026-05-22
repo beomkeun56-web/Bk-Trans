@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v11.9t';
+    const APP_VERSION = 'v12.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2208,7 +2208,7 @@
           const opusBtn = document.createElement('button');
           opusBtn.className = 'copyPill';
           opusBtn.type = 'button';
-          opusBtn.textContent = 'Opus';
+          opusBtn.textContent = 'Claude';
           opusBtn.addEventListener('click', () => retryWithModel(m.text, 'anthropic/claude-opus-4.7'));
           actions.appendChild(opusBtn);
 
