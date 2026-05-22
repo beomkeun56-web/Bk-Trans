@@ -1225,7 +1225,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v11.1t';
+    const APP_VERSION = 'v11.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2052,59 +2052,29 @@
 
     var _ttsEl = document.createElement('audio');
     _ttsEl.setAttribute('playsinline','');
-    _ttsEl.setAttribute('webkit-playsinline','');
     var _ttsBusy = false;
-    var _ttsChunks = [];
-    var _ttsIdx = 0;
-    var _ttsTl = '';
     var _ttsBtn = null;
 
-    function splitTtsChunks(text, max){
-      if(text.length <= max) return [text];
-      var chunks = [];
-      var rest = text;
-      while(rest.length > 0){
-        if(rest.length <= max){ chunks.push(rest); break; }
-        var i = rest.lastIndexOf('。', max);
-        if(i < max * 0.3) i = rest.lastIndexOf('.', max);
-        if(i < max * 0.3) i = rest.lastIndexOf('!', max);
-        if(i < max * 0.3) i = rest.lastIndexOf('?', max);
-        if(i < max * 0.3) i = rest.lastIndexOf(',', max);
-        if(i < max * 0.3) i = rest.lastIndexOf('，', max);
-        if(i < max * 0.3) i = rest.lastIndexOf(' ', max);
-        if(i < max * 0.3) i = max;
-        chunks.push(rest.substring(0, i + 1).trim());
-        rest = rest.substring(i + 1).trim();
-      }
-      return chunks.filter(function(c){ return c.length > 0; });
+    var _ssVoices = [];
+    if('speechSynthesis' in window){
+      _ssVoices = speechSynthesis.getVoices();
+      speechSynthesis.addEventListener('voiceschanged', function(){
+        _ssVoices = speechSynthesis.getVoices();
+      });
     }
 
     function stopTts(){
       _ttsBusy = false;
-      _ttsChunks = [];
-      _ttsIdx = 0;
       _ttsEl.onended = null;
       _ttsEl.onerror = null;
       _ttsEl.pause();
+      if('speechSynthesis' in window) speechSynthesis.cancel();
       document.querySelectorAll('.ttsBtn.speaking').forEach(function(b){ b.classList.remove('speaking'); });
     }
 
-    function ttsUrl(chunk, lang){
-      var le = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
-      return 'https://tts.youdao.com/fanyivoice?word=' + encodeURIComponent(chunk) + '&le=' + le + '&keyfrom=speaker-target';
-    }
-
-    function playNextChunk(){
-      if(!_ttsBusy || _ttsIdx >= _ttsChunks.length){
-        _ttsBusy = false;
-        if(_ttsBtn) _ttsBtn.classList.remove('speaking');
-        return;
-      }
-      var chunk = _ttsChunks[_ttsIdx++];
-      _ttsEl.onended = function(){ playNextChunk(); };
-      _ttsEl.onerror = function(){ playNextChunk(); };
-      _ttsEl.src = ttsUrl(chunk, _ttsTl);
-      _ttsEl.play().catch(function(){ setTimeout(playNextChunk, 200); });
+    function ttsFinish(){
+      _ttsBusy = false;
+      if(_ttsBtn) _ttsBtn.classList.remove('speaking');
     }
 
     function speakText(text, btn){
@@ -2117,11 +2087,50 @@
       if(btn) btn.classList.add('speaking');
 
       var lang = detectDominantLang(text);
-      _ttsTl = lang;
 
-      _ttsChunks = splitTtsChunks(text, 200);
-      _ttsIdx = 0;
-      playNextChunk();
+      if(_ssVoices.length > 0){
+        useSpeechSynthesis(text, lang);
+        return;
+      }
+
+      useAudioTTS(text, lang, 0);
+    }
+
+    function useSpeechSynthesis(text, lang){
+      speechSynthesis.cancel();
+      var lc = lang === 'zh' ? 'zh' : lang === 'ko' ? 'ko' : 'en';
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = lc;
+      u.rate = 0.9;
+      var v = _ssVoices.find(function(x){ return x.lang && x.lang.startsWith(lc); });
+      if(v) u.voice = v;
+      u.onend = function(){ ttsFinish(); };
+      u.onerror = function(){ ttsFinish(); };
+      speechSynthesis.speak(u);
+    }
+
+    var _ttsUrls = [
+      function(t,l){
+        var lg = l === 'zh' ? 'zh-CHS' : l === 'ko' ? 'ko' : 'en';
+        return 'https://fanyi.sogou.com/reventondc/synthesis?text=' + encodeURIComponent(t) + '&speed=1&lang=' + lg + '&from=translateweb&speaker=6';
+      },
+      function(t,l){
+        var lg = l === 'zh' ? 'zh' : l === 'ko' ? 'ko' : 'en';
+        return 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(t) + '&le=' + lg + '&type=2';
+      }
+    ];
+
+    function useAudioTTS(text, lang, srcIdx){
+      if(srcIdx >= _ttsUrls.length){
+        ttsFinish();
+        toast('TTS 재생 실패');
+        return;
+      }
+      var url = _ttsUrls[srcIdx](text, lang);
+      _ttsEl.onended = function(){ ttsFinish(); };
+      _ttsEl.onerror = function(){ useAudioTTS(text, lang, srcIdx + 1); };
+      _ttsEl.src = url;
+      _ttsEl.play().catch(function(){ useAudioTTS(text, lang, srcIdx + 1); });
     }
 
     function createTtsBtn(text){
