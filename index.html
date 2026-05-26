@@ -1271,7 +1271,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v16.3t';
+    const APP_VERSION = 'v16.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2716,14 +2716,14 @@
       if(ms != null) seg.push((ms / 1000).toFixed(1) + '초');
       return seg.join('  ·  ');
     }
-    function appendUsageLine(row, u, ms, modelName){
-      if(!_showTokens) return;
+    function appendUsageLine(actionsEl, u, ms, modelName){
+      if(!_showTokens || !actionsEl) return;
       var txt = usageLineText(u, ms, modelName);
       if(!txt) return;
-      var d = document.createElement('div');
-      d.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;padding-left:14px;';
-      d.textContent = txt;
-      row.appendChild(d);
+      var s = document.createElement('span');
+      s.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-left:8px;white-space:nowrap;';
+      s.textContent = txt;
+      actionsEl.appendChild(s);
     }
 
     function renderChat(){
@@ -2794,13 +2794,12 @@
           editBtn.textContent = 'Edit';
           editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
           actions.appendChild(editBtn);
+          appendUsageLine(actions, m.usage, m.ms, m.model);
         }
 
         if(actions.children.length > 0){
           row.appendChild(actions);
         }
-
-        if(m.role === 'assistant') appendUsageLine(row, m.usage, m.ms, m.model);
 
         el.chat.appendChild(row);
       }
@@ -2879,9 +2878,8 @@
         editBtn.textContent = 'Edit';
         editBtn.addEventListener('click', () => { el.input.value = translated; autoResizeInput(); el.input.focus(); });
         actions.appendChild(editBtn);
+        appendUsageLine(actions, _lastUsage, _ms, _modelName);
         streamRow.appendChild(actions);
-
-        appendUsageLine(streamRow, _lastUsage, _ms, _modelName);
 
         scrollThrottled();
 
