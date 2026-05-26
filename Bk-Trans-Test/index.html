@@ -824,16 +824,8 @@
         </div>
 
         <div style="margin-bottom:20px;">
-          <label for="apiBaseUrl" style="font-size:calc(12px * var(--textScale)); font-weight:600; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            API URL (403 에러 시)
-            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">비워두면 제공자 기본값 사용</span>
-          </label>
-          <input id="apiBaseUrl" type="text" placeholder="https://openrouter.ai/api/v1/chat/completions" autocomplete="off" style="font-size:calc(12px * var(--textScale));" />
-        </div>
-
-        <div style="margin-bottom:20px;">
           <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">모델 파라미터</label>
-          <div class="row" style="gap:12px;">
+          <div class="row" style="gap:12px; margin-bottom:12px;">
             <div style="flex:1 1 240px;">
               <label for="model" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">모델</label>
               <input id="model" type="text" value="google/gemini-3-flash-preview" list="modelList" />
@@ -843,15 +835,17 @@
               <label for="temperature" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Temperature</label>
               <input id="temperature" type="text" value="0.1" />
             </div>
-            <div style="flex:1 1 120px;">
+          </div>
+          <div style="display:flex; gap:12px; flex-wrap:nowrap;">
+            <div style="flex:1 1 0; min-width:0;">
               <label for="topP" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Top P</label>
               <input id="topP" type="text" value="0.9" />
             </div>
-            <div style="flex:1 1 120px;">
+            <div style="flex:1 1 0; min-width:0;">
               <label for="topK" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Top K</label>
               <input id="topK" type="text" value="40" />
             </div>
-            <div style="flex:1 1 120px;">
+            <div style="flex:1 1 0; min-width:0;">
               <label for="maxTokens" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">Max Tokens</label>
               <input id="maxTokens" type="text" value="4096" />
             </div>
@@ -1253,7 +1247,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v14.5t';
+    const APP_VERSION = 'v14.6t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1984,7 +1978,7 @@
 
     function loadSettings(){
       el.apiKey.value = localStorage.getItem(LS.apiKey) || '';
-      el.apiBaseUrl.value = localStorage.getItem(LS.apiBaseUrl) || '';
+      if(el.apiBaseUrl) el.apiBaseUrl.value = localStorage.getItem(LS.apiBaseUrl) || '';
       if(el.apiProvider) el.apiProvider.value = localStorage.getItem(LS.apiProvider) || 'openrouter';
       if(el.googleApiKey) el.googleApiKey.value = localStorage.getItem(LS.googleApiKey) || '';
       if(el.anthropicApiKey) el.anthropicApiKey.value = localStorage.getItem(LS.anthropicApiKey) || '';
@@ -2004,7 +1998,7 @@
 
     function saveApiSettings(){
       localStorage.setItem(LS.apiKey, el.apiKey.value.trim());
-      localStorage.setItem(LS.apiBaseUrl, el.apiBaseUrl.value.trim());
+      if(el.apiBaseUrl) localStorage.setItem(LS.apiBaseUrl, el.apiBaseUrl.value.trim());
       if(el.apiProvider) localStorage.setItem(LS.apiProvider, el.apiProvider.value);
       if(el.googleApiKey) localStorage.setItem(LS.googleApiKey, el.googleApiKey.value.trim());
       if(el.anthropicApiKey) localStorage.setItem(LS.anthropicApiKey, el.anthropicApiKey.value.trim());
