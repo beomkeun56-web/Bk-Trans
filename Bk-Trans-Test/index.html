@@ -1246,7 +1246,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v13.8t';
+    const APP_VERSION = 'v13.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1277,7 +1277,9 @@
       useEnhanced: 'bk_tr_test_useEnhanced',
       apiBaseUrl: 'bk_tr_test_apiBaseUrl',
       apiProvider: 'bk_tr_test_apiProvider',
-      googleApiKey: 'bk_tr_test_googleApiKey'
+      googleApiKey: 'bk_tr_test_googleApiKey',
+      googleModel: 'bk_tr_test_googleModel',
+      googleCustomModels: 'bk_tr_test_googleCustomModels'
     };
 
     const el = {
@@ -1340,7 +1342,7 @@
     function prettifyModelName(modelId){
       const raw = String(modelId || '').trim();
       if(!raw) return 'Model';
-      const found = MODEL_OPTIONS.find(m => m.id === raw);
+      const found = MODEL_OPTIONS.concat(GOOGLE_MODEL_OPTIONS).find(m => m.id === raw);
       if(found) return found.name;
       const short = raw.split('/').pop() || raw;
       const cleaned = short.replace(/[_]+/g,'-').replace(/-+/g,'-');
@@ -1351,7 +1353,7 @@
     }
 
     function getCurrentModelId(){
-      return (localStorage.getItem(LS.model) || (el.model ? el.model.value : '') || '').trim();
+      return (((el.model && el.model.value) || '') || localStorage.getItem(modelLsKey()) || '').trim();
     }
 
     function updateModelTag(){
@@ -1370,26 +1372,55 @@
       { id:'openai/gpt-5.5', name:'GPT 5.5', effort:'' }
     ];
 
-    function loadModelOptions(){
-      var saved = localStorage.getItem(LS.customModels);
-      if(!saved) return DEFAULT_MODELS.slice();
+    // Google 직접 호출용 모델 (네이티브 Gemini 모델명, google/ 접두어 없음)
+    const GOOGLE_DEFAULT_MODELS = [
+      { id:'gemini-3-flash-preview', name:'Gemini 3 Flash', effort:'' },
+      { id:'gemini-3.1-flash-lite', name:'Gemini 3.1 Flash Lite', effort:'' },
+      { id:'gemini-3.5-flash', name:'Gemini 3.5 Flash', effort:'' },
+      { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro', effort:'' }
+    ];
+
+    function loadModelList(lsKey, defaults){
+      var saved = localStorage.getItem(lsKey);
+      if(!saved) return defaults.slice();
       try{ var arr = JSON.parse(saved); if(Array.isArray(arr)) return arr; } catch(e){}
-      return DEFAULT_MODELS.slice();
+      return defaults.slice();
     }
 
-    var MODEL_OPTIONS = loadModelOptions();
+    var MODEL_OPTIONS = loadModelList(LS.customModels, DEFAULT_MODELS);
+    var GOOGLE_MODEL_OPTIONS = loadModelList(LS.googleCustomModels, GOOGLE_DEFAULT_MODELS);
+
+    function currentModelOptions(){
+      return isGoogleProvider() ? GOOGLE_MODEL_OPTIONS : MODEL_OPTIONS;
+    }
+    function modelLsKey(){
+      return isGoogleProvider() ? LS.googleModel : LS.model;
+    }
+    function getSavedModel(){
+      var opts = currentModelOptions();
+      return localStorage.getItem(modelLsKey()) || (opts[0] && opts[0].id) || '';
+    }
+    function setSavedModel(id){
+      localStorage.setItem(modelLsKey(), id);
+    }
 
     function saveModelOptions(arr){
-      localStorage.setItem(LS.customModels, JSON.stringify(arr));
-      MODEL_OPTIONS = arr;
+      if(isGoogleProvider()){
+        localStorage.setItem(LS.googleCustomModels, JSON.stringify(arr));
+        GOOGLE_MODEL_OPTIONS = arr;
+      } else {
+        localStorage.setItem(LS.customModels, JSON.stringify(arr));
+        MODEL_OPTIONS = arr;
+      }
       updateModelDatalist();
+      renderModelDropdown();
     }
 
     function updateModelDatalist(){
       var dl = document.getElementById('modelList');
       if(!dl) return;
       dl.innerHTML = '';
-      MODEL_OPTIONS.forEach(function(m){
+      currentModelOptions().forEach(function(m){
         var opt = document.createElement('option');
         opt.value = m.id;
         opt.textContent = m.name;
@@ -1402,7 +1433,7 @@
       overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
       var popup = document.createElement('div');
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;width:90vw;max-width:400px;max-height:85vh;overflow-y:auto;';
-      popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">모델 관리</div>';
+      popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">모델 관리 (' + (isGoogleProvider() ? 'Google' : 'OpenRouter') + ')</div>';
 
       var rows = [];
       function addRow(id, name, effort){
@@ -1458,7 +1489,7 @@
         bottomRow.style.cssText = 'display:flex;gap:6px;align-items:center;';
         var idInput = document.createElement('input');
         idInput.type = 'text'; idInput.value = id || '';
-        idInput.placeholder = 'model ID (예: google/gemini-3-flash-preview)';
+        idInput.placeholder = isGoogleProvider() ? 'Gemini model ID (예: gemini-3-flash-preview)' : 'model ID (예: google/gemini-3-flash-preview)';
         idInput.style.cssText = 'flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:var(--muted);font-size:11px;font-family:inherit;box-sizing:border-box;min-width:0;';
         var effortInput = document.createElement('input');
         effortInput.type = 'text'; effortInput.value = effort || '';
@@ -1479,7 +1510,7 @@
       var dragRow = null;
       var container = document.createElement('div');
       popup.appendChild(container);
-      MODEL_OPTIONS.forEach(function(m){ addRow(m.id, m.name, m.effort); });
+      currentModelOptions().forEach(function(m){ addRow(m.id, m.name, m.effort); });
 
       var addBtn = document.createElement('button');
       addBtn.type = 'button';
@@ -1526,14 +1557,14 @@
       if(!el.modelDropdown) return;
       const currentId = getCurrentModelId();
       el.modelDropdown.innerHTML = '';
-      MODEL_OPTIONS.forEach(m => {
+      currentModelOptions().forEach(m => {
         const btn = document.createElement('button');
         btn.className = 'modelDropdownItem' + (m.id === currentId ? ' active' : '');
         btn.type = 'button';
         btn.innerHTML = '<div class="mdName">' + m.name + '</div><div class="mdId">' + m.id + '</div>';
         btn.addEventListener('click', () => {
           if(el.model) el.model.value = m.id;
-          localStorage.setItem(LS.model, m.id);
+          setSavedModel(m.id);
           updateModelTag();
           closeModelDropdown();
           toast(m.name + ' 선택');
@@ -1928,8 +1959,6 @@
       if(el.apiProvider) el.apiProvider.value = localStorage.getItem(LS.apiProvider) || 'openrouter';
       if(el.googleApiKey) el.googleApiKey.value = localStorage.getItem(LS.googleApiKey) || '';
       updateProviderUI();
-      const savedModel = localStorage.getItem(LS.model);
-      if(savedModel) el.model.value = savedModel;
 
       el.temperature.value = localStorage.getItem(LS.temp) || el.temperature.value;
       el.topP.value = localStorage.getItem(LS.topP) || el.topP.value;
@@ -1949,7 +1978,7 @@
       localStorage.setItem(LS.apiBaseUrl, el.apiBaseUrl.value.trim());
       if(el.apiProvider) localStorage.setItem(LS.apiProvider, el.apiProvider.value);
       if(el.googleApiKey) localStorage.setItem(LS.googleApiKey, el.googleApiKey.value.trim());
-      localStorage.setItem(LS.model, el.model.value.trim());
+      setSavedModel(el.model.value.trim());
       localStorage.setItem(LS.temp, el.temperature.value.trim());
       localStorage.setItem(LS.topP, el.topP.value.trim());
       localStorage.setItem(LS.topK, el.topK.value.trim());
@@ -2101,6 +2130,10 @@
       const google = isGoogleProvider();
       if(orWrap) orWrap.style.display = google ? 'none' : '';
       if(ggWrap) ggWrap.style.display = google ? '' : 'none';
+      if(el.model) el.model.value = getSavedModel();
+      updateModelDatalist();
+      renderModelDropdown();
+      updateModelTag();
     }
     if(el.apiProvider) el.apiProvider.addEventListener('change', updateProviderUI);
 
@@ -2385,12 +2418,12 @@
       if(_isBusy || !userText) return;
       const prev = el.model.value;
       el.model.value = modelId;
-      localStorage.setItem(LS.model, modelId);
+      setSavedModel(modelId);
       updateModelTag();
       el.input.value = userText;
       send().finally(() => {
         el.model.value = prev;
-        localStorage.setItem(LS.model, prev);
+        setSavedModel(prev);
         updateModelTag();
       });
     }
@@ -2403,7 +2436,7 @@
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;min-width:260px;max-width:90vw;';
       popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:14px;">모델 선택 후 재번역</div>';
       var currentId = getCurrentModelId();
-      MODEL_OPTIONS.forEach(function(m){
+      currentModelOptions().forEach(function(m){
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:' + (m.id === currentId ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.05)') + ';color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
