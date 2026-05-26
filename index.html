@@ -767,6 +767,13 @@
                 </svg>
                 <span>모델 관리</span>
               </button>
+              <button id="topTokenToggleBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M9 12h6M12 9v6"></path>
+                </svg>
+                <span>토큰수 확인: 꺼짐</span>
+              </button>
             </div>
           </div>
 
@@ -1264,7 +1271,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v15.7t';
+    const APP_VERSION = 'v15.8t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1300,7 +1307,8 @@
       googleCustomModels: 'bk_tr_test_googleCustomModels',
       anthropicApiKey: 'bk_tr_test_anthropicApiKey',
       anthropicModel: 'bk_tr_test_anthropicModel',
-      anthropicCustomModels: 'bk_tr_test_anthropicCustomModels'
+      anthropicCustomModels: 'bk_tr_test_anthropicCustomModels',
+      showTokens: 'bk_tr_test_showTokens'
     };
 
     const el = {
@@ -2292,11 +2300,35 @@
         max_tokens: opts.maxTokens
       };
       if(p === 'openrouter' && typeof opts.topK === 'number') body.top_k = opts.topK;
+      if(opts.stream) body.stream_options = { include_usage: true }; // 토큰 사용량 수신
       return {
         url: url,
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
         body: body
       };
+    }
+
+    // 스트리밍 청크에서 토큰 사용량 추출 (Anthropic / OpenAI 형식 모두 처리)
+    function captureUsage(j){
+      if(j.usage && (j.usage.prompt_tokens != null || j.usage.completion_tokens != null)){
+        var det = j.usage.completion_tokens_details;
+        _lastUsage = {
+          in: j.usage.prompt_tokens,
+          out: j.usage.completion_tokens,
+          think: (det && det.reasoning_tokens != null) ? det.reasoning_tokens : undefined
+        };
+        return;
+      }
+      if(j.type === 'message_start' && j.message && j.message.usage){
+        _lastUsage = _lastUsage || {};
+        if(j.message.usage.input_tokens != null) _lastUsage.in = j.message.usage.input_tokens;
+        if(j.message.usage.output_tokens != null) _lastUsage.out = j.message.usage.output_tokens;
+      }
+      if(j.type === 'message_delta' && j.usage){
+        _lastUsage = _lastUsage || {};
+        if(j.usage.output_tokens != null) _lastUsage.out = j.usage.output_tokens;
+        if(j.usage.input_tokens != null) _lastUsage.in = j.usage.input_tokens;
+      }
     }
 
     // 스트리밍 청크에서 텍스트 추출 (Anthropic / OpenAI 형식 모두 처리)
@@ -2324,6 +2356,8 @@
     let _currentAbort = null;
     let _lastApiCallAt = 0;
     let _effortOverride = undefined; // 재번역 시 일시적 effort 지정 ('' = 기본/thinking 최대, 'low' 등)
+    let _lastUsage = null; // 직전 응답의 토큰 사용량
+    let _showTokens = localStorage.getItem(LS.showTokens) === '1';
 
     function abortCurrentRequest(){
       if(_currentAbort){ _currentAbort.abort(); _currentAbort = null; }
@@ -2418,6 +2452,7 @@
       }
 
       let full = '';
+      _lastUsage = null;
 
       if(res.body && res.body.getReader){
         const reader = res.body.getReader();
@@ -2436,6 +2471,7 @@
             if(data === '[DONE]') break;
             try{
               const j = JSON.parse(data);
+              captureUsage(j);
               const piece = parseChatDelta(j);
               if(piece){
                 full += piece;
@@ -2455,6 +2491,7 @@
           if(data === '[DONE]') continue;
           try{
             const j = JSON.parse(data);
+            captureUsage(j);
             full += parseChatDelta(j);
           } catch{}
         }
@@ -2746,6 +2783,18 @@
           row.appendChild(actions);
         }
 
+        if(_showTokens && m.role === 'assistant' && m.usage){
+          const tdiv = document.createElement('div');
+          tdiv.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;';
+          const u = m.usage;
+          const parts = [];
+          if(u.in != null) parts.push('입력 ' + u.in);
+          if(u.out != null) parts.push('출력 ' + u.out);
+          if(u.think != null) parts.push('사고 ' + u.think);
+          if(parts.length) tdiv.textContent = parts.join(' · ') + ' 토큰';
+          row.appendChild(tdiv);
+        }
+
         el.chat.appendChild(row);
       }
       el.chat.appendChild(el.bottomAnchor);
@@ -2796,7 +2845,7 @@
         });
         const translated = normalizeOutput(userText, translatedRaw);
 
-        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: prettifyModelName(getCurrentModelId()) });
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: prettifyModelName(getCurrentModelId()), usage: _lastUsage });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -3294,6 +3343,22 @@
     if(topImportPromptBtn) topImportPromptBtn.addEventListener('click', () => { if(importPromptFile) importPromptFile.click(); });
     var topModelEditorBtn = document.getElementById('topModelEditorBtn');
     if(topModelEditorBtn) topModelEditorBtn.addEventListener('click', showModelEditor);
+
+    var topTokenToggleBtn = document.getElementById('topTokenToggleBtn');
+    function updateTokenToggleLabel(){
+      if(!topTokenToggleBtn) return;
+      var span = topTokenToggleBtn.querySelector('span');
+      if(span) span.textContent = '토큰수 확인: ' + (_showTokens ? '켜짐' : '꺼짐');
+    }
+    updateTokenToggleLabel();
+    if(topTokenToggleBtn) topTokenToggleBtn.addEventListener('click', function(){
+      _showTokens = !_showTokens;
+      localStorage.setItem(LS.showTokens, _showTokens ? '1' : '0');
+      updateTokenToggleLabel();
+      renderChat();
+      toast(_showTokens ? '토큰수 표시 켜짐' : '토큰수 표시 꺼짐');
+    });
+
     if(el.topClearBtn) el.topClearBtn.addEventListener('click', clearChatOnly);
 
     const topMenuBtn = document.getElementById('topMenuBtn');
