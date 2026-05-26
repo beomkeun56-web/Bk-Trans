@@ -1256,7 +1256,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v14.3t';
+    const APP_VERSION = 'v14.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1990,6 +1990,7 @@
       el.apiBaseUrl.value = localStorage.getItem(LS.apiBaseUrl) || '';
       if(el.apiProvider) el.apiProvider.value = localStorage.getItem(LS.apiProvider) || 'openrouter';
       if(el.googleApiKey) el.googleApiKey.value = localStorage.getItem(LS.googleApiKey) || '';
+      if(el.anthropicApiKey) el.anthropicApiKey.value = localStorage.getItem(LS.anthropicApiKey) || '';
       updateProviderUI();
 
       el.temperature.value = localStorage.getItem(LS.temp) || el.temperature.value;
@@ -2010,6 +2011,7 @@
       localStorage.setItem(LS.apiBaseUrl, el.apiBaseUrl.value.trim());
       if(el.apiProvider) localStorage.setItem(LS.apiProvider, el.apiProvider.value);
       if(el.googleApiKey) localStorage.setItem(LS.googleApiKey, el.googleApiKey.value.trim());
+      if(el.anthropicApiKey) localStorage.setItem(LS.anthropicApiKey, el.anthropicApiKey.value.trim());
       setSavedModel(el.model.value.trim());
       localStorage.setItem(LS.temp, el.temperature.value.trim());
       localStorage.setItem(LS.topP, el.topP.value.trim());
