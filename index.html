@@ -8,6 +8,14 @@
 
   <link rel="icon" href="data:," />
 
+  <!-- API 호스트 사전 연결: 첫 요청 지연(TLS 핸드셰이크) 단축 -->
+  <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://api.anthropic.com" crossorigin />
+  <link rel="preconnect" href="https://openrouter.ai" crossorigin />
+  <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com" />
+  <link rel="dns-prefetch" href="https://api.anthropic.com" />
+  <link rel="dns-prefetch" href="https://openrouter.ai" />
+
   <style>
     :root{
       --bg:#050505;
@@ -1256,7 +1264,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v15.1t';
+    const APP_VERSION = 'v15.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2366,6 +2374,13 @@
         var _mopt = MODEL_OPTIONS.find(function(m){ return m.id === el.model.value.trim(); });
         if(_mopt && _mopt.effort){
           req.body.reasoning = { effort: _mopt.effort };
+        }
+      }
+      // Gemini: 모델 effort가 지정되면 thinking 수준 조절 (예: low → 사고 시간 단축 = 빠름)
+      if(google){
+        var _gmopt = GOOGLE_MODEL_OPTIONS.find(function(m){ return m.id === el.model.value.trim(); });
+        if(_gmopt && _gmopt.effort){
+          req.body.reasoning_effort = _gmopt.effort;
         }
       }
 
