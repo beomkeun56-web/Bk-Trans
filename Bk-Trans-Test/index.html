@@ -1256,7 +1256,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v14.0t';
+    const APP_VERSION = 'v14.1t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2200,11 +2200,8 @@
           model: opts.model,
           max_tokens: opts.maxTokens,
           messages: convo,
-          temperature: Math.min(opts.temperature, 1),
-          top_p: opts.topP,
           stream: !!opts.stream
         };
-        if(typeof opts.topK === 'number') body.top_k = opts.topK;
         if(systemText) body.system = systemText;
         return {
           url: url,
