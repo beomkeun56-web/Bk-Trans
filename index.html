@@ -1264,7 +1264,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v15.2t';
+    const APP_VERSION = 'v15.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2323,6 +2323,7 @@
 
     let _currentAbort = null;
     let _lastApiCallAt = 0;
+    let _effortOverride = undefined; // 재번역 시 일시적 effort 지정 ('' = 기본/thinking 최대, 'low' 등)
 
     function abortCurrentRequest(){
       if(_currentAbort){ _currentAbort.abort(); _currentAbort = null; }
@@ -2379,9 +2380,8 @@
       // Gemini: 모델 effort가 지정되면 thinking 수준 조절 (예: low → 사고 시간 단축 = 빠름)
       if(google){
         var _gmopt = GOOGLE_MODEL_OPTIONS.find(function(m){ return m.id === el.model.value.trim(); });
-        if(_gmopt && _gmopt.effort){
-          req.body.reasoning_effort = _gmopt.effort;
-        }
+        var _eff = (_effortOverride !== undefined) ? _effortOverride : (_gmopt && _gmopt.effort);
+        if(_eff) req.body.reasoning_effort = _eff;
       }
 
       // 연속 요청 차단: 직전 API 호출과 최소 간격(MIN_REQUEST_GAP_MS) 보장
@@ -2601,17 +2601,19 @@
       send();
     }
 
-    function retryWithModel(userText, modelId){
+    function retryWithModel(userText, modelId, effortOverride){
       if(_isBusy || !userText) return;
       const prev = el.model.value;
       el.model.value = modelId;
       setSavedModel(modelId);
       updateModelTag();
+      if(effortOverride !== undefined) _effortOverride = effortOverride;
       el.input.value = userText;
       send().finally(() => {
         el.model.value = prev;
         setSavedModel(prev);
         updateModelTag();
+        _effortOverride = undefined;
       });
     }
 
@@ -2624,9 +2626,33 @@
       popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:14px;">모델 선택 후 재번역</div>';
       var currentId = getCurrentModelId();
       currentModelOptions().forEach(function(m){
+        var bg = (m.id === currentId ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.05)');
+        // Google 모델에 effort(low 등)가 지정된 경우: 빠름/기본 선택 제공
+        if(isGoogleProvider() && m.effort){
+          var wrap = document.createElement('div');
+          wrap.style.cssText = 'margin-bottom:6px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:' + bg + ';padding:10px 14px;';
+          wrap.innerHTML = '<div style="font-weight:600;color:var(--text);font-size:14px;">' + m.name + '</div><div style="font-size:11px;color:var(--muted);margin:2px 0 8px;">' + m.id + '</div>';
+          var btnRow = document.createElement('div');
+          btnRow.style.cssText = 'display:flex;gap:6px;';
+          var bFast = document.createElement('button');
+          bFast.type = 'button';
+          bFast.textContent = m.effort + ' (빠름)';
+          bFast.style.cssText = 'flex:1;padding:8px;border:none;border-radius:8px;background:rgba(45,107,255,.3);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;';
+          bFast.addEventListener('click', function(){ document.body.removeChild(overlay); retryWithModel(userText, m.id, m.effort); });
+          var bDefault = document.createElement('button');
+          bDefault.type = 'button';
+          bDefault.textContent = '기본 (고품질)';
+          bDefault.style.cssText = 'flex:1;padding:8px;border:none;border-radius:8px;background:rgba(255,255,255,.1);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;';
+          bDefault.addEventListener('click', function(){ document.body.removeChild(overlay); retryWithModel(userText, m.id, ''); });
+          btnRow.appendChild(bFast);
+          btnRow.appendChild(bDefault);
+          wrap.appendChild(btnRow);
+          popup.appendChild(wrap);
+          return;
+        }
         var btn = document.createElement('button');
         btn.type = 'button';
-        btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:' + (m.id === currentId ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.05)') + ';color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
+        btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:' + bg + ';color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
         btn.innerHTML = '<div style="font-weight:600;">' + m.name + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">' + m.id + '</div>';
         btn.addEventListener('click', function(){
           document.body.removeChild(overlay);
