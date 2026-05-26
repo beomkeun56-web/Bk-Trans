@@ -1272,7 +1272,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v16.6t';
+    const APP_VERSION = 'v16.7t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2358,6 +2358,7 @@
     let _lastApiCallAt = 0;
     let _effortOverride = undefined; // 재번역 시 일시적 effort 지정 ('' = 기본/thinking 최대, 'low' 등)
     let _lastUsage = null; // 직전 응답의 토큰 사용량
+    let _lastEffort = ''; // 직전 요청에 적용된 effort (low/medium/high), 없으면 ''
     let _showTokens = localStorage.getItem(LS.showTokens) === '1';
 
     function abortCurrentRequest(){
@@ -2406,17 +2407,19 @@
         maxTokens: dynMax,
         stream: true
       });
+      _lastEffort = '';
       if(!google && !anthropic){
         var _mopt = MODEL_OPTIONS.find(function(m){ return m.id === el.model.value.trim(); });
         if(_mopt && _mopt.effort){
           req.body.reasoning = { effort: _mopt.effort };
+          _lastEffort = _mopt.effort;
         }
       }
       // Gemini: 모델 effort가 지정되면 thinking 수준 조절 (예: low → 사고 시간 단축 = 빠름)
       if(google){
         var _gmopt = GOOGLE_MODEL_OPTIONS.find(function(m){ return m.id === el.model.value.trim(); });
         var _eff = (_effortOverride !== undefined) ? _effortOverride : (_gmopt && _gmopt.effort);
-        if(_eff) req.body.reasoning_effort = _eff;
+        if(_eff){ req.body.reasoning_effort = _eff; _lastEffort = _eff; }
       }
 
       // 연속 요청 차단: 직전 API 호출과 최소 간격(MIN_REQUEST_GAP_MS) 보장
@@ -2710,16 +2713,21 @@
       document.body.appendChild(overlay);
     }
 
-    function usageLineText(u, ms, modelName){
+    function effLabel(e){
+      return e === 'low' ? 'Low' : e === 'medium' ? 'Mid' : e === 'high' ? 'High' : '';
+    }
+    function usageLineText(u, ms, modelName, effort){
       var seg = [];
       if(modelName) seg.push(modelName);
+      var el2 = effLabel(effort);
+      if(el2) seg.push(el2);
       if(u && u.think != null) seg.push('사고 ' + u.think + ' 토큰');
       if(ms != null) seg.push((ms / 1000).toFixed(1) + '초');
       return seg.join('  ·  ');
     }
-    function appendUsageLine(actionsEl, u, ms, modelName){
+    function appendUsageLine(actionsEl, u, ms, modelName, effort){
       if(!_showTokens || !actionsEl) return;
-      var txt = usageLineText(u, ms, modelName);
+      var txt = usageLineText(u, ms, modelName, effort);
       if(!txt) return;
       var s = document.createElement('span');
       s.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-left:8px;white-space:nowrap;';
@@ -2795,7 +2803,7 @@
           editBtn.textContent = 'Edit';
           editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
           actions.appendChild(editBtn);
-          appendUsageLine(actions, m.usage, m.ms, m.model);
+          appendUsageLine(actions, m.usage, m.ms, m.model, m.effort);
         }
 
         if(actions.children.length > 0){
@@ -2855,7 +2863,7 @@
         const _ms = Date.now() - _t0;
         const _modelName = prettifyModelName(getCurrentModelId());
 
-        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _modelName, usage: _lastUsage, ms: _ms });
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _modelName, usage: _lastUsage, ms: _ms, effort: _lastEffort });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -2879,7 +2887,7 @@
         editBtn.textContent = 'Edit';
         editBtn.addEventListener('click', () => { el.input.value = translated; autoResizeInput(); el.input.focus(); });
         actions.appendChild(editBtn);
-        appendUsageLine(actions, _lastUsage, _ms, _modelName);
+        appendUsageLine(actions, _lastUsage, _ms, _modelName, _lastEffort);
         streamRow.appendChild(actions);
 
         scrollThrottled();
