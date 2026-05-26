@@ -798,8 +798,9 @@
           <select id="apiProvider" style="width:100%; background:rgba(0,0,0,.35); color:var(--text); border:none; outline:none; border-radius:14px; padding:12px; font-size:calc(14px * var(--textScale));">
             <option value="openrouter">OpenRouter</option>
             <option value="google">Google (Gemini 직접 호출)</option>
+            <option value="anthropic">Anthropic (Claude 직접 호출)</option>
           </select>
-          <div class="hint" style="margin-top:6px;">OpenRouter가 403으로 막힐 때 Google로 바꾸면 Gemini를 직접 호출합니다. (각 제공자별 키를 따로 입력하세요)</div>
+          <div class="hint" style="margin-top:6px;">OpenRouter가 403으로 막힐 때 Google·Anthropic로 바꾸면 해당 모델을 직접 호출합니다. (각 제공자별 키를 따로 입력하세요)</div>
         </div>
 
         <div id="openrouterKeyWrap" style="margin-bottom:20px;">
@@ -814,6 +815,15 @@
           </label>
           <input id="googleApiKey" type="password" placeholder="AIza..." autocomplete="off" />
           <div class="hint" style="margin-top:6px;">Google 제공자에선 Gemini 모델만 작동합니다 (GPT·Claude 불가). 모델명 앞의 <code>google/</code> 는 자동 제거됩니다.</div>
+        </div>
+
+        <div id="anthropicKeyWrap" style="margin-bottom:20px; display:none;">
+          <label for="anthropicApiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            Anthropic API Key
+            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">console.anthropic.com 에서 발급</span>
+          </label>
+          <input id="anthropicApiKey" type="password" placeholder="sk-ant-..." autocomplete="off" />
+          <div class="hint" style="margin-top:6px;">Anthropic 제공자에선 Claude 모델만 작동합니다. 모델명 앞의 <code>anthropic/</code> 는 자동 제거됩니다. 모델 ID는 점(.) 없이 대시(-)를 씁니다 (예: <code>claude-opus-4-7</code>).</div>
         </div>
 
         <div style="margin-bottom:20px;">
@@ -1246,7 +1256,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v13.9t';
+    const APP_VERSION = 'v14.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1279,7 +1289,10 @@
       apiProvider: 'bk_tr_test_apiProvider',
       googleApiKey: 'bk_tr_test_googleApiKey',
       googleModel: 'bk_tr_test_googleModel',
-      googleCustomModels: 'bk_tr_test_googleCustomModels'
+      googleCustomModels: 'bk_tr_test_googleCustomModels',
+      anthropicApiKey: 'bk_tr_test_anthropicApiKey',
+      anthropicModel: 'bk_tr_test_anthropicModel',
+      anthropicCustomModels: 'bk_tr_test_anthropicCustomModels'
     };
 
     const el = {
@@ -1301,6 +1314,7 @@
       apiBaseUrl: document.getElementById('apiBaseUrl'),
       apiProvider: document.getElementById('apiProvider'),
       googleApiKey: document.getElementById('googleApiKey'),
+      anthropicApiKey: document.getElementById('anthropicApiKey'),
       model: document.getElementById('model'),
       temperature: document.getElementById('temperature'),
       topP: document.getElementById('topP'),
@@ -1342,7 +1356,7 @@
     function prettifyModelName(modelId){
       const raw = String(modelId || '').trim();
       if(!raw) return 'Model';
-      const found = MODEL_OPTIONS.concat(GOOGLE_MODEL_OPTIONS).find(m => m.id === raw);
+      const found = MODEL_OPTIONS.concat(GOOGLE_MODEL_OPTIONS, ANTHROPIC_MODEL_OPTIONS).find(m => m.id === raw);
       if(found) return found.name;
       const short = raw.split('/').pop() || raw;
       const cleaned = short.replace(/[_]+/g,'-').replace(/-+/g,'-');
@@ -1380,6 +1394,12 @@
       { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro', effort:'' }
     ];
 
+    // Anthropic 직접 호출용 모델 (네이티브 Claude 모델명, anthropic/ 접두어 없음, 대시 사용)
+    const ANTHROPIC_DEFAULT_MODELS = [
+      { id:'claude-haiku-4-5', name:'Claude Haiku 4.5', effort:'' },
+      { id:'claude-opus-4-7', name:'Claude Opus 4.7', effort:'' }
+    ];
+
     function loadModelList(lsKey, defaults){
       var saved = localStorage.getItem(lsKey);
       if(!saved) return defaults.slice();
@@ -1389,12 +1409,19 @@
 
     var MODEL_OPTIONS = loadModelList(LS.customModels, DEFAULT_MODELS);
     var GOOGLE_MODEL_OPTIONS = loadModelList(LS.googleCustomModels, GOOGLE_DEFAULT_MODELS);
+    var ANTHROPIC_MODEL_OPTIONS = loadModelList(LS.anthropicCustomModels, ANTHROPIC_DEFAULT_MODELS);
 
     function currentModelOptions(){
-      return isGoogleProvider() ? GOOGLE_MODEL_OPTIONS : MODEL_OPTIONS;
+      var p = getProvider();
+      if(p === 'google') return GOOGLE_MODEL_OPTIONS;
+      if(p === 'anthropic') return ANTHROPIC_MODEL_OPTIONS;
+      return MODEL_OPTIONS;
     }
     function modelLsKey(){
-      return isGoogleProvider() ? LS.googleModel : LS.model;
+      var p = getProvider();
+      if(p === 'google') return LS.googleModel;
+      if(p === 'anthropic') return LS.anthropicModel;
+      return LS.model;
     }
     function getSavedModel(){
       var opts = currentModelOptions();
@@ -1405,9 +1432,13 @@
     }
 
     function saveModelOptions(arr){
-      if(isGoogleProvider()){
+      var p = getProvider();
+      if(p === 'google'){
         localStorage.setItem(LS.googleCustomModels, JSON.stringify(arr));
         GOOGLE_MODEL_OPTIONS = arr;
+      } else if(p === 'anthropic'){
+        localStorage.setItem(LS.anthropicCustomModels, JSON.stringify(arr));
+        ANTHROPIC_MODEL_OPTIONS = arr;
       } else {
         localStorage.setItem(LS.customModels, JSON.stringify(arr));
         MODEL_OPTIONS = arr;
@@ -1433,7 +1464,7 @@
       overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
       var popup = document.createElement('div');
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;width:90vw;max-width:400px;max-height:85vh;overflow-y:auto;';
-      popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">모델 관리 (' + (isGoogleProvider() ? 'Google' : 'OpenRouter') + ')</div>';
+      popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">모델 관리 (' + (isGoogleProvider() ? 'Google' : isAnthropicProvider() ? 'Anthropic' : 'OpenRouter') + ')</div>';
 
       var rows = [];
       function addRow(id, name, effort){
@@ -1489,7 +1520,7 @@
         bottomRow.style.cssText = 'display:flex;gap:6px;align-items:center;';
         var idInput = document.createElement('input');
         idInput.type = 'text'; idInput.value = id || '';
-        idInput.placeholder = isGoogleProvider() ? 'Gemini model ID (예: gemini-3-flash-preview)' : 'model ID (예: google/gemini-3-flash-preview)';
+        idInput.placeholder = isGoogleProvider() ? 'Gemini model ID (예: gemini-3-flash-preview)' : isAnthropicProvider() ? 'Claude model ID (예: claude-opus-4-7)' : 'model ID (예: google/gemini-3-flash-preview)';
         idInput.style.cssText = 'flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:var(--muted);font-size:11px;font-family:inherit;box-sizing:border-box;min-width:0;';
         var effortInput = document.createElement('input');
         effortInput.type = 'text'; effortInput.value = effort || '';
@@ -2110,26 +2141,33 @@
 
     const DEFAULT_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
     const GOOGLE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+    const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
     function getProvider(){
       return (el.apiProvider && el.apiProvider.value) || localStorage.getItem(LS.apiProvider) || 'openrouter';
     }
     function isGoogleProvider(){ return getProvider() === 'google'; }
+    function isAnthropicProvider(){ return getProvider() === 'anthropic'; }
     function getActiveApiKey(){
-      return isGoogleProvider()
-        ? ((el.googleApiKey && el.googleApiKey.value) || '').trim()
-        : ((el.apiKey && el.apiKey.value) || '').trim();
+      const p = getProvider();
+      if(p === 'google') return ((el.googleApiKey && el.googleApiKey.value) || '').trim();
+      if(p === 'anthropic') return ((el.anthropicApiKey && el.anthropicApiKey.value) || '').trim();
+      return ((el.apiKey && el.apiKey.value) || '').trim();
     }
     function toRequestModelId(id){
       const m = String(id || '').trim();
-      return isGoogleProvider() ? m.replace(/^google\//, '') : m;
+      const p = getProvider();
+      if(p === 'google') return m.replace(/^google\//, '');
+      if(p === 'anthropic') return m.replace(/^anthropic\//, '');
+      return m;
     }
     function updateProviderUI(){
-      const orWrap = document.getElementById('openrouterKeyWrap');
-      const ggWrap = document.getElementById('googleKeyWrap');
-      const google = isGoogleProvider();
-      if(orWrap) orWrap.style.display = google ? 'none' : '';
-      if(ggWrap) ggWrap.style.display = google ? '' : 'none';
+      const p = getProvider();
+      const wraps = { openrouter:'openrouterKeyWrap', google:'googleKeyWrap', anthropic:'anthropicKeyWrap' };
+      Object.keys(wraps).forEach(function(k){
+        const w = document.getElementById(wraps[k]);
+        if(w) w.style.display = (k === p) ? '' : 'none';
+      });
       if(el.model) el.model.value = getSavedModel();
       updateModelDatalist();
       renderModelDropdown();
@@ -2140,7 +2178,81 @@
     function getApiUrl(){
       const custom = el.apiBaseUrl && el.apiBaseUrl.value.trim();
       if(custom) return custom;
-      return isGoogleProvider() ? GOOGLE_API_URL : DEFAULT_API_URL;
+      const p = getProvider();
+      if(p === 'google') return GOOGLE_API_URL;
+      if(p === 'anthropic') return ANTHROPIC_API_URL;
+      return DEFAULT_API_URL;
+    }
+
+    // 제공자별 요청(헤더/본문) 생성 — Anthropic은 OpenAI 형식이 아님
+    function buildChatRequest(opts){
+      const p = getProvider();
+      const key = getActiveApiKey();
+      const url = getApiUrl();
+      if(p === 'anthropic'){
+        let systemText = '';
+        const convo = [];
+        (opts.messages || []).forEach(function(m){
+          if(m.role === 'system') systemText += (systemText ? '\n' : '') + m.content;
+          else convo.push({ role: m.role, content: m.content });
+        });
+        const body = {
+          model: opts.model,
+          max_tokens: opts.maxTokens,
+          messages: convo,
+          temperature: Math.min(opts.temperature, 1),
+          top_p: opts.topP,
+          stream: !!opts.stream
+        };
+        if(typeof opts.topK === 'number') body.top_k = opts.topK;
+        if(systemText) body.system = systemText;
+        return {
+          url: url,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: body
+        };
+      }
+      const body = {
+        model: opts.model,
+        messages: opts.messages,
+        temperature: opts.temperature,
+        top_p: opts.topP,
+        stream: !!opts.stream,
+        max_tokens: opts.maxTokens
+      };
+      if(p === 'openrouter' && typeof opts.topK === 'number') body.top_k = opts.topK;
+      return {
+        url: url,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: body
+      };
+    }
+
+    // 스트리밍 청크에서 텍스트 추출 (Anthropic / OpenAI 형식 모두 처리)
+    function parseChatDelta(j){
+      if(isAnthropicProvider()){
+        if(j.type === 'content_block_delta' && j.delta && typeof j.delta.text === 'string') return j.delta.text;
+        return '';
+      }
+      const c = j.choices && j.choices[0];
+      if(!c) return '';
+      if(c.delta && c.delta.content) return c.delta.content;
+      if(c.message && c.message.content) return c.message.content;
+      return '';
+    }
+    // 비스트리밍 단일 JSON 응답에서 본문 추출
+    function parseChatFull(j){
+      if(isAnthropicProvider()){
+        if(Array.isArray(j.content)) return j.content.map(function(c){ return c && c.text ? c.text : ''; }).join('');
+        return '';
+      }
+      const m = j.choices && j.choices[0] && j.choices[0].message;
+      return (m && m.content) ? m.content : '';
     }
 
     let _currentAbort = null;
@@ -2163,8 +2275,10 @@
 
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
       const google = isGoogleProvider();
+      const anthropic = isAnthropicProvider();
+      const provName = anthropic ? 'Anthropic ' : google ? 'Google ' : 'OpenRouter ';
       const apiKey = getActiveApiKey();
-      if(!apiKey) throw new Error((google ? 'Google ' : 'OpenRouter ') + 'API Key가 비어 있습니다.');
+      if(!apiKey) throw new Error(provName + 'API Key가 비어 있습니다.');
 
       const model = toRequestModelId(el.model.value.trim());
       if(!model) throw new Error('모델이 비어 있습니다.');
@@ -2180,19 +2294,19 @@
         ? [{ role: 'user', content: 'ping' }]
         : buildContextMessages(userText);
 
-      const payload = {
-        model,
-        messages,
-        temperature,
-        top_p: topP,
-        stream: true,
-        max_tokens: dynMax
-      };
-      if(!google){
-        payload.top_k = topK;
+      const req = buildChatRequest({
+        model: model,
+        messages: messages,
+        temperature: temperature,
+        topP: topP,
+        topK: topK,
+        maxTokens: dynMax,
+        stream: true
+      });
+      if(!google && !anthropic){
         var _mopt = MODEL_OPTIONS.find(function(m){ return m.id === el.model.value.trim(); });
         if(_mopt && _mopt.effort){
-          payload.reasoning = { effort: _mopt.effort };
+          req.body.reasoning = { effort: _mopt.effort };
         }
       }
 
@@ -2202,13 +2316,10 @@
 
       let res;
       try{
-        res = await fetch(getApiUrl(), {
+        res = await fetch(req.url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + apiKey
-          },
-          body: JSON.stringify(payload),
+          headers: req.headers,
+          body: JSON.stringify(req.body),
           signal: ac.signal
         });
       } finally {
@@ -2246,9 +2357,9 @@
             if(data === '[DONE]') break;
             try{
               const j = JSON.parse(data);
-              const delta = j.choices && j.choices[0] && j.choices[0].delta;
-              if(delta && delta.content){
-                full += delta.content;
+              const piece = parseChatDelta(j);
+              if(piece){
+                full += piece;
                 const visible = stripThinkingTags(full);
                 if(visible) onChunk(visible);
               }
@@ -2265,10 +2376,7 @@
           if(data === '[DONE]') continue;
           try{
             const j = JSON.parse(data);
-            const delta = j.choices && j.choices[0] && j.choices[0].delta;
-            if(delta && delta.content) full += delta.content;
-            const msg = j.choices && j.choices[0] && j.choices[0].message;
-            if(msg && msg.content) full += msg.content;
+            full += parseChatDelta(j);
           } catch{}
         }
         onChunk(stripThinkingTags(full));
@@ -2836,23 +2944,23 @@
 
       const apiKey = getActiveApiKey();
       if(!apiKey){ toast('API Key가 필요합니다'); return; }
-      const analyzeModel = isGoogleProvider()
-        ? toRequestModelId(el.model.value.trim() || 'gemini-3-flash-preview')
-        : 'anthropic/claude-opus-4.7';
+      let analyzeModel;
+      if(isGoogleProvider()) analyzeModel = toRequestModelId(el.model.value.trim() || 'gemini-3-flash-preview');
+      else if(isAnthropicProvider()) analyzeModel = toRequestModelId(el.model.value.trim() || 'claude-opus-4-7');
+      else analyzeModel = 'anthropic/claude-opus-4.7';
 
       try{
-        const res = await fetch(getApiUrl(), {
+        const req = buildChatRequest({
+          model: analyzeModel,
+          messages: [{ role: 'user', content: analyzePrompt }],
+          temperature: 0.1,
+          maxTokens: 512,
+          stream: false
+        });
+        const res = await fetch(req.url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + apiKey
-          },
-          body: JSON.stringify({
-            model: analyzeModel,
-            messages: [{ role: 'user', content: analyzePrompt }],
-            temperature: 0.1,
-            max_tokens: 512
-          })
+          headers: req.headers,
+          body: JSON.stringify(req.body)
         });
         if(!res.ok){
           const t = await res.text();
@@ -2860,7 +2968,7 @@
           toast('분석 실패: ' + msg); return;
         }
         const json = await res.json();
-        const rules = (json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content || '').trim();
+        const rules = (parseChatFull(json) || '').trim();
         if(!rules){ toast('보완 규칙 생성 실패'); return; }
 
         const enhanced = currentPrompt + '\n' + rules;
