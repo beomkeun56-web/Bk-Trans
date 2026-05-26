@@ -1256,7 +1256,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v14.2t';
+    const APP_VERSION = 'v14.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2203,6 +2203,8 @@
           messages: convo,
           stream: !!opts.stream
         };
+        // Anthropic은 temperature 최대 1.0 (top_p/top_k는 보내지 않음)
+        if(typeof opts.temperature === 'number') body.temperature = Math.min(opts.temperature, 1);
         if(systemText) body.system = systemText;
         return {
           url: url,
