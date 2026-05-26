@@ -355,6 +355,10 @@
       position:relative;
     }
     .settings .row{display:flex; gap:10px; flex-wrap:wrap}
+    /* 모바일/터치: 키보드가 입력칸을 가리지 않도록 모달을 상단 정렬 */
+    @media (hover: none) and (pointer: coarse){
+      .settingsOverlay{ align-items:flex-start; }
+    }
     label{font-size: calc(12px * var(--textScale)); color:var(--muted); display:block; margin:10px 0 6px}
     input, textarea, select, button{
       font-family: inherit;
@@ -1247,7 +1251,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v14.6t';
+    const APP_VERSION = 'v14.7t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2036,10 +2040,39 @@
     function setApiSettingsVisible(v){
       if(v){
         apiSettingsOverlay.classList.add('show');
+        const _p = document.getElementById('apiSettingsPanel');
+        if(_p) _p.style.maxHeight = '';
       } else {
         apiSettingsOverlay.classList.remove('show');
       }
     }
+
+    // 모바일: 소프트 키보드가 설정 입력칸을 가리지 않도록 처리
+    (function(){
+      const vv = window.visualViewport;
+      function visiblePanel(){
+        const o = document.querySelector('.settingsOverlay.show');
+        return o ? o.querySelector('.settings') : null;
+      }
+      function fit(){
+        if(!vv) return;
+        const p = visiblePanel();
+        if(p) p.style.maxHeight = (vv.height - 16) + 'px';
+      }
+      if(vv){
+        vv.addEventListener('resize', fit);
+        vv.addEventListener('scroll', fit);
+      }
+      document.addEventListener('focusin', function(e){
+        const t = e.target;
+        if(!t || !t.closest || !t.closest('.settingsOverlay.show')) return;
+        if(t.tagName !== 'TEXTAREA' && t.tagName !== 'INPUT' && t.tagName !== 'SELECT') return;
+        setTimeout(function(){
+          fit();
+          try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(_){}
+        }, 300);
+      });
+    })();
 
     function setColorSettingsVisible(v){
       if(v){
@@ -2595,21 +2628,24 @@
       for(const m of chat){
         if(m.role === 'user') lastUserText = m.text;
 
+        // 사용자 메시지의 방향 마커 '#'은 화면에선 숨김 (전송/재번역엔 유지)
+        const dispText = m.role === 'user' ? m.text.replace(/^#\s*/, '') : m.text;
+
         const row = document.createElement('div');
         row.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
 
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
-        bubble.textContent = m.text;
+        bubble.textContent = dispText;
         bubble.style.cursor = 'pointer';
-        bubble.addEventListener('click', () => showFocusOverlay(m.text));
+        bubble.addEventListener('click', () => showFocusOverlay(dispText));
         row.appendChild(bubble);
 
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
 
         if(m.role === 'user'){
-          actions.appendChild(createTtsBtn(m.text));
+          actions.appendChild(createTtsBtn(dispText));
 
           const retranBtn = document.createElement('button');
           retranBtn.className = 'copyPill';
