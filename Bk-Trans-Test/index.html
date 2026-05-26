@@ -1256,7 +1256,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v15.0t';
+    const APP_VERSION = 'v15.1t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1938,6 +1938,8 @@
       AUTO_TRANSLATE_MAX_LEN: 300,
       REQUEST_TIMEOUT_MS: 20000,
       CLIPBOARD_DEBOUNCE_MS: 150,
+      MIN_REQUEST_GAP_MS: 1500,
+      QUALITY_TEST_GAP_MS: 4000,
     };
 
     let chat = [];
@@ -2312,6 +2314,7 @@
     }
 
     let _currentAbort = null;
+    let _lastApiCallAt = 0;
 
     function abortCurrentRequest(){
       if(_currentAbort){ _currentAbort.abort(); _currentAbort = null; }
@@ -2365,6 +2368,11 @@
           req.body.reasoning = { effort: _mopt.effort };
         }
       }
+
+      // 연속 요청 차단: 직전 API 호출과 최소 간격(MIN_REQUEST_GAP_MS) 보장
+      const _gap = CONFIG.MIN_REQUEST_GAP_MS - (Date.now() - _lastApiCallAt);
+      if(_gap > 0) await new Promise(r => setTimeout(r, _gap));
+      _lastApiCallAt = Date.now();
 
       const ac = new AbortController();
       _currentAbort = ac;
@@ -2928,7 +2936,8 @@
         if(_isBusy) await new Promise(r => { const iv = setInterval(() => { if(!_isBusy){ clearInterval(iv); r(); } }, 200); });
         el.input.value = allSamples[i];
         await send();
-        await new Promise(r => setTimeout(r, 500));
+        // 남용 탐지 회피: 문장 간 간격을 넓히고 무작위 지터 추가
+        await new Promise(r => setTimeout(r, CONFIG.QUALITY_TEST_GAP_MS + Math.random() * 2000));
       }
       toast('품질점검 완료 (' + allSamples.length + '문장)');
     }
