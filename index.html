@@ -794,14 +794,32 @@
       </div>
 
         <div style="margin-bottom:20px;">
+          <label for="apiProvider" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:block;">API 제공자</label>
+          <select id="apiProvider" style="width:100%; background:rgba(0,0,0,.35); color:var(--text); border:none; outline:none; border-radius:14px; padding:12px; font-size:calc(14px * var(--textScale));">
+            <option value="openrouter">OpenRouter</option>
+            <option value="google">Google (Gemini 직접 호출)</option>
+          </select>
+          <div class="hint" style="margin-top:6px;">OpenRouter가 403으로 막힐 때 Google로 바꾸면 Gemini를 직접 호출합니다. (각 제공자별 키를 따로 입력하세요)</div>
+        </div>
+
+        <div id="openrouterKeyWrap" style="margin-bottom:20px;">
           <label for="apiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">OpenRouter API Key</label>
           <input id="apiKey" type="password" placeholder="sk-or-v1-..." autocomplete="off" />
+        </div>
+
+        <div id="googleKeyWrap" style="margin-bottom:20px; display:none;">
+          <label for="googleApiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            Google API Key
+            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">aistudio.google.com 에서 발급</span>
+          </label>
+          <input id="googleApiKey" type="password" placeholder="AIza..." autocomplete="off" />
+          <div class="hint" style="margin-top:6px;">Google 제공자에선 Gemini 모델만 작동합니다 (GPT·Claude 불가). 모델명 앞의 <code>google/</code> 는 자동 제거됩니다.</div>
         </div>
 
         <div style="margin-bottom:20px;">
           <label for="apiBaseUrl" style="font-size:calc(12px * var(--textScale)); font-weight:600; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
             API URL (403 에러 시)
-            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">비워두면 기본값 사용</span>
+            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">비워두면 제공자 기본값 사용</span>
           </label>
           <input id="apiBaseUrl" type="text" placeholder="https://openrouter.ai/api/v1/chat/completions" autocomplete="off" style="font-size:calc(12px * var(--textScale));" />
         </div>
@@ -1257,7 +1275,9 @@
       chatHistory: 'bk_tr_test_chatHistory',
       enhancedPrompt: 'bk_tr_test_enhancedPrompt',
       useEnhanced: 'bk_tr_test_useEnhanced',
-      apiBaseUrl: 'bk_tr_test_apiBaseUrl'
+      apiBaseUrl: 'bk_tr_test_apiBaseUrl',
+      apiProvider: 'bk_tr_test_apiProvider',
+      googleApiKey: 'bk_tr_test_googleApiKey'
     };
 
     const el = {
@@ -1277,6 +1297,8 @@
 
       apiKey: document.getElementById('apiKey'),
       apiBaseUrl: document.getElementById('apiBaseUrl'),
+      apiProvider: document.getElementById('apiProvider'),
+      googleApiKey: document.getElementById('googleApiKey'),
       model: document.getElementById('model'),
       temperature: document.getElementById('temperature'),
       topP: document.getElementById('topP'),
@@ -1903,6 +1925,9 @@
     function loadSettings(){
       el.apiKey.value = localStorage.getItem(LS.apiKey) || '';
       el.apiBaseUrl.value = localStorage.getItem(LS.apiBaseUrl) || '';
+      if(el.apiProvider) el.apiProvider.value = localStorage.getItem(LS.apiProvider) || 'openrouter';
+      if(el.googleApiKey) el.googleApiKey.value = localStorage.getItem(LS.googleApiKey) || '';
+      updateProviderUI();
       const savedModel = localStorage.getItem(LS.model);
       if(savedModel) el.model.value = savedModel;
 
@@ -1922,6 +1947,8 @@
     function saveApiSettings(){
       localStorage.setItem(LS.apiKey, el.apiKey.value.trim());
       localStorage.setItem(LS.apiBaseUrl, el.apiBaseUrl.value.trim());
+      if(el.apiProvider) localStorage.setItem(LS.apiProvider, el.apiProvider.value);
+      if(el.googleApiKey) localStorage.setItem(LS.googleApiKey, el.googleApiKey.value.trim());
       localStorage.setItem(LS.model, el.model.value.trim());
       localStorage.setItem(LS.temp, el.temperature.value.trim());
       localStorage.setItem(LS.topP, el.topP.value.trim());
@@ -2053,9 +2080,34 @@
     }
 
     const DEFAULT_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+    const GOOGLE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+
+    function getProvider(){
+      return (el.apiProvider && el.apiProvider.value) || localStorage.getItem(LS.apiProvider) || 'openrouter';
+    }
+    function isGoogleProvider(){ return getProvider() === 'google'; }
+    function getActiveApiKey(){
+      return isGoogleProvider()
+        ? ((el.googleApiKey && el.googleApiKey.value) || '').trim()
+        : ((el.apiKey && el.apiKey.value) || '').trim();
+    }
+    function toRequestModelId(id){
+      const m = String(id || '').trim();
+      return isGoogleProvider() ? m.replace(/^google\//, '') : m;
+    }
+    function updateProviderUI(){
+      const orWrap = document.getElementById('openrouterKeyWrap');
+      const ggWrap = document.getElementById('googleKeyWrap');
+      const google = isGoogleProvider();
+      if(orWrap) orWrap.style.display = google ? 'none' : '';
+      if(ggWrap) ggWrap.style.display = google ? '' : 'none';
+    }
+    if(el.apiProvider) el.apiProvider.addEventListener('change', updateProviderUI);
+
     function getApiUrl(){
       const custom = el.apiBaseUrl && el.apiBaseUrl.value.trim();
-      return custom || DEFAULT_API_URL;
+      if(custom) return custom;
+      return isGoogleProvider() ? GOOGLE_API_URL : DEFAULT_API_URL;
     }
 
     let _currentAbort = null;
@@ -2077,10 +2129,11 @@
     }
 
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
-      const apiKey = el.apiKey.value.trim();
-      if(!apiKey) throw new Error('API Key가 비어 있습니다.');
+      const google = isGoogleProvider();
+      const apiKey = getActiveApiKey();
+      if(!apiKey) throw new Error((google ? 'Google ' : 'OpenRouter ') + 'API Key가 비어 있습니다.');
 
-      const model = el.model.value.trim();
+      const model = toRequestModelId(el.model.value.trim());
       if(!model) throw new Error('모델이 비어 있습니다.');
 
       const isPing = userText === 'ping';
@@ -2099,13 +2152,15 @@
         messages,
         temperature,
         top_p: topP,
-        top_k: topK,
         stream: true,
         max_tokens: dynMax
       };
-      var _mopt = MODEL_OPTIONS.find(function(m){ return m.id === model; });
-      if(_mopt && _mopt.effort){
-        payload.reasoning = { effort: _mopt.effort };
+      if(!google){
+        payload.top_k = topK;
+        var _mopt = MODEL_OPTIONS.find(function(m){ return m.id === el.model.value.trim(); });
+        if(_mopt && _mopt.effort){
+          payload.reasoning = { effort: _mopt.effort };
+        }
       }
 
       const ac = new AbortController();
@@ -2746,8 +2801,11 @@
         '출력 형식: 보완 규칙만 3줄 이내로 출력. 기존 프롬프트 내용 반복 금지. 설명 금지. 규칙만 출력.\n' +
         '예시: "구어체는 구어체로, 경어는 경어로 톤 유지."';
 
-      const apiKey = el.apiKey.value.trim();
+      const apiKey = getActiveApiKey();
       if(!apiKey){ toast('API Key가 필요합니다'); return; }
+      const analyzeModel = isGoogleProvider()
+        ? toRequestModelId(el.model.value.trim() || 'gemini-3-flash-preview')
+        : 'anthropic/claude-opus-4.7';
 
       try{
         const res = await fetch(getApiUrl(), {
@@ -2757,7 +2815,7 @@
             'Authorization': 'Bearer ' + apiKey
           },
           body: JSON.stringify({
-            model: 'anthropic/claude-opus-4.7',
+            model: analyzeModel,
             messages: [{ role: 'user', content: analyzePrompt }],
             temperature: 0.1,
             max_tokens: 512
@@ -2779,7 +2837,7 @@
         updateNewToggleUI();
 
         chat.push({ role:'user', text:'[품질강화 분석 결과]', ts:Date.now() });
-        chat.push({ role:'assistant', text: rules, ts:Date.now(), model:'Opus 4.7 분석' });
+        chat.push({ role:'assistant', text: rules, ts:Date.now(), model: prettifyModelName(analyzeModel) + ' 분석' });
         saveChatHistory();
         renderChat();
         toast('품질강화 완료 — New 프롬프트 자동 적용');
