@@ -1271,7 +1271,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v16.1t';
+    const APP_VERSION = 'v16.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2709,8 +2709,9 @@
       document.body.appendChild(overlay);
     }
 
-    function usageLineText(u, ms){
+    function usageLineText(u, ms, modelName){
       var seg = [];
+      if(modelName) seg.push(modelName);
       if(u && u.think != null) seg.push('사고 ' + u.think + ' 토큰');
       if(ms != null){
         seg.push((ms / 1000).toFixed(1) + '초');
@@ -2718,9 +2719,9 @@
       }
       return seg.join('  ·  ');
     }
-    function appendUsageLine(row, u, ms){
+    function appendUsageLine(row, u, ms, modelName){
       if(!_showTokens) return;
-      var txt = usageLineText(u, ms);
+      var txt = usageLineText(u, ms, modelName);
       if(!txt) return;
       var d = document.createElement('div');
       d.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;';
@@ -2802,7 +2803,7 @@
           row.appendChild(actions);
         }
 
-        if(m.role === 'assistant') appendUsageLine(row, m.usage, m.ms);
+        if(m.role === 'assistant') appendUsageLine(row, m.usage, m.ms, m.model);
 
         el.chat.appendChild(row);
       }
@@ -2855,8 +2856,9 @@
         });
         const translated = normalizeOutput(userText, translatedRaw);
         const _ms = Date.now() - _t0;
+        const _modelName = prettifyModelName(getCurrentModelId());
 
-        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: prettifyModelName(getCurrentModelId()), usage: _lastUsage, ms: _ms });
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _modelName, usage: _lastUsage, ms: _ms });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -2882,7 +2884,7 @@
         actions.appendChild(editBtn);
         streamRow.appendChild(actions);
 
-        appendUsageLine(streamRow, _lastUsage, _ms);
+        appendUsageLine(streamRow, _lastUsage, _ms, _modelName);
 
         scrollThrottled();
 
