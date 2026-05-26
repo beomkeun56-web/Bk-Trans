@@ -1248,10 +1248,10 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
+  <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v14.8t';
+    const APP_VERSION = 'v14.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3066,32 +3066,38 @@
     function importPrompt(file){
       const reader = new FileReader();
       reader.onload = function(e){
-        const text = e.target.result;
+        const text = String(e.target.result || '');
         const baseMark = '=== 기본 프롬프트 ===';
         const enhMark = '=== 수정 프롬프트 ===';
         const baseIdx = text.indexOf(baseMark);
         const enhIdx = text.indexOf(enhMark);
 
-        if(baseIdx === -1){ toast('올바른 프롬프트 파일이 아닙니다'); return; }
-
-        let basePrompt, enhPrompt;
-        if(enhIdx !== -1){
-          basePrompt = text.substring(baseIdx + baseMark.length, enhIdx).trim();
-          enhPrompt = text.substring(enhIdx + enhMark.length).trim();
+        let basePrompt = '', enhPrompt = '';
+        if(baseIdx !== -1){
+          // 앱 내보내기 형식
+          if(enhIdx !== -1){
+            basePrompt = text.substring(baseIdx + baseMark.length, enhIdx).trim();
+            enhPrompt = text.substring(enhIdx + enhMark.length).trim();
+          } else {
+            basePrompt = text.substring(baseIdx + baseMark.length).trim();
+          }
         } else {
-          basePrompt = text.substring(baseIdx + baseMark.length).trim();
-          enhPrompt = '';
+          // 마커 없는 일반 txt → 전체를 기본 프롬프트로
+          basePrompt = text.trim();
         }
+        if(!basePrompt){ toast('빈 파일입니다'); return; }
 
-        if(basePrompt) el.systemPrompt.value = basePrompt;
+        // 현재 선택된 제공자에만 적용 (제공자별 분리)
+        el.systemPrompt.value = basePrompt;
+        localStorage.setItem(sysLsKey(), basePrompt);
         if(enhPrompt){
           localStorage.setItem(enhancedLsKey(), enhPrompt);
           _useEnhancedPrompt = true;
           localStorage.setItem(useEnhancedLsKey(), 'true');
         }
-        saveApiSettings();
         updateNewToggleUI();
-        toast('프롬프트 가져오기 완료' + (enhPrompt ? ' (수정 프롬프트 적용)' : ''));
+        const provLabel = isGoogleProvider() ? 'Google' : isAnthropicProvider() ? 'Anthropic' : 'OpenRouter';
+        toast(provLabel + ' 프롬프트 가져오기 완료' + (enhPrompt ? ' (수정 프롬프트 적용)' : ''));
       };
       reader.readAsText(file);
     }
