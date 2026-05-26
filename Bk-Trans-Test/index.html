@@ -1271,7 +1271,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v15.9t';
+    const APP_VERSION = 'v16.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2709,6 +2709,30 @@
       document.body.appendChild(overlay);
     }
 
+    function usageLineText(u, ms){
+      var seg = [];
+      var tok = [];
+      if(u){
+        if(u.think != null) tok.push('사고 ' + u.think);
+        if(u.out != null) tok.push('출력 ' + u.out);
+      }
+      if(tok.length) seg.push(tok.join(' · ') + ' 토큰');
+      if(ms != null){
+        seg.push((ms / 1000).toFixed(1) + '초');
+        if(u && u.out != null && ms > 0) seg.push((u.out / (ms / 1000)).toFixed(1) + ' tok/s');
+      }
+      return seg.join('  ·  ');
+    }
+    function appendUsageLine(row, u, ms){
+      if(!_showTokens) return;
+      var txt = usageLineText(u, ms);
+      if(!txt) return;
+      var d = document.createElement('div');
+      d.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;';
+      d.textContent = txt;
+      row.appendChild(d);
+    }
+
     function renderChat(){
       el.chat.innerHTML = '';
       if(chat.length === 0){
@@ -2783,17 +2807,7 @@
           row.appendChild(actions);
         }
 
-        if(_showTokens && m.role === 'assistant' && m.usage){
-          const tdiv = document.createElement('div');
-          tdiv.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;';
-          const u = m.usage;
-          const parts = [];
-          if(u.in != null) parts.push('입력 ' + u.in);
-          if(u.out != null) parts.push('출력 ' + u.out);
-          if(u.think != null) parts.push('사고 ' + u.think);
-          if(parts.length) tdiv.textContent = parts.join(' · ') + ' 토큰';
-          row.appendChild(tdiv);
-        }
+        if(m.role === 'assistant') appendUsageLine(row, m.usage, m.ms);
 
         el.chat.appendChild(row);
       }
@@ -2837,6 +2851,7 @@
       }
       scrollThrottled();
 
+      const _t0 = Date.now();
       try{
         const translatedRaw = await callOpenRouterStream(userText, (partial) => {
           streamBubble.style.opacity = '1';
@@ -2844,8 +2859,9 @@
           scrollThrottled();
         });
         const translated = normalizeOutput(userText, translatedRaw);
+        const _ms = Date.now() - _t0;
 
-        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: prettifyModelName(getCurrentModelId()), usage: _lastUsage });
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: prettifyModelName(getCurrentModelId()), usage: _lastUsage, ms: _ms });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -2871,16 +2887,7 @@
         actions.appendChild(editBtn);
         streamRow.appendChild(actions);
 
-        if(_showTokens && _lastUsage){
-          const tdiv = document.createElement('div');
-          tdiv.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;';
-          const u = _lastUsage;
-          const parts = [];
-          if(u.in != null) parts.push('입력 ' + u.in);
-          if(u.out != null) parts.push('출력 ' + u.out);
-          if(u.think != null) parts.push('사고 ' + u.think);
-          if(parts.length){ tdiv.textContent = parts.join(' · ') + ' 토큰'; streamRow.appendChild(tdiv); }
-        }
+        appendUsageLine(streamRow, _lastUsage, _ms);
 
         scrollThrottled();
 
