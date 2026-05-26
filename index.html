@@ -1271,7 +1271,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v16.2t';
+    const APP_VERSION = 'v16.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2713,10 +2713,7 @@
       var seg = [];
       if(modelName) seg.push(modelName);
       if(u && u.think != null) seg.push('사고 ' + u.think + ' 토큰');
-      if(ms != null){
-        seg.push((ms / 1000).toFixed(1) + '초');
-        if(u && u.out != null && ms > 0) seg.push((u.out / (ms / 1000)).toFixed(1) + ' tok/s');
-      }
+      if(ms != null) seg.push((ms / 1000).toFixed(1) + '초');
       return seg.join('  ·  ');
     }
     function appendUsageLine(row, u, ms, modelName){
@@ -2724,7 +2721,7 @@
       var txt = usageLineText(u, ms, modelName);
       if(!txt) return;
       var d = document.createElement('div');
-      d.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;';
+      d.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;padding-left:14px;';
       d.textContent = txt;
       row.appendChild(d);
     }
