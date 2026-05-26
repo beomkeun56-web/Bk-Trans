@@ -1271,7 +1271,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v16.0t';
+    const APP_VERSION = 'v16.1t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2711,12 +2711,7 @@
 
     function usageLineText(u, ms){
       var seg = [];
-      var tok = [];
-      if(u){
-        if(u.think != null) tok.push('사고 ' + u.think);
-        if(u.out != null) tok.push('출력 ' + u.out);
-      }
-      if(tok.length) seg.push(tok.join(' · ') + ' 토큰');
+      if(u && u.think != null) seg.push('사고 ' + u.think + ' 토큰');
       if(ms != null){
         seg.push((ms / 1000).toFixed(1) + '초');
         if(u && u.out != null && ms > 0) seg.push((u.out / (ms / 1000)).toFixed(1) + ' tok/s');
