@@ -1251,7 +1251,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v14.7t';
+    const APP_VERSION = 'v14.8t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1988,7 +1988,6 @@
       if(el.anthropicApiKey) el.anthropicApiKey.value = localStorage.getItem(LS.anthropicApiKey) || '';
       updateProviderUI();
 
-      el.temperature.value = localStorage.getItem(LS.temp) || el.temperature.value;
       el.topP.value = localStorage.getItem(LS.topP) || el.topP.value;
       el.topK.value = localStorage.getItem(LS.topK) || el.topK.value;
 
@@ -2007,7 +2006,7 @@
       if(el.googleApiKey) localStorage.setItem(LS.googleApiKey, el.googleApiKey.value.trim());
       if(el.anthropicApiKey) localStorage.setItem(LS.anthropicApiKey, el.anthropicApiKey.value.trim());
       setSavedModel(el.model.value.trim());
-      localStorage.setItem(LS.temp, el.temperature.value.trim());
+      localStorage.setItem(tempLsKey(), el.temperature.value.trim());
       localStorage.setItem(LS.topP, el.topP.value.trim());
       localStorage.setItem(LS.topK, el.topK.value.trim());
 
@@ -2196,6 +2195,7 @@
     function sysLsKey(prov){ return provKey(LS.system, prov); }
     function enhancedLsKey(prov){ return provKey(LS.enhancedPrompt, prov); }
     function useEnhancedLsKey(prov){ return provKey(LS.useEnhanced, prov); }
+    function tempLsKey(prov){ return provKey(LS.temp, prov); }
     function refreshEnhancedState(){
       _useEnhancedPrompt = localStorage.getItem(useEnhancedLsKey()) === 'true';
     }
@@ -2209,6 +2209,7 @@
         if(w) w.style.display = (k === p) ? '' : 'none';
       });
       if(el.model) el.model.value = getSavedModel();
+      if(el.temperature) el.temperature.value = localStorage.getItem(tempLsKey()) || '0.1';
       if(el.systemPrompt) el.systemPrompt.value = localStorage.getItem(sysLsKey()) || defaultSystemPrompt();
       refreshEnhancedState();
       updateModelDatalist();
@@ -2218,9 +2219,10 @@
       _prevProvider = p;
     }
     function onProviderChange(){
-      // 전환 전 현재 textarea 프롬프트를 이전 제공자 키에 저장 (편집 보존)
-      if(_prevProvider && el.systemPrompt){
-        localStorage.setItem(sysLsKey(_prevProvider), el.systemPrompt.value);
+      // 전환 전 현재 프롬프트·temperature를 이전 제공자 키에 저장 (편집 보존)
+      if(_prevProvider){
+        if(el.systemPrompt) localStorage.setItem(sysLsKey(_prevProvider), el.systemPrompt.value);
+        if(el.temperature) localStorage.setItem(tempLsKey(_prevProvider), el.temperature.value);
       }
       updateProviderUI();
     }
