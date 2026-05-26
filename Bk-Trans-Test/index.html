@@ -1272,7 +1272,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v16.8t';
+    const APP_VERSION = 'v16.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2721,7 +2721,6 @@
       if(modelName) seg.push(modelName);
       var el2 = effLabel(effort);
       if(el2) seg.push(el2);
-      if(u && u.think != null) seg.push('사고 ' + u.think + ' 토큰');
       if(ms != null) seg.push((ms / 1000).toFixed(1) + '초');
       return seg.join('  ·  ');
     }
