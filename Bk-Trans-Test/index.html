@@ -809,6 +809,11 @@
         <div id="openrouterKeyWrap" style="margin-bottom:20px;">
           <label for="apiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">OpenRouter API Key</label>
           <input id="apiKey" type="password" placeholder="sk-or-v1-..." autocomplete="off" />
+          <label for="apiBaseUrl" style="font-size:calc(12px * var(--textScale)); font-weight:600; margin:12px 0 6px; display:flex; align-items:center; gap:6px;">
+            프록시 URL (우회용)
+            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">비워두면 기본값</span>
+          </label>
+          <input id="apiBaseUrl" type="text" placeholder="https://...workers.dev/" autocomplete="off" style="font-size:calc(12px * var(--textScale));" />
         </div>
 
         <div id="googleKeyWrap" style="margin-bottom:20px; display:none;">
@@ -1251,7 +1256,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v14.9t';
+    const APP_VERSION = 'v15.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2229,12 +2234,11 @@
     if(el.apiProvider) el.apiProvider.addEventListener('change', onProviderChange);
 
     function getApiUrl(){
-      const custom = el.apiBaseUrl && el.apiBaseUrl.value.trim();
-      if(custom) return custom;
       const p = getProvider();
       if(p === 'google') return GOOGLE_API_URL;
       if(p === 'anthropic') return ANTHROPIC_API_URL;
-      return DEFAULT_API_URL;
+      const custom = el.apiBaseUrl && el.apiBaseUrl.value.trim();
+      return custom || DEFAULT_API_URL;
     }
 
     // 제공자별 요청(헤더/본문) 생성 — Anthropic은 OpenAI 형식이 아님
