@@ -1271,7 +1271,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v15.8t';
+    const APP_VERSION = 'v15.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2870,6 +2870,17 @@
         editBtn.addEventListener('click', () => { el.input.value = translated; autoResizeInput(); el.input.focus(); });
         actions.appendChild(editBtn);
         streamRow.appendChild(actions);
+
+        if(_showTokens && _lastUsage){
+          const tdiv = document.createElement('div');
+          tdiv.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-top:3px;';
+          const u = _lastUsage;
+          const parts = [];
+          if(u.in != null) parts.push('입력 ' + u.in);
+          if(u.out != null) parts.push('출력 ' + u.out);
+          if(u.think != null) parts.push('사고 ' + u.think);
+          if(parts.length){ tdiv.textContent = parts.join(' · ') + ' 토큰'; streamRow.appendChild(tdiv); }
+        }
 
         scrollThrottled();
 
