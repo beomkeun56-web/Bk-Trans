@@ -1264,7 +1264,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v15.4t';
+    const APP_VERSION = 'v15.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2635,9 +2635,9 @@
           var btnRow = document.createElement('div');
           btnRow.style.cssText = 'display:flex;gap:6px;';
           var efforts = [
-            { v:'low', label:'low (빠름)', bg:'rgba(45,107,255,.3)' },
-            { v:'medium', label:'medium', bg:'rgba(255,255,255,.12)' },
-            { v:'high', label:'high (고품질)', bg:'rgba(255,255,255,.1)' }
+            { v:'low', label:'low', bg:'rgba(45,107,255,.3)' },
+            { v:'medium', label:'med', bg:'rgba(255,255,255,.12)' },
+            { v:'high', label:'high', bg:'rgba(255,255,255,.1)' }
           ];
           efforts.forEach(function(ef){
             var b = document.createElement('button');
