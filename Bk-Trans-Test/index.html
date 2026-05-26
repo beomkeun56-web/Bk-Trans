@@ -1256,7 +1256,7 @@
   <input type="file" id="importPromptFile" accept=".txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v14.1t';
+    const APP_VERSION = 'v14.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1394,10 +1394,11 @@
       { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro', effort:'' }
     ];
 
-    // Anthropic 직접 호출용 모델 (네이티브 Claude 모델명, anthropic/ 접두어 없음, 대시 사용)
+    // Anthropic 직접 호출용 모델 (Claude API ID, anthropic/ 접두어 없음, 대시 사용)
     const ANTHROPIC_DEFAULT_MODELS = [
-      { id:'claude-haiku-4-5', name:'Claude Haiku 4.5', effort:'' },
-      { id:'claude-opus-4-7', name:'Claude Opus 4.7', effort:'' }
+      { id:'claude-opus-4-7', name:'Claude Opus 4.7', effort:'' },
+      { id:'claude-sonnet-4-6', name:'Claude Sonnet 4.6', effort:'' },
+      { id:'claude-haiku-4-5', name:'Claude Haiku 4.5', effort:'' }
     ];
 
     function loadModelList(lsKey, defaults){
