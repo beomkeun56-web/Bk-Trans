@@ -1272,7 +1272,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v16.9t';
+    const APP_VERSION = 'v17.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2716,17 +2716,27 @@
     function effLabel(e){
       return e === 'low' ? 'Low' : e === 'medium' ? 'Mid' : e === 'high' ? 'High' : '';
     }
-    function usageLineText(u, ms, modelName, effort){
+    function extractPromptVersion(){
+      var sys = el.systemPrompt ? (el.systemPrompt.value || '') : '';
+      if(_useEnhancedPrompt){
+        var enh = localStorage.getItem(enhancedLsKey());
+        if(enh) sys = enh;
+      }
+      var m = sys.match(/\bv\d+(?:\.\d+)?[a-z]*/i);
+      return m ? m[0] : '';
+    }
+    function usageLineText(u, ms, modelName, effort, promptVer){
       var seg = [];
       if(modelName) seg.push(modelName);
       var el2 = effLabel(effort);
       if(el2) seg.push(el2);
       if(ms != null) seg.push((ms / 1000).toFixed(1) + '초');
+      if(promptVer) seg.push(promptVer);
       return seg.join('  ·  ');
     }
-    function appendUsageLine(actionsEl, u, ms, modelName, effort){
+    function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer){
       if(!_showTokens || !actionsEl) return;
-      var txt = usageLineText(u, ms, modelName, effort);
+      var txt = usageLineText(u, ms, modelName, effort, promptVer);
       if(!txt) return;
       var s = document.createElement('span');
       s.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-left:8px;white-space:nowrap;';
@@ -2802,7 +2812,7 @@
           editBtn.textContent = 'Edit';
           editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
           actions.appendChild(editBtn);
-          appendUsageLine(actions, m.usage, m.ms, m.model, m.effort);
+          appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer);
         }
 
         if(actions.children.length > 0){
@@ -2861,8 +2871,9 @@
         const translated = normalizeOutput(userText, translatedRaw);
         const _ms = Date.now() - _t0;
         const _modelName = prettifyModelName(getCurrentModelId());
+        const _promptVer = extractPromptVersion();
 
-        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _modelName, usage: _lastUsage, ms: _ms, effort: _lastEffort });
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _modelName, usage: _lastUsage, ms: _ms, effort: _lastEffort, promptVer: _promptVer });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -2886,7 +2897,7 @@
         editBtn.textContent = 'Edit';
         editBtn.addEventListener('click', () => { el.input.value = translated; autoResizeInput(); el.input.focus(); });
         actions.appendChild(editBtn);
-        appendUsageLine(actions, _lastUsage, _ms, _modelName, _lastEffort);
+        appendUsageLine(actions, _lastUsage, _ms, _modelName, _lastEffort, _promptVer);
         streamRow.appendChild(actions);
 
         scrollThrottled();
