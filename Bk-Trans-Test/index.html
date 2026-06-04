@@ -490,15 +490,15 @@
 
     /* 병음·한글발음 표시: 한자는 인라인 baseline 유지, 병음/한글은 absolute로 위에 띄움
        → 숫자·기호가 한자에 맞춰 정렬되고, 글자 가로폭도 한자 크기 그대로 */
-    .bubble:has(.py) { line-height: 2.0; }
+    .bubble:has(.py) { line-height: 2.3; }
     .bubble .py {
       position: relative;
       display: inline-block;
       vertical-align: baseline;
     }
-    .bubble .py > .pt {  /* 병음(중간) */
+    .bubble .py > .pt {  /* 병음(중간) — 한자 위 2px */
       position: absolute;
-      bottom: 100%;
+      bottom: calc(100% + 2px);
       left: 50%;
       transform: translateX(-50%);
       font-size: 0.5em;
@@ -510,9 +510,9 @@
       white-space: nowrap;
       pointer-events: none;
     }
-    .bubble .py > .pk {  /* 한글 발음(맨 위) */
+    .bubble .py > .pk {  /* 한글 발음(맨 위) — 병음 위 2px (= 한자에서 0.5em+4px) */
       position: absolute;
-      bottom: calc(100% + 0.5em + 1px);
+      bottom: calc(100% + 0.5em + 4px);
       left: 50%;
       transform: translateX(-50%);
       font-size: 0.5em;
@@ -1314,7 +1314,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v17.7t';
+    const APP_VERSION = 'v17.8t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
