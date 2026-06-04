@@ -491,6 +491,8 @@
     /* 병음·한글발음 표시: 한자는 인라인 baseline 유지, 병음/한글은 absolute로 위에 띄움
        → 숫자·기호가 한자에 맞춰 정렬되고, 글자 가로폭도 한자 크기 그대로 */
     .bubble:has(.py), .focusText:has(.py) { line-height: 1.8; }
+    /* 전체화면(focusText)은 overflow:auto라 첫 줄 위 병음이 잘림 — 위 여백 확보 */
+    .focusText:has(.py) { padding-top: 0.7em; }
     .py {
       position: relative;
       display: inline-block;
@@ -1299,7 +1301,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v18.1t';
+    const APP_VERSION = 'v18.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
