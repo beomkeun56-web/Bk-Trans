@@ -496,36 +496,31 @@
       display: inline-block;
       vertical-align: baseline;
     }
-    .bubble .py > .pt {  /* 병음(중간) — 한자 위 2px */
+    .bubble .py > .ann {  /* 한글+병음 묶음을 flex column으로 — 사이 gap 2px 균등 */
       position: absolute;
       bottom: calc(100% + 2px);
       left: 50%;
       transform: translateX(-50%);
-      font-size: 0.5em;
-      color: rgba(180,180,180,.75);
-      font-weight: 400;
-      user-select: none;
-      letter-spacing: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
       line-height: 1;
       white-space: nowrap;
+      user-select: none;
       pointer-events: none;
     }
-    .bubble .py > .pk {  /* 한글 발음(맨 위) — 병음 위 2px (= 한자에서 0.5em+4px) */
-      position: absolute;
-      bottom: calc(100% + 0.5em + 4px);
-      left: 50%;
-      transform: translateX(-50%);
+    .bubble .py .pk,
+    .bubble .py .pt {
       font-size: 0.5em;
-      color: rgba(180,180,180,.6);
       font-weight: 400;
-      user-select: none;
       letter-spacing: 0;
       line-height: 1;
-      white-space: nowrap;
-      pointer-events: none;
     }
-    .bubble .py > .pt::selection,
-    .bubble .py > .pk::selection { background: transparent; }
+    .bubble .py .pk { color: rgba(180,180,180,.6); }
+    .bubble .py .pt { color: rgba(180,180,180,.75); }
+    .bubble .py .pk::selection,
+    .bubble .py .pt::selection { background: transparent; }
 
     .focusOverlay{
       display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -1314,7 +1309,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v17.8t';
+    const APP_VERSION = 'v17.9t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2831,8 +2826,10 @@
             var py = pyArr[pi++] || '';
             var pk = pinyinToHangul(py);
             out += '<span class="py">' +
-              '<span class="pk">' + escapeHtml(pk) + '</span>' +
-              '<span class="pt">' + escapeHtml(py) + '</span>' +
+              '<span class="ann">' +
+                '<span class="pk">' + escapeHtml(pk) + '</span>' +
+                '<span class="pt">' + escapeHtml(py) + '</span>' +
+              '</span>' +
               escapeHtml(ch) + '</span>';
           } else {
             out += escapeHtml(ch);
@@ -2854,7 +2851,7 @@
         if(!anchor || !anchor.closest || !anchor.closest('.bubble')) return;
         var temp = document.createElement('div');
         temp.appendChild(range.cloneContents());
-        temp.querySelectorAll('rt, .pt, .pk').forEach(function(rt){ rt.remove(); });
+        temp.querySelectorAll('rt, .ann, .pt, .pk').forEach(function(rt){ rt.remove(); });
         var clean = temp.textContent;
         if(e.clipboardData){
           e.clipboardData.setData('text/plain', clean);
