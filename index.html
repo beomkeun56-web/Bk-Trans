@@ -16,6 +16,9 @@
   <link rel="dns-prefetch" href="https://api.anthropic.com" />
   <link rel="dns-prefetch" href="https://openrouter.ai" />
 
+  <!-- 병음(pinyin) 표시용: 중국어 글자 위에 발음을 ruby로 렌더 -->
+  <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3/dist/index.js" defer></script>
+
   <style>
     :root{
       --bg:#050505;
@@ -483,6 +486,16 @@
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       border-bottom-left-radius: 10px;
       max-width: 92%;
+    }
+
+    /* 병음(ruby) 표시: 중국어 글자 위 회색 발음 */
+    .bubble ruby { ruby-position: over; }
+    .bubble rt {
+      font-size: 0.55em;
+      color: rgba(180,180,180,.75);
+      font-weight: 400;
+      user-select: none;
+      letter-spacing: 0;
     }
 
     .focusOverlay{
@@ -1272,7 +1285,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v17.0t';
+    const APP_VERSION = 'v17.1t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2716,6 +2729,37 @@
     function effLabel(e){
       return e === 'low' ? 'Low' : e === 'medium' ? 'Mid' : e === 'high' ? 'High' : '';
     }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, function(c){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+    var CJK_RE = /[㐀-䶿一-鿿豈-﫿]/;
+    // 중국어 텍스트 → <ruby>글자<rt>병음</rt></ruby> HTML (글자 위 회색 발음)
+    function renderWithPinyin(text){
+      if(!hasChinese(text) || typeof window.pinyinPro === 'undefined'){
+        return escapeHtml(text);
+      }
+      try{
+        var cjk = (text.match(new RegExp(CJK_RE.source, 'g')) || []).join('');
+        var pyArr = window.pinyinPro.pinyin(cjk, { type: 'array' }) || [];
+        var out = '';
+        var pi = 0;
+        for(var i = 0; i < text.length; i++){
+          var ch = text[i];
+          if(CJK_RE.test(ch)){
+            var py = pyArr[pi++] || '';
+            out += '<ruby>' + escapeHtml(ch) + '<rt>' + escapeHtml(py) + '</rt></ruby>';
+          } else {
+            out += escapeHtml(ch);
+          }
+        }
+        return out;
+      } catch(e){
+        return escapeHtml(text);
+      }
+    }
     function extractPromptVersion(){
       var sys = el.systemPrompt ? (el.systemPrompt.value || '') : '';
       if(_useEnhancedPrompt){
@@ -2764,7 +2808,11 @@
 
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
-        bubble.textContent = dispText;
+        if(m.role === 'assistant' && hasChinese(dispText)){
+          bubble.innerHTML = renderWithPinyin(dispText);
+        } else {
+          bubble.textContent = dispText;
+        }
         bubble.style.cursor = 'pointer';
         bubble.addEventListener('click', () => showFocusOverlay(dispText));
         row.appendChild(bubble);
@@ -2877,7 +2925,11 @@
         trimChatToMaxInputs();
         saveChatHistory();
 
-        streamBubble.textContent = translated;
+        if(hasChinese(translated)){
+          streamBubble.innerHTML = renderWithPinyin(translated);
+        } else {
+          streamBubble.textContent = translated;
+        }
         streamBubble.style.opacity = '1';
         streamBubble.style.cursor = 'pointer';
         streamBubble.addEventListener('click', () => showFocusOverlay(translated));
@@ -3258,6 +3310,12 @@
     loadChatHistory();
     updateModelDatalist();
     renderChat();
+    // pinyin-pro는 defer로 로드 → DOM 완료 후 도착하면 병음 포함해 다시 렌더
+    if(typeof window.pinyinPro === 'undefined'){
+      document.addEventListener('DOMContentLoaded', function(){
+        if(window.pinyinPro) renderChat();
+      });
+    }
     setApiSettingsVisible(false);
     setColorSettingsVisible(false);
     setConnState('warn');
