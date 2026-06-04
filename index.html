@@ -490,31 +490,21 @@
 
     /* 병음·한글발음 표시: 한자는 인라인 baseline 유지, 병음/한글은 absolute로 위에 띄움
        → 숫자·기호가 한자에 맞춰 정렬되고, 글자 가로폭도 한자 크기 그대로 */
-    .bubble:has(.py), .focusText:has(.py) { line-height: 1.8; }
-    /* 한자+병음 묶음이 말풍선 중앙에 오도록 위 패딩 추가 (병음 높이만큼) */
-    .bubble:has(.py) { padding-top: calc(12px + 0.6em); }
-    /* 전체화면(focusText)은 overflow:auto라 첫 줄 위 병음이 잘림 — 위 여백 확보 */
-    .focusText:has(.py) { padding-top: 0.7em; }
-    .py {
-      position: relative;
-      display: inline-block;
-      vertical-align: baseline;
+    /* 병음: native <ruby><rt>로 → 가로폭은 자동으로 병음에 맞춰 늘어나고
+       줄 바꿈 시에도 자동으로 공간 확보됨(겹침 없음). */
+    .bubble ruby, .focusText ruby {
+      ruby-position: over;
+      ruby-align: center;
     }
-    .py > .pt {  /* 병음(한자 바로 위) */
-      position: absolute;
-      bottom: calc(100% + 1px);
-      left: 50%;
-      transform: translateX(-50%);
+    .bubble rt, .focusText rt {
       font-size: 0.55em;
       color: rgba(180,180,180,.75);
       font-weight: 400;
       user-select: none;
       letter-spacing: 0;
-      line-height: 1;
-      white-space: nowrap;
-      pointer-events: none;
+      line-height: 1.1;
     }
-    .py > .pt::selection { background: transparent; }
+    .bubble rt::selection, .focusText rt::selection { background: transparent; }
 
     .focusOverlay{
       display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -1303,7 +1293,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v18.3t';
+    const APP_VERSION = 'v18.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2822,7 +2812,7 @@
           var ch = text[i];
           if(CJK_RE.test(ch)){
             var py = pyArr[pi++] || '';
-            out += '<span class="py"><span class="pt">' + escapeHtml(py) + '</span>' + escapeHtml(ch) + '</span>';
+            out += '<ruby>' + escapeHtml(ch) + '<rt>' + escapeHtml(py) + '</rt></ruby>';
           } else {
             out += escapeHtml(ch);
           }
@@ -2843,7 +2833,7 @@
         if(!anchor || !anchor.closest || !anchor.closest('.bubble')) return;
         var temp = document.createElement('div');
         temp.appendChild(range.cloneContents());
-        temp.querySelectorAll('rt, .ann, .pt, .pk').forEach(function(rt){ rt.remove(); });
+        temp.querySelectorAll('rt').forEach(function(rt){ rt.remove(); });
         var clean = temp.textContent;
         if(e.clipboardData){
           e.clipboardData.setData('text/plain', clean);
