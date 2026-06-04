@@ -489,16 +489,17 @@
     }
 
     /* 병음(ruby) 표시: 중국어 글자 위 회색 발음 */
-    .bubble ruby { ruby-position: over; line-height: 2.1; }
+    .bubble ruby { ruby-position: over; line-height: 2.4; }
     .bubble rt {
-      font-size: 0.55em;
+      font-size: 0.65em;
       color: rgba(180,180,180,.75);
       font-weight: 400;
       user-select: none;
       letter-spacing: 0;
-      transform: translateY(-3px);
+      transform: translateY(-5px);
       line-height: 1.2;
     }
+    .bubble rt::selection { background: transparent; }
 
     .focusOverlay{
       display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -1287,7 +1288,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v17.3t';
+    const APP_VERSION = 'v17.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2762,6 +2763,26 @@
         return escapeHtml(text);
       }
     }
+    // 버블 안 텍스트를 복사할 때 병음(rt)은 제외하고 한자만 복사
+    document.addEventListener('copy', function(e){
+      try{
+        var sel = window.getSelection();
+        if(!sel || sel.rangeCount === 0) return;
+        var range = sel.getRangeAt(0);
+        var anchor = range.commonAncestorContainer;
+        if(anchor.nodeType === 3) anchor = anchor.parentNode;
+        if(!anchor || !anchor.closest || !anchor.closest('.bubble')) return;
+        var temp = document.createElement('div');
+        temp.appendChild(range.cloneContents());
+        temp.querySelectorAll('rt').forEach(function(rt){ rt.remove(); });
+        var clean = temp.textContent;
+        if(e.clipboardData){
+          e.clipboardData.setData('text/plain', clean);
+          e.preventDefault();
+        }
+      } catch(_){}
+    });
+
     function extractPromptVersion(){
       var sys = el.systemPrompt ? (el.systemPrompt.value || '') : '';
       if(_useEnhancedPrompt){
