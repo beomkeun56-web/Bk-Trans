@@ -490,41 +490,27 @@
 
     /* 병음·한글발음 표시: 한자는 인라인 baseline 유지, 병음/한글은 absolute로 위에 띄움
        → 숫자·기호가 한자에 맞춰 정렬되고, 글자 가로폭도 한자 크기 그대로 */
-    .bubble:has(.py) { line-height: 2.0; }
-    .bubble .py {
+    .bubble:has(.py), .focusText:has(.py) { line-height: 1.8; }
+    .py {
       position: relative;
       display: inline-block;
       vertical-align: baseline;
     }
-    .bubble .py > .ann {
+    .py > .pt {  /* 병음(한자 바로 위) */
       position: absolute;
-      bottom: 100%;
+      bottom: calc(100% + 1px);
       left: 50%;
       transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0;
-      line-height: 1;
-      white-space: nowrap;
-      user-select: none;
-      pointer-events: none;
-    }
-    .bubble .py .pk,
-    .bubble .py .pt {
-      font-size: 0.5em;
+      font-size: 0.55em;
+      color: rgba(180,180,180,.75);
       font-weight: 400;
+      user-select: none;
       letter-spacing: 0;
       line-height: 1;
+      white-space: nowrap;
+      pointer-events: none;
     }
-    .bubble .py .pk {
-      color: rgba(180,180,180,.6);
-      /* 한글 글자는 박스 중앙에 그려져서 아래 빈 공간이 있음 → 음수 마진으로 보정 */
-      margin-bottom: -2px;
-    }
-    .bubble .py .pt { color: rgba(180,180,180,.75); }
-    .bubble .py .pk::selection,
-    .bubble .py .pt::selection { background: transparent; }
+    .py > .pt::selection { background: transparent; }
 
     .focusOverlay{
       display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -1313,7 +1299,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v18.0t';
+    const APP_VERSION = 'v18.1t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2668,7 +2654,11 @@
     const focusOverlay = document.getElementById('focusOverlay');
     const focusText = document.getElementById('focusText');
     function showFocusOverlay(text){
-      focusText.textContent = text;
+      if(hasChinese(text)){
+        focusText.innerHTML = renderWithPinyin(text);
+      } else {
+        focusText.textContent = text;
+      }
       focusOverlay.classList.add('active');
     }
     focusOverlay.addEventListener('click', () => focusOverlay.classList.remove('active'));
@@ -2828,13 +2818,7 @@
           var ch = text[i];
           if(CJK_RE.test(ch)){
             var py = pyArr[pi++] || '';
-            var pk = pinyinToHangul(py);
-            out += '<span class="py">' +
-              '<span class="ann">' +
-                '<span class="pk">' + escapeHtml(pk) + '</span>' +
-                '<span class="pt">' + escapeHtml(py) + '</span>' +
-              '</span>' +
-              escapeHtml(ch) + '</span>';
+            out += '<span class="py"><span class="pt">' + escapeHtml(py) + '</span>' + escapeHtml(ch) + '</span>';
           } else {
             out += escapeHtml(ch);
           }
