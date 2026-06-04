@@ -489,13 +489,15 @@
     }
 
     /* 병음(ruby) 표시: 중국어 글자 위 회색 발음 */
-    .bubble ruby { ruby-position: over; }
+    .bubble ruby { ruby-position: over; line-height: 2.1; }
     .bubble rt {
       font-size: 0.55em;
       color: rgba(180,180,180,.75);
       font-weight: 400;
       user-select: none;
       letter-spacing: 0;
+      transform: translateY(-3px);
+      line-height: 1.2;
     }
 
     .focusOverlay{
@@ -1285,7 +1287,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v17.1t';
+    const APP_VERSION = 'v17.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
