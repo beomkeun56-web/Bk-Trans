@@ -1287,7 +1287,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v17.2t';
+    const APP_VERSION = 'v17.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2810,7 +2810,7 @@
 
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
-        if(m.role === 'assistant' && hasChinese(dispText)){
+        if(hasChinese(dispText)){
           bubble.innerHTML = renderWithPinyin(dispText);
         } else {
           bubble.textContent = dispText;
