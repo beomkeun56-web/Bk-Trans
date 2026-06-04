@@ -488,18 +488,24 @@
       max-width: 92%;
     }
 
-    /* 병음(ruby) 표시: 중국어 글자 위 회색 발음 */
-    .bubble ruby { ruby-position: over; line-height: 2.4; }
-    .bubble rt {
+    /* 병음 표시: 중국어 글자 위 회색 발음 (flex로 직접 위치 제어) */
+    .bubble .py {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: baseline;
+      line-height: 1.05;
+    }
+    .bubble .py > .pt {
       font-size: 0.65em;
       color: rgba(180,180,180,.75);
       font-weight: 400;
       user-select: none;
       letter-spacing: 0;
-      transform: translateY(-5px);
-      line-height: 1.2;
+      line-height: 1;
+      margin-bottom: 5px;
     }
-    .bubble rt::selection { background: transparent; }
+    .bubble .py > .pt::selection { background: transparent; }
 
     .focusOverlay{
       display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -1288,7 +1294,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v17.4t';
+    const APP_VERSION = 'v17.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2753,7 +2759,7 @@
           var ch = text[i];
           if(CJK_RE.test(ch)){
             var py = pyArr[pi++] || '';
-            out += '<ruby>' + escapeHtml(ch) + '<rt>' + escapeHtml(py) + '</rt></ruby>';
+            out += '<span class="py"><span class="pt">' + escapeHtml(py) + '</span>' + escapeHtml(ch) + '</span>';
           } else {
             out += escapeHtml(ch);
           }
@@ -2774,7 +2780,7 @@
         if(!anchor || !anchor.closest || !anchor.closest('.bubble')) return;
         var temp = document.createElement('div');
         temp.appendChild(range.cloneContents());
-        temp.querySelectorAll('rt').forEach(function(rt){ rt.remove(); });
+        temp.querySelectorAll('rt, .pt').forEach(function(rt){ rt.remove(); });
         var clean = temp.textContent;
         if(e.clipboardData){
           e.clipboardData.setData('text/plain', clean);
