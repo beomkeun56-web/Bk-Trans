@@ -488,22 +488,28 @@
       max-width: 92%;
     }
 
-    /* 병음 표시: 중국어 글자 위 회색 발음 (flex로 직접 위치 제어) */
+    /* 병음 표시: 한자는 인라인 baseline 유지, 병음은 absolute로 위에 띄움
+       → 숫자·기호 등 다른 인라인 텍스트가 한자에 맞춰 정렬됨 */
+    .bubble:has(.py) { line-height: 2.4; }
     .bubble .py {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
+      position: relative;
+      display: inline-block;
       vertical-align: baseline;
-      line-height: 1.05;
     }
     .bubble .py > .pt {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-bottom: 2px;
       font-size: 0.65em;
       color: rgba(180,180,180,.75);
       font-weight: 400;
       user-select: none;
       letter-spacing: 0;
       line-height: 1;
-      margin-bottom: 5px;
+      white-space: nowrap;
+      pointer-events: none;
     }
     .bubble .py > .pt::selection { background: transparent; }
 
@@ -1294,7 +1300,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v17.5t';
+    const APP_VERSION = 'v17.6t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
