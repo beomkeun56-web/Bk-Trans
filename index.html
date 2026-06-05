@@ -792,19 +792,12 @@
                 </svg>
                 <span>모델 관리</span>
               </button>
-              <button id="topGlossaryBtn" class="menuDropdownItem" type="button" role="menuitem">
+              <button id="topGlossarySysBtn" class="menuDropdownItem" type="button" role="menuitem">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"></path>
                   <path d="M8 8h8M8 12h8"></path>
                 </svg>
-                <span>프롬프트 용어집</span>
-              </button>
-              <button id="topGlossarySysBtn" class="menuDropdownItem" type="button" role="menuitem">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"></path>
-                  <path d="M8 8h8M8 12h8M8 16h6"></path>
-                </svg>
-                <span>시스템 용어집</span>
+                <span>용어집</span>
               </button>
               <button id="topLearningBtn" class="menuDropdownItem" type="button" role="menuitem">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -893,13 +886,9 @@
         <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">2차 번역 사용 (다듬기)</span>
         <input type="checkbox" id="optSecondPass" style="transform:scale(1.3); cursor:pointer;" />
       </label>
-      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">시스템 용어집 사용</span>
-        <input type="checkbox" id="optGlossarySys" style="transform:scale(1.3); cursor:pointer;" />
-      </label>
       <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer;">
-        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">프롬프트 용어집 사용</span>
-        <input type="checkbox" id="optGlossaryUser" style="transform:scale(1.3); cursor:pointer;" />
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">용어집 사용</span>
+        <input type="checkbox" id="optGlossarySys" style="transform:scale(1.3); cursor:pointer;" />
       </label>
     </section>
   </div>
@@ -1381,7 +1370,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.3t';
+    const APP_VERSION = 'v19.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2498,14 +2487,14 @@
       // Edit 학습 프롬프트(사용자 교정 지침 누적) 추가
       const learning = (typeof getLearningPrompt === 'function') ? getLearningPrompt() : '';
       if(learning) sys += '\n\n[사용자 교정 지침]\n' + learning;
-      // 매칭되는 용어집 항목 주입 (시스템·사용자 각각 활성화 시)
+      // 매칭되는 용어집 항목 주입 (입력 문장에 src가 등장하면 자동 주입)
       try{
-        var glAll = [];
-        if(_useGlossarySys)  glAll = glAll.concat(getGlossaryFor('sys').map(function(e){ return Object.assign({_kind:'sys'}, e); }));
-        if(_useGlossaryUser) glAll = glAll.concat(getGlossaryFor('user').map(function(e){ return Object.assign({_kind:'user'}, e); }));
-        const matches = glAll.filter(function(e){ return e && e.src && userText.indexOf(e.src) !== -1; });
-        if(matches.length){
-          sys += '\n\n[용어집 — 다음 매핑을 따를 것]\n' + matches.map(function(e){ return e.src + ' → ' + e.tgt; }).join('\n');
+        if(_useGlossarySys){
+          var gl = getGlossaryFor('sys');
+          var matches = gl.filter(function(e){ return e && e.src && userText.indexOf(e.src) !== -1; });
+          if(matches.length){
+            sys += '\n\n[용어집 — 다음 매핑을 따를 것]\n' + matches.map(function(e){ return e.src + ' → ' + e.tgt; }).join('\n');
+          }
         }
       } catch(_){}
       return [
@@ -3507,9 +3496,7 @@
       if(optEnhanced) optEnhanced.checked = !!_useEnhancedPrompt && !!localStorage.getItem(enhancedLsKey());
       if(optSecondPass) optSecondPass.checked = !!_useSecondPass;
       var oSys = document.getElementById('optGlossarySys');
-      var oUsr = document.getElementById('optGlossaryUser');
       if(oSys) oSys.checked = _useGlossarySys;
-      if(oUsr) oUsr.checked = _useGlossaryUser;
       newOptionsOverlay.classList.add('show');
     }
     function closeNewOptions(){ if(newOptionsOverlay) newOptionsOverlay.classList.remove('show'); }
@@ -3535,21 +3522,12 @@
       toast(_useSecondPass ? '2차 번역 ON' : '2차 번역 OFF');
     });
     var optGlossarySys = document.getElementById('optGlossarySys');
-    var optGlossaryUser = document.getElementById('optGlossaryUser');
     if(optGlossarySys){
       optGlossarySys.checked = _useGlossarySys;
       optGlossarySys.addEventListener('change', function(){
         _useGlossarySys = optGlossarySys.checked;
         localStorage.setItem(LS.useGlossarySys, _useGlossarySys ? '1' : '0');
-        toast(_useGlossarySys ? '시스템 용어집 ON' : '시스템 용어집 OFF');
-      });
-    }
-    if(optGlossaryUser){
-      optGlossaryUser.checked = _useGlossaryUser;
-      optGlossaryUser.addEventListener('change', function(){
-        _useGlossaryUser = optGlossaryUser.checked;
-        localStorage.setItem(LS.useGlossaryUser, _useGlossaryUser ? '1' : '0');
-        toast(_useGlossaryUser ? '프롬프트 용어집 ON' : '프롬프트 용어집 OFF');
+        toast(_useGlossarySys ? '용어집 ON' : '용어집 OFF');
       });
     }
     updateNewToggleUI();
@@ -3886,8 +3864,6 @@
       overlay.addEventListener('click', function(e){ if(e.target === overlay) document.body.removeChild(overlay); });
       document.body.appendChild(overlay);
     }
-    var topGlossaryBtn = document.getElementById('topGlossaryBtn');
-    if(topGlossaryBtn) topGlossaryBtn.addEventListener('click', function(){ showGlossaryEditor('user'); });
     var topGlossarySysBtn = document.getElementById('topGlossarySysBtn');
     if(topGlossarySysBtn) topGlossarySysBtn.addEventListener('click', function(){ showGlossaryEditor('sys'); });
 
