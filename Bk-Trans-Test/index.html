@@ -207,6 +207,9 @@
       box-shadow: 0 12px 36px rgba(0,0,0,.55);
       padding:6px;
       z-index:50;
+      max-height: calc(100dvh - 80px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
     .menuDropdown.show{display:block}
     .menuDropdownItem{
@@ -1378,7 +1381,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.2t';
+    const APP_VERSION = 'v19.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3235,8 +3238,15 @@
         const _ms1 = Date.now() - _t0;
         let _ms2 = 0;
 
-        // 2차 번역(다듬기) — _useSecondPass가 켜져 있으면 결과를 한 번 더 다듬는다
-        if(_useSecondPass){
+        // 2차 번역(다듬기) — _useSecondPass ON & 입력 단어 수 > 4 일 때만
+        //   (짧은 입력은 1차만 — 다듬기 효과 거의 없고 속도/비용만 낭비)
+        //   단어 카운트: CJK 글자 1개 = 1단어, 그 외는 공백 분리로 카운트
+        var _wcText = (userText || '').trim();
+        var _cjkAtoms = (_wcText.match(/[一-鿿]/g) || []).length;
+        var _nonCjkRaw = _wcText.replace(/[一-鿿]/g, ' ').trim();
+        var _spaceWords = _nonCjkRaw ? _nonCjkRaw.split(/\s+/).length : 0;
+        var _wordCount = _cjkAtoms + _spaceWords;
+        if(_useSecondPass && _wordCount > 4){
           const _t1 = Date.now();
           const refinePrompt = (el.secondPrompt && el.secondPrompt.value.trim()) || defaultSecondPrompt();
           const refineInput = '【원문】\n' + userText + '\n\n【1차 번역】\n' + translated;
