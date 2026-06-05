@@ -93,7 +93,7 @@
     }
 
     header{
-      position:sticky; top:0; z-index:30;
+      position:sticky; top:0; z-index:70;
       padding: 0 var(--headerHPadding) 0;
       padding-top: calc(var(--headerSpacing) + env(safe-area-inset-top));
       background: var(--bg);
@@ -350,7 +350,7 @@
     .settingsOverlay{
       display:none;
       position:fixed; top:0; left:0; right:0; bottom:0;
-      z-index:100;
+      z-index:200;
       background: rgba(0,0,0,.75);
       align-items:center; justify-content:center;
       padding: 20px;
@@ -1370,7 +1370,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.4t';
+    const APP_VERSION = 'v19.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
