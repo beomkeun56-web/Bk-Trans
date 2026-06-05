@@ -789,6 +789,20 @@
                 </svg>
                 <span>모델 관리</span>
               </button>
+              <button id="topGlossaryBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"></path>
+                  <path d="M8 8h8M8 12h8"></path>
+                </svg>
+                <span>용어집</span>
+              </button>
+              <button id="topLearningBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 20l9-7-9-7-9 7 9 7z"></path>
+                  <path d="M3 13l9 7 9-7"></path>
+                </svg>
+                <span>학습 프롬프트</span>
+              </button>
               <button id="topTokenToggleBtn" class="menuDropdownItem" type="button" role="menuitem">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <circle cx="12" cy="12" r="9"></circle>
@@ -823,6 +837,58 @@
       </div>
     </div>
   </header>
+
+  <!-- Edit 교정 팝업 -->
+  <div id="editGuideOverlay" class="settingsOverlay">
+    <section id="editGuidePanel" class="settings" style="max-width:520px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.08);">
+        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:var(--text);">Edit · 교정 지침으로 재번역</h2>
+        <button id="editGuideCloseBtn" class="iconBtn" type="button" aria-label="닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:calc(12px * var(--textScale)); color:#888; margin-bottom:4px; display:block;">현재 번역</label>
+        <div id="editCurrentText" style="background:rgba(255,255,255,.04); border-radius:10px; padding:10px 12px; font-size:calc(13px * var(--textScale)); color:var(--text); max-height:120px; overflow-y:auto; white-space:pre-wrap;"></div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label for="editGuideText" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:6px; display:block;">교정 지침 (어떻게 고쳐야 할지 자유롭게)</label>
+        <textarea id="editGuideText" placeholder="예: 더 격식있게 / 직역 말고 의역으로 / '~합니다' 대신 '~해' 같이 반말로" style="min-height:90px;"></textarea>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button id="editGuideRetryBtn" class="btn" type="button" style="flex:1;">이 문장만 재번역</button>
+        <button id="editGuideLearnBtn" class="btn secondary" type="button" style="flex:1;">학습 프롬프트에 추가</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- New: 번역 옵션 팝업 -->
+  <div id="newOptionsOverlay" class="settingsOverlay">
+    <section id="newOptionsPanel" class="settings" style="max-width:380px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.08);">
+        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:var(--text);">번역 옵션</h2>
+        <button id="newOptionsCloseBtn" class="iconBtn" type="button" aria-label="닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">품질강화(보정) 프롬프트 적용</span>
+        <input type="checkbox" id="optEnhanced" style="transform:scale(1.3); cursor:pointer;" />
+      </label>
+      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">2차 번역 사용 (다듬기)</span>
+        <input type="checkbox" id="optSecondPass" style="transform:scale(1.3); cursor:pointer;" />
+      </label>
+      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05); opacity:.45;">
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">시스템 용어집 사용 <span style="color:#888; font-size:11px;">(준비 중)</span></span>
+        <input type="checkbox" disabled style="transform:scale(1.3);" />
+      </label>
+      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; opacity:.45;">
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">프롬프트 용어집 사용 <span style="color:#888; font-size:11px;">(준비 중)</span></span>
+        <input type="checkbox" disabled style="transform:scale(1.3);" />
+      </label>
+    </section>
+  </div>
 
   <!-- API 설정 패널 -->
   <div id="apiSettingsOverlay" class="settingsOverlay">
@@ -899,8 +965,16 @@
         </div>
 
         <div style="margin-bottom:20px;">
-          <label for="systemPrompt" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">시스템 프롬프트 (기본)</label>
+          <label for="systemPrompt" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">시스템 프롬프트 (1차 번역)</label>
           <textarea id="systemPrompt" placeholder="여기에 시스템 프롬프트를 입력하세요..." style="min-height:140px;"></textarea>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label for="secondPrompt" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            2차 다듬기 프롬프트
+            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">New 메뉴에서 2차 번역 켤 때 사용</span>
+          </label>
+          <textarea id="secondPrompt" placeholder="1차 번역 결과를 더 자연스럽게 다듬는 프롬프트..." style="min-height:90px;"></textarea>
         </div>
 
         <div id="enhancedPromptWrap" style="margin-bottom:20px; display:none;">
@@ -1293,7 +1367,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v18.4t';
+    const APP_VERSION = 'v19.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1330,7 +1404,9 @@
       anthropicApiKey: 'bk_tr_test_anthropicApiKey',
       anthropicModel: 'bk_tr_test_anthropicModel',
       anthropicCustomModels: 'bk_tr_test_anthropicCustomModels',
-      showTokens: 'bk_tr_test_showTokens'
+      showTokens: 'bk_tr_test_showTokens',
+      useSecondPass: 'bk_tr_test_useSecondPass',
+      secondPrompt: 'bk_tr_test_secondPrompt'
     };
 
     const el = {
@@ -1359,6 +1435,7 @@
       topK: document.getElementById('topK'),
       maxTokens: document.getElementById('maxTokens'),
       systemPrompt: document.getElementById('systemPrompt'),
+      secondPrompt: document.getElementById('secondPrompt'),
       autoCopy: document.getElementById('autoCopy'),
       saveBtn: document.getElementById('saveBtn'),
 
@@ -2057,6 +2134,7 @@
 
       localStorage.setItem(LS.maxTokens, el.maxTokens.value.trim());
       localStorage.setItem(sysLsKey(), el.systemPrompt.value || defaultSystemPrompt());
+      if(el.secondPrompt) localStorage.setItem(secondPromptLsKey(), el.secondPrompt.value || defaultSecondPrompt());
       localStorage.setItem(LS.autoCopy, el.autoCopy.checked ? '1' : '0');
       updateModelTag();
       toast('API 설정 저장 완료');
@@ -2238,6 +2316,11 @@
       return prov === 'openrouter' ? base : base + '_' + prov;
     }
     function sysLsKey(prov){ return provKey(LS.system, prov); }
+    function secondPromptLsKey(prov){ return provKey(LS.secondPrompt, prov); }
+    function defaultSecondPrompt(){
+      return '아래는 원문과 그에 대한 1차 번역이다. 1차 번역을 검토해 더 자연스럽고 정확하게 다듬어라.\n- 원문의 의미와 톤(존댓말/구어체 등)을 그대로 유지\n- 어색한 표현은 자연스럽게 교정\n- 의역이 필요하면 의역\n- 결과 번역문만 출력 (설명·라벨 금지)';
+    }
+    let _useSecondPass = localStorage.getItem(LS.useSecondPass) === '1';
     function enhancedLsKey(prov){ return provKey(LS.enhancedPrompt, prov); }
     function useEnhancedLsKey(prov){ return provKey(LS.useEnhanced, prov); }
     function tempLsKey(prov){ return provKey(LS.temp, prov); }
@@ -2256,6 +2339,7 @@
       if(el.model) el.model.value = getSavedModel();
       if(el.temperature) el.temperature.value = localStorage.getItem(tempLsKey()) || '0.1';
       if(el.systemPrompt) el.systemPrompt.value = localStorage.getItem(sysLsKey()) || defaultSystemPrompt();
+      if(el.secondPrompt) el.secondPrompt.value = localStorage.getItem(secondPromptLsKey()) || defaultSecondPrompt();
       refreshEnhancedState();
       updateModelDatalist();
       renderModelDropdown();
@@ -2267,6 +2351,7 @@
       // 전환 전 현재 프롬프트·temperature를 이전 제공자 키에 저장 (편집 보존)
       if(_prevProvider){
         if(el.systemPrompt) localStorage.setItem(sysLsKey(_prevProvider), el.systemPrompt.value);
+        if(el.secondPrompt) localStorage.setItem(secondPromptLsKey(_prevProvider), el.secondPrompt.value);
         if(el.temperature) localStorage.setItem(tempLsKey(_prevProvider), el.temperature.value);
       }
       updateProviderUI();
@@ -2392,10 +2477,32 @@
         const enhanced = localStorage.getItem(enhancedLsKey());
         if(enhanced) sys = enhanced;
       }
+      // Edit 학습 프롬프트(사용자 교정 지침 누적) 추가
+      const learning = (typeof getLearningPrompt === 'function') ? getLearningPrompt() : '';
+      if(learning) sys += '\n\n[사용자 교정 지침]\n' + learning;
+      // 매칭되는 사용자 용어집 항목 주입 (소스 패턴이 입력에 등장하면)
+      try{
+        const gl = getGlossaryEntries();
+        if(gl && gl.length){
+          const matches = gl.filter(function(e){ return e && e.src && userText.indexOf(e.src) !== -1; });
+          if(matches.length){
+            sys += '\n\n[용어집 — 다음 매핑을 따를 것]\n' + matches.map(function(e){ return e.src + ' → ' + e.tgt; }).join('\n');
+          }
+        }
+      } catch(_){}
       return [
         { role: 'system', content: sys },
         { role: 'user', content: userText }
       ];
+    }
+
+    // ====== 사용자 용어집 (간단 키-값 매핑) ======
+    function glossaryLsKey(){ return 'bk_tr_test_glossary'; }
+    function getGlossaryEntries(){
+      try{ return JSON.parse(localStorage.getItem(glossaryLsKey()) || '[]'); } catch(_){ return []; }
+    }
+    function setGlossaryEntries(arr){
+      localStorage.setItem(glossaryLsKey(), JSON.stringify(arr || []));
     }
 
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
@@ -2547,6 +2654,20 @@
       return callOpenRouterStream(userText, () => {});
     }
 
+    // 2차 다듬기·교정용 호출: 시스템 프롬프트를 일시적으로 교체해 사용
+    async function callRefine(input, customSystem, onChunk){
+      const origSys = el.systemPrompt ? el.systemPrompt.value : '';
+      const origEnhanced = _useEnhancedPrompt;
+      if(el.systemPrompt) el.systemPrompt.value = customSystem || '';
+      _useEnhancedPrompt = false;
+      try{
+        return await callOpenRouterStream(input, onChunk || (()=>{}));
+      } finally {
+        if(el.systemPrompt) el.systemPrompt.value = origSys;
+        _useEnhancedPrompt = origEnhanced;
+      }
+    }
+
     var _ttsBusy = false;
     var _ttsBtn = null;
     var _ttsAudio = null;
@@ -2647,6 +2768,67 @@
 
     const focusOverlay = document.getElementById('focusOverlay');
     const focusText = document.getElementById('focusText');
+    // ====== Edit 학습(교정 지침) 팝업 ======
+    function learningPromptLsKey(prov){ return provKey('bk_tr_test_learningPrompt', prov); }
+    function getLearningPrompt(){ return localStorage.getItem(learningPromptLsKey()) || ''; }
+    function appendLearningPrompt(rule){
+      var key = learningPromptLsKey();
+      var prev = localStorage.getItem(key) || '';
+      var addition = '- ' + String(rule || '').trim();
+      var newText = prev ? (prev + '\n' + addition) : addition;
+      localStorage.setItem(key, newText);
+    }
+    var _editCtx = null;
+    var _editGuideOverlay = null, _editGuideCurr = null, _editGuideText = null;
+    function openEditGuide(src, trans, msgRef){
+      if(!_editGuideOverlay){
+        _editGuideOverlay = document.getElementById('editGuideOverlay');
+        _editGuideCurr = document.getElementById('editCurrentText');
+        _editGuideText = document.getElementById('editGuideText');
+      }
+      _editCtx = { src: src || '', trans: trans || '', msgRef: msgRef || null };
+      if(_editGuideCurr) _editGuideCurr.textContent = trans || '';
+      if(_editGuideText) _editGuideText.value = '';
+      if(_editGuideOverlay) _editGuideOverlay.classList.add('show');
+    }
+    function closeEditGuide(){
+      if(_editGuideOverlay) _editGuideOverlay.classList.remove('show');
+      _editCtx = null;
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      var closeBtn = document.getElementById('editGuideCloseBtn');
+      var retryBtn = document.getElementById('editGuideRetryBtn');
+      var learnBtn = document.getElementById('editGuideLearnBtn');
+      var ov = document.getElementById('editGuideOverlay');
+      if(closeBtn) closeBtn.addEventListener('click', closeEditGuide);
+      if(ov) ov.addEventListener('click', function(e){ if(e.target === ov) closeEditGuide(); });
+      if(retryBtn) retryBtn.addEventListener('click', async function(){
+        if(!_editCtx) return;
+        var guide = (_editGuideText && _editGuideText.value.trim()) || '';
+        if(!guide){ toast('교정 지침을 입력하세요'); return; }
+        closeEditGuide();
+        var refinePrompt = '다음 1차 번역을 사용자의 교정 지침대로 다시 작성하라.\n결과 번역문만 출력(설명/라벨 금지).\n\n[교정 지침]\n' + guide;
+        var refineInput = '【원문】\n' + (_editCtx.src||'') + '\n\n【기존 번역】\n' + (_editCtx.trans||'');
+        try{
+          var raw = await callRefine(refineInput, refinePrompt, ()=>{});
+          var newTrans = normalizeOutput(_editCtx.src||'', raw);
+          if(newTrans){
+            if(_editCtx.msgRef){ _editCtx.msgRef.text = newTrans; saveChatHistory(); renderChat(); }
+            toast('재번역 완료');
+          } else {
+            toast('재번역 결과가 비어있음');
+          }
+        } catch(e){ toast('재번역 실패: ' + (e.message||e)); }
+      });
+      if(learnBtn) learnBtn.addEventListener('click', function(){
+        var guide = (_editGuideText && _editGuideText.value.trim()) || '';
+        if(!guide){ toast('교정 지침을 입력하세요'); return; }
+        appendLearningPrompt(guide);
+        closeEditGuide();
+        toast('학습 프롬프트에 추가됨');
+      });
+    });
+
     function showFocusOverlay(text){
       if(hasChinese(text)){
         focusText.innerHTML = renderWithPinyin(text);
@@ -2851,18 +3033,22 @@
       var m = sys.match(/\bv\d+(?:\.\d+)?[a-z]*/i);
       return m ? m[0] : '';
     }
-    function usageLineText(u, ms, modelName, effort, promptVer){
+    function usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2){
       var seg = [];
       if(modelName) seg.push(modelName);
       var el2 = effLabel(effort);
       if(el2) seg.push(el2);
-      if(ms != null) seg.push((ms / 1000).toFixed(1) + '초');
+      if(ms2 != null && ms2 > 0 && ms1 != null){
+        seg.push((ms1/1000).toFixed(1) + '+' + (ms2/1000).toFixed(1) + '초');
+      } else if(ms != null){
+        seg.push((ms / 1000).toFixed(1) + '초');
+      }
       if(promptVer) seg.push(promptVer);
       return seg.join('  ·  ');
     }
-    function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer){
+    function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2){
       if(!_showTokens || !actionsEl) return;
-      var txt = usageLineText(u, ms, modelName, effort, promptVer);
+      var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2);
       if(!txt) return;
       var s = document.createElement('span');
       s.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-left:8px;white-space:nowrap;';
@@ -2940,9 +3126,9 @@
           editBtn.className = 'copyPill';
           editBtn.type = 'button';
           editBtn.textContent = 'Edit';
-          editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
+          editBtn.addEventListener('click', () => openEditGuide(lastUserText, m.text, m));
           actions.appendChild(editBtn);
-          appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer);
+          appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2);
         }
 
         if(actions.children.length > 0){
@@ -2993,17 +3179,42 @@
 
       const _t0 = Date.now();
       try{
-        const translatedRaw = await callOpenRouterStream(userText, (partial) => {
+        let translatedRaw = await callOpenRouterStream(userText, (partial) => {
           streamBubble.style.opacity = '1';
           streamBubble.textContent = partial;
           scrollThrottled();
         });
-        const translated = normalizeOutput(userText, translatedRaw);
-        const _ms = Date.now() - _t0;
+        let translated = normalizeOutput(userText, translatedRaw);
+        const _ms1 = Date.now() - _t0;
+        let _ms2 = 0;
+
+        // 2차 번역(다듬기) — _useSecondPass가 켜져 있으면 결과를 한 번 더 다듬는다
+        if(_useSecondPass){
+          const _t1 = Date.now();
+          const refinePrompt = (el.secondPrompt && el.secondPrompt.value.trim()) || defaultSecondPrompt();
+          const refineInput = '【원문】\n' + userText + '\n\n【1차 번역】\n' + translated;
+          try{
+            // buildContextMessages를 우회하기 위해 임시로 시스템 프롬프트와 메시지를 직접 전달.
+            // 간단히 callOpenRouterStream을 다시 활용하기 위해 별도 분기 사용:
+            const refined = await callRefine(refineInput, refinePrompt, (partial) => {
+              streamBubble.style.opacity = '1';
+              streamBubble.textContent = '[다듬는 중] ' + partial;
+              scrollThrottled();
+            });
+            const refinedClean = normalizeOutput(userText, refined);
+            if(refinedClean) translated = refinedClean;
+          } catch(re){
+            // 2차 실패 시 1차 결과 그대로 사용
+            toast('2차 다듬기 실패 — 1차 결과 사용: ' + (re.message||re));
+          }
+          _ms2 = Date.now() - _t1;
+        }
+
+        const _ms = _ms1 + _ms2;
         const _modelName = prettifyModelName(getCurrentModelId());
         const _promptVer = extractPromptVersion();
 
-        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _modelName, usage: _lastUsage, ms: _ms, effort: _lastEffort, promptVer: _promptVer });
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _modelName, usage: _lastUsage, ms: _ms, ms1: _ms1, ms2: _ms2, effort: _lastEffort, promptVer: _promptVer });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -3029,9 +3240,12 @@
         editBtn.className = 'copyPill';
         editBtn.type = 'button';
         editBtn.textContent = 'Edit';
-        editBtn.addEventListener('click', () => { el.input.value = translated; autoResizeInput(); el.input.focus(); });
+        editBtn.addEventListener('click', () => {
+          var lastAssistant = chat[chat.length-1];
+          openEditGuide(userText, translated, lastAssistant && lastAssistant.role==='assistant' ? lastAssistant : null);
+        });
         actions.appendChild(editBtn);
-        appendUsageLine(actions, _lastUsage, _ms, _modelName, _lastEffort, _promptVer);
+        appendUsageLine(actions, _lastUsage, _ms, _modelName, _lastEffort, _promptVer, _ms1, _ms2);
         streamRow.appendChild(actions);
 
         scrollThrottled();
@@ -3206,13 +3420,15 @@
       if(!newPromptToggle) return;
       const enhanced = localStorage.getItem(enhancedLsKey());
       const hasEnhanced = !!enhanced;
-      if(_useEnhancedPrompt && hasEnhanced){
+      var enhancedActive = _useEnhancedPrompt && hasEnhanced;
+      if(!hasEnhanced) _useEnhancedPrompt = false;
+      var anyActive = enhancedActive || _useSecondPass;
+      if(anyActive){
         newPromptToggle.classList.add('newActive');
         newPromptToggle.style.opacity = '';
       } else {
         newPromptToggle.classList.remove('newActive');
         newPromptToggle.style.opacity = '0.4';
-        _useEnhancedPrompt = false;
       }
       if(enhancedPromptWrap && enhancedPromptView){
         if(hasEnhanced){
@@ -3224,16 +3440,39 @@
       }
     }
 
-    if(newPromptToggle){
-      newPromptToggle.addEventListener('click', () => {
-        const hasEnhanced = !!localStorage.getItem(enhancedLsKey());
-        if(!hasEnhanced){ toast('품질강화를 먼저 실행하세요'); return; }
-        _useEnhancedPrompt = !_useEnhancedPrompt;
-        localStorage.setItem(useEnhancedLsKey(), _useEnhancedPrompt);
-        updateNewToggleUI();
-        toast(_useEnhancedPrompt ? '수정 프롬프트 적용' : '기본 프롬프트 적용');
-      });
+    // New 버튼: 번역 옵션 팝업 열기
+    var newOptionsOverlay = document.getElementById('newOptionsOverlay');
+    var newOptionsCloseBtn = document.getElementById('newOptionsCloseBtn');
+    var optEnhanced = document.getElementById('optEnhanced');
+    var optSecondPass = document.getElementById('optSecondPass');
+    function openNewOptions(){
+      if(!newOptionsOverlay) return;
+      if(optEnhanced) optEnhanced.checked = !!_useEnhancedPrompt && !!localStorage.getItem(enhancedLsKey());
+      if(optSecondPass) optSecondPass.checked = !!_useSecondPass;
+      newOptionsOverlay.classList.add('show');
     }
+    function closeNewOptions(){ if(newOptionsOverlay) newOptionsOverlay.classList.remove('show'); }
+    if(newPromptToggle) newPromptToggle.addEventListener('click', openNewOptions);
+    if(newOptionsCloseBtn) newOptionsCloseBtn.addEventListener('click', closeNewOptions);
+    if(newOptionsOverlay) newOptionsOverlay.addEventListener('click', function(e){ if(e.target === newOptionsOverlay) closeNewOptions(); });
+    if(optEnhanced) optEnhanced.addEventListener('change', function(){
+      var hasEnhanced = !!localStorage.getItem(enhancedLsKey());
+      if(optEnhanced.checked && !hasEnhanced){
+        toast('품질강화를 먼저 실행하세요');
+        optEnhanced.checked = false;
+        return;
+      }
+      _useEnhancedPrompt = optEnhanced.checked;
+      localStorage.setItem(useEnhancedLsKey(), _useEnhancedPrompt);
+      updateNewToggleUI();
+      toast(_useEnhancedPrompt ? '품질강화 ON' : '품질강화 OFF');
+    });
+    if(optSecondPass) optSecondPass.addEventListener('change', function(){
+      _useSecondPass = optSecondPass.checked;
+      localStorage.setItem(LS.useSecondPass, _useSecondPass ? '1' : '0');
+      updateNewToggleUI();
+      toast(_useSecondPass ? '2차 번역 ON' : '2차 번역 OFF');
+    });
     updateNewToggleUI();
 
     async function enhanceQuality(){
@@ -3512,6 +3751,93 @@
     if(topImportPromptBtn) topImportPromptBtn.addEventListener('click', () => { if(importPromptFile) importPromptFile.click(); });
     var topModelEditorBtn = document.getElementById('topModelEditorBtn');
     if(topModelEditorBtn) topModelEditorBtn.addEventListener('click', showModelEditor);
+
+    function showGlossaryEditor(){
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+      var popup = document.createElement('div');
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:90vw;max-width:480px;max-height:85vh;overflow-y:auto;';
+      popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">용어집</div>' +
+        '<div style="font-size:11px;color:#888;margin-bottom:12px;">입력 문장에 src가 등장하면 매 번역마다 자동 주입됩니다.</div>';
+      var rows = [];
+      var entries = getGlossaryEntries();
+      var container = document.createElement('div');
+      function addRow(src, tgt){
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;';
+        var s = document.createElement('input'); s.type='text'; s.value=src||''; s.placeholder='src (예: 我们)';
+        s.style.cssText='flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:var(--text);font-size:13px;font-family:inherit;';
+        var t = document.createElement('input'); t.type='text'; t.value=tgt||''; t.placeholder='target (예: 저희)';
+        t.style.cssText='flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:var(--text);font-size:13px;font-family:inherit;';
+        var d = document.createElement('button'); d.type='button'; d.textContent='✕';
+        d.style.cssText='border:none;background:rgba(255,80,60,.3);color:#ff6b6b;border-radius:8px;width:30px;cursor:pointer;font-size:13px;';
+        d.addEventListener('click', function(){ row.remove(); var i=rows.indexOf(row); if(i>=0) rows.splice(i,1); });
+        row.appendChild(s); row.appendChild(t); row.appendChild(d);
+        row._s = s; row._t = t;
+        rows.push(row); container.appendChild(row);
+      }
+      entries.forEach(function(e){ addRow(e.src, e.tgt); });
+      popup.appendChild(container);
+      var addBtn = document.createElement('button'); addBtn.type='button'; addBtn.textContent='+ 항목 추가';
+      addBtn.style.cssText='display:block;width:100%;padding:10px;margin:10px 0;border:1px dashed rgba(255,255,255,.2);border-radius:10px;background:none;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;';
+      addBtn.addEventListener('click', function(){ addRow('',''); });
+      popup.appendChild(addBtn);
+      var btnRow = document.createElement('div');
+      btnRow.style.cssText='display:flex;gap:8px;margin-top:8px;';
+      var saveBtn = document.createElement('button'); saveBtn.type='button'; saveBtn.textContent='저장';
+      saveBtn.style.cssText='flex:1;padding:10px;border:none;border-radius:10px;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;';
+      saveBtn.addEventListener('click', function(){
+        var arr = [];
+        rows.forEach(function(r){
+          var s = r._s.value.trim(), t = r._t.value.trim();
+          if(s && t) arr.push({src:s, tgt:t});
+        });
+        setGlossaryEntries(arr);
+        document.body.removeChild(overlay);
+        toast('용어집 저장 (' + arr.length + '개)');
+      });
+      var cancelBtn = document.createElement('button'); cancelBtn.type='button'; cancelBtn.textContent='취소';
+      cancelBtn.style.cssText='flex:1;padding:10px;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit;';
+      cancelBtn.addEventListener('click', function(){ document.body.removeChild(overlay); });
+      btnRow.appendChild(saveBtn); btnRow.appendChild(cancelBtn);
+      popup.appendChild(btnRow);
+      overlay.appendChild(popup);
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) document.body.removeChild(overlay); });
+      document.body.appendChild(overlay);
+    }
+    var topGlossaryBtn = document.getElementById('topGlossaryBtn');
+    if(topGlossaryBtn) topGlossaryBtn.addEventListener('click', showGlossaryEditor);
+
+    function showLearningEditor(){
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+      var popup = document.createElement('div');
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:90vw;max-width:520px;max-height:85vh;overflow-y:auto;';
+      popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">학습 프롬프트 (제공자별)</div>' +
+        '<div style="font-size:11px;color:#888;margin-bottom:12px;">Edit 학습으로 누적된 교정 지침. 매 번역 시스템 프롬프트 뒤에 자동 추가됨. 직접 편집 가능.</div>';
+      var ta = document.createElement('textarea');
+      ta.style.cssText='width:100%;min-height:240px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-size:13px;font-family:inherit;';
+      ta.value = getLearningPrompt();
+      popup.appendChild(ta);
+      var btnRow = document.createElement('div');
+      btnRow.style.cssText='display:flex;gap:8px;margin-top:10px;';
+      var saveBtn = document.createElement('button'); saveBtn.type='button'; saveBtn.textContent='저장';
+      saveBtn.style.cssText='flex:1;padding:10px;border:none;border-radius:10px;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;';
+      saveBtn.addEventListener('click', function(){ localStorage.setItem(learningPromptLsKey(), ta.value); document.body.removeChild(overlay); toast('학습 프롬프트 저장'); });
+      var clrBtn = document.createElement('button'); clrBtn.type='button'; clrBtn.textContent='전체 삭제';
+      clrBtn.style.cssText='flex:1;padding:10px;border:none;border-radius:10px;background:rgba(255,80,60,.25);color:#ff8a7a;font-size:14px;cursor:pointer;font-family:inherit;';
+      clrBtn.addEventListener('click', function(){ if(confirm('학습 프롬프트를 모두 지울까요?')){ ta.value=''; } });
+      var cancelBtn = document.createElement('button'); cancelBtn.type='button'; cancelBtn.textContent='취소';
+      cancelBtn.style.cssText='flex:1;padding:10px;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit;';
+      cancelBtn.addEventListener('click', function(){ document.body.removeChild(overlay); });
+      btnRow.appendChild(saveBtn); btnRow.appendChild(clrBtn); btnRow.appendChild(cancelBtn);
+      popup.appendChild(btnRow);
+      overlay.appendChild(popup);
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) document.body.removeChild(overlay); });
+      document.body.appendChild(overlay);
+    }
+    var topLearningBtn = document.getElementById('topLearningBtn');
+    if(topLearningBtn) topLearningBtn.addEventListener('click', showLearningEditor);
 
     var topTokenToggleBtn = document.getElementById('topTokenToggleBtn');
     function updateTokenToggleLabel(){
