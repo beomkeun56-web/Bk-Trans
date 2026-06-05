@@ -862,9 +862,13 @@
         <label for="editGuideText" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:6px; display:block;">교정 지침 (어떻게 고쳐야 할지 자유롭게)</label>
         <textarea id="editGuideText" placeholder="예: 더 격식있게 / 직역 말고 의역으로 / '~합니다' 대신 '~해' 같이 반말로" style="min-height:90px;"></textarea>
       </div>
-      <div style="display:flex; gap:8px;">
-        <button id="editGuideRetryBtn" class="btn" type="button" style="flex:1;">이 문장만 재번역</button>
-        <button id="editGuideLearnBtn" class="btn secondary" type="button" style="flex:1;">학습 프롬프트에 추가</button>
+      <div style="display:flex; gap:8px; flex-direction:column;">
+        <button id="editGuideRetryBtn" class="btn" type="button">이 문장만 재번역 (1회성)</button>
+        <button id="editGuideLearnBtn" class="btn secondary" type="button">학습 프롬프트 갱신 (AI가 분석·정리)</button>
+      </div>
+      <div style="font-size:11px; color:#888; margin-top:8px;">
+        · 재번역 = 그 메시지만 즉시 다시 만듦, 저장 안 됨<br>
+        · 학습 갱신 = AI가 피드백을 분석해 기존 학습 프롬프트를 다듬어 저장 (이후 모든 1차 번역에 자동 적용)
       </div>
     </section>
   </div>
@@ -1374,7 +1378,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.1t';
+    const APP_VERSION = 'v19.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2837,12 +2841,38 @@
           }
         } catch(e){ toast('재번역 실패: ' + (e.message||e)); }
       });
-      if(learnBtn) learnBtn.addEventListener('click', function(){
+      if(learnBtn) learnBtn.addEventListener('click', async function(){
         var guide = (_editGuideText && _editGuideText.value.trim()) || '';
         if(!guide){ toast('교정 지침을 입력하세요'); return; }
-        appendLearningPrompt(guide);
+        var src = (_editCtx && _editCtx.src) || '';
+        var trans = (_editCtx && _editCtx.trans) || '';
         closeEditGuide();
-        toast('학습 프롬프트에 추가됨');
+        toast('학습 분석 중...');
+        var current = getLearningPrompt();
+        var sys = '당신은 번역 가이드 큐레이터다. 사용자의 새 피드백을 통합해 학습 프롬프트를 다듬어라.\n' +
+          '규칙:\n' +
+          '- 동일·유사 규칙 중복 제거\n' +
+          '- 가능한 한 일반화(이 사례뿐 아니라 같은 패턴 전체 반영)\n' +
+          '- 모순되는 옛 규칙은 새 피드백 우선으로 갱신\n' +
+          '- 최대 12줄 이내, 각 규칙은 한 줄로 간결하게\n' +
+          '- 결과 학습 프롬프트만 출력 (설명·번호·라벨 금지)';
+        var userMsg = '[현재 학습 프롬프트]\n' + (current || '(비어있음)') +
+          '\n\n[이번 사용자 피드백]\n' +
+          '원문: ' + (src || '(없음)') + '\n' +
+          '기존 번역: ' + (trans || '(없음)') + '\n' +
+          '사용자 지적: ' + guide +
+          '\n\n위를 반영해 학습 프롬프트를 갱신하라.';
+        try{
+          var newPrompt = await callRefine(userMsg, sys, ()=>{});
+          newPrompt = String(newPrompt || '').trim();
+          if(!newPrompt){ toast('학습 갱신 결과가 비어있음'); return; }
+          localStorage.setItem(learningPromptLsKey(), newPrompt);
+          toast('학습 프롬프트 갱신 완료');
+        } catch(e){
+          // 분석 실패 시 단순 추가로 폴백
+          appendLearningPrompt(guide);
+          toast('분석 실패 → 단순 추가로 저장: ' + (e.message||e));
+        }
       });
     });
 
