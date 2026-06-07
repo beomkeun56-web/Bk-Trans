@@ -1395,7 +1395,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.25t';
+    const APP_VERSION = 'v19.26t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2626,10 +2626,12 @@
     function captureUsage(j){
       if(j.usage && (j.usage.prompt_tokens != null || j.usage.completion_tokens != null)){
         var det = j.usage.completion_tokens_details;
+        var pdet = j.usage.prompt_tokens_details;
         _lastUsage = {
           in: j.usage.prompt_tokens,
           out: j.usage.completion_tokens,
-          think: (det && det.reasoning_tokens != null) ? det.reasoning_tokens : undefined
+          think: (det && det.reasoning_tokens != null) ? det.reasoning_tokens : undefined,
+          cached: (pdet && pdet.cached_tokens != null) ? pdet.cached_tokens : undefined
         };
         return;
       }
@@ -2637,11 +2639,14 @@
         _lastUsage = _lastUsage || {};
         if(j.message.usage.input_tokens != null) _lastUsage.in = j.message.usage.input_tokens;
         if(j.message.usage.output_tokens != null) _lastUsage.out = j.message.usage.output_tokens;
+        // Anthropic 캐시 토큰
+        if(j.message.usage.cache_read_input_tokens != null) _lastUsage.cached = j.message.usage.cache_read_input_tokens;
       }
       if(j.type === 'message_delta' && j.usage){
         _lastUsage = _lastUsage || {};
         if(j.usage.output_tokens != null) _lastUsage.out = j.usage.output_tokens;
         if(j.usage.input_tokens != null) _lastUsage.in = j.usage.input_tokens;
+        if(j.usage.cache_read_input_tokens != null) _lastUsage.cached = j.usage.cache_read_input_tokens;
       }
     }
 
@@ -3402,6 +3407,11 @@
         seg.push((ms / 1000).toFixed(1) + '초');
       }
       if(promptVer) seg.push(promptVer);
+      // 캐시 명중 표시 (입력 토큰 중 캐시에서 가져온 비율)
+      if(u && u.cached && u.in){
+        var pct = Math.round((u.cached / u.in) * 100);
+        if(pct >= 5) seg.push('CS' + pct + '%');
+      }
       return seg.join('  ·  ');
     }
     function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2){
