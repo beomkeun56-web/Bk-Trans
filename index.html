@@ -1436,7 +1436,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.29t';
+    const APP_VERSION = 'v19.30t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1571,7 +1571,24 @@
     }
 
     function updateModelTag(){
-      const pretty = prettifyModelName(getCurrentModelId());
+      var pretty = prettifyModelName(getCurrentModelId());
+      // 분기번역(Smart Routing) ON 시: '짧은모델 + 긴모델' 합쳐서 표시 + 글자 작게
+      var smartActive = false;
+      try{ smartActive = localStorage.getItem(LS.useSmartRouting) === '1'; } catch(_){}
+      if(smartActive && el.modelTag){
+        var sMdl = (localStorage.getItem(LS.routingShortModel) || '').trim();
+        var lMdl = (localStorage.getItem(LS.routingLongModel) || '').trim();
+        if(sMdl || lMdl){
+          var sPretty = sMdl ? prettifyModelName(sMdl) : prettifyModelName(getCurrentModelId());
+          var lPretty = lMdl ? prettifyModelName(lMdl) : prettifyModelName(getCurrentModelId());
+          pretty = sPretty + ' + ' + lPretty;
+          el.modelTag.style.fontSize = 'calc(13px * var(--textScale))';
+        } else {
+          el.modelTag.style.fontSize = '';
+        }
+      } else if(el.modelTag){
+        el.modelTag.style.fontSize = '';
+      }
       if(el.modelTag) el.modelTag.textContent = pretty;
       document.title = pretty + ' BK Trans ' + APP_VERSION;
     }
@@ -4090,6 +4107,7 @@
       localStorage.setItem(LS.useSmartRouting, _useSmartRouting ? '1' : '0');
       if(optSmartRoutingWrap) optSmartRoutingWrap.style.display = _useSmartRouting ? '' : 'none';
       updateNewToggleUI();
+      updateModelTag();
       toast(_useSmartRouting ? '단어 수 분기 ON' : '단어 수 분기 OFF');
     });
     if(optRoutingThreshold) optRoutingThreshold.addEventListener('change', function(){
@@ -4105,6 +4123,7 @@
     });
     if(optRoutingShortModel) optRoutingShortModel.addEventListener('change', function(){
       localStorage.setItem(LS.routingShortModel, (optRoutingShortModel.value || '').trim());
+      updateModelTag();
     });
     if(optRoutingLongProvider) optRoutingLongProvider.addEventListener('change', function(){
       localStorage.setItem(LS.routingLongProvider, optRoutingLongProvider.value || '');
@@ -4113,6 +4132,7 @@
     });
     if(optRoutingLongModel) optRoutingLongModel.addEventListener('change', function(){
       localStorage.setItem(LS.routingLongModel, (optRoutingLongModel.value || '').trim());
+      updateModelTag();
     });
 
     var optGlossarySys = document.getElementById('optGlossarySys');
