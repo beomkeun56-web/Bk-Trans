@@ -1395,7 +1395,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.19t';
+    const APP_VERSION = 'v19.20t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2398,7 +2398,9 @@
     function secondPromptLsKey(prov){ return provKey(LS.secondPrompt, prov); }
     function defaultSecondPrompt(){
       return '1차 번역이 이미 자연스럽고 정확하면 그대로 두라.\n' +
-        '명백한 오역·문법 오류·과도한 직역·확실히 어색한 표현만 최소한으로 손본다.\n\n' +
+        '다음 경우에만 손본다:\n' +
+        '- ★ 출력에 원문 언어 글자가 남아있음 (한국어 번역에 한자가 끼어있거나, 중국어 번역에 한글이 끼어있음) → 반드시 목표 언어로 교체\n' +
+        '- 명백한 오역·문법 오류·과도한 직역·확실히 어색한 표현\n\n' +
         '엄격한 규칙:\n' +
         '- 의미와 톤(존댓말/반말/구어체)을 절대 변경하지 말 것\n' +
         '- 용어·표현을 임의로 바꾸지 말 것 (1차에서 선택한 표현 존중)\n' +
@@ -3544,12 +3546,22 @@
         var _wordCount = _cjkAtoms + _spaceWords;
         if(_useSecondPass && _wordCount > 4){
           const _t1 = Date.now();
-          const refineUser = (el.secondPrompt && el.secondPrompt.value.trim()) || defaultSecondPrompt();
+          // 언어 누설 자동 감지 — 입력은 단일 언어인데 1차 결과에 두 언어가 섞인 경우
+          var _uHan = /[가-힯]/.test(userText), _uZh = /[一-鿿]/.test(userText);
+          var _tHan = /[가-힯]/.test(translated), _tZh = /[一-鿿]/.test(translated);
+          var _langLeak = (_uZh && !_uHan && _tHan && _tZh) || (_uHan && !_uZh && _tZh && _tHan);
+          const userSecondPrompt = (el.secondPrompt && el.secondPrompt.value.trim()) || defaultSecondPrompt();
+          // 누설 감지 시 더 강한 재번역 지시로 override
+          const refineUser = _langLeak
+            ? '★ 1차 번역에 원문 언어 글자가 잘못 남아있다. 그 부분을 반드시 목표 언어로 교체해 자연스럽게 다시 써라. 의미는 그대로, 표현만 목표 언어로 통일. 결과 번역문만 출력(설명·라벨·따옴표 금지).'
+            : userSecondPrompt;
           // 2차 system = 1차 시스템 프롬프트(톤/규칙 유지) + 2차 보수적 다듬기 지시
           const origSys = (el.systemPrompt && el.systemPrompt.value) || defaultSystemPrompt();
           const refineSys = origSys + '\n\n[다듬기 검토 단계]\n' + refineUser;
           const refineInput = '【원문】\n' + userText + '\n\n【1차 번역】\n' + translated +
-            '\n\n위 1차 번역을 검토하라. 손볼 필요 없으면 그대로, 명백히 잘못된 부분만 최소한으로 손봐 최종 번역만 출력.';
+            (_langLeak
+              ? '\n\n★ 1차에 원문 언어 글자가 끼어있다. 반드시 목표 언어로만 출력하라.'
+              : '\n\n위 1차 번역을 검토하라. 손볼 필요 없으면 그대로, 명백히 잘못된 부분만 최소한으로 손봐 최종 번역만 출력.');
           // 2차는 deterministic하게 (자유도↓) — temperature 일시 0
           const origTemp = el.temperature ? el.temperature.value : '';
           if(el.temperature) el.temperature.value = '0';
