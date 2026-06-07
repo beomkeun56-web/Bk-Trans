@@ -902,6 +902,47 @@
         </div>
         <div style="font-size:calc(10px * var(--textScale)); color:#666; margin-top:4px;">예: 1차=qwen-mt-plus, 2차=Google + gemini-3-flash-preview</div>
       </div>
+      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">단어 수 분기 번역 (짧음=속도, 긴메시지=품질)</span>
+        <input type="checkbox" id="optSmartRouting" style="transform:scale(1.3); cursor:pointer;" />
+      </label>
+      <div id="optSmartRoutingWrap" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); display:none;">
+        <div style="font-size:calc(12px * var(--textScale)); color:var(--muted); margin-bottom:8px;">
+          임계값:
+          <input type="number" id="optRoutingThreshold" value="4" min="1" max="100" style="width:60px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:6px; padding:4px 6px; font-size:calc(12px * var(--textScale)); margin:0 4px;" />단어
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:calc(11px * var(--textScale)); color:var(--muted); margin-bottom:4px;">짧은 메시지 (속도 우선)</div>
+          <div style="display:flex; gap:6px;">
+            <select id="optRoutingShortProvider" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
+              <option value="">(기본 사용)</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="google">Google (Gemini)</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="qwen">Alibaba (Qwen)</option>
+            </select>
+            <select id="optRoutingShortModel" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
+              <option value="">(모델 선택)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:calc(11px * var(--textScale)); color:var(--muted); margin-bottom:4px;">긴 메시지 (품질 우선)</div>
+          <div style="display:flex; gap:6px;">
+            <select id="optRoutingLongProvider" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
+              <option value="">(기본 사용)</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="google">Google (Gemini)</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="qwen">Alibaba (Qwen)</option>
+            </select>
+            <select id="optRoutingLongModel" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
+              <option value="">(모델 선택)</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:calc(10px * var(--textScale)); color:#666; margin-top:6px;">예: 짧음=Alibaba+qwen-mt-flash, 긴메시지=Alibaba+qwen3.7-max</div>
+      </div>
       <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer;">
         <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">용어집 사용</span>
         <input type="checkbox" id="optGlossarySys" style="transform:scale(1.3); cursor:pointer;" />
@@ -1395,7 +1436,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.27t';
+    const APP_VERSION = 'v19.28t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1440,6 +1481,12 @@
       secondPrompt: 'bk_tr_test_secondPrompt',
       secondProvider: 'bk_tr_test_secondProvider',
       secondModel: 'bk_tr_test_secondModel',
+      useSmartRouting: 'bk_tr_test_useSmartRouting',
+      routingThreshold: 'bk_tr_test_routingThreshold',
+      routingShortProvider: 'bk_tr_test_routingShortProvider',
+      routingShortModel: 'bk_tr_test_routingShortModel',
+      routingLongProvider: 'bk_tr_test_routingLongProvider',
+      routingLongModel: 'bk_tr_test_routingLongModel',
       glossarySys: 'bk_tr_test_glossarySys',
       glossaryUser: 'bk_tr_test_glossary',
       useGlossarySys: 'bk_tr_test_useGlossarySys',
@@ -3554,6 +3601,28 @@
       scrollThrottled();
 
       const _t0 = Date.now();
+      // 단어 카운트 (1차 호출 전에 계산해서 Smart Routing 분기에도 활용)
+      var _wcText = (userText || '').trim();
+      var _cjkAtoms = (_wcText.match(/[一-鿿]/g) || []).length;
+      var _nonCjkRaw = _wcText.replace(/[一-鿿]/g, ' ').trim();
+      var _spaceWords = _nonCjkRaw ? _nonCjkRaw.split(/\s+/).length : 0;
+      var _wordCount = _cjkAtoms + _spaceWords;
+
+      // ★ Smart Routing: 단어 수에 따라 1차 모델 자동 전환
+      var _routingActive = false;
+      var _routingOrigProv = el.apiProvider ? el.apiProvider.value : '';
+      var _routingOrigMdl = el.model ? el.model.value : '';
+      if(_useSmartRouting){
+        var _thresh = parseInt(localStorage.getItem(LS.routingThreshold) || '4', 10);
+        if(!Number.isFinite(_thresh) || _thresh < 1) _thresh = 4;
+        var _useShort = (_wordCount <= _thresh);
+        var _rP = localStorage.getItem(_useShort ? LS.routingShortProvider : LS.routingLongProvider) || '';
+        var _rM = localStorage.getItem(_useShort ? LS.routingShortModel : LS.routingLongModel) || '';
+        if(_rP && el.apiProvider){ el.apiProvider.value = _rP; _routingActive = true; }
+        if(_rM && el.model){ el.model.value = _rM; _routingActive = true; }
+        try{ console.log('[Smart Routing] wordCount=' + _wordCount + ', threshold=' + _thresh + ', useShort=' + _useShort + ', provider=' + _rP + ', model=' + _rM); } catch(_){}
+      }
+
       try{
         let translatedRaw = await callOpenRouterStream(userText, (partial) => {
           streamBubble.style.opacity = '1';
@@ -3563,15 +3632,6 @@
         let translated = normalizeOutput(userText, translatedRaw);
         const _ms1 = Date.now() - _t0;
         let _ms2 = 0;
-
-        // 2차 번역(다듬기) — _useSecondPass ON & 입력 단어 수 > 4 일 때만
-        //   (짧은 입력은 1차만 — 다듬기 효과 거의 없고 속도/비용만 낭비)
-        //   단어 카운트: CJK 글자 1개 = 1단어, 그 외는 공백 분리로 카운트
-        var _wcText = (userText || '').trim();
-        var _cjkAtoms = (_wcText.match(/[一-鿿]/g) || []).length;
-        var _nonCjkRaw = _wcText.replace(/[一-鿿]/g, ' ').trim();
-        var _spaceWords = _nonCjkRaw ? _nonCjkRaw.split(/\s+/).length : 0;
-        var _wordCount = _cjkAtoms + _spaceWords;
         if(_useSecondPass && _wordCount > 4){
           const _t1 = Date.now();
           // 언어 누설 자동 감지 — 입력은 단일 언어인데 1차 결과에 두 언어가 섞인 경우
@@ -3697,6 +3757,11 @@
         setConnState(isAbort ? 'warn' : 'err');
       } finally {
         _currentAbort = null;
+        // Smart Routing 으로 임시 전환된 제공자/모델 원복
+        if(_routingActive){
+          if(el.apiProvider) el.apiProvider.value = _routingOrigProv;
+          if(el.model) el.model.value = _routingOrigMdl;
+        }
       }
     }
 
@@ -3900,6 +3965,7 @@
       if(optSecondProvider) optSecondProvider.value = savedProv;
       refreshOptSecondModels(savedProv, savedMdl);
       if(optSecondTargetWrap) optSecondTargetWrap.style.display = (optSecondPass && optSecondPass.checked) ? '' : 'none';
+      if(typeof refreshAllRoutingUI === 'function') refreshAllRoutingUI();
       var oSys = document.getElementById('optGlossarySys');
       if(oSys) oSys.checked = _useGlossarySys;
       newOptionsOverlay.classList.add('show');
@@ -3943,6 +4009,84 @@
       localStorage.setItem(LS.secondModel, (optSecondModel.value || '').trim());
       toast('2차 모델: ' + (optSecondModel.value || '1차와 동일'));
     });
+
+    // 단어 수 분기 번역 (Smart Routing)
+    var _useSmartRouting = localStorage.getItem(LS.useSmartRouting) === '1';
+    var optSmartRouting = document.getElementById('optSmartRouting');
+    var optSmartRoutingWrap = document.getElementById('optSmartRoutingWrap');
+    var optRoutingThreshold = document.getElementById('optRoutingThreshold');
+    var optRoutingShortProvider = document.getElementById('optRoutingShortProvider');
+    var optRoutingShortModel = document.getElementById('optRoutingShortModel');
+    var optRoutingLongProvider = document.getElementById('optRoutingLongProvider');
+    var optRoutingLongModel = document.getElementById('optRoutingLongModel');
+    function refreshRoutingModels(sel, prov, savedModel){
+      if(!sel) return;
+      sel.innerHTML = '';
+      var blank = document.createElement('option');
+      blank.value = ''; blank.textContent = '(기본 모델 사용)';
+      sel.appendChild(blank);
+      var list = [];
+      if(prov === 'google') list = GOOGLE_MODEL_OPTIONS;
+      else if(prov === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
+      else if(prov === 'qwen') list = QWEN_MODEL_OPTIONS;
+      else if(prov === 'openrouter') list = MODEL_OPTIONS;
+      list.forEach(function(m){
+        var opt = document.createElement('option');
+        opt.value = m.id; opt.textContent = m.name + ' — ' + m.id;
+        sel.appendChild(opt);
+      });
+      if(savedModel){
+        var found = Array.prototype.some.call(sel.options, function(o){ return o.value === savedModel; });
+        if(!found){
+          var custom = document.createElement('option');
+          custom.value = savedModel; custom.textContent = '(사용자 지정) ' + savedModel;
+          sel.appendChild(custom);
+        }
+        sel.value = savedModel;
+      }
+    }
+    function refreshAllRoutingUI(){
+      if(optSmartRouting) optSmartRouting.checked = !!_useSmartRouting;
+      if(optRoutingThreshold) optRoutingThreshold.value = localStorage.getItem(LS.routingThreshold) || '4';
+      var sP = localStorage.getItem(LS.routingShortProvider) || '';
+      var sM = localStorage.getItem(LS.routingShortModel) || '';
+      var lP = localStorage.getItem(LS.routingLongProvider) || '';
+      var lM = localStorage.getItem(LS.routingLongModel) || '';
+      if(optRoutingShortProvider) optRoutingShortProvider.value = sP;
+      if(optRoutingLongProvider) optRoutingLongProvider.value = lP;
+      refreshRoutingModels(optRoutingShortModel, sP, sM);
+      refreshRoutingModels(optRoutingLongModel, lP, lM);
+      if(optSmartRoutingWrap) optSmartRoutingWrap.style.display = _useSmartRouting ? '' : 'none';
+    }
+    if(optSmartRouting) optSmartRouting.addEventListener('change', function(){
+      _useSmartRouting = optSmartRouting.checked;
+      localStorage.setItem(LS.useSmartRouting, _useSmartRouting ? '1' : '0');
+      if(optSmartRoutingWrap) optSmartRoutingWrap.style.display = _useSmartRouting ? '' : 'none';
+      toast(_useSmartRouting ? '단어 수 분기 ON' : '단어 수 분기 OFF');
+    });
+    if(optRoutingThreshold) optRoutingThreshold.addEventListener('change', function(){
+      var v = parseInt(optRoutingThreshold.value, 10);
+      if(!Number.isFinite(v) || v < 1) v = 4;
+      localStorage.setItem(LS.routingThreshold, String(v));
+      toast('임계값 ' + v + '단어');
+    });
+    if(optRoutingShortProvider) optRoutingShortProvider.addEventListener('change', function(){
+      localStorage.setItem(LS.routingShortProvider, optRoutingShortProvider.value || '');
+      refreshRoutingModels(optRoutingShortModel, optRoutingShortProvider.value, localStorage.getItem(LS.routingShortModel) || '');
+      if(optRoutingShortModel) localStorage.setItem(LS.routingShortModel, optRoutingShortModel.value || '');
+    });
+    if(optRoutingShortModel) optRoutingShortModel.addEventListener('change', function(){
+      localStorage.setItem(LS.routingShortModel, (optRoutingShortModel.value || '').trim());
+    });
+    if(optRoutingLongProvider) optRoutingLongProvider.addEventListener('change', function(){
+      localStorage.setItem(LS.routingLongProvider, optRoutingLongProvider.value || '');
+      refreshRoutingModels(optRoutingLongModel, optRoutingLongProvider.value, localStorage.getItem(LS.routingLongModel) || '');
+      if(optRoutingLongModel) localStorage.setItem(LS.routingLongModel, optRoutingLongModel.value || '');
+    });
+    if(optRoutingLongModel) optRoutingLongModel.addEventListener('change', function(){
+      localStorage.setItem(LS.routingLongModel, (optRoutingLongModel.value || '').trim());
+    });
+
     var optGlossarySys = document.getElementById('optGlossarySys');
     if(optGlossarySys){
       optGlossarySys.checked = _useGlossarySys;
