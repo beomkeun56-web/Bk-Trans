@@ -1379,7 +1379,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.9t';
+    const APP_VERSION = 'v19.10t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2530,6 +2530,9 @@
     }
 
     // 스트리밍 청크에서 텍스트 추출 (Anthropic / OpenAI 형식 모두 처리)
+    // Qwen-MT compatible-mode는 청크마다 누적 텍스트를 보내므로 증분만 추출
+    let _qwenLastContent = '';
+    function resetQwenStreamState(){ _qwenLastContent = ''; }
     function parseChatDelta(j){
       if(isAnthropicProvider()){
         if(j.type === 'content_block_delta' && j.delta && typeof j.delta.text === 'string') return j.delta.text;
@@ -2537,7 +2540,19 @@
       }
       const c = j.choices && j.choices[0];
       if(!c) return '';
-      if(c.delta && c.delta.content) return c.delta.content;
+      if(c.delta && typeof c.delta.content === 'string' && c.delta.content){
+        var content = c.delta.content;
+        if(isQwenProvider()){
+          if(content.indexOf(_qwenLastContent) === 0){
+            var diff = content.slice(_qwenLastContent.length);
+            _qwenLastContent = content;
+            return diff;
+          }
+          _qwenLastContent = content;
+          return content;
+        }
+        return content;
+      }
       if(c.message && c.message.content) return c.message.content;
       return '';
     }
@@ -2693,6 +2708,8 @@
 
       const model = toRequestModelId(el.model.value.trim());
       if(!model) throw new Error('모델이 비어 있습니다.');
+
+      if(qwen) resetQwenStreamState();
 
       const isPing = userText === 'ping';
       const temperature = validateNumber(el.temperature.value.trim(), 0, 2, 'temperature');
