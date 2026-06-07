@@ -1379,7 +1379,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.16t';
+    const APP_VERSION = 'v19.17t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2562,6 +2562,12 @@
             { role: 'user', content: userPrefix + lastUserContent }
           ];
         }
+        // 진단 로그 (F12 콘솔에서 확인)
+        try{
+          console.log('[Qwen Debug] provider=qwen, model=' + opts.model + ', mtMode=' + isQwenMtModel() + ', hasMarker=' + hasQwenNativeMarker + ', override=' + (!hasQwenNativeMarker && lastUserContent && lastUserContent !== 'ping'));
+          console.log('[Qwen Debug] system:', (qwenMessages[0] && qwenMessages[0].role === 'system') ? qwenMessages[0].content.slice(0, 200) : '(none)');
+          console.log('[Qwen Debug] user:', (qwenMessages[qwenMessages.length-1] && qwenMessages[qwenMessages.length-1].content) ? qwenMessages[qwenMessages.length-1].content.slice(0, 300) : '(none)');
+        } catch(_){}
       }
       const body = {
         model: opts.model,
