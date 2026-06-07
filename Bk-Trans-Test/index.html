@@ -1436,7 +1436,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.28t';
+    const APP_VERSION = 'v19.29t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3902,13 +3902,40 @@
       const hasEnhanced = !!enhanced;
       var enhancedActive = _useEnhancedPrompt && hasEnhanced;
       if(!hasEnhanced) _useEnhancedPrompt = false;
-      var anyActive = enhancedActive || _useSecondPass;
+      var smartActive = (typeof _useSmartRouting !== 'undefined') && _useSmartRouting;
+      var secondActive = !!_useSecondPass;
+      var anyActive = enhancedActive || secondActive || smartActive;
       if(anyActive){
         newPromptToggle.classList.add('newActive');
         newPromptToggle.style.opacity = '';
       } else {
         newPromptToggle.classList.remove('newActive');
         newPromptToggle.style.opacity = '0.4';
+      }
+      // 활성 모드를 3자 영어 뱃지로 표시 (모드별 색)
+      // BRN(파랑)=분기번역 / 2ND(주황)=2차번역 / ENH(초록)=품질강화
+      newPromptToggle.style.color = '';
+      newPromptToggle.style.fontWeight = '';
+      newPromptToggle.innerHTML = '';
+      if(!anyActive){
+        newPromptToggle.textContent = 'New';
+      } else {
+        var parts = [];
+        if(smartActive) parts.push({ t:'BRN', c:'#3b82f6' });    // 파랑 — 분기
+        if(secondActive) parts.push({ t:'2ND', c:'#f59e0b' });   // 주황 — 2차
+        if(enhancedActive) parts.push({ t:'ENH', c:'#10b981' }); // 초록 — 품질강화
+        parts.forEach(function(p, idx){
+          var span = document.createElement('span');
+          span.textContent = p.t;
+          span.style.cssText = 'color:' + p.c + ';font-weight:700;letter-spacing:0.5px;';
+          newPromptToggle.appendChild(span);
+          if(idx < parts.length - 1){
+            var sep = document.createElement('span');
+            sep.textContent = ' ';
+            sep.style.cssText = 'color:rgba(255,255,255,.3);';
+            newPromptToggle.appendChild(sep);
+          }
+        });
       }
       if(enhancedPromptWrap && enhancedPromptView){
         if(hasEnhanced){
@@ -4062,6 +4089,7 @@
       _useSmartRouting = optSmartRouting.checked;
       localStorage.setItem(LS.useSmartRouting, _useSmartRouting ? '1' : '0');
       if(optSmartRoutingWrap) optSmartRoutingWrap.style.display = _useSmartRouting ? '' : 'none';
+      updateNewToggleUI();
       toast(_useSmartRouting ? '단어 수 분기 ON' : '단어 수 분기 OFF');
     });
     if(optRoutingThreshold) optRoutingThreshold.addEventListener('change', function(){
