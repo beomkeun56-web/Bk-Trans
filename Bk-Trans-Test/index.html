@@ -1436,7 +1436,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.32t';
+    const APP_VERSION = 'v19.33t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2688,11 +2688,12 @@
       };
       if(p === 'openrouter' && typeof opts.topK === 'number') body.top_k = opts.topK;
       if(opts.stream) body.stream_options = { include_usage: true }; // 토큰 사용량 수신
-      // Qwen3 모델은 기본 thinking 모드가 활성화돼 추론이 끼어들 수 있음 → 번역엔 비활성
+      // Qwen3 모델: thinking 모드 활성화로 디테일·완결성 확보 (누락·오역 감소)
+      // 단점: 응답 시간·비용 약간 증가
       if(p === 'qwen'){
         var midLow = String(opts.model || '').toLowerCase();
         if(midLow.indexOf('qwen3') === 0 || midLow.indexOf('qwen-3') === 0){
-          body.enable_thinking = false;
+          body.enable_thinking = true;
         }
       }
       return {
