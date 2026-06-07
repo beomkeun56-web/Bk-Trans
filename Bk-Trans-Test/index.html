@@ -943,10 +943,20 @@
         </div>
         <div style="font-size:calc(10px * var(--textScale)); color:#666; margin-top:6px;">예: 짧음=Alibaba+qwen-mt-flash, 긴메시지=Alibaba+qwen3.7-max</div>
       </div>
-      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer;">
+      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
         <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">용어집 사용</span>
         <input type="checkbox" id="optGlossarySys" style="transform:scale(1.3); cursor:pointer;" />
       </label>
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0;">
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">Qwen3 사고 깊이 (Thinking)</span>
+        <select id="optQwenThinking" style="background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px 10px; font-size:calc(12px * var(--textScale)); cursor:pointer;">
+          <option value="off">OFF (가장 빠름 · 2-3초)</option>
+          <option value="low">Low (빠름 · 3-5초)</option>
+          <option value="mid">Mid (중간 · 5-8초)</option>
+          <option value="high">High (깊음 · 8-14초)</option>
+        </select>
+      </div>
+      <div style="font-size:calc(11px * var(--textScale)); color:#666; padding:0 0 10px;">사고 깊이가 클수록 누락·오역 감소 (Qwen3 계열에만 적용).</div>
     </section>
   </div>
 
@@ -1436,7 +1446,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.33t';
+    const APP_VERSION = 'v19.34t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1487,6 +1497,7 @@
       routingShortModel: 'bk_tr_test_routingShortModel',
       routingLongProvider: 'bk_tr_test_routingLongProvider',
       routingLongModel: 'bk_tr_test_routingLongModel',
+      qwenThinking: 'bk_tr_test_qwenThinking',
       glossarySys: 'bk_tr_test_glossarySys',
       glossaryUser: 'bk_tr_test_glossary',
       useGlossarySys: 'bk_tr_test_useGlossarySys',
@@ -2688,12 +2699,21 @@
       };
       if(p === 'openrouter' && typeof opts.topK === 'number') body.top_k = opts.topK;
       if(opts.stream) body.stream_options = { include_usage: true }; // 토큰 사용량 수신
-      // Qwen3 모델: thinking 모드 활성화로 디테일·완결성 확보 (누락·오역 감소)
-      // 단점: 응답 시간·비용 약간 증가
+      // Qwen3 모델: 사고 깊이 4단계 (off/low/mid/high)
+      // 깊이 ↑ → 누락·오역 감소, 응답시간 ↑
       if(p === 'qwen'){
         var midLow = String(opts.model || '').toLowerCase();
         if(midLow.indexOf('qwen3') === 0 || midLow.indexOf('qwen-3') === 0){
-          body.enable_thinking = true;
+          var thinkLevel = 'off';
+          try{ thinkLevel = localStorage.getItem(LS.qwenThinking) || 'off'; } catch(_){}
+          if(thinkLevel === 'off'){
+            body.enable_thinking = false;
+          } else {
+            body.enable_thinking = true;
+            // thinking_budget: low=512, mid=2048, high=8192 (모델 최대치)
+            var budget = (thinkLevel === 'low') ? 512 : (thinkLevel === 'mid' ? 2048 : 8192);
+            body.thinking_budget = budget;
+          }
         }
       }
       return {
@@ -4066,6 +4086,8 @@
       if(typeof refreshAllRoutingUI === 'function') refreshAllRoutingUI();
       var oSys = document.getElementById('optGlossarySys');
       if(oSys) oSys.checked = _useGlossarySys;
+      var oThk = document.getElementById('optQwenThinking');
+      if(oThk) oThk.value = localStorage.getItem(LS.qwenThinking) || 'off';
       newOptionsOverlay.classList.add('show');
     }
     function closeNewOptions(){ if(newOptionsOverlay) newOptionsOverlay.classList.remove('show'); }
@@ -4189,6 +4211,17 @@
       updateModelTag();
     });
 
+    var optQwenThinking = document.getElementById('optQwenThinking');
+    if(optQwenThinking){
+      optQwenThinking.value = localStorage.getItem(LS.qwenThinking) || 'off';
+      optQwenThinking.addEventListener('change', function(){
+        localStorage.setItem(LS.qwenThinking, optQwenThinking.value);
+        var label = optQwenThinking.value === 'off' ? 'OFF (빠름)' :
+                    optQwenThinking.value === 'low' ? 'Low' :
+                    optQwenThinking.value === 'mid' ? 'Mid' : 'High';
+        toast('Qwen3 사고 깊이: ' + label);
+      });
+    }
     var optGlossarySys = document.getElementById('optGlossarySys');
     if(optGlossarySys){
       optGlossarySys.checked = _useGlossarySys;
