@@ -1379,7 +1379,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.10t';
+    const APP_VERSION = 'v19.11t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1536,11 +1536,15 @@
       { id:'claude-haiku-4-5', name:'Claude Haiku 4.5', effort:'' }
     ];
 
-    // Qwen-MT (DashScope/百炼) 전용 번역 모델
+    // Alibaba DashScope/百炼 모델 (MT 전용 + 일반 chat 모델 혼합)
+    // qwen-mt-* 는 번역 전용 (translation_options 모드), 나머지는 일반 chat
     const QWEN_DEFAULT_MODELS = [
       { id:'qwen-mt-flash', name:'Qwen-MT Flash', effort:'' },
       { id:'qwen-mt-turbo', name:'Qwen-MT Turbo', effort:'' },
-      { id:'qwen-mt-plus', name:'Qwen-MT Plus', effort:'' }
+      { id:'qwen-mt-plus', name:'Qwen-MT Plus', effort:'' },
+      { id:'qwen-plus', name:'Qwen Plus', effort:'' },
+      { id:'qwen-max', name:'Qwen Max', effort:'' },
+      { id:'qwen3-max', name:'Qwen3 Max', effort:'' }
     ];
 
     function loadModelList(lsKey, defaults){
@@ -2333,6 +2337,12 @@
     function isGoogleProvider(){ return getProvider() === 'google'; }
     function isAnthropicProvider(){ return getProvider() === 'anthropic'; }
     function isQwenProvider(){ return getProvider() === 'qwen'; }
+    // Alibaba 제공자이면서 qwen-mt-* 모델(번역 전용)인지 — system 프롬프트·temperature 무시, translation_options 모드
+    function isQwenMtModel(){
+      if(!isQwenProvider()) return false;
+      var mid = ((el.model && el.model.value) || '').trim().toLowerCase();
+      return mid.indexOf('qwen-mt-') === 0;
+    }
     function getActiveApiKey(){
       const p = getProvider();
       if(p === 'google') return ((el.googleApiKey && el.googleApiKey.value) || '').trim();
@@ -2459,7 +2469,7 @@
           body: body
         };
       }
-      if(p === 'qwen'){
+      if(p === 'qwen' && isQwenMtModel()){
         // Qwen-MT: system 프롬프트 무시(번역 전용 모델), translation_options 필수
         var userMsgs = (opts.messages || []).filter(function(m){ return m.role !== 'system'; });
         var lastUser = userMsgs.length ? userMsgs[userMsgs.length-1].content : '';
@@ -2489,6 +2499,7 @@
           body: qbody
         };
       }
+      // 일반 Qwen (qwen-plus, qwen-max, qwen3-max 등) → 표준 OpenAI chat 포맷
       const body = {
         model: opts.model,
         messages: opts.messages,
@@ -2542,7 +2553,7 @@
       if(!c) return '';
       if(c.delta && typeof c.delta.content === 'string' && c.delta.content){
         var content = c.delta.content;
-        if(isQwenProvider()){
+        if(isQwenMtModel()){
           if(content.indexOf(_qwenLastContent) === 0){
             var diff = content.slice(_qwenLastContent.length);
             _qwenLastContent = content;
@@ -3751,10 +3762,11 @@
 
       const apiKey = getActiveApiKey();
       if(!apiKey){ toast('API Key가 필요합니다'); return; }
-      if(isQwenProvider()){ toast('Qwen-MT는 번역 전용 모델입니다. 학습 분석은 다른 제공자로 전환하세요.'); return; }
+      if(isQwenMtModel()){ toast('Qwen-MT는 번역 전용 모델입니다. 분석은 일반 Qwen(qwen-plus/max) 또는 다른 제공자로 전환하세요.'); return; }
       let analyzeModel;
       if(isGoogleProvider()) analyzeModel = toRequestModelId(el.model.value.trim() || 'gemini-3-flash-preview');
       else if(isAnthropicProvider()) analyzeModel = toRequestModelId(el.model.value.trim() || 'claude-opus-4-7');
+      else if(isQwenProvider()) analyzeModel = toRequestModelId(el.model.value.trim() || 'qwen-plus');
       else analyzeModel = 'anthropic/claude-opus-4.7';
 
       try{
