@@ -1379,7 +1379,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.13t';
+    const APP_VERSION = 'v19.14t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2511,10 +2511,31 @@
           body: qbody
         };
       }
-      // 일반 Qwen (qwen-plus, qwen-max, qwen3-max 등) → 표준 OpenAI chat 포맷
+      // 일반 Qwen (qwen3.7-plus, qwen3.7-max, qwen3.6-flash 등) → 표준 OpenAI chat 포맷
+      // ★ Qwen은 system 프롬프트 번역 지시를 약하게 받아들이고 'rephrase'로 빠지는 경향이 있어
+      //   user 메시지 자체에 강제 번역 명령을 prepend 한다.
+      var qwenMessages = opts.messages;
+      if(p === 'qwen'){
+        qwenMessages = (opts.messages || []).slice();
+        for(var qi = qwenMessages.length - 1; qi >= 0; qi--){
+          if(qwenMessages[qi].role === 'user'){
+            var origText = qwenMessages[qi].content || '';
+            // ping 등 메타 호출은 건드리지 않음
+            if(origText && origText !== 'ping'){
+              var qlangs = detectQwenLangs(origText);
+              var srcZh = qlangs.source === 'Chinese';
+              var prefix = srcZh
+                ? '严格执行翻译任务：把以下中文翻译成自然的韩文。绝对不要用中文重写、润色、或回答。只输出韩文译文，不加解释、不加引号、不加标签。\n\n[原文]\n'
+                : '엄격한 번역 작업: 다음 한국어를 자연스러운 중국어로 번역하라. 한국어로 다시 쓰거나 다듬거나 답변하지 말 것. 중국어 번역문만 출력하라. 설명·따옴표·라벨 금지.\n\n[原文]\n';
+              qwenMessages[qi] = { role: 'user', content: prefix + origText };
+            }
+            break;
+          }
+        }
+      }
       const body = {
         model: opts.model,
-        messages: opts.messages,
+        messages: qwenMessages,
         temperature: opts.temperature,
         top_p: opts.topP,
         stream: !!opts.stream,
