@@ -1395,7 +1395,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.24t';
+    const APP_VERSION = 'v19.25t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1561,6 +1561,8 @@
       { id:'qwen-mt-turbo', name:'Qwen-MT Turbo', effort:'' },
       { id:'qwen-mt-plus', name:'Qwen-MT Plus', effort:'' },
       { id:'qwen3.6-flash', name:'Qwen3.6 Flash', effort:'' },
+      { id:'qwen3.6-plus', name:'Qwen3.6 Plus', effort:'' },
+      { id:'qwen3.6-max-preview', name:'Qwen3.6 Max (preview)', effort:'' },
       { id:'qwen3.7-plus', name:'Qwen3.7 Plus', effort:'' },
       { id:'qwen3.7-max', name:'Qwen3.7 Max', effort:'' }
     ];
@@ -1574,6 +1576,13 @@
           localStorage.removeItem(LS.qwenModel);
         }
         localStorage.setItem('bk_tr_test_qwenModelMigration_v2', '1');
+      }
+    } catch(_){}
+    // v19.25t 마이그레이션 — qwen3.6-plus, qwen3.6-max-preview 추가 (저장된 모델 선택은 유지)
+    try{
+      if(!localStorage.getItem('bk_tr_test_qwenModelMigration_v3')){
+        localStorage.removeItem(LS.qwenCustomModels);
+        localStorage.setItem('bk_tr_test_qwenModelMigration_v3', '1');
       }
     } catch(_){}
 
