@@ -896,7 +896,9 @@
             <option value="anthropic">Anthropic (Claude)</option>
             <option value="qwen">Alibaba (Qwen)</option>
           </select>
-          <input id="optSecondModel" type="text" placeholder="model ID (예: gemini-3-flash-preview)" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));" />
+          <select id="optSecondModel" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
+            <option value="">(모델 선택)</option>
+          </select>
         </div>
         <div style="font-size:calc(10px * var(--textScale)); color:#666; margin-top:4px;">예: 1차=qwen-mt-plus, 2차=Google + gemini-3-flash-preview</div>
       </div>
@@ -1393,7 +1395,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.18t';
+    const APP_VERSION = 'v19.19t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3805,12 +3807,42 @@
     var optSecondTargetWrap = document.getElementById('optSecondTargetWrap');
     var optSecondProvider = document.getElementById('optSecondProvider');
     var optSecondModel = document.getElementById('optSecondModel');
+    // 2차 모델 select를 제공자에 맞게 다시 채움
+    function refreshOptSecondModels(prov, savedModel){
+      if(!optSecondModel) return;
+      optSecondModel.innerHTML = '';
+      var blank = document.createElement('option');
+      blank.value = ''; blank.textContent = '(1차 모델과 동일)';
+      optSecondModel.appendChild(blank);
+      var list = [];
+      if(prov === 'google') list = GOOGLE_MODEL_OPTIONS;
+      else if(prov === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
+      else if(prov === 'qwen') list = QWEN_MODEL_OPTIONS;
+      else if(prov === 'openrouter') list = MODEL_OPTIONS;
+      list.forEach(function(m){
+        var opt = document.createElement('option');
+        opt.value = m.id; opt.textContent = m.name + ' — ' + m.id;
+        optSecondModel.appendChild(opt);
+      });
+      // 저장된 모델을 선택 (목록에 없으면 자유 입력값으로 추가)
+      if(savedModel){
+        var found = Array.prototype.some.call(optSecondModel.options, function(o){ return o.value === savedModel; });
+        if(!found){
+          var custom = document.createElement('option');
+          custom.value = savedModel; custom.textContent = '(사용자 지정) ' + savedModel;
+          optSecondModel.appendChild(custom);
+        }
+        optSecondModel.value = savedModel;
+      }
+    }
     function openNewOptions(){
       if(!newOptionsOverlay) return;
       if(optEnhanced) optEnhanced.checked = !!_useEnhancedPrompt && !!localStorage.getItem(enhancedLsKey());
       if(optSecondPass) optSecondPass.checked = !!_useSecondPass;
-      if(optSecondProvider) optSecondProvider.value = localStorage.getItem(LS.secondProvider) || '';
-      if(optSecondModel) optSecondModel.value = localStorage.getItem(LS.secondModel) || '';
+      var savedProv = localStorage.getItem(LS.secondProvider) || '';
+      var savedMdl = localStorage.getItem(LS.secondModel) || '';
+      if(optSecondProvider) optSecondProvider.value = savedProv;
+      refreshOptSecondModels(savedProv, savedMdl);
       if(optSecondTargetWrap) optSecondTargetWrap.style.display = (optSecondPass && optSecondPass.checked) ? '' : 'none';
       var oSys = document.getElementById('optGlossarySys');
       if(oSys) oSys.checked = _useGlossarySys;
@@ -3841,11 +3873,19 @@
     });
     if(optSecondProvider) optSecondProvider.addEventListener('change', function(){
       localStorage.setItem(LS.secondProvider, optSecondProvider.value || '');
-      toast('2차 제공자: ' + (optSecondProvider.value || '1차와 동일'));
+      // 제공자 바뀌면 모델 목록 새로 채움. 저장된 모델이 새 제공자에 없으면 비움
+      var newProv = optSecondProvider.value || '';
+      var prevModel = localStorage.getItem(LS.secondModel) || '';
+      refreshOptSecondModels(newProv, prevModel);
+      // 새 제공자에 prev 모델이 없으면 select가 자동으로 첫 항목 선택할 수 있으니 동기화
+      if(optSecondModel && optSecondModel.value !== prevModel){
+        localStorage.setItem(LS.secondModel, optSecondModel.value || '');
+      }
+      toast('2차 제공자: ' + (newProv || '1차와 동일'));
     });
     if(optSecondModel) optSecondModel.addEventListener('change', function(){
-      localStorage.setItem(LS.secondModel, optSecondModel.value.trim());
-      toast('2차 모델 저장');
+      localStorage.setItem(LS.secondModel, (optSecondModel.value || '').trim());
+      toast('2차 모델: ' + (optSecondModel.value || '1차와 동일'));
     });
     var optGlossarySys = document.getElementById('optGlossarySys');
     if(optGlossarySys){
