@@ -1379,7 +1379,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.15t';
+    const APP_VERSION = 'v19.16t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2517,6 +2517,15 @@
       //   용어집 매핑은 user 메시지에 인라인 첨부 (자동 주입 효과 유지).
       var qwenMessages = opts.messages;
       if(p === 'qwen'){
+        // 시스템 프롬프트에 QWEN37_NATIVE 마커가 있으면 = 사용자가 Qwen 최적화 프롬프트를 작성함 → 우회 비활성화
+        var hasQwenNativeMarker = false;
+        try{
+          (opts.messages || []).forEach(function(m){
+            if(m.role === 'system' && typeof m.content === 'string' && m.content.indexOf('QWEN37_NATIVE') !== -1){
+              hasQwenNativeMarker = true;
+            }
+          });
+        } catch(_){}
         // 마지막 user 메시지 추출
         var lastUserContent = '';
         for(var qi = (opts.messages||[]).length - 1; qi >= 0; qi--){
@@ -2525,7 +2534,7 @@
             break;
           }
         }
-        if(lastUserContent && lastUserContent !== 'ping'){
+        if(!hasQwenNativeMarker && lastUserContent && lastUserContent !== 'ping'){
           var qlangs = detectQwenLangs(lastUserContent);
           var srcZh = qlangs.source === 'Chinese';
           // 용어집 매칭 (자동 주입)
