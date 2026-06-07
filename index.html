@@ -1436,7 +1436,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.30t';
+    const APP_VERSION = 'v19.31t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1570,9 +1570,19 @@
       return (((el.model && el.model.value) || '') || localStorage.getItem(modelLsKey()) || '').trim();
     }
 
+    // 분기 모델 이름을 짧게 압축 (Qwen Mt Plus → MT, Qwen3.7 Max → 3.7Max 등)
+    function compactRoutingName(s, dropPrefix){
+      if(!s) return '';
+      var x = String(s);
+      if(dropPrefix) x = x.replace(/^Qwen\s*/i, '').replace(/^Gemini\s*/i, '').replace(/^Claude\s*/i, '').replace(/^GPT\s*/i, '');
+      x = x.replace(/\bMt\s+Plus\b/i, 'MT').replace(/\bMt\s+Turbo\b/i, 'MT-T').replace(/\bMt\s+Flash\b/i, 'MT-F');
+      x = x.replace(/(\d(?:\.\d+)?)\s+(Max|Plus|Flash|Turbo|Lite|Pro|Haiku|Sonnet|Opus)/gi, '$1$2');
+      x = x.replace(/\s+\(preview\)/i, '');
+      return x.trim();
+    }
     function updateModelTag(){
       var pretty = prettifyModelName(getCurrentModelId());
-      // 분기번역(Smart Routing) ON 시: '짧은모델 + 긴모델' 합쳐서 표시 + 글자 작게
+      // 분기번역(Smart Routing) ON 시: '짧은모델+긴모델' 압축 표시 + 글자 더 작게
       var smartActive = false;
       try{ smartActive = localStorage.getItem(LS.useSmartRouting) === '1'; } catch(_){}
       if(smartActive && el.modelTag){
@@ -1581,8 +1591,14 @@
         if(sMdl || lMdl){
           var sPretty = sMdl ? prettifyModelName(sMdl) : prettifyModelName(getCurrentModelId());
           var lPretty = lMdl ? prettifyModelName(lMdl) : prettifyModelName(getCurrentModelId());
-          pretty = sPretty + ' + ' + lPretty;
-          el.modelTag.style.fontSize = 'calc(13px * var(--textScale))';
+          // 두 모델이 같은 prefix(Qwen 등)면 두 번째에서 제거
+          var sFirstWord = (sPretty.split(/\s|\d/)[0] || '').toLowerCase();
+          var lFirstWord = (lPretty.split(/\s|\d/)[0] || '').toLowerCase();
+          var sharedPrefix = sFirstWord && sFirstWord === lFirstWord;
+          var sCompact = compactRoutingName(sPretty, false);
+          var lCompact = compactRoutingName(lPretty, sharedPrefix);
+          pretty = sCompact + '+' + lCompact;
+          el.modelTag.style.fontSize = 'calc(11px * var(--textScale))';
         } else {
           el.modelTag.style.fontSize = '';
         }
