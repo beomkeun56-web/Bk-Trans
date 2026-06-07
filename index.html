@@ -1395,7 +1395,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.20t';
+    const APP_VERSION = 'v19.21t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2978,6 +2978,7 @@
         el.model.value = secondMdl;
         switched = true;
       }
+      try{ console.log('[Refine] provider=' + (el.apiProvider ? el.apiProvider.value : '?') + ', model=' + (el.model ? el.model.value : '?') + ', switched=' + switched + ', secondProvLS=' + secondProv + ', secondMdlLS=' + secondMdl); } catch(_){}
       try{
         return await callOpenRouterStream(input, onChunk || (()=>{}));
       } finally {
