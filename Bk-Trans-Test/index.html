@@ -1395,7 +1395,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.21t';
+    const APP_VERSION = 'v19.22t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3556,8 +3556,16 @@
           const refineUser = _langLeak
             ? '★ 1차 번역에 원문 언어 글자가 잘못 남아있다. 그 부분을 반드시 목표 언어로 교체해 자연스럽게 다시 써라. 의미는 그대로, 표현만 목표 언어로 통일. 결과 번역문만 출력(설명·라벨·따옴표 금지).'
             : userSecondPrompt;
-          // 2차 system = 1차 시스템 프롬프트(톤/규칙 유지) + 2차 보수적 다듬기 지시
-          const origSys = (el.systemPrompt && el.systemPrompt.value) || defaultSystemPrompt();
+          // 2차 system = (2차 제공자의 시스템 프롬프트 슬롯) + 다듬기 지시
+          // 2차 제공자가 별도 설정돼 있으면 그쪽 슬롯에서, 아니면 현재(1차) 슬롯에서 가져옴
+          const _secondProvForSys = (localStorage.getItem(LS.secondProvider) || '').trim();
+          let origSys;
+          if(_secondProvForSys){
+            const _secondSysKey = _secondProvForSys === 'openrouter' ? LS.system : (LS.system + '_' + _secondProvForSys);
+            origSys = localStorage.getItem(_secondSysKey) || defaultSystemPrompt();
+          } else {
+            origSys = (el.systemPrompt && el.systemPrompt.value) || defaultSystemPrompt();
+          }
           const refineSys = origSys + '\n\n[다듬기 검토 단계]\n' + refineUser;
           const refineInput = '【원문】\n' + userText + '\n\n【1차 번역】\n' + translated +
             (_langLeak
