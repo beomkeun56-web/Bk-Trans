@@ -1379,7 +1379,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.12t';
+    const APP_VERSION = 'v19.13t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1542,10 +1542,22 @@
       { id:'qwen-mt-flash', name:'Qwen-MT Flash', effort:'' },
       { id:'qwen-mt-turbo', name:'Qwen-MT Turbo', effort:'' },
       { id:'qwen-mt-plus', name:'Qwen-MT Plus', effort:'' },
-      { id:'qwen-plus', name:'Qwen Plus', effort:'' },
-      { id:'qwen-max', name:'Qwen Max', effort:'' },
-      { id:'qwen3-max', name:'Qwen3 Max', effort:'' }
+      { id:'qwen3.6-flash', name:'Qwen3.6 Flash', effort:'' },
+      { id:'qwen3.7-plus', name:'Qwen3.7 Plus', effort:'' },
+      { id:'qwen3.7-max', name:'Qwen3.7 Max', effort:'' }
     ];
+
+    // v19.13t 마이그레이션 — qwen-plus/max/qwen3-max → qwen3.7-plus/max + qwen3.6-flash 로 교체
+    try{
+      if(!localStorage.getItem('bk_tr_test_qwenModelMigration_v2')){
+        localStorage.removeItem(LS.qwenCustomModels);
+        var oldSel = localStorage.getItem(LS.qwenModel);
+        if(oldSel === 'qwen-plus' || oldSel === 'qwen-max' || oldSel === 'qwen3-max'){
+          localStorage.removeItem(LS.qwenModel);
+        }
+        localStorage.setItem('bk_tr_test_qwenModelMigration_v2', '1');
+      }
+    } catch(_){}
 
     function loadModelList(lsKey, defaults){
       var saved = localStorage.getItem(lsKey);
