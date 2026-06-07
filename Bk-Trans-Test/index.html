@@ -909,6 +909,7 @@
             <option value="openrouter">OpenRouter</option>
             <option value="google">Google (Gemini 직접 호출)</option>
             <option value="anthropic">Anthropic (Claude 직접 호출)</option>
+            <option value="qwen">Qwen-MT (阿里云 백련 직접 호출)</option>
           </select>
         </div>
 
@@ -936,6 +937,14 @@
             <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">console.anthropic.com 에서 발급</span>
           </label>
           <input id="anthropicApiKey" type="password" placeholder="sk-ant-..." autocomplete="off" />
+        </div>
+
+        <div id="qwenKeyWrap" style="margin-bottom:20px; display:none;">
+          <label for="qwenApiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            Qwen (DashScope) API Key
+            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">bailian.console.aliyun.com 에서 발급</span>
+          </label>
+          <input id="qwenApiKey" type="password" placeholder="sk-..." autocomplete="off" />
         </div>
 
         <div style="margin-bottom:20px;">
@@ -1370,7 +1379,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.7t';
+    const APP_VERSION = 'v19.8t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1407,6 +1416,9 @@
       anthropicApiKey: 'bk_tr_test_anthropicApiKey',
       anthropicModel: 'bk_tr_test_anthropicModel',
       anthropicCustomModels: 'bk_tr_test_anthropicCustomModels',
+      qwenApiKey: 'bk_tr_test_qwenApiKey',
+      qwenModel: 'bk_tr_test_qwenModel',
+      qwenCustomModels: 'bk_tr_test_qwenCustomModels',
       showTokens: 'bk_tr_test_showTokens',
       useSecondPass: 'bk_tr_test_useSecondPass',
       secondPrompt: 'bk_tr_test_secondPrompt',
@@ -1436,6 +1448,7 @@
       apiProvider: document.getElementById('apiProvider'),
       googleApiKey: document.getElementById('googleApiKey'),
       anthropicApiKey: document.getElementById('anthropicApiKey'),
+      qwenApiKey: document.getElementById('qwenApiKey'),
       model: document.getElementById('model'),
       temperature: document.getElementById('temperature'),
       topP: document.getElementById('topP'),
@@ -1523,6 +1536,12 @@
       { id:'claude-haiku-4-5', name:'Claude Haiku 4.5', effort:'' }
     ];
 
+    // Qwen-MT (DashScope/百炼) 전용 번역 모델
+    const QWEN_DEFAULT_MODELS = [
+      { id:'qwen-mt-plus', name:'Qwen-MT Plus', effort:'' },
+      { id:'qwen-mt-turbo', name:'Qwen-MT Turbo', effort:'' }
+    ];
+
     function loadModelList(lsKey, defaults){
       var saved = localStorage.getItem(lsKey);
       if(!saved) return defaults.slice();
@@ -1533,17 +1552,20 @@
     var MODEL_OPTIONS = loadModelList(LS.customModels, DEFAULT_MODELS);
     var GOOGLE_MODEL_OPTIONS = loadModelList(LS.googleCustomModels, GOOGLE_DEFAULT_MODELS);
     var ANTHROPIC_MODEL_OPTIONS = loadModelList(LS.anthropicCustomModels, ANTHROPIC_DEFAULT_MODELS);
+    var QWEN_MODEL_OPTIONS = loadModelList(LS.qwenCustomModels, QWEN_DEFAULT_MODELS);
 
     function currentModelOptions(){
       var p = getProvider();
       if(p === 'google') return GOOGLE_MODEL_OPTIONS;
       if(p === 'anthropic') return ANTHROPIC_MODEL_OPTIONS;
+      if(p === 'qwen') return QWEN_MODEL_OPTIONS;
       return MODEL_OPTIONS;
     }
     function modelLsKey(){
       var p = getProvider();
       if(p === 'google') return LS.googleModel;
       if(p === 'anthropic') return LS.anthropicModel;
+      if(p === 'qwen') return LS.qwenModel;
       return LS.model;
     }
     function getSavedModel(){
@@ -1562,6 +1584,9 @@
       } else if(p === 'anthropic'){
         localStorage.setItem(LS.anthropicCustomModels, JSON.stringify(arr));
         ANTHROPIC_MODEL_OPTIONS = arr;
+      } else if(p === 'qwen'){
+        localStorage.setItem(LS.qwenCustomModels, JSON.stringify(arr));
+        QWEN_MODEL_OPTIONS = arr;
       } else {
         localStorage.setItem(LS.customModels, JSON.stringify(arr));
         MODEL_OPTIONS = arr;
@@ -1587,7 +1612,7 @@
       overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
       var popup = document.createElement('div');
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;width:90vw;max-width:400px;max-height:85vh;overflow-y:auto;';
-      popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">모델 관리 (' + (isGoogleProvider() ? 'Google' : isAnthropicProvider() ? 'Anthropic' : 'OpenRouter') + ')</div>';
+      popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">모델 관리 (' + (isGoogleProvider() ? 'Google' : isAnthropicProvider() ? 'Anthropic' : isQwenProvider() ? 'Qwen' : 'OpenRouter') + ')</div>';
 
       var rows = [];
       function addRow(id, name, effort){
@@ -1643,7 +1668,7 @@
         bottomRow.style.cssText = 'display:flex;gap:6px;align-items:center;';
         var idInput = document.createElement('input');
         idInput.type = 'text'; idInput.value = id || '';
-        idInput.placeholder = isGoogleProvider() ? 'Gemini model ID (예: gemini-3-flash-preview)' : isAnthropicProvider() ? 'Claude model ID (예: claude-opus-4-7)' : 'model ID (예: google/gemini-3-flash-preview)';
+        idInput.placeholder = isGoogleProvider() ? 'Gemini model ID (예: gemini-3-flash-preview)' : isAnthropicProvider() ? 'Claude model ID (예: claude-opus-4-7)' : isQwenProvider() ? 'Qwen model ID (예: qwen-mt-plus)' : 'model ID (예: google/gemini-3-flash-preview)';
         idInput.style.cssText = 'flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:var(--muted);font-size:11px;font-family:inherit;box-sizing:border-box;min-width:0;';
         var effortInput = document.createElement('input');
         effortInput.type = 'text'; effortInput.value = effort || '';
@@ -2115,6 +2140,7 @@
       if(el.apiProvider) el.apiProvider.value = localStorage.getItem(LS.apiProvider) || 'openrouter';
       if(el.googleApiKey) el.googleApiKey.value = localStorage.getItem(LS.googleApiKey) || '';
       if(el.anthropicApiKey) el.anthropicApiKey.value = localStorage.getItem(LS.anthropicApiKey) || '';
+      if(el.qwenApiKey) el.qwenApiKey.value = localStorage.getItem(LS.qwenApiKey) || '';
       updateProviderUI();
 
       el.topP.value = localStorage.getItem(LS.topP) || el.topP.value;
@@ -2134,6 +2160,7 @@
       if(el.apiProvider) localStorage.setItem(LS.apiProvider, el.apiProvider.value);
       if(el.googleApiKey) localStorage.setItem(LS.googleApiKey, el.googleApiKey.value.trim());
       if(el.anthropicApiKey) localStorage.setItem(LS.anthropicApiKey, el.anthropicApiKey.value.trim());
+      if(el.qwenApiKey) localStorage.setItem(LS.qwenApiKey, el.qwenApiKey.value.trim());
       setSavedModel(el.model.value.trim());
       localStorage.setItem(tempLsKey(), el.temperature.value.trim());
       localStorage.setItem(LS.topP, el.topP.value.trim());
@@ -2297,16 +2324,19 @@
     const DEFAULT_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
     const GOOGLE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
     const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
+    const QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
     function getProvider(){
       return (el.apiProvider && el.apiProvider.value) || localStorage.getItem(LS.apiProvider) || 'openrouter';
     }
     function isGoogleProvider(){ return getProvider() === 'google'; }
     function isAnthropicProvider(){ return getProvider() === 'anthropic'; }
+    function isQwenProvider(){ return getProvider() === 'qwen'; }
     function getActiveApiKey(){
       const p = getProvider();
       if(p === 'google') return ((el.googleApiKey && el.googleApiKey.value) || '').trim();
       if(p === 'anthropic') return ((el.anthropicApiKey && el.anthropicApiKey.value) || '').trim();
+      if(p === 'qwen') return ((el.qwenApiKey && el.qwenApiKey.value) || '').trim();
       return ((el.apiKey && el.apiKey.value) || '').trim();
     }
     function toRequestModelId(id){
@@ -2314,6 +2344,7 @@
       const p = getProvider();
       if(p === 'google') return m.replace(/^google\//, '');
       if(p === 'anthropic') return m.replace(/^anthropic\//, '');
+      if(p === 'qwen') return m.replace(/^qwen\//, '');
       return m;
     }
 
@@ -2345,7 +2376,7 @@
     let _prevProvider = null;
     function updateProviderUI(){
       const p = getProvider();
-      const wraps = { openrouter:'openrouterKeyWrap', google:'googleKeyWrap', anthropic:'anthropicKeyWrap' };
+      const wraps = { openrouter:'openrouterKeyWrap', google:'googleKeyWrap', anthropic:'anthropicKeyWrap', qwen:'qwenKeyWrap' };
       Object.keys(wraps).forEach(function(k){
         const w = document.getElementById(wraps[k]);
         if(w) w.style.display = (k === p) ? '' : 'none';
@@ -2376,8 +2407,23 @@
       const p = getProvider();
       if(p === 'google') return GOOGLE_API_URL;
       if(p === 'anthropic') return ANTHROPIC_API_URL;
+      if(p === 'qwen') return QWEN_API_URL;
       const custom = el.apiBaseUrl && el.apiBaseUrl.value.trim();
       return custom || DEFAULT_API_URL;
+    }
+
+    // Qwen-MT 전용: 입력 텍스트에서 source/target 언어 자동 감지
+    function detectQwenLangs(text){
+      var s = String(text || '');
+      var hasHangul = /[가-힯ᄀ-ᇿ]/.test(s);
+      var hasHanzi = /[一-鿿]/.test(s);
+      if(hasHangul && !hasHanzi) return { source:'Korean', target:'Chinese' };
+      if(hasHanzi && !hasHangul) return { source:'Chinese', target:'Korean' };
+      // 혼합 또는 둘 다 없음 → 한글 우세 판단
+      var hangulCount = (s.match(/[가-힯]/g) || []).length;
+      var hanziCount = (s.match(/[一-鿿]/g) || []).length;
+      if(hangulCount >= hanziCount) return { source:'Korean', target:'Chinese' };
+      return { source:'Chinese', target:'Korean' };
     }
 
     // 제공자별 요청(헤더/본문) 생성 — Anthropic은 OpenAI 형식이 아님
@@ -2410,6 +2456,36 @@
             'anthropic-dangerous-direct-browser-access': 'true'
           },
           body: body
+        };
+      }
+      if(p === 'qwen'){
+        // Qwen-MT: system 프롬프트 무시(번역 전용 모델), translation_options 필수
+        var userMsgs = (opts.messages || []).filter(function(m){ return m.role !== 'system'; });
+        var lastUser = userMsgs.length ? userMsgs[userMsgs.length-1].content : '';
+        var langs = detectQwenLangs(lastUser);
+        var qbody = {
+          model: opts.model,
+          messages: userMsgs.length ? userMsgs : [{ role:'user', content: lastUser || ' ' }],
+          stream: !!opts.stream,
+          translation_options: {
+            source_lang: langs.source,
+            target_lang: langs.target
+          }
+        };
+        // 용어집(자동 주입) → translation_options.terms 로 전달
+        try{
+          if(typeof _useGlossarySys !== 'undefined' && _useGlossarySys){
+            var gl = (typeof getGlossaryFor === 'function') ? getGlossaryFor('sys') : [];
+            var terms = gl.filter(function(e){ return e && e.src && e.tgt && lastUser.indexOf(e.src) !== -1; })
+                          .map(function(e){ return { source: e.src, target: e.tgt }; });
+            if(terms.length) qbody.translation_options.terms = terms;
+          }
+        } catch(_){}
+        if(opts.stream) qbody.stream_options = { include_usage: true };
+        return {
+          url: url,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+          body: qbody
         };
       }
       const body = {
@@ -2609,7 +2685,8 @@
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
       const google = isGoogleProvider();
       const anthropic = isAnthropicProvider();
-      const provName = anthropic ? 'Anthropic ' : google ? 'Google ' : 'OpenRouter ';
+      const qwen = isQwenProvider();
+      const provName = anthropic ? 'Anthropic ' : google ? 'Google ' : qwen ? 'Qwen ' : 'OpenRouter ';
       const apiKey = getActiveApiKey();
       if(!apiKey) throw new Error(provName + 'API Key가 비어 있습니다.');
 
@@ -3656,6 +3733,7 @@
 
       const apiKey = getActiveApiKey();
       if(!apiKey){ toast('API Key가 필요합니다'); return; }
+      if(isQwenProvider()){ toast('Qwen-MT는 번역 전용 모델입니다. 학습 분석은 다른 제공자로 전환하세요.'); return; }
       let analyzeModel;
       if(isGoogleProvider()) analyzeModel = toRequestModelId(el.model.value.trim() || 'gemini-3-flash-preview');
       else if(isAnthropicProvider()) analyzeModel = toRequestModelId(el.model.value.trim() || 'claude-opus-4-7');
@@ -3753,7 +3831,7 @@
           localStorage.setItem(useEnhancedLsKey(), 'true');
         }
         updateNewToggleUI();
-        const provLabel = isGoogleProvider() ? 'Google' : isAnthropicProvider() ? 'Anthropic' : 'OpenRouter';
+        const provLabel = isGoogleProvider() ? 'Google' : isAnthropicProvider() ? 'Anthropic' : isQwenProvider() ? 'Qwen' : 'OpenRouter';
         toast(provLabel + ' 프롬프트 가져오기 완료' + (enhPrompt ? ' (수정 프롬프트 적용)' : ''));
       };
       reader.readAsText(file);
