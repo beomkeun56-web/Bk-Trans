@@ -1395,7 +1395,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.26t';
+    const APP_VERSION = 'v19.27t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2627,11 +2627,19 @@
       if(j.usage && (j.usage.prompt_tokens != null || j.usage.completion_tokens != null)){
         var det = j.usage.completion_tokens_details;
         var pdet = j.usage.prompt_tokens_details;
+        // 캐시 토큰 — 다양한 필드명 시도 (OpenAI 표준 / DashScope / DeepSeek / 기타)
+        var cached;
+        if(pdet && pdet.cached_tokens != null) cached = pdet.cached_tokens;
+        else if(j.usage.cached_tokens != null) cached = j.usage.cached_tokens;
+        else if(j.usage.prompt_cache_hit_tokens != null) cached = j.usage.prompt_cache_hit_tokens;
+        else if(j.usage.cache_read_input_tokens != null) cached = j.usage.cache_read_input_tokens;
+        else if(pdet && pdet.cache_tokens != null) cached = pdet.cache_tokens;
+        try{ console.log('[Usage] full=', JSON.stringify(j.usage), 'cached=', cached); } catch(_){}
         _lastUsage = {
           in: j.usage.prompt_tokens,
           out: j.usage.completion_tokens,
           think: (det && det.reasoning_tokens != null) ? det.reasoning_tokens : undefined,
-          cached: (pdet && pdet.cached_tokens != null) ? pdet.cached_tokens : undefined
+          cached: cached
         };
         return;
       }
