@@ -1423,7 +1423,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.40t';
+    const APP_VERSION = 'v19.41t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4189,25 +4189,25 @@
           name: 'Agent 1: 분석가',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '당신은 언어 분석가입니다. 입력 텍스트를 분석해 다음을 JSON으로 출력하세요. 설명·라벨·마크다운 금지.\n\n{\n  "source_lang": "ko" 또는 "zh",\n  "target_lang": "zh" 또는 "ko",\n  "structure": "주요 문장 구조",\n  "key_nouns": ["명사1","명사2"],\n  "key_verbs": ["동사1"],\n  "modifiers": ["수식어1"],\n  "speech_act": "추궁/지시/완곡/일상/감정/보고",\n  "register": "격식/친근/중립",\n  "critical_info": ["보존해야 할 부정어/수치/시간/한정어"]\n}\n\nJSON만 출력.'
+          prompt: '[QWEN37_NATIVE]\n당신은 한·중 텍스트 언어 분석가입니다.\n입력을 분석해 아래 JSON 스키마로만 출력. 설명·자기평가·마크다운 절대 금지.\n\n{\n  "source_lang": "ko" 또는 "zh",\n  "target_lang": "zh" 또는 "ko" (source 반대),\n  "sentence_type": "지시/질문/보고/감정/일반",\n  "key_nouns": ["입력의 핵심 명사들"],\n  "key_verbs": ["핵심 동사들"],\n  "numbers_units": ["3개/2주/내일까지 등 모든 수치·시간·기한"],\n  "negation": ["안/못/마라 등 부정어 (없으면 빈 배열)"],\n  "speech_act": "추궁/지시/완곡/의도수정/위임/일상/감정/보고/일반",\n  "register": "격식/친근/중립",\n  "must_preserve": ["반드시 번역에 포함되어야 할 단어·정보 리스트"]\n}\n\nJSON 객체 하나만. ```json 같은 마크다운 금지.'
         },
         {
           name: 'Agent 2: 용어 매핑',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '당신은 용어 매핑 전문가입니다. 입력 텍스트와 시스템 용어집을 받아 매칭되는 용어 + 컨텍스트 기반 추천 용어를 JSON으로 출력. 설명·라벨·마크다운 금지.\n\n{\n  "matched_terms": [{"source": "切刀", "target": "금형"}],\n  "context_terms": [{"source": "...", "target": "...", "reason": "..."}]\n}\n\nJSON만 출력.'
+          prompt: '[QWEN37_NATIVE]\n당신은 한↔중 번역의 용어 매핑 전문가입니다.\n사용자 메시지에 [원문]과 [시스템 용어집 매칭]이 포함됩니다.\n번역에 적용할 용어 매핑을 JSON으로만 출력. 설명·자기평가·마크다운 절대 금지.\n\n{\n  "matched_terms": [\n    {"source": "원문 표현", "target": "목표 언어 표현"}\n  ],\n  "context_terms": [\n    {"source": "추가 권장 용어", "target": "권장 번역", "reason": "한 줄 이유"}\n  ]\n}\n\n시스템 용어집 매칭이 있으면 matched_terms에 우선 포함. JSON 객체 하나만 출력.'
         },
         {
           name: 'Agent 3: 번역기',
           provider: 'qwen',
-          model: 'qwen-mt-plus',
-          prompt: '당신은 한국어↔중국어 번역 전문가입니다. 제공된 [분석]과 [용어]를 100% 반영해 정확하고 자연스러운 번역을 생성하세요.\n\n원칙:\n- 분석의 critical_info는 반드시 보존\n- 용어 매핑은 강제 적용\n- speech_act에 맞는 톤·화행 유지\n- 출력은 번역문만, 설명·라벨·따옴표 금지'
+          model: 'qwen3.7-plus',
+          prompt: '[QWEN37_NATIVE]\n당신은 한국어↔중국어 번역 전문가입니다.\n사용자 메시지에 [분석], [용어], [원문] 세 블록이 포함됩니다.\n\n[분석]: Agent 1의 JSON (source/target 언어, must_preserve, speech_act 등)\n[용어]: Agent 2의 JSON (matched_terms·context_terms)\n[원문]: 번역 대상 텍스트\n\n번역 규칙:\n1. 출력 언어 = [분석].target_lang (절대 다른 언어 출력 금지).\n2. [분석].must_preserve의 모든 정보(부정어·수치·시간·기한·한정어)를 반드시 출력에 포함.\n3. [용어].matched_terms와 context_terms의 매핑을 강제 적용.\n4. [분석].speech_act와 register에 맞는 톤·화행 유지.\n5. 출력에 원문 언어 글자(한국어 출력에 한자, 중국어 출력에 한글) 절대 잔존 금지.\n\n출력: 최종 번역문 텍스트만. JSON 라벨·블록 라벨·설명·따옴표·마크다운·자기평가 절대 금지.'
         },
         {
           name: 'Agent 4: 검증·승인',
           provider: 'qwen',
           model: 'qwen3.7-plus',
-          prompt: '당신은 번역 검증자입니다. 원문과 1차 번역을 비교 검증하고 필요 시 수정해 최종 출력.\n\n체크리스트:\n1. 출력 언어가 입력의 반대 언어인가? (한국어↔중국어)\n2. 원문의 모든 정보(부정어/수치/시간/대상/한정어)가 출력에 있는가?\n3. 출력에 원문 언어 글자가 잔존하는가? (있으면 교체)\n4. 화행·톤이 일치하는가?\n5. 자연스러운가?\n\n문제 있으면 수정해 최종 번역문 출력.\n모두 OK면 그대로 출력.\n결과 번역문만. 설명·라벨·따옴표·마크다운 금지.'
+          prompt: '[QWEN37_NATIVE]\n당신은 번역 검증자입니다.\n사용자 메시지에 [원문], [분석], [용어], [1차 번역] 네 블록이 포함됩니다.\n\n다음을 머릿속으로 체크 후, 최종 번역문만 출력:\n1. 출력 언어 = [분석].target_lang? (한국어 출력엔 한글만, 중국어 출력엔 简体中文만)\n2. [분석].must_preserve 모든 항목이 1차 번역에 포함됐나? (누락 있으면 보충)\n3. [분석].negation의 부정어 모두 보존? (의미 정반대 위험)\n4. [용어]의 matched_terms·context_terms 매핑이 정확히 적용됐나?\n5. [분석].speech_act·register에 맞는 톤·화행인가?\n6. 어색하거나 부자연스러운 부분?\n7. 원문 언어 글자 잔존(한자/한글 누설) 없나?\n\n판정:\n- 모두 OK → 1차 번역 그대로 출력\n- 작은 결함 → 그 부분만 최소 수정해 출력\n- 명백한 누락·오역·언어누설 → 수정해 최종 출력\n\n출력: 최종 번역문 텍스트만. 체크 과정·설명·라벨·블록 라벨·따옴표·마크다운 절대 금지.'
         }
       ];
     }
@@ -4278,9 +4278,9 @@
         var a3User = '[분석]\n' + a1 + '\n\n[용어]\n' + a2 + '\n\n[원문]\n' + userText + '\n\n위 분석·용어를 100% 반영해 번역.';
         var a3 = await callOneAgent(3, getAgent(3).prompt, a3User);
 
-        // Agent 4: 검증
+        // Agent 4: 검증 (분석·용어·1차 번역 모두 전달)
         if(onProgress) onProgress('Agent 4 (검증 중)', '');
-        var a4User = '[원문]\n' + userText + '\n\n[1차 번역]\n' + a3 + '\n\n위 1차 번역을 검증하고 필요 시 수정해 최종 출력.';
+        var a4User = '[원문]\n' + userText + '\n\n[분석]\n' + a1 + '\n\n[용어]\n' + a2 + '\n\n[1차 번역]\n' + a3 + '\n\n위 자료로 검증하고 필요 시 최소 수정 후 최종 번역문만 출력.';
         var a4 = await callOneAgent(4, getAgent(4).prompt, a4User);
 
         result = a4 || a3 || '';
