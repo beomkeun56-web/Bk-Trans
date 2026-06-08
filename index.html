@@ -1429,7 +1429,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.46t';
+    const APP_VERSION = 'v19.47t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3634,10 +3634,11 @@
         modeSpan.textContent = '5Mode' + (pipeline.intent ? ' ' + shortIntent(pipeline.intent) : '');
         actionsEl.appendChild(modeSpan);
         if(stages.length){
+          var parts = stages.map(function(t){ return (t / 1000).toFixed(1); });
           var sum = stages.reduce(function(a, b){ return a + b; }, 0);
           var timeSpan = document.createElement('span');
           timeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
-          timeSpan.textContent = (sum / 1000).toFixed(1) + 's';
+          timeSpan.textContent = parts.join('+') + '=' + (sum / 1000).toFixed(1) + 's';
           actionsEl.appendChild(timeSpan);
         }
         var statusSpan = document.createElement('span');
