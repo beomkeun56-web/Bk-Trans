@@ -1429,7 +1429,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.45t';
+    const APP_VERSION = 'v19.46t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1692,8 +1692,8 @@
     // v19.44t 마이그레이션 — 옛 4-단계 Agent 프롬프트 → 5-Stage 프롬프트로 자동 교체
     // 프롬프트만 초기화 (제공자·모델 선택은 유지 — 사용자 의도 존중)
     try{
-      if(!localStorage.getItem('bk_tr_test_5stage_migration_v1')){
-        // 옛 프롬프트 감지 키워드 (4-단계 시절)
+      if(!localStorage.getItem('bk_tr_test_5stage_migration_v2')){
+        // 옛 프롬프트 감지 키워드 (4-단계 시절 + 초기 5-Stage)
         var _oldPatterns = [
           '당신은 한·중 텍스트 언어 분석가',
           '당신은 언어 분석가입니다',
@@ -1702,7 +1702,10 @@
           '당신은 한국어↔중국어 번역 전문가',
           '당신은 번역 검증자',
           '사용자 메시지에 [분석], [용어], [원문]',
-          '사용자 메시지에 [원문], [분석], [용어], [1차 번역]'
+          '사용자 메시지에 [원문], [분석], [용어], [1차 번역]',
+          // 초기 5-Stage (누락 방지 강화 전)
+          '원문의 모든 정보(부정어·수치·시간·기한·한정어·대상) 반드시 포함',
+          '✓ [원문]의 모든 정보가 [번역]에 있나? (부정어·수치·시간·한정어)'
         ];
         for(var ai = 1; ai <= 4; ai++){
           var key = 'bk_tr_test_agent' + ai + 'Prompt';
@@ -1718,7 +1721,7 @@
         if(oldAgent3Model === 'qwen-mt-plus' || oldAgent3Model === 'qwen-mt-turbo' || oldAgent3Model === 'qwen-mt-flash'){
           localStorage.removeItem('bk_tr_test_agent3Model');
         }
-        localStorage.setItem('bk_tr_test_5stage_migration_v1', '1');
+        localStorage.setItem('bk_tr_test_5stage_migration_v2', '1');
       }
     } catch(_){}
 
@@ -4287,7 +4290,7 @@
           name: 'Agent 1: 의도 파악',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '[QWEN37_NATIVE]\n원문의 의도를 한 단어로 분류해 출력.\n\n선택지: 추궁, 독촉, 지시, 질문, 완곡, 요청, 의도수정, 위임, 일상, 감정, 보고, 일반\n\n출력: 단어 하나만. 설명·따옴표·마크다운 절대 금지.'
+          prompt: '[QWEN37_NATIVE]\n원문의 의도를 한 단어로 분류해 출력.\n\n선택지: 추궁, 독촉, 지시, 질문, 완곡, 요청, 의도수정, 위임, 일상, 감정, 보고, 약속, 일반\n\n참고:\n- 문두 동사 중첩(去去/来来/好好) = 약속/동의\n- "왜 아직" = 추궁\n- "내말은" = 의도수정\n- "[이모지]" 포함 = 일상 또는 감정\n\n출력: 단어 하나만. 설명·따옴표·마크다운 절대 금지.'
         },
         {
           // Stage 2: 어순 계획 — 의도 + 원문 → 타겟 어순 템플릿
@@ -4301,14 +4304,14 @@
           name: 'Agent 3: 번역',
           provider: 'qwen',
           model: 'qwen3.7-plus',
-          prompt: '[QWEN37_NATIVE]\n사용자 메시지에 [의도], [어순], [용어], [원문] 네 블록이 포함됩니다.\n위 어순 템플릿을 따르고 용어를 강제 적용해 번역.\n\n규칙:\n1. 출력 언어는 어순 템플릿의 방향(zh 또는 ko)을 정확히 따름.\n2. 원문의 모든 정보(부정어·수치·시간·기한·한정어·대상) 반드시 포함.\n3. [용어]의 매핑을 1글자도 어기지 말고 적용.\n4. [의도]에 맞는 톤·화행 유지.\n5. 출력에 원문 언어 글자 절대 잔존 금지.\n\n출력: 번역문만. 블록 라벨·설명·따옴표·마크다운·자기평가 절대 금지.'
+          prompt: '[QWEN37_NATIVE]\n사용자 메시지에 [의도], [어순], [용어], [원문] 네 블록이 포함됩니다.\n위 어순 템플릿을 따르고 용어를 강제 적용해 번역.\n\n★ 절대 누락 금지 — 원문의 모든 단어·표현을 빠짐없이 번역에 포함:\n- 문두 동사 중첩 (去去/来来/走走/好好/试试/看看) — 동의·약속·재촉의 의미\n- 감탄사·추임새 (哎/哎呀/啊/哦/嘛/呗/吧/呢)\n- 이모지·마커 ([Facepalm], [Smile], 😂 등 — 원문 그대로 보존)\n- 수치·단위·시간·기한 (3개, 2주, 내일까지, 오후 3시)\n- 부정어 (안/못/마라/不/没/别/无)\n- 한정어 (어느, 언제, 누가, 몇 개, 어디서)\n- 인명·설비번호·LOT·모델명 등 고유명사\n\n규칙:\n1. 출력 언어 = 어순 템플릿의 방향 (zh 또는 ko) 정확히 따름.\n2. 원문에 등장한 모든 표현을 1개도 빼놓지 말 것.\n3. [용어] 매핑을 1글자도 어기지 말고 적용.\n4. [의도]에 맞는 톤·화행 유지.\n5. 출력에 원문 언어 글자 절대 잔존 금지 (한국어 출력에 한자 X, 중국어 출력에 한글 X).\n\n출력: 번역문만. 블록 라벨·설명·따옴표·마크다운·자기평가 절대 금지.'
         },
         {
           // Stage 5 (4번째 LLM 호출): 검증 — 모든 정보 비교 후 최종 출력
           name: 'Agent 4: 검증·출력',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '[QWEN37_NATIVE]\n사용자 메시지에 [원문], [의도], [어순], [용어], [번역] 다섯 블록이 포함됩니다.\n\n머릿속으로 체크 후 최종 번역문만 출력:\n✓ 출력 언어가 어순 방향과 일치? (한국어→한글만, 중국어→简体만)\n✓ [원문]의 모든 정보가 [번역]에 있나? (부정어·수치·시간·한정어)\n✓ [용어] 매핑이 정확히 적용?\n✓ [의도]가 [번역]에 살아있나? (추궁이면 추궁체, 지시면 지시체)\n✓ 원문 언어 글자 잔존(한자/한글 누설) 없나?\n\n판정:\n- 모두 OK → [번역] 그대로 출력\n- 한두 결함 → 그 부분만 최소 수정 후 출력\n- 명백한 오류·누설·누락 → 수정해 출력\n\n출력: 최종 번역문 텍스트만. 체크 과정·설명·라벨·블록명·따옴표·마크다운 절대 금지.'
+          prompt: '[QWEN37_NATIVE]\n사용자 메시지에 [원문], [의도], [어순], [용어], [번역] 다섯 블록이 포함됩니다.\n\n★ 누락 점검 우선 — 원문의 모든 단어·표현이 번역에 있는지 확인:\n1. 문두 동사 중첩 (去去/来来/走走/好好/试试/看看) — 누락 시 의미 손실\n2. 감탄사·추임새 (哎/哎呀/啊/哦/嘛/呗/吧/呢)\n3. 이모지·마커 ([Facepalm]/[Smile]/😂 등) — 원문 그대로\n4. 수치·단위·시간·기한·부정어·한정어\n5. 인명·설비번호·LOT·모델명\n\n그 외 체크:\n✓ 출력 언어가 어순 방향과 일치? (한국어→한글만, 중국어→简体만)\n✓ [용어] 매핑이 정확히 적용?\n✓ [의도]가 [번역]에 살아있나? (추궁=추궁체, 지시=지시체)\n✓ 원문 언어 글자 잔존(한자/한글 누설) 없나?\n\n판정:\n- 모두 OK → [번역] 그대로 출력\n- 누락된 단어/표현 발견 → 추가 보충 후 출력\n- 잘못 옮긴 부분 → 최소 수정 후 출력\n- 언어 누설 → 교체 후 출력\n\n출력: 최종 번역문 텍스트만. 체크 과정·설명·라벨·블록명·따옴표·마크다운 절대 금지.'
         }
       ];
     }
@@ -4439,56 +4442,58 @@
       agentConfigBody.innerHTML = '';
       var defs = getAgentDefaults();
       for(var i = 1; i <= 4; i++){
-        var cur = getAgent(i);
-        var def = defs[i-1];
-        var wrap = document.createElement('div');
-        wrap.style.cssText = 'margin-bottom:14px; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(255,255,255,.02);';
-        wrap.dataset.agentIdx = i;
-        wrap.innerHTML =
-          '<div style="font-weight:700; color:var(--text); margin-bottom:8px; font-size:13px;">' + def.name + '</div>' +
-          '<div style="display:flex; gap:6px; margin-bottom:6px;">' +
-            '<select class="agentProv" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px; font-size:12px;">' +
-              '<option value="openrouter">OpenRouter</option>' +
-              '<option value="google">Google</option>' +
-              '<option value="anthropic">Anthropic</option>' +
-              '<option value="qwen">Alibaba</option>' +
-            '</select>' +
-            '<select class="agentMdl" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px; font-size:12px;"></select>' +
-          '</div>' +
-          '<textarea class="agentPrompt" placeholder="Agent 프롬프트" style="width:100%; min-height:90px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:11px; font-family:inherit; box-sizing:border-box;"></textarea>';
-        agentConfigBody.appendChild(wrap);
-        var provSel = wrap.querySelector('.agentProv');
-        var mdlSel = wrap.querySelector('.agentMdl');
-        var promptTa = wrap.querySelector('.agentPrompt');
-        provSel.value = cur.provider || def.provider;
-        function fillModels(provider, currentMdl){
-          mdlSel.innerHTML = '';
-          var list = [];
-          if(provider === 'google') list = GOOGLE_MODEL_OPTIONS;
-          else if(provider === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
-          else if(provider === 'qwen') list = QWEN_MODEL_OPTIONS;
-          else list = MODEL_OPTIONS;
-          list.forEach(function(m){
-            var o = document.createElement('option');
-            o.value = m.id; o.textContent = m.name + ' — ' + m.id;
-            mdlSel.appendChild(o);
-          });
-          // 저장된 모델이 목록에 없으면 추가
-          if(currentMdl){
-            var found = Array.prototype.some.call(mdlSel.options, function(o){ return o.value === currentMdl; });
-            if(!found){
+        // ★ IIFE로 var 클로저 버그 회피 (각 iteration별 독립 스코프)
+        (function(idx){
+          var cur = getAgent(idx);
+          var def = defs[idx-1];
+          var wrap = document.createElement('div');
+          wrap.style.cssText = 'margin-bottom:14px; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(255,255,255,.02);';
+          wrap.dataset.agentIdx = idx;
+          wrap.innerHTML =
+            '<div style="font-weight:700; color:var(--text); margin-bottom:8px; font-size:13px;">' + def.name + '</div>' +
+            '<div style="display:flex; gap:6px; margin-bottom:6px;">' +
+              '<select class="agentProv" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px; font-size:12px;">' +
+                '<option value="openrouter">OpenRouter</option>' +
+                '<option value="google">Google</option>' +
+                '<option value="anthropic">Anthropic</option>' +
+                '<option value="qwen">Alibaba</option>' +
+              '</select>' +
+              '<select class="agentMdl" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px; font-size:12px;"></select>' +
+            '</div>' +
+            '<textarea class="agentPrompt" placeholder="Agent 프롬프트" style="width:100%; min-height:90px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:11px; font-family:inherit; box-sizing:border-box;"></textarea>';
+          agentConfigBody.appendChild(wrap);
+          var provSel = wrap.querySelector('.agentProv');
+          var mdlSel = wrap.querySelector('.agentMdl');
+          var promptTa = wrap.querySelector('.agentPrompt');
+          provSel.value = cur.provider || def.provider;
+          function fillModels(provider, currentMdl){
+            mdlSel.innerHTML = '';
+            var list = [];
+            if(provider === 'google') list = GOOGLE_MODEL_OPTIONS;
+            else if(provider === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
+            else if(provider === 'qwen') list = QWEN_MODEL_OPTIONS;
+            else list = MODEL_OPTIONS;
+            list.forEach(function(m){
               var o = document.createElement('option');
-              o.value = currentMdl; o.textContent = '(사용자) ' + currentMdl;
+              o.value = m.id; o.textContent = m.name + ' — ' + m.id;
               mdlSel.appendChild(o);
+            });
+            if(currentMdl){
+              var found = Array.prototype.some.call(mdlSel.options, function(o){ return o.value === currentMdl; });
+              if(!found){
+                var custom = document.createElement('option');
+                custom.value = currentMdl; custom.textContent = '(사용자) ' + currentMdl;
+                mdlSel.appendChild(custom);
+              }
+              mdlSel.value = currentMdl;
             }
-            mdlSel.value = currentMdl;
           }
-        }
-        fillModels(provSel.value, cur.model || def.model);
-        provSel.addEventListener('change', function(){
-          fillModels(provSel.value, '');
-        });
-        promptTa.value = cur.prompt || def.prompt;
+          fillModels(provSel.value, cur.model || def.model);
+          provSel.addEventListener('change', function(){
+            fillModels(provSel.value, '');
+          });
+          promptTa.value = cur.prompt || def.prompt;
+        })(i);
       }
     }
     function openAgentConfig(){
