@@ -879,12 +879,18 @@
         </button>
       </div>
       <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">4-Agent 모드 (분석→용어→번역→검증)</span>
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">5-Stage 모드 (의도→어순→용어→번역→검증)</span>
         <input type="checkbox" id="opt4Agent" style="transform:scale(1.3); cursor:pointer;" />
       </label>
       <div id="opt4AgentWrap" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); display:none;">
-        <div style="font-size:calc(11px * var(--textScale)); color:var(--muted); margin-bottom:6px;">
-          ON 시 메인 시스템 프롬프트 우회. 4명의 에이전트가 순차 처리. 시스템 용어집은 자동 주입.
+        <div style="font-size:calc(11px * var(--textScale)); color:var(--muted); margin-bottom:6px; line-height:1.5;">
+          각 단계가 단일 작업만 수행 → LLM 능력 극대화.<br>
+          Stage 1: 의도 파악 (LLM)<br>
+          Stage 2: 어순 계획 (LLM)<br>
+          Stage 3 (용어): 시스템 용어집 자동 매칭 (코드, 즉시)<br>
+          Stage 4: 번역 실행 (LLM)<br>
+          Stage 5: 검증·출력 (LLM)<br>
+          ※ 메인 시스템 프롬프트는 우회됨.
         </div>
         <button id="opt4AgentConfigBtn" type="button" style="width:100%; padding:10px; border:1px solid rgba(45,107,255,.3); border-radius:10px; background:rgba(45,107,255,.15); color:var(--text); font-size:calc(13px * var(--textScale)); cursor:pointer; font-family:inherit;">⚙️ Agent 설정 (모델·프롬프트)</button>
       </div>
@@ -924,7 +930,7 @@
   <div id="agentConfigOverlay" class="settingsOverlay">
     <section class="settings" style="max-width:520px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.08);">
-        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:var(--text);">4-Agent 설정</h2>
+        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:var(--text);">5-Stage 설정 (4 LLM Agent + 코드 용어집)</h2>
         <button id="agentConfigCloseBtn" class="iconBtn" type="button" aria-label="닫기">
           <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -1423,7 +1429,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.41t';
+    const APP_VERSION = 'v19.42t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4183,31 +4189,37 @@
 
     // ====== 4-Agent 모드 ======
     var _use4Agent = localStorage.getItem(LS.use4Agent) === '1';
+    // 5-Stage 파이프라인 (사용자 설계: 의도→어순→번역→검증, 용어는 코드로 병렬)
+    // 각 Agent는 단순·집중된 단일 작업만 수행 → LLM 능력 극대화
     function getAgentDefaults(){
       return [
         {
-          name: 'Agent 1: 분석가',
+          // Stage 1: 의도 파악 — 단어 1개 분류
+          name: 'Agent 1: 의도 파악',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '[QWEN37_NATIVE]\n당신은 한·중 텍스트 언어 분석가입니다.\n입력을 분석해 아래 JSON 스키마로만 출력. 설명·자기평가·마크다운 절대 금지.\n\n{\n  "source_lang": "ko" 또는 "zh",\n  "target_lang": "zh" 또는 "ko" (source 반대),\n  "sentence_type": "지시/질문/보고/감정/일반",\n  "key_nouns": ["입력의 핵심 명사들"],\n  "key_verbs": ["핵심 동사들"],\n  "numbers_units": ["3개/2주/내일까지 등 모든 수치·시간·기한"],\n  "negation": ["안/못/마라 등 부정어 (없으면 빈 배열)"],\n  "speech_act": "추궁/지시/완곡/의도수정/위임/일상/감정/보고/일반",\n  "register": "격식/친근/중립",\n  "must_preserve": ["반드시 번역에 포함되어야 할 단어·정보 리스트"]\n}\n\nJSON 객체 하나만. ```json 같은 마크다운 금지.'
+          prompt: '[QWEN37_NATIVE]\n원문의 의도를 한 단어로 분류해 출력.\n\n선택지: 추궁, 독촉, 지시, 질문, 완곡, 요청, 의도수정, 위임, 일상, 감정, 보고, 일반\n\n출력: 단어 하나만. 설명·따옴표·마크다운 절대 금지.'
         },
         {
-          name: 'Agent 2: 용어 매핑',
+          // Stage 2: 어순 계획 — 의도 + 원문 → 타겟 어순 템플릿
+          name: 'Agent 2: 어순 계획',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '[QWEN37_NATIVE]\n당신은 한↔중 번역의 용어 매핑 전문가입니다.\n사용자 메시지에 [원문]과 [시스템 용어집 매칭]이 포함됩니다.\n번역에 적용할 용어 매핑을 JSON으로만 출력. 설명·자기평가·마크다운 절대 금지.\n\n{\n  "matched_terms": [\n    {"source": "원문 표현", "target": "목표 언어 표현"}\n  ],\n  "context_terms": [\n    {"source": "추가 권장 용어", "target": "권장 번역", "reason": "한 줄 이유"}\n  ]\n}\n\n시스템 용어집 매칭이 있으면 matched_terms에 우선 포함. JSON 객체 하나만 출력.'
+          prompt: '[QWEN37_NATIVE]\n사용자 메시지에 [의도]와 [원문]이 포함됩니다.\n원문의 출발 언어(한국어/중국어)와 목표 언어(반대)를 자동 판단하고,\n의도에 맞는 목표 언어의 어순 템플릿을 한 줄로 출력. [ ]는 채울 자리.\n\n예시:\n- 추궁 ko→zh: 都[시간]，[주어]怎么还没[동사]？\n- 지시 ko→zh: [설비번호][부품] [수량][기한]+동사\n- 의도수정 ko→zh: 我的意思是，[요점]\n- 보고 zh→ko: [설비번호] [현상], [조치]함\n- 일상 zh→ko: [감탄] + [요점] + [어미]\n- 완곡 zh→ko: [전제]하니까, [본론]\n\n출력: "(방향): 템플릿" 한 줄만. 설명·자기평가·마크다운 금지.'
         },
         {
-          name: 'Agent 3: 번역기',
+          // Stage 3: 번역 — 의도+어순+용어+원문 → 번역문
+          name: 'Agent 3: 번역',
           provider: 'qwen',
           model: 'qwen3.7-plus',
-          prompt: '[QWEN37_NATIVE]\n당신은 한국어↔중국어 번역 전문가입니다.\n사용자 메시지에 [분석], [용어], [원문] 세 블록이 포함됩니다.\n\n[분석]: Agent 1의 JSON (source/target 언어, must_preserve, speech_act 등)\n[용어]: Agent 2의 JSON (matched_terms·context_terms)\n[원문]: 번역 대상 텍스트\n\n번역 규칙:\n1. 출력 언어 = [분석].target_lang (절대 다른 언어 출력 금지).\n2. [분석].must_preserve의 모든 정보(부정어·수치·시간·기한·한정어)를 반드시 출력에 포함.\n3. [용어].matched_terms와 context_terms의 매핑을 강제 적용.\n4. [분석].speech_act와 register에 맞는 톤·화행 유지.\n5. 출력에 원문 언어 글자(한국어 출력에 한자, 중국어 출력에 한글) 절대 잔존 금지.\n\n출력: 최종 번역문 텍스트만. JSON 라벨·블록 라벨·설명·따옴표·마크다운·자기평가 절대 금지.'
+          prompt: '[QWEN37_NATIVE]\n사용자 메시지에 [의도], [어순], [용어], [원문] 네 블록이 포함됩니다.\n위 어순 템플릿을 따르고 용어를 강제 적용해 번역.\n\n규칙:\n1. 출력 언어는 어순 템플릿의 방향(zh 또는 ko)을 정확히 따름.\n2. 원문의 모든 정보(부정어·수치·시간·기한·한정어·대상) 반드시 포함.\n3. [용어]의 매핑을 1글자도 어기지 말고 적용.\n4. [의도]에 맞는 톤·화행 유지.\n5. 출력에 원문 언어 글자 절대 잔존 금지.\n\n출력: 번역문만. 블록 라벨·설명·따옴표·마크다운·자기평가 절대 금지.'
         },
         {
-          name: 'Agent 4: 검증·승인',
+          // Stage 5 (4번째 LLM 호출): 검증 — 모든 정보 비교 후 최종 출력
+          name: 'Agent 4: 검증·출력',
           provider: 'qwen',
-          model: 'qwen3.7-plus',
-          prompt: '[QWEN37_NATIVE]\n당신은 번역 검증자입니다.\n사용자 메시지에 [원문], [분석], [용어], [1차 번역] 네 블록이 포함됩니다.\n\n다음을 머릿속으로 체크 후, 최종 번역문만 출력:\n1. 출력 언어 = [분석].target_lang? (한국어 출력엔 한글만, 중국어 출력엔 简体中文만)\n2. [분석].must_preserve 모든 항목이 1차 번역에 포함됐나? (누락 있으면 보충)\n3. [분석].negation의 부정어 모두 보존? (의미 정반대 위험)\n4. [용어]의 matched_terms·context_terms 매핑이 정확히 적용됐나?\n5. [분석].speech_act·register에 맞는 톤·화행인가?\n6. 어색하거나 부자연스러운 부분?\n7. 원문 언어 글자 잔존(한자/한글 누설) 없나?\n\n판정:\n- 모두 OK → 1차 번역 그대로 출력\n- 작은 결함 → 그 부분만 최소 수정해 출력\n- 명백한 누락·오역·언어누설 → 수정해 최종 출력\n\n출력: 최종 번역문 텍스트만. 체크 과정·설명·라벨·블록 라벨·따옴표·마크다운 절대 금지.'
+          model: 'qwen3.6-flash',
+          prompt: '[QWEN37_NATIVE]\n사용자 메시지에 [원문], [의도], [어순], [용어], [번역] 다섯 블록이 포함됩니다.\n\n머릿속으로 체크 후 최종 번역문만 출력:\n✓ 출력 언어가 어순 방향과 일치? (한국어→한글만, 중국어→简体만)\n✓ [원문]의 모든 정보가 [번역]에 있나? (부정어·수치·시간·한정어)\n✓ [용어] 매핑이 정확히 적용?\n✓ [의도]가 [번역]에 살아있나? (추궁이면 추궁체, 지시면 지시체)\n✓ 원문 언어 글자 잔존(한자/한글 누설) 없나?\n\n판정:\n- 모두 OK → [번역] 그대로 출력\n- 한두 결함 → 그 부분만 최소 수정 후 출력\n- 명백한 오류·누설·누락 → 수정해 출력\n\n출력: 최종 번역문 텍스트만. 체크 과정·설명·라벨·블록명·따옴표·마크다운 절대 금지.'
         }
       ];
     }
@@ -4264,26 +4276,35 @@
 
       var result = '';
       try{
-        // Agent 1: 분석
-        if(onProgress) onProgress('Agent 1 (분석 중)', '');
-        var a1 = await callOneAgent(1, getAgent(1).prompt, userText);
+        // ===== 5-Stage 파이프라인 =====
+        // Stage 4 (용어): 이미 위에서 코드로 처리됨 (glossaryText) — Stage 1과 사실상 병렬
+        var termsBlock = glossaryText || '(시스템 용어집 매칭 없음)';
 
-        // Agent 2: 용어 매핑 (글로서리 텍스트 동봉)
-        if(onProgress) onProgress('Agent 2 (용어 매핑)', '');
-        var a2User = '[원문]\n' + userText + '\n\n[시스템 용어집 매칭]\n' + (glossaryText || '(매칭 없음)') + '\n\n위 정보로 JSON 출력.';
-        var a2 = await callOneAgent(2, getAgent(2).prompt, a2User);
+        // Stage 1: 의도 파악 (LLM, 단순 분류)
+        if(onProgress) onProgress('Stage 1: 의도 파악', '');
+        var intent = await callOneAgent(1, getAgent(1).prompt, userText);
+        intent = (intent || '').trim();
 
-        // Agent 3: 번역
-        if(onProgress) onProgress('Agent 3 (번역 중)', '');
-        var a3User = '[분석]\n' + a1 + '\n\n[용어]\n' + a2 + '\n\n[원문]\n' + userText + '\n\n위 분석·용어를 100% 반영해 번역.';
-        var a3 = await callOneAgent(3, getAgent(3).prompt, a3User);
+        // Stage 2: 어순 계획 (LLM, 의도 + 원문 → 템플릿)
+        if(onProgress) onProgress('Stage 2: 어순 계획', '');
+        var stage2User = '[의도]\n' + intent + '\n\n[원문]\n' + userText;
+        var wordOrder = await callOneAgent(2, getAgent(2).prompt, stage2User);
+        wordOrder = (wordOrder || '').trim();
 
-        // Agent 4: 검증 (분석·용어·1차 번역 모두 전달)
-        if(onProgress) onProgress('Agent 4 (검증 중)', '');
-        var a4User = '[원문]\n' + userText + '\n\n[분석]\n' + a1 + '\n\n[용어]\n' + a2 + '\n\n[1차 번역]\n' + a3 + '\n\n위 자료로 검증하고 필요 시 최소 수정 후 최종 번역문만 출력.';
-        var a4 = await callOneAgent(4, getAgent(4).prompt, a4User);
+        // Stage 3: 번역 (LLM, 의도+어순+용어+원문 → 번역)
+        if(onProgress) onProgress('Stage 3: 번역', '');
+        var stage3User = '[의도]\n' + intent + '\n\n[어순]\n' + wordOrder + '\n\n[용어]\n' + termsBlock + '\n\n[원문]\n' + userText;
+        var translation = await callOneAgent(3, getAgent(3).prompt, stage3User);
+        translation = (translation || '').trim();
 
-        result = a4 || a3 || '';
+        // Stage 5: 검증·출력 (LLM, 모든 결과 + 원문 → 최종)
+        if(onProgress) onProgress('Stage 5: 검증·출력', '');
+        var stage5User = '[원문]\n' + userText + '\n\n[의도]\n' + intent + '\n\n[어순]\n' + wordOrder + '\n\n[용어]\n' + termsBlock + '\n\n[번역]\n' + translation;
+        var finalOutput = await callOneAgent(4, getAgent(4).prompt, stage5User);
+
+        try{ console.log('[5-Stage Pipeline]', { intent: intent, wordOrder: wordOrder, terms: termsBlock, translation: translation, final: finalOutput }); } catch(_){}
+
+        result = (finalOutput || translation || '').trim();
       } finally {
         // 최종 복구
         if(el.apiProvider) el.apiProvider.value = origProv;
