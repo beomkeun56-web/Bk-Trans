@@ -1446,7 +1446,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.38t';
+    const APP_VERSION = 'v19.39t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1567,9 +1567,11 @@
     function prettifyModelName(modelId){
       const raw = String(modelId || '').trim();
       if(!raw) return 'Model';
-      const found = MODEL_OPTIONS.concat(GOOGLE_MODEL_OPTIONS, ANTHROPIC_MODEL_OPTIONS).find(m => m.id === raw);
+      // QWEN_MODEL_OPTIONS 포함 모든 등록 모델에서 name 찾기
+      const found = MODEL_OPTIONS.concat(GOOGLE_MODEL_OPTIONS, ANTHROPIC_MODEL_OPTIONS, (typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : [])).find(m => m.id === raw);
       if(found) return found.name;
-      const short = raw.split('/').pop() || raw;
+      // 등록 없으면 fallback: 날짜 접미사(-YYYY-MM-DD) 제거 후 분해
+      const short = (raw.split('/').pop() || raw).replace(/-\d{4}-\d{2}-\d{2}$/, '');
       const cleaned = short.replace(/[_]+/g,'-').replace(/-+/g,'-');
       return cleaned.split('-').filter(Boolean).map(t => {
         if(/^\d+(\.\d+)?$/.test(t)) return t;
