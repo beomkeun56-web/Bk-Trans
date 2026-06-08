@@ -1429,7 +1429,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.44t';
+    const APP_VERSION = 'v19.45t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1591,6 +1591,21 @@
     }
     function updateModelTag(){
       var pretty = prettifyModelName(getCurrentModelId());
+      // 5-Stage 모드 ON 시: 상단바 모델 태그 = "5_Agent" (파란색, 굵게)
+      var use5Stage = false;
+      try{ use5Stage = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
+      if(use5Stage && el.modelTag){
+        el.modelTag.style.color = '#3b82f6';
+        el.modelTag.style.fontWeight = '700';
+        el.modelTag.style.fontSize = '';
+        el.modelTag.textContent = '5_Agent';
+        document.title = '5_Agent BK Trans ' + APP_VERSION;
+        return;
+      }
+      if(el.modelTag){
+        el.modelTag.style.color = '';
+        el.modelTag.style.fontWeight = '';
+      }
       // 분기번역(Smart Routing) ON 시: '짧은모델+긴모델' 압축 표시 + 글자 더 작게
       var smartActive = false;
       try{ smartActive = localStorage.getItem(LS.useSmartRouting) === '1'; } catch(_){}
@@ -3597,25 +3612,29 @@
       }
       return seg.join('  ·  ');
     }
+    // 의도를 2글자로 압축 (의도수정 → 수정 등)
+    function shortIntent(s){
+      if(!s) return '';
+      var t = String(s).trim().replace(/[.,。:;\s]+$/g, '');
+      var map = { '의도수정':'수정', '의도 수정':'수정', '추궁·질책':'추궁', '추궁/질책':'추궁' };
+      if(map[t]) return map[t];
+      return t.slice(0, 2);
+    }
     function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline){
       if(!_showTokens || !actionsEl) return;
-      // 5-Stage 파이프라인 표시: 5_Agent · 5Mode 추궁 · 1.5+0.5+1+1.5=4.5s · 오류X(또는 5수정)
+      // 5-Stage 파이프라인 표시: 5Mode 추궁 · 4.5s · 오류X (또는 5수정)
+      // ※ 5_Agent 모델명은 상단바에서만 표시. 출력문 밑엔 5Mode~ 부터.
       if(pipeline){
         var stages = pipeline.stages || [];
-        var nameSpan = document.createElement('span');
-        nameSpan.style.cssText = 'font-size:10px;color:#3b82f6;opacity:.95;margin-left:8px;font-weight:700;white-space:nowrap;';
-        nameSpan.textContent = modelName || '5_Agent';
-        actionsEl.appendChild(nameSpan);
         var modeSpan = document.createElement('span');
         modeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
-        modeSpan.textContent = '5Mode' + (pipeline.intent ? ' ' + pipeline.intent : '');
+        modeSpan.textContent = '5Mode' + (pipeline.intent ? ' ' + shortIntent(pipeline.intent) : '');
         actionsEl.appendChild(modeSpan);
         if(stages.length){
-          var parts = stages.map(function(t){ return (t / 1000).toFixed(1); });
           var sum = stages.reduce(function(a, b){ return a + b; }, 0);
           var timeSpan = document.createElement('span');
           timeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
-          timeSpan.textContent = parts.join('+') + '=' + (sum / 1000).toFixed(1) + 's';
+          timeSpan.textContent = (sum / 1000).toFixed(1) + 's';
           actionsEl.appendChild(timeSpan);
         }
         var statusSpan = document.createElement('span');
@@ -3623,12 +3642,6 @@
         statusSpan.style.cssText = 'font-size:10px;color:' + (modified ? '#f59e0b' : '#10b981') + ';opacity:.95;margin-left:8px;font-weight:700;white-space:nowrap;';
         statusSpan.textContent = modified ? '5수정' : '오류X';
         actionsEl.appendChild(statusSpan);
-        if(promptVer){
-          var verSpan = document.createElement('span');
-          verSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-left:8px;white-space:nowrap;';
-          verSpan.textContent = promptVer;
-          actionsEl.appendChild(verSpan);
-        }
         return;
       }
       // 일반 표시 (기존 그대로)
@@ -3909,9 +3922,11 @@
         const _modelName = prettifyModelName(getCurrentModelId());
         const _promptVer = extractPromptVersion();
 
-        // 5-Stage 파이프라인 사용 시 모델 이름을 '5_Agent'로 표시 + 파이프라인 정보 첨부
-        var _displayModel = _pipelineInfo ? '5_Agent' : _modelName;
-        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _displayModel, usage: _lastUsage, ms: _ms, ms1: _ms1, ms2: _ms2, effort: _lastEffort, promptVer: _promptVer, pipeline: _pipelineInfo });
+        // 5-Stage 파이프라인 사용 시: 메시지 밑엔 5Mode 정보 표시 (모델명은 상단바 5_Agent에서 표시).
+        // 메시지 model 필드엔 promptVer 제거 위해 빈값 설정 (pipeline 있으면 v## 표시 안 함).
+        var _displayModel = _modelName;
+        var _displayPromptVer = _pipelineInfo ? '' : _promptVer;
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _displayModel, usage: _lastUsage, ms: _ms, ms1: _ms1, ms2: _ms2, effort: _lastEffort, promptVer: _displayPromptVer, pipeline: _pipelineInfo });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -3942,7 +3957,7 @@
           openEditGuide(userText, translated, lastAssistant && lastAssistant.role==='assistant' ? lastAssistant : null);
         });
         actions.appendChild(editBtn);
-        appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _promptVer, _ms1, _ms2, _pipelineInfo);
+        appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _displayPromptVer, _ms1, _ms2, _pipelineInfo);
         streamRow.appendChild(actions);
 
         scrollThrottled();
@@ -4517,7 +4532,8 @@
         localStorage.setItem(LS.use4Agent, _use4Agent ? '1' : '0');
         if(opt4AgentWrap) opt4AgentWrap.style.display = _use4Agent ? '' : 'none';
         if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
-        toast(_use4Agent ? '4-Agent 모드 ON' : '4-Agent 모드 OFF');
+        if(typeof updateModelTag === 'function') updateModelTag();
+        toast(_use4Agent ? '5-Stage 모드 ON' : '5-Stage 모드 OFF');
       });
       if(opt4AgentWrap) opt4AgentWrap.style.display = _use4Agent ? '' : 'none';
     }
