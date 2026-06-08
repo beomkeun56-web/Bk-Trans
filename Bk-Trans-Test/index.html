@@ -1446,7 +1446,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.37t';
+    const APP_VERSION = 'v19.38t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2710,14 +2710,16 @@
             body.enable_thinking = false;
           } else {
             body.enable_thinking = true;
-            // thinking_budget: low=512, mid=2048, high=8192 (모델 최대치)
-            var budget = (thinkLevel === 'low') ? 512 : (thinkLevel === 'mid' ? 2048 : 8192);
+            // thinking_budget을 더 큰 격차로 (DashScope 최소값이 1024일 수 있음)
+            var budget = (thinkLevel === 'low') ? 1024 : (thinkLevel === 'mid' ? 4096 : 16384);
             body.thinking_budget = budget;
-            // DashScope 호환 모드는 일부 파라미터가 extra_body / parameters 위치 필요할 수 있음 → 동시에 시도
+            // OpenAI 호환 reasoning_effort 표기도 동시 시도
+            body.reasoning_effort = (thinkLevel === 'low') ? 'low' : (thinkLevel === 'mid' ? 'medium' : 'high');
+            // DashScope native 형식도 함께 시도 (호환성 최대화)
             body.extra_body = { enable_thinking: true, thinking_budget: budget };
             body.parameters = { enable_thinking: true, thinking_budget: budget };
           }
-          try{ console.log('[Qwen3 Thinking] level=' + thinkLevel + ', enable=' + body.enable_thinking + ', budget=' + (body.thinking_budget || 'n/a')); } catch(_){}
+          try{ console.log('[Qwen3 Thinking] level=' + thinkLevel + ', enable=' + body.enable_thinking + ', budget=' + (body.thinking_budget || 'n/a') + ', effort=' + (body.reasoning_effort || 'n/a')); } catch(_){}
         }
       }
       return {
