@@ -1446,7 +1446,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.35t';
+    const APP_VERSION = 'v19.36t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3727,12 +3727,13 @@
         let translated = normalizeOutput(userText, translatedRaw);
         const _ms1 = Date.now() - _t0;
         let _ms2 = 0;
-        if(_useSecondPass && _wordCount > 4){
+        // 언어 누설 자동 감지 — 입력은 단일 언어인데 1차 결과에 두 언어가 섞인 경우
+        var _uHan = /[가-힯]/.test(userText), _uZh = /[一-鿿]/.test(userText);
+        var _tHan = /[가-힯]/.test(translated), _tZh = /[一-鿿]/.test(translated);
+        var _langLeak = (_uZh && !_uHan && _tHan && _tZh) || (_uHan && !_uZh && _tZh && _tHan);
+        // 2차 OFF여도 언어 누설 발견 시 자동 보정 1회 호출 (정확도 보장)
+        if(_langLeak || (_useSecondPass && _wordCount > 4)){
           const _t1 = Date.now();
-          // 언어 누설 자동 감지 — 입력은 단일 언어인데 1차 결과에 두 언어가 섞인 경우
-          var _uHan = /[가-힯]/.test(userText), _uZh = /[一-鿿]/.test(userText);
-          var _tHan = /[가-힯]/.test(translated), _tZh = /[一-鿿]/.test(translated);
-          var _langLeak = (_uZh && !_uHan && _tHan && _tZh) || (_uHan && !_uZh && _tZh && _tHan);
           const userSecondPrompt = (el.secondPrompt && el.secondPrompt.value.trim()) || defaultSecondPrompt();
           // 누설 감지 시 더 강한 재번역 지시로 override
           const refineUser = _langLeak
