@@ -1429,7 +1429,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.43t';
+    const APP_VERSION = 'v19.44t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1672,6 +1672,38 @@
       if(!localStorage.getItem('bk_tr_test_qwenModelMigration_v3')){
         localStorage.removeItem(LS.qwenCustomModels);
         localStorage.setItem('bk_tr_test_qwenModelMigration_v3', '1');
+      }
+    } catch(_){}
+    // v19.44t 마이그레이션 — 옛 4-단계 Agent 프롬프트 → 5-Stage 프롬프트로 자동 교체
+    // 프롬프트만 초기화 (제공자·모델 선택은 유지 — 사용자 의도 존중)
+    try{
+      if(!localStorage.getItem('bk_tr_test_5stage_migration_v1')){
+        // 옛 프롬프트 감지 키워드 (4-단계 시절)
+        var _oldPatterns = [
+          '당신은 한·중 텍스트 언어 분석가',
+          '당신은 언어 분석가입니다',
+          '당신은 한↔중 번역의 용어 매핑 전문가',
+          '당신은 용어 매핑 전문가',
+          '당신은 한국어↔중국어 번역 전문가',
+          '당신은 번역 검증자',
+          '사용자 메시지에 [분석], [용어], [원문]',
+          '사용자 메시지에 [원문], [분석], [용어], [1차 번역]'
+        ];
+        for(var ai = 1; ai <= 4; ai++){
+          var key = 'bk_tr_test_agent' + ai + 'Prompt';
+          var p = localStorage.getItem(key) || '';
+          var isOld = _oldPatterns.some(function(pat){ return p.indexOf(pat) !== -1; });
+          if(isOld){
+            localStorage.removeItem(key); // 다음 호출 시 새 기본값 사용
+          }
+        }
+        // Agent 3 모델이 옛 기본값(qwen-mt-plus)이면 → 새 기본 qwen3.7-plus로
+        // (MT는 system·구조화 입력 무시하므로 5-Stage 부적합)
+        var oldAgent3Model = localStorage.getItem('bk_tr_test_agent3Model') || '';
+        if(oldAgent3Model === 'qwen-mt-plus' || oldAgent3Model === 'qwen-mt-turbo' || oldAgent3Model === 'qwen-mt-flash'){
+          localStorage.removeItem('bk_tr_test_agent3Model');
+        }
+        localStorage.setItem('bk_tr_test_5stage_migration_v1', '1');
       }
     } catch(_){}
 
