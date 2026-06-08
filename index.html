@@ -1429,7 +1429,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.50t';
+    const APP_VERSION = 'v19.51t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1692,7 +1692,7 @@
     // v19.44t 마이그레이션 — 옛 4-단계 Agent 프롬프트 → 5-Stage 프롬프트로 자동 교체
     // 프롬프트만 초기화 (제공자·모델 선택은 유지 — 사용자 의도 존중)
     try{
-      if(!localStorage.getItem('bk_tr_test_5stage_migration_v5')){
+      if(!localStorage.getItem('bk_tr_test_5stage_migration_v6')){
         // 옛 프롬프트 감지 키워드 (4-단계 시절 + 초기 5-Stage)
         var _oldPatterns = [
           '당신은 한·중 텍스트 언어 분석가',
@@ -1711,7 +1711,11 @@
           // v19.46t/47t/48t 어순 (한 줄 템플릿)
           '의도에 맞는 목표 언어의 어순 템플릿을 한 줄로 출력',
           // v19.49t 한국어 번역기 프롬프트 (v50t에서 중국어 번역기로 교체)
-          '사용자 메시지에 [의도], [어순], [용어], [원문] 네 블록이 포함됩니다.\n\n[의도]의 [문장] 리스트'
+          '사용자 메시지에 [의도], [어순], [용어], [원문] 네 블록이 포함됩니다.\n\n[의도]의 [문장] 리스트',
+          // v19.49~50t 한국어 의도/어순/검증 (v51t에서 영어로 교체)
+          '원문을 문장 단위로 나눠 각 문장의 의도를 식별',
+          '[의도]에 문장별 분석이 있으면 그에 맞춰 각 문장별 목표 언어 어순을 계획',
+          '사용자 메시지에 [원문], [의도], [어순], [용어], [번역] 다섯 블록 포함'
         ];
         for(var ai = 1; ai <= 4; ai++){
           var key = 'bk_tr_test_agent' + ai + 'Prompt';
@@ -1727,7 +1731,7 @@
         if(oldAgent3Model === 'qwen-mt-plus' || oldAgent3Model === 'qwen-mt-turbo' || oldAgent3Model === 'qwen-mt-flash'){
           localStorage.removeItem('bk_tr_test_agent3Model');
         }
-        localStorage.setItem('bk_tr_test_5stage_migration_v5', '1');
+        localStorage.setItem('bk_tr_test_5stage_migration_v6', '1');
       }
     } catch(_){}
 
@@ -3625,12 +3629,25 @@
       }
       return seg.join('  ·  ');
     }
-    // 의도를 2글자로 압축 (의도수정 → 수정 등)
+    // 의도를 한국어 2글자로 압축 (English Agent 출력도 한글로 매핑)
     function shortIntent(s){
       if(!s) return '';
       var t = String(s).trim().replace(/[.,。:;\s]+$/g, '');
-      var map = { '의도수정':'수정', '의도 수정':'수정', '추궁·질책':'추궁', '추궁/질책':'추궁' };
-      if(map[t]) return map[t];
+      // 영어 의도 → 한국어 2글자 매핑
+      var enToKr = {
+        'interrogation':'추궁', 'urging':'독촉', 'instruction':'지시',
+        'question':'질문', 'indirect':'완곡', 'request':'요청',
+        'intent_correction':'수정', 'intent-correction':'수정',
+        'delegation':'위임', 'daily':'일상', 'emotion':'감정',
+        'report':'보고', 'promise':'약속', 'apology':'사과',
+        'excuse':'변명', 'agreement':'동의', 'refusal':'거절',
+        'greeting':'인사', 'exclamation':'감탄', 'general':'일반'
+      };
+      var low = t.toLowerCase();
+      if(enToKr[low]) return enToKr[low];
+      // 한국어 특수 매핑
+      var krMap = { '의도수정':'수정', '의도 수정':'수정', '추궁·질책':'추궁', '추궁/질책':'추궁' };
+      if(krMap[t]) return krMap[t];
       return t.slice(0, 2);
     }
     function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline){
@@ -4301,14 +4318,14 @@
           name: 'Agent 1: 의도 파악',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '[QWEN37_NATIVE]\n원문을 문장 단위로 나눠 각 문장의 의도를 식별하고, 전체 의도와 톤을 결정.\n\n반드시 아래 형식 그대로 출력 (다른 설명·마크다운 금지):\n[전체] <의도 단어>\n[톤] <격식/친근/중립>\n[문장]\n1. <문장1 원문> → <의도1>\n2. <문장2 원문> → <의도2>\n...\n\n의도 선택지: 추궁, 독촉, 지시, 질문, 완곡, 요청, 의도수정, 위임, 일상, 감정, 보고, 약속, 사과, 변명, 동의, 거절, 인사, 감탄, 일반\n\n가이드:\n- 짧은 단위도 한 문장으로 (예: "去去" 단독도 1번)\n- 쉼표·句号·마침표로 분리\n- 동사 중첩(去去/来来/好好) 단독 = 약속·동의\n- 동사 중첩+변명/원인 함께 = 전체는 사과\n- "왜 아직" = 추궁, "내말은" = 의도수정\n- 이모지·마커는 의도 분류 대상 아님 (보존만 표시)\n- 전체 의도 = 메시지 핵심 화행 (사과+변명 → 사과)'
+          prompt: '[QWEN37_NATIVE]\nYou are a sentence-level intent analyzer for Korean<->Chinese translation.\nSplit input by sentence (comma/period/句号), classify each sentence intent, and determine overall intent + tone.\n\nOutput format (EXACTLY this, NO other text/markdown):\n[Overall] <intent>\n[Tone] <formal|casual|neutral>\n[Sentences]\n1. <sentence1 verbatim> -> <intent1>\n2. <sentence2 verbatim> -> <intent2>\n...\n\nIntent choices (use English):\ninterrogation, urging, instruction, question, indirect, request, intent_correction, delegation, daily, emotion, report, promise, apology, excuse, agreement, refusal, greeting, exclamation, general\n\nGuidelines:\n- Short units count as one sentence (e.g., "去去" alone is sentence 1)\n- Verb repetition alone (去去/来来/好好/走走) = promise OR agreement\n- Verb repetition + excuse/reason = overall apology\n- "왜 아직" / "怎么还没" = interrogation\n- "내말은" / "我的意思是" = intent_correction\n- "[이모지]"/"[Facepalm]" not classified (preserved only)\n- Short friendly text = daily\n- Overall = strongest speech act (apology+excuse -> apology)'
         },
         {
           // Stage 2: 어순 계획 — 문장별 어순 + 자연 흐름
           name: 'Agent 2: 어순 계획',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '[QWEN37_NATIVE]\n사용자 메시지에 [의도]와 [원문]이 포함됩니다.\n[의도]에 문장별 분석이 있으면 그에 맞춰 각 문장별 목표 언어 어순을 계획.\n\n반드시 아래 형식 그대로 출력 (다른 설명·마크다운 금지):\n[방향] ko→zh 또는 zh→ko\n[전체 톤] <친근/격식> + <대분류 톤>\n[문장별 어순]\n1. <원문1> → <목표 언어 어순 패턴>\n2. <원문2> → <패턴>\n...\n\n목표 언어 자연 어순 가이드:\n- 한국어(SOV): 주어+(시간/장소)+(목적어)+동사. 종결은 의도에 맞춰 (~어/~네/~잖아/~습니다)\n- 중국어(SVO): 주어+동사+목적어. 시간은 문두 또는 동사 앞. 어기사(吧/嘛/呗/呢) 문말.\n- 동사 중첩(去去/来来/好好) → 그대로 유지 (의역·축약 금지)\n- 감탄사·이모지 → 원문 위치 그대로\n\n의도별 어순 예시:\n- 추궁 ko→zh: 都[시간]+[주어]+怎么还+没+[동사]+？\n- 의도수정 ko→zh: 我的意思是，+[요점]\n- 사과 zh→ko: [원인]+해서+[부정어]+[동사]+[종결]\n- 보고 ko→zh: [설비번호]+[현상]+，+[조치]+了\n- 일상 zh→ko: [감탄]+[요점]+[어미]\n- 약속 (동사 중첩): "去去" → "갈게 갈게" 그대로'
+          prompt: '[QWEN37_NATIVE]\nYou are a word-order planner for Korean<->Chinese translation.\nInput has [Intent] (with per-sentence analysis) and [Source]. Plan target-language word order per sentence.\n\nOutput format (EXACTLY this, NO other text/markdown):\n[Direction] ko->zh OR zh->ko\n[OverallTone] <casual|formal> + <sub-tone, e.g., apology, report, daily>\n[PerSentenceOrder]\n1. <sentence1 verbatim> -> <target-language order pattern>\n2. <sentence2 verbatim> -> <pattern>\n...\n\nNatural target-language order guide:\n- Korean (SOV): subject + (time/place) + (object) + verb. Endings vary by intent (~어/~네/~잖아/~거든/~더라/~ㄴ데 for casual; ~습니다/~합니다 for formal).\n- Chinese (SVO): subject + verb + object. Time at front. Sentence-final particles (吧/嘛/呗/呢) at end.\n- Verb repetition (去去/来来/好好/走走) -> keep as-is, no paraphrase/contraction\n- Exclamations/emojis -> keep original position\n\nExamples per intent:\n- interrogation ko->zh: 都[time]+[subj]+怎么还+没+[verb]+？\n- intent_correction ko->zh: 我的意思是，+[main point]\n- apology zh->ko: [cause]+해서+[neg]+[verb]+[ending]\n- report ko->zh: [equipment]+[phenomenon]+，+[action]+了\n- daily zh->ko: [exclam]+[main]+[ending]\n- promise (verb repetition): "去去" -> "갈게 갈게" verbatim'
         },
         {
           // Stage 3: 번역 — 문장별 번역 + 자연 연결
@@ -4322,7 +4339,7 @@
           name: 'Agent 4: 검증·출력',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '[QWEN37_NATIVE]\n사용자 메시지에 [원문], [의도], [어순], [용어], [번역] 다섯 블록 포함.\n\n★ 문장별 1:1 매칭 검증 (우선):\n[의도].[문장] 리스트의 N개 문장이 [번역]에 모두 대응되는지 확인.\n빠진 문장 발견 → 그 문장 번역 추가 후 출력.\n\n동사 중첩 체크:\n- 원문에 去去/来来/好好/走走/试试/看看/等等 있으면 → 번역에 "갈게 갈게/와 와/그래 그래/..." 그대로 있나?\n- "아이고/그러게" 같은 감탄사로 의역됐으면 → 정확한 매핑으로 교체\n\n그 외 체크:\n✓ 출력 언어 = [어순].방향? (한국어→한글, 중국어→简体)\n✓ 감탄사·이모지·수치·부정어·한정어 모두 보존?\n✓ [용어] 매핑 적용?\n✓ [의도].전체 톤 살아있나?\n✓ 원문 언어 글자 잔존(한자/한글 누설) 없나?\n✓ 한국어 출력은 자연 SOV 어순? 중국어는 자연 SVO?\n\n판정:\n- 모두 OK → [번역] 그대로 출력\n- 누락된 문장·표현 → 보충 후 출력\n- 동사 중첩 의역 → 매핑표대로 교체 후 출력\n- 언어 누설 → 교체 후 출력\n\n출력: 최종 번역문 텍스트만. 체크 과정·설명·라벨·블록명·따옴표·마크다운 절대 금지.'
+          prompt: '[QWEN37_NATIVE]\nYou are a translation verifier. Input has 5 blocks: [Source], [Intent], [WordOrder], [Glossary], [Translation].\n\n★ PRIORITY — Per-sentence 1:1 matching:\nCheck all N sentences in [Intent].[Sentences] appear in [Translation].\nIf any missing, add that sentence translation and output.\n\nVerb repetition check (HIGH IMPORTANCE):\n- If [Source] contains 去去/来来/好好/走走/试试/看看/等等, [Translation] MUST have:\n  去去->"갈게 갈게", 来来->"와 와", 好好->"그래 그래",\n  走走->"가자 가자", 试试->"해볼게", 看看->"볼게", 等等->"잠깐만"\n- If translated as exclamation (아이고/그러게/이런/저런), REPLACE with correct mapping.\n\nOther checks:\n* Output language = [WordOrder].Direction? (Korean->Hangul only, Chinese->simplified only)\n* All exclamations/particles/emojis/numbers/units/negations/qualifiers preserved?\n* [Glossary] mappings applied exactly?\n* [Intent].Overall tone alive in [Translation]? (interrogation->interrogative, instruction->imperative, apology->apologetic)\n* No source-language characters leaked (Hanja in Korean output, Hangul in Chinese output)?\n* Korean output uses natural SOV? Chinese uses natural SVO?\n\nVerdict:\n- All OK -> output [Translation] verbatim\n- Missing sentence/expression -> add and output\n- Verb repetition misrendered -> replace using mapping table\n- Language leak -> replace and output\n\nOutput: ONLY final translation text. NO check process, explanation, labels, block names, quotes, markdown.'
         }
       ];
     }
@@ -4392,9 +4409,9 @@
         if(onProgress) onProgress('Stage 1: 의도 파악', '');
         var intent = await callOneAgent(1, getAgent(1).prompt, userText);
         intent = (intent || '').trim();
-        // UI 표시용 '전체 의도' 추출 ([전체] <단어> 형식)
+        // UI 표시용 '전체 의도' 추출 ([Overall] 영문 우선, [전체] 한글 폴백)
         var overallIntent = '';
-        var _mAll = intent.match(/^\s*\[전체\]\s*([^\r\n]+)/m);
+        var _mAll = intent.match(/^\s*\[(?:Overall|overall|전체)\]\s*([^\r\n]+)/im);
         if(_mAll){
           overallIntent = (_mAll[1] || '').trim().split(/[\s(（]/)[0];
         } else {
