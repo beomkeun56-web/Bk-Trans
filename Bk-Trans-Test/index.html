@@ -1446,7 +1446,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.36t';
+    const APP_VERSION = 'v19.37t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3734,11 +3734,51 @@
         // 2차 OFF여도 언어 누설 발견 시 자동 보정 1회 호출 (정확도 보장)
         if(_langLeak || (_useSecondPass && _wordCount > 4)){
           const _t1 = Date.now();
-          const userSecondPrompt = (el.secondPrompt && el.secondPrompt.value.trim()) || defaultSecondPrompt();
-          // 누설 감지 시 더 강한 재번역 지시로 override
-          const refineUser = _langLeak
-            ? '★ 1차 번역에 원문 언어 글자가 잘못 남아있다. 그 부분을 반드시 목표 언어로 교체. 나머지는 1차 그대로. 결과 번역문만 출력.'
-            : userSecondPrompt;
+          // ★ 언어 누설 전용 보정: 짧고 강한 명령. v67 framing 완전 배제.
+          //   누설된 글자를 명시해서 모델이 정확히 무엇을 교체할지 알도록.
+          if(_langLeak){
+            var _leakedChars = '';
+            if(_uZh && !_uHan){
+              var mAll = translated.match(/[一-鿿]+/g) || [];
+              _leakedChars = Array.from(new Set(mAll)).join(', ');
+            } else if(_uHan && !_uZh){
+              var mAll2 = translated.match(/[가-힯]+/g) || [];
+              _leakedChars = Array.from(new Set(mAll2)).join(', ');
+            }
+            var _targetLang = (_uZh && !_uHan) ? '한국어' : '중국어';
+            var _leakSys = 'You fix translation language errors. Replace the wrong-language characters with proper target-language equivalents. Output only the corrected translation. No explanation, no labels, no quotes.';
+            var _leakUser = '아래 번역문에 잘못 남아있는 글자: ' + _leakedChars + '\n' +
+              '→ 모두 ' + _targetLang + '로 교체하라. 나머지는 그대로 두라.\n\n' +
+              '[원문]\n' + userText + '\n\n[수정 대상 번역문]\n' + translated + '\n\n' +
+              '[지시] 위 글자(' + _leakedChars + ')만 ' + _targetLang + '로 교체. 다른 부분은 1글자도 변경 금지. 최종 번역문만 출력.';
+            const _origTempL = el.temperature ? el.temperature.value : '';
+            if(el.temperature) el.temperature.value = '0';
+            try{
+              const _leakFixed = await callRefine(_leakUser, _leakSys, (partial) => {
+                streamBubble.style.opacity = '1';
+                streamBubble.textContent = '[누설 보정] ' + partial;
+                scrollThrottled();
+              });
+              const _leakFixedClean = normalizeOutput(userText, _leakFixed);
+              if(_leakFixedClean){
+                // 보정 결과에 여전히 누설이 있으면 무시
+                var _stillLeak = false;
+                if(_uZh && !_uHan && /[가-힯]/.test(_leakFixedClean) && /[一-鿿]/.test(_leakFixedClean)) _stillLeak = true;
+                if(_uHan && !_uZh && /[一-鿿]/.test(_leakFixedClean) && /[가-힯]/.test(_leakFixedClean)) _stillLeak = true;
+                if(!_stillLeak) translated = _leakFixedClean;
+              }
+            } catch(re){
+              toast('누설 보정 실패 — 1차 결과 사용');
+            } finally {
+              if(el.temperature) el.temperature.value = _origTempL;
+            }
+            _ms2 = Date.now() - _t1;
+          }
+          // 누설 보정 후에도 2차 번역(다듬기) 호출은 그대로 (페르소나·자연도 적용)
+          if(_useSecondPass && _wordCount > 4){
+            const _t2 = Date.now();
+            const userSecondPrompt = (el.secondPrompt && el.secondPrompt.value.trim()) || defaultSecondPrompt();
+            const refineUser = userSecondPrompt;
           // 2차 system: "리뷰어" framing을 맨 앞에 박아 v67의 "번역가" framing을 덮어씀
           // v67은 참고 규칙(스타일·페르소나·용어)으로만 사용, 메인 지시는 "1차 검토"
           const origSys = (el.systemPrompt && el.systemPrompt.value) || defaultSystemPrompt();
@@ -3778,7 +3818,8 @@
           } finally {
             if(el.temperature) el.temperature.value = origTemp;
           }
-          _ms2 = Date.now() - _t1;
+          _ms2 += Date.now() - _t2;
+          } // close inner if(_useSecondPass)
         }
 
         const _ms = _ms1 + _ms2;
