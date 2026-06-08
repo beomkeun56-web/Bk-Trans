@@ -1429,7 +1429,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.42t';
+    const APP_VERSION = 'v19.43t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3565,8 +3565,41 @@
       }
       return seg.join('  ·  ');
     }
-    function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2){
+    function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline){
       if(!_showTokens || !actionsEl) return;
+      // 5-Stage 파이프라인 표시: 5_Agent · 5Mode 추궁 · 1.5+0.5+1+1.5=4.5s · 오류X(또는 5수정)
+      if(pipeline){
+        var stages = pipeline.stages || [];
+        var nameSpan = document.createElement('span');
+        nameSpan.style.cssText = 'font-size:10px;color:#3b82f6;opacity:.95;margin-left:8px;font-weight:700;white-space:nowrap;';
+        nameSpan.textContent = modelName || '5_Agent';
+        actionsEl.appendChild(nameSpan);
+        var modeSpan = document.createElement('span');
+        modeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
+        modeSpan.textContent = '5Mode' + (pipeline.intent ? ' ' + pipeline.intent : '');
+        actionsEl.appendChild(modeSpan);
+        if(stages.length){
+          var parts = stages.map(function(t){ return (t / 1000).toFixed(1); });
+          var sum = stages.reduce(function(a, b){ return a + b; }, 0);
+          var timeSpan = document.createElement('span');
+          timeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
+          timeSpan.textContent = parts.join('+') + '=' + (sum / 1000).toFixed(1) + 's';
+          actionsEl.appendChild(timeSpan);
+        }
+        var statusSpan = document.createElement('span');
+        var modified = !!pipeline.modified;
+        statusSpan.style.cssText = 'font-size:10px;color:' + (modified ? '#f59e0b' : '#10b981') + ';opacity:.95;margin-left:8px;font-weight:700;white-space:nowrap;';
+        statusSpan.textContent = modified ? '5수정' : '오류X';
+        actionsEl.appendChild(statusSpan);
+        if(promptVer){
+          var verSpan = document.createElement('span');
+          verSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-left:8px;white-space:nowrap;';
+          verSpan.textContent = promptVer;
+          actionsEl.appendChild(verSpan);
+        }
+        return;
+      }
+      // 일반 표시 (기존 그대로)
       var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2);
       if(!txt) return;
       var s = document.createElement('span');
@@ -3647,7 +3680,7 @@
           editBtn.textContent = 'Edit';
           editBtn.addEventListener('click', () => openEditGuide(lastUserText, m.text, m));
           actions.appendChild(editBtn);
-          appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2);
+          appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline);
         }
 
         if(actions.children.length > 0){
@@ -3721,13 +3754,20 @@
 
       try{
         let translatedRaw;
-        if(_use4Agent){
-          // ★ 4-Agent 파이프라인 사용 (메인 시스템 프롬프트 우회)
-          translatedRaw = await run4AgentPipeline(userText, function(stage, partial){
+        let _pipelineInfo = null;
+        // 5-Stage 파이프라인: 5단어 이상 입력에만 사용 (짧은 메시지는 일반 흐름)
+        if(_use4Agent && _wordCount >= 5){
+          var _pipeRes = await run4AgentPipeline(userText, function(stage, partial){
             streamBubble.style.opacity = '1';
             streamBubble.textContent = '[' + stage + '] ' + (partial || '');
             scrollThrottled();
           });
+          if(_pipeRes && typeof _pipeRes === 'object'){
+            translatedRaw = _pipeRes.text || '';
+            _pipelineInfo = _pipeRes;
+          } else {
+            translatedRaw = _pipeRes || '';
+          }
         } else {
           translatedRaw = await callOpenRouterStream(userText, (partial) => {
             streamBubble.style.opacity = '1';
@@ -3837,7 +3877,9 @@
         const _modelName = prettifyModelName(getCurrentModelId());
         const _promptVer = extractPromptVersion();
 
-        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _modelName, usage: _lastUsage, ms: _ms, ms1: _ms1, ms2: _ms2, effort: _lastEffort, promptVer: _promptVer });
+        // 5-Stage 파이프라인 사용 시 모델 이름을 '5_Agent'로 표시 + 파이프라인 정보 첨부
+        var _displayModel = _pipelineInfo ? '5_Agent' : _modelName;
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _displayModel, usage: _lastUsage, ms: _ms, ms1: _ms1, ms2: _ms2, effort: _lastEffort, promptVer: _promptVer, pipeline: _pipelineInfo });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -3868,7 +3910,7 @@
           openEditGuide(userText, translated, lastAssistant && lastAssistant.role==='assistant' ? lastAssistant : null);
         });
         actions.appendChild(editBtn);
-        appendUsageLine(actions, _lastUsage, _ms, _modelName, _lastEffort, _promptVer, _ms1, _ms2);
+        appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _promptVer, _ms1, _ms2, _pipelineInfo);
         streamRow.appendChild(actions);
 
         scrollThrottled();
@@ -4275,34 +4317,53 @@
       }
 
       var result = '';
+      var stage1Ms = 0, stage2Ms = 0, stage3Ms = 0, stage4Ms = 0, stage5Ms = 0;
+      var pipelineIntent = '';
+      var pipelineModified = false;
+      var translation = '';
       try{
         // ===== 5-Stage 파이프라인 =====
-        // Stage 4 (용어): 이미 위에서 코드로 처리됨 (glossaryText) — Stage 1과 사실상 병렬
+        // Stage 3 (용어): 이미 위에서 코드로 처리됨 (glossaryText) — Stage 1과 사실상 병렬
         var termsBlock = glossaryText || '(시스템 용어집 매칭 없음)';
 
         // Stage 1: 의도 파악 (LLM, 단순 분류)
+        var _sT1 = Date.now();
         if(onProgress) onProgress('Stage 1: 의도 파악', '');
         var intent = await callOneAgent(1, getAgent(1).prompt, userText);
         intent = (intent || '').trim();
+        pipelineIntent = intent;
+        stage1Ms = Date.now() - _sT1;
 
         // Stage 2: 어순 계획 (LLM, 의도 + 원문 → 템플릿)
+        var _sT2 = Date.now();
         if(onProgress) onProgress('Stage 2: 어순 계획', '');
         var stage2User = '[의도]\n' + intent + '\n\n[원문]\n' + userText;
         var wordOrder = await callOneAgent(2, getAgent(2).prompt, stage2User);
         wordOrder = (wordOrder || '').trim();
+        stage2Ms = Date.now() - _sT2;
+        // Stage 3 (용어, 코드)은 위에서 이미 끝남 (시간 무시 가능, ~0)
+        stage3Ms = 0;
 
-        // Stage 3: 번역 (LLM, 의도+어순+용어+원문 → 번역)
-        if(onProgress) onProgress('Stage 3: 번역', '');
-        var stage3User = '[의도]\n' + intent + '\n\n[어순]\n' + wordOrder + '\n\n[용어]\n' + termsBlock + '\n\n[원문]\n' + userText;
-        var translation = await callOneAgent(3, getAgent(3).prompt, stage3User);
+        // Stage 4: 번역 (LLM, 의도+어순+용어+원문 → 번역)
+        var _sT4 = Date.now();
+        if(onProgress) onProgress('Stage 4: 번역', '');
+        var stage4User = '[의도]\n' + intent + '\n\n[어순]\n' + wordOrder + '\n\n[용어]\n' + termsBlock + '\n\n[원문]\n' + userText;
+        translation = await callOneAgent(3, getAgent(3).prompt, stage4User);
         translation = (translation || '').trim();
+        stage4Ms = Date.now() - _sT4;
 
         // Stage 5: 검증·출력 (LLM, 모든 결과 + 원문 → 최종)
+        var _sT5 = Date.now();
         if(onProgress) onProgress('Stage 5: 검증·출력', '');
         var stage5User = '[원문]\n' + userText + '\n\n[의도]\n' + intent + '\n\n[어순]\n' + wordOrder + '\n\n[용어]\n' + termsBlock + '\n\n[번역]\n' + translation;
         var finalOutput = await callOneAgent(4, getAgent(4).prompt, stage5User);
+        finalOutput = (finalOutput || '').trim();
+        stage5Ms = Date.now() - _sT5;
 
-        try{ console.log('[5-Stage Pipeline]', { intent: intent, wordOrder: wordOrder, terms: termsBlock, translation: translation, final: finalOutput }); } catch(_){}
+        // Stage 5가 번역을 수정했는지 판정 (단순 trim 후 비교)
+        pipelineModified = !!(translation && finalOutput && translation !== finalOutput);
+
+        try{ console.log('[5-Stage Pipeline]', { intent: intent, wordOrder: wordOrder, terms: termsBlock, translation: translation, final: finalOutput, modified: pipelineModified, stages: [stage1Ms, stage2Ms, stage4Ms, stage5Ms] }); } catch(_){}
 
         result = (finalOutput || translation || '').trim();
       } finally {
@@ -4312,7 +4373,12 @@
         if(el.systemPrompt) el.systemPrompt.value = origSys;
         _useEnhancedPrompt = origEnhanced;
       }
-      return result;
+      return {
+        text: result,
+        intent: pipelineIntent,
+        stages: [stage1Ms, stage2Ms, stage4Ms, stage5Ms],
+        modified: pipelineModified
+      };
     }
 
     // 4-Agent 설정 팝업 빌드
