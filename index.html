@@ -879,69 +879,29 @@
         </button>
       </div>
       <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">품질강화(보정) 프롬프트 적용</span>
-        <input type="checkbox" id="optEnhanced" style="transform:scale(1.3); cursor:pointer;" />
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">4-Agent 모드 (분석→용어→번역→검증)</span>
+        <input type="checkbox" id="opt4Agent" style="transform:scale(1.3); cursor:pointer;" />
       </label>
-      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">2차 번역 사용 (다듬기)</span>
-        <input type="checkbox" id="optSecondPass" style="transform:scale(1.3); cursor:pointer;" />
-      </label>
-      <div id="optSecondTargetWrap" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); display:none;">
-        <div style="font-size:calc(12px * var(--textScale)); color:var(--muted); margin-bottom:6px;">2차 다듬기 제공자·모델 (비워두면 1차와 동일)</div>
-        <div style="display:flex; gap:6px;">
-          <select id="optSecondProvider" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
-            <option value="">(1차와 동일)</option>
-            <option value="openrouter">OpenRouter</option>
-            <option value="google">Google (Gemini)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-            <option value="qwen">Alibaba (Qwen)</option>
-          </select>
-          <select id="optSecondModel" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
-            <option value="">(모델 선택)</option>
-          </select>
+      <div id="opt4AgentWrap" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); display:none;">
+        <div style="font-size:calc(11px * var(--textScale)); color:var(--muted); margin-bottom:6px;">
+          ON 시 메인 시스템 프롬프트 우회. 4명의 에이전트가 순차 처리. 시스템 용어집은 자동 주입.
         </div>
-        <div style="font-size:calc(10px * var(--textScale)); color:#666; margin-top:4px;">예: 1차=qwen-mt-plus, 2차=Google + gemini-3-flash-preview</div>
+        <button id="opt4AgentConfigBtn" type="button" style="width:100%; padding:10px; border:1px solid rgba(45,107,255,.3); border-radius:10px; background:rgba(45,107,255,.15); color:var(--text); font-size:calc(13px * var(--textScale)); cursor:pointer; font-family:inherit;">⚙️ Agent 설정 (모델·프롬프트)</button>
       </div>
-      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">단어 수 분기 번역 (짧음=속도, 긴메시지=품질)</span>
-        <input type="checkbox" id="optSmartRouting" style="transform:scale(1.3); cursor:pointer;" />
-      </label>
-      <div id="optSmartRoutingWrap" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); display:none;">
-        <div style="font-size:calc(12px * var(--textScale)); color:var(--muted); margin-bottom:8px;">
-          임계값:
-          <input type="number" id="optRoutingThreshold" value="4" min="1" max="100" style="width:60px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:6px; padding:4px 6px; font-size:calc(12px * var(--textScale)); margin:0 4px;" />단어
-        </div>
-        <div style="margin-bottom:8px;">
-          <div style="font-size:calc(11px * var(--textScale)); color:var(--muted); margin-bottom:4px;">짧은 메시지 (속도 우선)</div>
-          <div style="display:flex; gap:6px;">
-            <select id="optRoutingShortProvider" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
-              <option value="">(기본 사용)</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="google">Google (Gemini)</option>
-              <option value="anthropic">Anthropic (Claude)</option>
-              <option value="qwen">Alibaba (Qwen)</option>
-            </select>
-            <select id="optRoutingShortModel" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
-              <option value="">(모델 선택)</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:calc(11px * var(--textScale)); color:var(--muted); margin-bottom:4px;">긴 메시지 (품질 우선)</div>
-          <div style="display:flex; gap:6px;">
-            <select id="optRoutingLongProvider" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
-              <option value="">(기본 사용)</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="google">Google (Gemini)</option>
-              <option value="anthropic">Anthropic (Claude)</option>
-              <option value="qwen">Alibaba (Qwen)</option>
-            </select>
-            <select id="optRoutingLongModel" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:calc(12px * var(--textScale));">
-              <option value="">(모델 선택)</option>
-            </select>
-          </div>
-        </div>
-        <div style="font-size:calc(10px * var(--textScale)); color:#666; margin-top:6px;">예: 짧음=Alibaba+qwen-mt-flash, 긴메시지=Alibaba+qwen3.7-max</div>
+      <!-- 숨김 — 기존 로직 호환용 -->
+      <input type="checkbox" id="optEnhanced" style="display:none;" />
+      <input type="checkbox" id="optSecondPass" style="display:none;" />
+      <div id="optSecondTargetWrap" style="display:none;">
+        <select id="optSecondProvider"></select>
+        <select id="optSecondModel"></select>
+      </div>
+      <input type="checkbox" id="optSmartRouting" style="display:none;" />
+      <div id="optSmartRoutingWrap" style="display:none;">
+        <input type="number" id="optRoutingThreshold" value="4" />
+        <select id="optRoutingShortProvider"></select>
+        <select id="optRoutingShortModel"></select>
+        <select id="optRoutingLongProvider"></select>
+        <select id="optRoutingLongModel"></select>
       </div>
       <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
         <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">용어집 사용</span>
@@ -957,6 +917,23 @@
         </select>
       </div>
       <div style="font-size:calc(11px * var(--textScale)); color:#666; padding:0 0 10px;">사고 깊이가 클수록 누락·오역 감소 (Qwen3 계열에만 적용).</div>
+    </section>
+  </div>
+
+  <!-- 4-Agent 설정 팝업 -->
+  <div id="agentConfigOverlay" class="settingsOverlay">
+    <section class="settings" style="max-width:520px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.08);">
+        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:var(--text);">4-Agent 설정</h2>
+        <button id="agentConfigCloseBtn" class="iconBtn" type="button" aria-label="닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="agentConfigBody" style="max-height:70vh; overflow-y:auto;"></div>
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button id="agentConfigSaveBtn" type="button" style="flex:1; padding:10px; border:none; border-radius:10px; background:var(--blue); color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;">저장</button>
+        <button id="agentConfigDefaultBtn" type="button" style="flex:1; padding:10px; border:1px solid rgba(255,255,255,.15); border-radius:10px; background:rgba(255,255,255,.06); color:var(--text); font-size:14px; cursor:pointer; font-family:inherit;">기본값 불러오기</button>
+      </div>
     </section>
   </div>
 
@@ -1446,7 +1423,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.39t';
+    const APP_VERSION = 'v19.40t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1498,6 +1475,19 @@
       routingLongProvider: 'bk_tr_test_routingLongProvider',
       routingLongModel: 'bk_tr_test_routingLongModel',
       qwenThinking: 'bk_tr_test_qwenThinking',
+      use4Agent: 'bk_tr_test_use4Agent',
+      agent1Provider: 'bk_tr_test_agent1Provider',
+      agent1Model: 'bk_tr_test_agent1Model',
+      agent1Prompt: 'bk_tr_test_agent1Prompt',
+      agent2Provider: 'bk_tr_test_agent2Provider',
+      agent2Model: 'bk_tr_test_agent2Model',
+      agent2Prompt: 'bk_tr_test_agent2Prompt',
+      agent3Provider: 'bk_tr_test_agent3Provider',
+      agent3Model: 'bk_tr_test_agent3Model',
+      agent3Prompt: 'bk_tr_test_agent3Prompt',
+      agent4Provider: 'bk_tr_test_agent4Provider',
+      agent4Model: 'bk_tr_test_agent4Model',
+      agent4Prompt: 'bk_tr_test_agent4Prompt',
       glossarySys: 'bk_tr_test_glossarySys',
       glossaryUser: 'bk_tr_test_glossary',
       useGlossarySys: 'bk_tr_test_useGlossarySys',
@@ -2870,7 +2860,7 @@
       ['推进装置','추진장치'],['推进机构','추진장치'],['工位','공정'],['清理工位','공정 청소'],
       ['成型工位','성형 공정'],['整熔接工位','융착 공정'],
       // E. Defects & Issues
-      ['胶异物','접착제 이물'],['金属异物','금속이물'],['异物','이물'],
+      ['胶异物','접착제 이물'],['胶叠','접착제 겹침'],['金属异物','금속이물'],['异物','이물'],
       ['压痕','눌림'],['压点','압점'],['压印','압인'],['毛刺','Burr'],
       ['错位','위치 틀어짐'],['R角','R각'],['凹陷','함몰'],['残胶','잔사'],
       ['划伤','스크래치'],['漏贴','미부착'],['假贴','가융착'],['折叠','접힘'],
@@ -2881,6 +2871,7 @@
       ['台','대'],['列','열'],['千分尺','마이크로미터'],['厚度仪','두께 측정기'],
       ['S值','S값'],['M尺寸','M치수'],['良率','수율'],['稼动率','가동률'],
       ['过秤','중량 측정'],['过磅','중량 측정'],['称重','계량'],
+      ['良品','양품'],['跑出','튀어나옴'],['摆放','배치'],['矫正','교정'],['支架','브라켓'],
       ['首件','초도품'],['入库','입고'],['出库','출고']
     ];
     function buildV67GlossaryEntries(){
@@ -3723,11 +3714,21 @@
       }
 
       try{
-        let translatedRaw = await callOpenRouterStream(userText, (partial) => {
-          streamBubble.style.opacity = '1';
-          streamBubble.textContent = partial;
-          scrollThrottled();
-        });
+        let translatedRaw;
+        if(_use4Agent){
+          // ★ 4-Agent 파이프라인 사용 (메인 시스템 프롬프트 우회)
+          translatedRaw = await run4AgentPipeline(userText, function(stage, partial){
+            streamBubble.style.opacity = '1';
+            streamBubble.textContent = '[' + stage + '] ' + (partial || '');
+            scrollThrottled();
+          });
+        } else {
+          translatedRaw = await callOpenRouterStream(userText, (partial) => {
+            streamBubble.style.opacity = '1';
+            streamBubble.textContent = partial;
+            scrollThrottled();
+          });
+        }
         let translated = normalizeOutput(userText, translatedRaw);
         const _ms1 = Date.now() - _t0;
         let _ms2 = 0;
@@ -4179,6 +4180,229 @@
       localStorage.setItem(LS.secondModel, (optSecondModel.value || '').trim());
       toast('2차 모델: ' + (optSecondModel.value || '1차와 동일'));
     });
+
+    // ====== 4-Agent 모드 ======
+    var _use4Agent = localStorage.getItem(LS.use4Agent) === '1';
+    function getAgentDefaults(){
+      return [
+        {
+          name: 'Agent 1: 분석가',
+          provider: 'qwen',
+          model: 'qwen3.6-flash',
+          prompt: '당신은 언어 분석가입니다. 입력 텍스트를 분석해 다음을 JSON으로 출력하세요. 설명·라벨·마크다운 금지.\n\n{\n  "source_lang": "ko" 또는 "zh",\n  "target_lang": "zh" 또는 "ko",\n  "structure": "주요 문장 구조",\n  "key_nouns": ["명사1","명사2"],\n  "key_verbs": ["동사1"],\n  "modifiers": ["수식어1"],\n  "speech_act": "추궁/지시/완곡/일상/감정/보고",\n  "register": "격식/친근/중립",\n  "critical_info": ["보존해야 할 부정어/수치/시간/한정어"]\n}\n\nJSON만 출력.'
+        },
+        {
+          name: 'Agent 2: 용어 매핑',
+          provider: 'qwen',
+          model: 'qwen3.6-flash',
+          prompt: '당신은 용어 매핑 전문가입니다. 입력 텍스트와 시스템 용어집을 받아 매칭되는 용어 + 컨텍스트 기반 추천 용어를 JSON으로 출력. 설명·라벨·마크다운 금지.\n\n{\n  "matched_terms": [{"source": "切刀", "target": "금형"}],\n  "context_terms": [{"source": "...", "target": "...", "reason": "..."}]\n}\n\nJSON만 출력.'
+        },
+        {
+          name: 'Agent 3: 번역기',
+          provider: 'qwen',
+          model: 'qwen-mt-plus',
+          prompt: '당신은 한국어↔중국어 번역 전문가입니다. 제공된 [분석]과 [용어]를 100% 반영해 정확하고 자연스러운 번역을 생성하세요.\n\n원칙:\n- 분석의 critical_info는 반드시 보존\n- 용어 매핑은 강제 적용\n- speech_act에 맞는 톤·화행 유지\n- 출력은 번역문만, 설명·라벨·따옴표 금지'
+        },
+        {
+          name: 'Agent 4: 검증·승인',
+          provider: 'qwen',
+          model: 'qwen3.7-plus',
+          prompt: '당신은 번역 검증자입니다. 원문과 1차 번역을 비교 검증하고 필요 시 수정해 최종 출력.\n\n체크리스트:\n1. 출력 언어가 입력의 반대 언어인가? (한국어↔중국어)\n2. 원문의 모든 정보(부정어/수치/시간/대상/한정어)가 출력에 있는가?\n3. 출력에 원문 언어 글자가 잔존하는가? (있으면 교체)\n4. 화행·톤이 일치하는가?\n5. 자연스러운가?\n\n문제 있으면 수정해 최종 번역문 출력.\n모두 OK면 그대로 출력.\n결과 번역문만. 설명·라벨·따옴표·마크다운 금지.'
+        }
+      ];
+    }
+    function getAgent(i){
+      var defs = getAgentDefaults();
+      var def = defs[i-1] || defs[0];
+      return {
+        provider: localStorage.getItem(LS['agent'+i+'Provider']) || def.provider,
+        model: localStorage.getItem(LS['agent'+i+'Model']) || def.model,
+        prompt: localStorage.getItem(LS['agent'+i+'Prompt']) || def.prompt
+      };
+    }
+    function setAgent(i, prov, mdl, prmpt){
+      localStorage.setItem(LS['agent'+i+'Provider'], prov || '');
+      localStorage.setItem(LS['agent'+i+'Model'], mdl || '');
+      localStorage.setItem(LS['agent'+i+'Prompt'], prmpt || '');
+    }
+    // 4-Agent 파이프라인 실행
+    async function run4AgentPipeline(userText, onProgress){
+      var origProv = el.apiProvider ? el.apiProvider.value : '';
+      var origMdl = el.model ? el.model.value : '';
+      var origSys = el.systemPrompt ? el.systemPrompt.value : '';
+      var origEnhanced = _useEnhancedPrompt;
+      _useEnhancedPrompt = false;
+
+      // 시스템 용어집에서 입력에 매칭되는 항목 추출
+      var glossaryText = '';
+      try{
+        if(_useGlossarySys){
+          var gl = getGlossaryFor('sys');
+          var matches = gl.filter(function(e){ return e && e.src && e.tgt && userText.indexOf(e.src) !== -1; });
+          if(matches.length){
+            glossaryText = matches.map(function(e){ return e.src + ' → ' + e.tgt; }).join('\n');
+          }
+        }
+      } catch(_){}
+
+      async function callOneAgent(idx, systemPrompt, userContent){
+        var ag = getAgent(idx);
+        if(ag.provider && el.apiProvider) el.apiProvider.value = ag.provider;
+        if(ag.model && el.model) el.model.value = ag.model;
+        if(el.systemPrompt) el.systemPrompt.value = systemPrompt;
+        try{
+          var res = await callOpenRouterStream(userContent, function(partial){
+            if(onProgress) onProgress('Agent ' + idx, partial);
+          });
+          return res || '';
+        } finally {
+          // 다음 agent를 위해 복구 (각 agent 끝마다)
+          if(el.apiProvider) el.apiProvider.value = origProv;
+          if(el.model) el.model.value = origMdl;
+        }
+      }
+
+      var result = '';
+      try{
+        // Agent 1: 분석
+        if(onProgress) onProgress('Agent 1 (분석 중)', '');
+        var a1 = await callOneAgent(1, getAgent(1).prompt, userText);
+
+        // Agent 2: 용어 매핑 (글로서리 텍스트 동봉)
+        if(onProgress) onProgress('Agent 2 (용어 매핑)', '');
+        var a2User = '[원문]\n' + userText + '\n\n[시스템 용어집 매칭]\n' + (glossaryText || '(매칭 없음)') + '\n\n위 정보로 JSON 출력.';
+        var a2 = await callOneAgent(2, getAgent(2).prompt, a2User);
+
+        // Agent 3: 번역
+        if(onProgress) onProgress('Agent 3 (번역 중)', '');
+        var a3User = '[분석]\n' + a1 + '\n\n[용어]\n' + a2 + '\n\n[원문]\n' + userText + '\n\n위 분석·용어를 100% 반영해 번역.';
+        var a3 = await callOneAgent(3, getAgent(3).prompt, a3User);
+
+        // Agent 4: 검증
+        if(onProgress) onProgress('Agent 4 (검증 중)', '');
+        var a4User = '[원문]\n' + userText + '\n\n[1차 번역]\n' + a3 + '\n\n위 1차 번역을 검증하고 필요 시 수정해 최종 출력.';
+        var a4 = await callOneAgent(4, getAgent(4).prompt, a4User);
+
+        result = a4 || a3 || '';
+      } finally {
+        // 최종 복구
+        if(el.apiProvider) el.apiProvider.value = origProv;
+        if(el.model) el.model.value = origMdl;
+        if(el.systemPrompt) el.systemPrompt.value = origSys;
+        _useEnhancedPrompt = origEnhanced;
+      }
+      return result;
+    }
+
+    // 4-Agent 설정 팝업 빌드
+    var agentConfigOverlay = document.getElementById('agentConfigOverlay');
+    var agentConfigCloseBtn = document.getElementById('agentConfigCloseBtn');
+    var agentConfigSaveBtn = document.getElementById('agentConfigSaveBtn');
+    var agentConfigDefaultBtn = document.getElementById('agentConfigDefaultBtn');
+    var agentConfigBody = document.getElementById('agentConfigBody');
+    function buildAgentConfigUI(){
+      if(!agentConfigBody) return;
+      agentConfigBody.innerHTML = '';
+      var defs = getAgentDefaults();
+      for(var i = 1; i <= 4; i++){
+        var cur = getAgent(i);
+        var def = defs[i-1];
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'margin-bottom:14px; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(255,255,255,.02);';
+        wrap.dataset.agentIdx = i;
+        wrap.innerHTML =
+          '<div style="font-weight:700; color:var(--text); margin-bottom:8px; font-size:13px;">' + def.name + '</div>' +
+          '<div style="display:flex; gap:6px; margin-bottom:6px;">' +
+            '<select class="agentProv" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px; font-size:12px;">' +
+              '<option value="openrouter">OpenRouter</option>' +
+              '<option value="google">Google</option>' +
+              '<option value="anthropic">Anthropic</option>' +
+              '<option value="qwen">Alibaba</option>' +
+            '</select>' +
+            '<select class="agentMdl" style="flex:1.3; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px; font-size:12px;"></select>' +
+          '</div>' +
+          '<textarea class="agentPrompt" placeholder="Agent 프롬프트" style="width:100%; min-height:90px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:11px; font-family:inherit; box-sizing:border-box;"></textarea>';
+        agentConfigBody.appendChild(wrap);
+        var provSel = wrap.querySelector('.agentProv');
+        var mdlSel = wrap.querySelector('.agentMdl');
+        var promptTa = wrap.querySelector('.agentPrompt');
+        provSel.value = cur.provider || def.provider;
+        function fillModels(provider, currentMdl){
+          mdlSel.innerHTML = '';
+          var list = [];
+          if(provider === 'google') list = GOOGLE_MODEL_OPTIONS;
+          else if(provider === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
+          else if(provider === 'qwen') list = QWEN_MODEL_OPTIONS;
+          else list = MODEL_OPTIONS;
+          list.forEach(function(m){
+            var o = document.createElement('option');
+            o.value = m.id; o.textContent = m.name + ' — ' + m.id;
+            mdlSel.appendChild(o);
+          });
+          // 저장된 모델이 목록에 없으면 추가
+          if(currentMdl){
+            var found = Array.prototype.some.call(mdlSel.options, function(o){ return o.value === currentMdl; });
+            if(!found){
+              var o = document.createElement('option');
+              o.value = currentMdl; o.textContent = '(사용자) ' + currentMdl;
+              mdlSel.appendChild(o);
+            }
+            mdlSel.value = currentMdl;
+          }
+        }
+        fillModels(provSel.value, cur.model || def.model);
+        provSel.addEventListener('change', function(){
+          fillModels(provSel.value, '');
+        });
+        promptTa.value = cur.prompt || def.prompt;
+      }
+    }
+    function openAgentConfig(){
+      if(!agentConfigOverlay) return;
+      buildAgentConfigUI();
+      agentConfigOverlay.classList.add('show');
+    }
+    function closeAgentConfig(){ if(agentConfigOverlay) agentConfigOverlay.classList.remove('show'); }
+    if(agentConfigCloseBtn) agentConfigCloseBtn.addEventListener('click', closeAgentConfig);
+    if(agentConfigOverlay) agentConfigOverlay.addEventListener('click', function(e){ if(e.target === agentConfigOverlay) closeAgentConfig(); });
+    if(agentConfigSaveBtn) agentConfigSaveBtn.addEventListener('click', function(){
+      var rows = agentConfigBody.querySelectorAll('[data-agent-idx]');
+      rows.forEach(function(row){
+        var i = parseInt(row.dataset.agentIdx, 10);
+        var prov = row.querySelector('.agentProv').value;
+        var mdl = row.querySelector('.agentMdl').value;
+        var prmpt = row.querySelector('.agentPrompt').value;
+        setAgent(i, prov, mdl, prmpt);
+      });
+      toast('Agent 설정 저장');
+      closeAgentConfig();
+    });
+    if(agentConfigDefaultBtn) agentConfigDefaultBtn.addEventListener('click', function(){
+      if(!confirm('모든 Agent 설정을 기본값으로 되돌립니다.')) return;
+      for(var i = 1; i <= 4; i++){
+        localStorage.removeItem(LS['agent'+i+'Provider']);
+        localStorage.removeItem(LS['agent'+i+'Model']);
+        localStorage.removeItem(LS['agent'+i+'Prompt']);
+      }
+      buildAgentConfigUI();
+      toast('기본값으로 초기화됨');
+    });
+
+    var opt4Agent = document.getElementById('opt4Agent');
+    var opt4AgentWrap = document.getElementById('opt4AgentWrap');
+    var opt4AgentConfigBtn = document.getElementById('opt4AgentConfigBtn');
+    if(opt4Agent){
+      opt4Agent.checked = _use4Agent;
+      opt4Agent.addEventListener('change', function(){
+        _use4Agent = opt4Agent.checked;
+        localStorage.setItem(LS.use4Agent, _use4Agent ? '1' : '0');
+        if(opt4AgentWrap) opt4AgentWrap.style.display = _use4Agent ? '' : 'none';
+        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
+        toast(_use4Agent ? '4-Agent 모드 ON' : '4-Agent 모드 OFF');
+      });
+      if(opt4AgentWrap) opt4AgentWrap.style.display = _use4Agent ? '' : 'none';
+    }
+    if(opt4AgentConfigBtn) opt4AgentConfigBtn.addEventListener('click', openAgentConfig);
 
     // 단어 수 분기 번역 (Smart Routing)
     var _useSmartRouting = localStorage.getItem(LS.useSmartRouting) === '1';
