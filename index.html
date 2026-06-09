@@ -1428,7 +1428,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.56t';
+    const APP_VERSION = 'v19.57t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3437,17 +3437,34 @@
       send();
     }
 
+    // 1회성 Agent Mode 재번역 (현재 _use4Agent 상태와 무관, 단어수 제한도 우회)
+    function retryWithAgentMode(userText){
+      if(_isBusy || !userText) return;
+      const prev4 = _use4Agent;
+      const prevForce = _forceAgentMode;
+      _use4Agent = true;
+      _forceAgentMode = true;
+      el.input.value = userText;
+      send().finally(function(){
+        _use4Agent = prev4;
+        _forceAgentMode = prevForce;
+      });
+    }
+
     function retryWithModel(userText, modelId, effortOverride){
       if(_isBusy || !userText) return;
       const prev = el.model.value;
+      const prev4 = _use4Agent;
       el.model.value = modelId;
       setSavedModel(modelId);
+      _use4Agent = false; // 일반 모델 1회성 — Agent Mode 우회
       updateModelTag();
       if(effortOverride !== undefined) _effortOverride = effortOverride;
       el.input.value = userText;
       send().finally(() => {
         el.model.value = prev;
         setSavedModel(prev);
+        _use4Agent = prev4;
         updateModelTag();
         _effortOverride = undefined;
       });
@@ -3458,14 +3475,17 @@
       if(_isBusy || !userText) return;
       const prevProvider = el.apiProvider ? el.apiProvider.value : '';
       const prevModel = el.model.value;
+      const prev4 = _use4Agent;
       if(providerId && el.apiProvider) el.apiProvider.value = providerId;
       if(modelId && el.model) el.model.value = modelId;
+      _use4Agent = false; // 일반 모델 1회성 — Agent Mode 우회
       updateModelTag();
       if(effortOverride !== undefined) _effortOverride = effortOverride;
       el.input.value = userText;
       send().finally(() => {
         if(providerId && el.apiProvider) el.apiProvider.value = prevProvider;
         if(prevModel && el.model) el.model.value = prevModel;
+        _use4Agent = prev4;
         updateModelTag();
         _effortOverride = undefined;
       });
@@ -3478,6 +3498,17 @@
       var popup = document.createElement('div');
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;min-width:260px;max-width:90vw;';
       popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:14px;">모델 선택 후 재번역</div>';
+
+      // ★ Agent Mode 1회성 재번역 (현재 모드와 무관 — 항상 표시)
+      var agentBtn = document.createElement('button');
+      agentBtn.type = 'button';
+      agentBtn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
+      agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">→ Agent Mode (파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">의도+어순 → 번역 → 검증·맥락 (1회성)</div>';
+      agentBtn.addEventListener('click', function(){
+        document.body.removeChild(overlay);
+        retryWithAgentMode(userText);
+      });
+      popup.appendChild(agentBtn);
 
       // Qwen 사용 중일 때만: OpenRouter Gemini 3 Flash 빠른 재번역 옵션 추가
       if(isQwenProvider()){
@@ -3888,7 +3919,8 @@
         let translatedRaw;
         let _pipelineInfo = null;
         // 3-Stage 파이프라인: 5단어 이상 입력에만 사용 (짧은 메시지는 일반 흐름)
-        if(_use4Agent && _wordCount >= 5){
+        // _forceAgentMode: Retry 팝업의 Agent Mode 버튼 1회성 강제 (단어수 무시)
+        if((_use4Agent && _wordCount >= 5) || _forceAgentMode){
           var _pipeRes = await run4AgentPipeline(userText, function(stage, partial){
             streamBubble.style.opacity = '1';
             streamBubble.textContent = '[' + stage + '] ' + (partial || '');
@@ -4365,6 +4397,7 @@
 
     // ====== 4-Agent 모드 ======
     var _use4Agent = localStorage.getItem(LS.use4Agent) === '1';
+    var _forceAgentMode = false; // 1회성 Agent Mode 강제 (Retry 팝업 등)
     // 3-Stage 파이프라인 (v19.53t — 단순화)
     //   Stage 1: Analyzer (의도+어순 통합 분석)
     //   Stage 2: 용어 매핑 (코드, 즉시)
