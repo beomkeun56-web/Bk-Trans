@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.81t';
+    const APP_VERSION = 'v19.82t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1530,6 +1530,9 @@
       agent2mode_model: 'bk_tr_test_agent2mode_model',
       agent2mode_prompt: 'bk_tr_test_agent2mode_prompt',
       agent2mode_mtModel: 'bk_tr_test_agent2mode_mtModel',
+      skipShortMax: 'bk_tr_test_skipShortMax',
+      skipLongMin: 'bk_tr_test_skipLongMin',
+      skipSentenceMax: 'bk_tr_test_skipSentenceMax',
       agent1Provider: 'bk_tr_test_agent1Provider',
       agent1Model: 'bk_tr_test_agent1Model',
       agent1Prompt: 'bk_tr_test_agent1Prompt',
@@ -5036,11 +5039,26 @@
 
     // ★ Stage 2 필요 여부 판단 (휴리스틱) — 단순 입력은 MT만으로 충분, 보정 생략 → 속도·토큰 절감
     // 2st Agent Mode와 Plan Mode가 공유
+    // 임계값은 LS에서 읽음 (사용자 설정 가능):
+    //   skipShortMax: 이 글자수 미만이면 무조건 MT만 (기본 3)
+    //   skipLongMin: 이 글자수 이상이면 무조건 LLM 보정 (기본 40)
+    //   skipSentenceMax: 이 문장수 이상이면 무조건 LLM 보정 (기본 2)
+    function getSkipThresholds(){
+      var shortMax = parseInt(localStorage.getItem(LS.skipShortMax) || '3', 10);
+      var longMin = parseInt(localStorage.getItem(LS.skipLongMin) || '40', 10);
+      var sentMax = parseInt(localStorage.getItem(LS.skipSentenceMax) || '2', 10);
+      return {
+        shortMax: isFinite(shortMax) && shortMax > 0 ? shortMax : 3,
+        longMin: isFinite(longMin) && longMin > 0 ? longMin : 40,
+        sentMax: isFinite(sentMax) && sentMax > 0 ? sentMax : 2
+      };
+    }
     function shouldSkipStage2(text, hasPersona){
       if(!text) return false;
       var t = String(text);
-      // 너무 짧으면 (1~2자) 어차피 빠르니 MT만
-      if(t.length < 3) return true;
+      var th = getSkipThresholds();
+      // 너무 짧으면 어차피 빠르니 MT만
+      if(t.length < th.shortMax) return true;
       // 페르소나 강하게 설정돼 있으면 → 무조건 LLM 보정 필요 (페르소나 정렬은 LLM만 가능)
       if(hasPersona) return false;
       // ★ 보정 필수 신호 (하나라도 매치 → 보정 실행)
@@ -5067,9 +5085,9 @@
       if((hasHan || hasHangul) && hasLatinWord) return false;
       // 다문장
       var sentenceCount = (t.match(/[.!?。！？\n]+/g) || []).length;
-      if(sentenceCount >= 2) return false;
-      // 긴 단문 (40자+) → 어순·문맥 정렬 가치 ↑
-      if(t.length >= 40) return false;
+      if(sentenceCount >= th.sentMax) return false;
+      // 긴 단문 → 어순·문맥 정렬 가치 ↑
+      if(t.length >= th.longMin) return false;
       // 위 모두 통과 → 단순 입력 → MT만으로 충분
       return true;
     }
@@ -5610,6 +5628,33 @@
         '<textarea class="ag2_prompt" placeholder="Agent 2 프롬프트" style="width:100%; min-height:160px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:11px; font-family:inherit; box-sizing:border-box;"></textarea>';
       agent2ConfigBody.appendChild(s2);
 
+      // Stage 2 생략 임계값 설정 (2st Agent + Plan Mode 공유)
+      var th = (typeof getSkipThresholds === 'function') ? getSkipThresholds() : { shortMax: 3, longMin: 40, sentMax: 2 };
+      var s3 = document.createElement('div');
+      s3.style.cssText = 'margin-bottom:14px; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(255,255,255,.02);';
+      s3.innerHTML =
+        '<div style="font-weight:700; color:var(--text); margin-bottom:6px; font-size:13px;">보정 생략 임계값 (2st Agent + Plan Mode 공유)</div>' +
+        '<div style="font-size:10px; color:var(--muted); margin-bottom:10px; line-height:1.5;">' +
+          '단순 입력은 LLM 보정 생략하고 MT 결과 그대로 사용 → 속도·토큰 절감.<br>' +
+          '아래 조건에 해당하면 보정 실행:' +
+          '</div>' +
+        '<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">' +
+          '<label style="font-size:11px; color:var(--text); flex:1;">짧은글자 임계값 (이 글자수 미만이면 MT만)</label>' +
+          '<input id="ag2_skipShort" type="number" min="1" max="20" value="' + th.shortMax + '" style="width:60px; padding:4px 6px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:6px; font-size:12px; text-align:center;" />' +
+          '<span style="font-size:11px; color:var(--muted);">자</span>' +
+        '</div>' +
+        '<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">' +
+          '<label style="font-size:11px; color:var(--text); flex:1;">긴글자 임계값 (이 글자수 이상이면 보정)</label>' +
+          '<input id="ag2_skipLong" type="number" min="5" max="500" value="' + th.longMin + '" style="width:60px; padding:4px 6px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:6px; font-size:12px; text-align:center;" />' +
+          '<span style="font-size:11px; color:var(--muted);">자</span>' +
+        '</div>' +
+        '<div style="display:flex; gap:8px; align-items:center;">' +
+          '<label style="font-size:11px; color:var(--text); flex:1;">문장수 임계값 (이 문장수 이상이면 보정)</label>' +
+          '<input id="ag2_skipSent" type="number" min="1" max="20" value="' + th.sentMax + '" style="width:60px; padding:4px 6px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:6px; font-size:12px; text-align:center;" />' +
+          '<span style="font-size:11px; color:var(--muted);">문장</span>' +
+        '</div>';
+      agent2ConfigBody.appendChild(s3);
+
       var provSel = s2.querySelector('.ag2_prov');
       var mdlSel = s2.querySelector('.ag2_mdl');
       var promptTa = s2.querySelector('.ag2_prompt');
@@ -5658,6 +5703,13 @@
         localStorage.setItem(LS.agent2mode_model, s2.querySelector('.ag2_mdl').value || '');
         localStorage.setItem(LS.agent2mode_prompt, s2.querySelector('.ag2_prompt').value || '');
       }
+      // 임계값 저장
+      var skipShort = agent2ConfigBody.querySelector('#ag2_skipShort');
+      var skipLong = agent2ConfigBody.querySelector('#ag2_skipLong');
+      var skipSent = agent2ConfigBody.querySelector('#ag2_skipSent');
+      if(skipShort && skipShort.value) localStorage.setItem(LS.skipShortMax, String(parseInt(skipShort.value, 10) || 3));
+      if(skipLong && skipLong.value) localStorage.setItem(LS.skipLongMin, String(parseInt(skipLong.value, 10) || 40));
+      if(skipSent && skipSent.value) localStorage.setItem(LS.skipSentenceMax, String(parseInt(skipSent.value, 10) || 2));
       toast('2st Agent 설정 저장');
       closeAgent2Config();
     });
@@ -5667,6 +5719,9 @@
       localStorage.removeItem(LS.agent2mode_provider);
       localStorage.removeItem(LS.agent2mode_model);
       localStorage.removeItem(LS.agent2mode_prompt);
+      localStorage.removeItem(LS.skipShortMax);
+      localStorage.removeItem(LS.skipLongMin);
+      localStorage.removeItem(LS.skipSentenceMax);
       buildAgent2ConfigUI();
       toast('기본값으로 초기화됨');
     });
