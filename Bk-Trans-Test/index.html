@@ -1428,7 +1428,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.61t';
+    const APP_VERSION = 'v19.62t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3934,10 +3934,18 @@
         // 3-Stage 파이프라인: 5단어 이상 입력에만 사용 (짧은 메시지는 일반 흐름)
         // _forceAgentMode: Retry 팝업의 Agent Mode 버튼 1회성 강제 (단어수 무시)
         if((_use4Agent && _wordCount >= 5) || _forceAgentMode){
+          var _currentStep = 0;
           var _pipeRes = await run4AgentPipeline(userText, function(stage, partial){
-            streamBubble.style.opacity = '1';
-            streamBubble.textContent = '[' + stage + '] ' + (partial || '');
-            scrollThrottled();
+            // Step만 표시 (내용은 무시) — step 번호 바뀔 때만 갱신
+            var m = String(stage || '').match(/(?:Stage|Agent)\s+(\d+)/);
+            if(!m) return;
+            var step = parseInt(m[1], 10);
+            if(step !== _currentStep){
+              _currentStep = step;
+              streamBubble.style.opacity = '1';
+              streamBubble.textContent = '[Step_' + step + ']';
+              scrollThrottled();
+            }
           });
           if(_pipeRes && typeof _pipeRes === 'object'){
             translatedRaw = _pipeRes.text || '';
