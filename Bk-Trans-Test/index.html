@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.86t';
+    const APP_VERSION = 'v19.87t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2770,7 +2770,7 @@
       AUTO_TRANSLATE_MAX_LEN: 300,
       REQUEST_TIMEOUT_MS: 20000,
       CLIPBOARD_DEBOUNCE_MS: 150,
-      MIN_REQUEST_GAP_MS: 1500,
+      MIN_REQUEST_GAP_MS: 300,
       QUALITY_TEST_GAP_MS: 4000,
     };
 
@@ -3384,6 +3384,7 @@
 
     let _currentAbort = null;
     let _lastApiCallAt = 0;
+    let _skipRequestGap = false; // 파이프라인 내부 호출에서는 gap 우회 (run4/run2AgentPipeline에서 set)
     let _effortOverride = undefined; // 재번역 시 일시적 effort 지정 ('' = 기본/thinking 최대, 'low' 등)
     let _lastUsage = null; // 직전 응답의 토큰 사용량
     let _lastEffort = ''; // 직전 요청에 적용된 effort (low/medium/high), 없으면 ''
@@ -3591,9 +3592,11 @@
         if(_eff){ req.body.reasoning_effort = _eff; _lastEffort = _eff; }
       }
 
-      // 연속 요청 차단: 직전 API 호출과 최소 간격(MIN_REQUEST_GAP_MS) 보장
-      const _gap = CONFIG.MIN_REQUEST_GAP_MS - (Date.now() - _lastApiCallAt);
-      if(_gap > 0) await new Promise(r => setTimeout(r, _gap));
+      // 연속 요청 차단: 직전 API 호출과 최소 간격 보장. 단 파이프라인 내부 호출은 우회
+      if(!_skipRequestGap){
+        const _gap = CONFIG.MIN_REQUEST_GAP_MS - (Date.now() - _lastApiCallAt);
+        if(_gap > 0) await new Promise(r => setTimeout(r, _gap));
+      }
       _lastApiCallAt = Date.now();
 
       const ac = new AbortController();
@@ -5143,6 +5146,8 @@
       var origSys = el.systemPrompt ? el.systemPrompt.value : '';
       var origEnhanced = _useEnhancedPrompt;
       _useEnhancedPrompt = false;
+      var _prevSkipGap = _skipRequestGap;
+      _skipRequestGap = true; // 파이프라인 내부 호출은 gap 우회 — 단계간 대기 제거
 
       // 용어집 매칭 (sys + user 통합) + 상한 20개 (긴 src 우선 = 더 특이한 매칭)
       var glossaryText = '';
@@ -5305,6 +5310,7 @@
         if(el.model) el.model.value = origMdl;
         if(el.systemPrompt) el.systemPrompt.value = origSys;
         _useEnhancedPrompt = origEnhanced;
+        _skipRequestGap = _prevSkipGap;
       }
       // Stage 2 생략 시 stages 배열에서 stage2 빼고 모델도 1개만
       var resStages = stage2Skipped ? [stage1Ms] : [stage1Ms, stage2Ms];
@@ -5399,6 +5405,8 @@
       var origSys = el.systemPrompt ? el.systemPrompt.value : '';
       var origEnhanced = _useEnhancedPrompt;
       _useEnhancedPrompt = false;
+      var _prevSkipGap4 = _skipRequestGap;
+      _skipRequestGap = true; // 파이프라인 단계간 gap 우회
 
       // 용어집 매칭 (sys + user 통합) — Agent Mode 3단계 전 stage 공통
       var glossaryText = '';
@@ -5542,6 +5550,7 @@
         if(el.model) el.model.value = origMdl;
         if(el.systemPrompt) el.systemPrompt.value = origSys;
         _useEnhancedPrompt = origEnhanced;
+        _skipRequestGap = _prevSkipGap4;
       }
       // Plan Mode면 stages/models 2개만, 일반 3-Agent는 3개
       var resStages = skipVerifier ? [stageAnalyzerMs, stageTranslateMs] : [stageAnalyzerMs, stageTranslateMs, stageVerifyMs];
