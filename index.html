@@ -606,21 +606,45 @@
     .composer:focus-within .composerFade{
       opacity: 1;
     }
-    .composerInner{
-      position: relative;
+    .composerRow{
+      max-width: var(--inputMaxWidth);
+      margin: 0 auto;
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+      pointer-events: auto;
     }
     .composerInner{
-      max-width: var(--inputMaxWidth);
-      margin:0 auto;
+      position: relative;
+      flex: 1;
+      min-width: 0;
       background: var(--inputBg);
       border: 1px solid rgba(255,255,255,.15);
       border-radius: 18px;
       box-shadow: 0 4px 16px rgba(0,0,0,.3);
       display:flex;
       flex-direction:column;
-      position:relative;
       pointer-events:auto;
     }
+    #composerModelBtn{
+      flex: 0 0 56px;
+      min-height: var(--inputMinHeight);
+      border: 1px solid rgba(255,255,255,.15);
+      background: var(--inputBg);
+      color: #ffffff;
+      border-radius: 18px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+      padding: 0 8px;
+      pointer-events: auto;
+      align-self: stretch;
+      transition: filter .15s;
+    }
+    #composerModelBtn:hover{ filter: brightness(1.15); }
+    #composerModelBtn:active{ transform: scale(.97); }
 
     #input{
       width:100%;
@@ -1410,12 +1434,15 @@
 
   <div class="composer">
     <div class="composerFade"></div>
-    <div class="composerInner">
-      <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
-      <div id="inputBtnWrap" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); flex-direction:column; gap:4px;">
-        <button id="inputCopyBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Copy</button>
-        <button id="inputClearBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Delete</button>
+    <div class="composerRow">
+      <div class="composerInner">
+        <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
+        <div id="inputBtnWrap" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); flex-direction:column; gap:4px;">
+          <button id="inputCopyBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Copy</button>
+          <button id="inputClearBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Delete</button>
+        </div>
       </div>
+      <button id="composerModelBtn" type="button" aria-label="제공자·모델 선택" title="제공자·모델 선택">M</button>
     </div>
   </div>
 
@@ -1428,7 +1455,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.62t';
+    const APP_VERSION = 'v19.63t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1599,6 +1626,7 @@
         el.modelTag.style.fontSize = '';
         el.modelTag.textContent = 'Agent Mode';
         document.title = 'Agent Mode BK Trans ' + APP_VERSION;
+        if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
         return;
       }
       if(el.modelTag){
@@ -1630,6 +1658,7 @@
       }
       if(el.modelTag) el.modelTag.textContent = pretty;
       document.title = pretty + ' BK Trans ' + APP_VERSION;
+      if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
     }
 
     const DEFAULT_MODELS = [
@@ -2007,6 +2036,117 @@
       const isOpen = el.modelDropdown.classList.contains('show');
       if(isOpen){ closeModelDropdown(); }
       else { renderModelDropdown(); el.modelDropdown.classList.add('show'); }
+    }
+
+    // 입력창 우측 모델 버튼: 제공자+모델 동시 선택 팝업
+    function openComposerModelPicker(){
+      var existing = document.getElementById('composerModelPickerOverlay');
+      if(existing){ document.body.removeChild(existing); return; }
+      var overlay = document.createElement('div');
+      overlay.id = 'composerModelPickerOverlay';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;padding:0 12px 12px;';
+      var popup = document.createElement('div');
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:16px;width:100%;max-width:520px;max-height:80vh;overflow-y:auto;';
+      popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:12px;">제공자·모델 선택</div>';
+      var is3Agent = false;
+      try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
+
+      // Agent Mode 최상단
+      var agentBtn = document.createElement('button');
+      agentBtn.type = 'button';
+      agentBtn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is3Agent ? 'box-shadow:inset 0 0 0 2px #3b82f6;' : '');
+      agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">Agent Mode (파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">의도+어순 → 번역 → 검증·맥락</div>';
+      agentBtn.addEventListener('click', function(){
+        _use4Agent = true;
+        try{ localStorage.setItem(LS.use4Agent, '1'); } catch(_){}
+        var optEl = document.getElementById('opt4Agent');
+        if(optEl) optEl.checked = true;
+        var wrap2 = document.getElementById('opt4AgentWrap');
+        if(wrap2) wrap2.style.display = '';
+        updateModelTag();
+        updateComposerModelBtn();
+        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
+        document.body.removeChild(overlay);
+        toast('Agent Mode ON');
+      });
+      popup.appendChild(agentBtn);
+
+      var providers = [
+        { id: 'openrouter', name: 'OpenRouter', models: MODEL_OPTIONS },
+        { id: 'google', name: 'Google', models: GOOGLE_MODEL_OPTIONS },
+        { id: 'anthropic', name: 'Anthropic', models: ANTHROPIC_MODEL_OPTIONS },
+        { id: 'qwen', name: 'Alibaba (Qwen)', models: typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : [] }
+      ];
+      var currentProv = (el.apiProvider && el.apiProvider.value) || 'openrouter';
+      var currentId = getCurrentModelId();
+      providers.forEach(function(prov){
+        if(!prov.models || prov.models.length === 0) return;
+        var header = document.createElement('div');
+        header.style.cssText = 'font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin:14px 0 6px;letter-spacing:0.5px;';
+        header.textContent = prov.name;
+        popup.appendChild(header);
+        prov.models.forEach(function(m){
+          var isActive = !is3Agent && currentProv === prov.id && m.id === currentId;
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:' + (isActive ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.03)') + ';color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;';
+          btn.innerHTML = '<div style="font-weight:600;">' + m.name + '</div><div style="font-size:10px;color:var(--muted);margin-top:1px;">' + m.id + '</div>';
+          btn.addEventListener('click', function(){
+            // Agent Mode 자동 해제
+            if(_use4Agent){
+              _use4Agent = false;
+              try{ localStorage.setItem(LS.use4Agent, '0'); } catch(_){}
+              var optEl2 = document.getElementById('opt4Agent');
+              if(optEl2) optEl2.checked = false;
+              var wrap3 = document.getElementById('opt4AgentWrap');
+              if(wrap3) wrap3.style.display = 'none';
+              if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
+            }
+            // Provider 전환 (change 이벤트로 onProviderChange 트리거)
+            if(el.apiProvider && el.apiProvider.value !== prov.id){
+              el.apiProvider.value = prov.id;
+              try{ localStorage.setItem(LS.apiProvider, prov.id); } catch(_){}
+              el.apiProvider.dispatchEvent(new Event('change'));
+            }
+            if(el.model) el.model.value = m.id;
+            setSavedModel(m.id);
+            updateModelTag();
+            updateComposerModelBtn();
+            document.body.removeChild(overlay);
+            toast(prov.name + ' · ' + m.name);
+          });
+          popup.appendChild(btn);
+        });
+      });
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.style.cssText = 'display:block;width:100%;padding:10px;margin-top:12px;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit;';
+      cancelBtn.textContent = '취소';
+      cancelBtn.addEventListener('click', function(){ document.body.removeChild(overlay); });
+      popup.appendChild(cancelBtn);
+
+      overlay.appendChild(popup);
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) document.body.removeChild(overlay); });
+      document.body.appendChild(overlay);
+    }
+
+    // 버튼 라벨: 현재 모델의 브랜드 두 글자 / Agent Mode면 "AG"
+    function updateComposerModelBtn(){
+      var btn = document.getElementById('composerModelBtn');
+      if(!btn) return;
+      var is3Agent = false;
+      try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
+      if(is3Agent){
+        btn.textContent = 'AG';
+        btn.style.color = '#3b82f6';
+        return;
+      }
+      var pretty = prettifyModelName(getCurrentModelId());
+      var first = String(pretty || '').trim().split(/[\s\-_]/)[0] || '';
+      var brand = first.replace(/[0-9.]+.*$/, '') || first;
+      btn.textContent = brand.slice(0, 6) || 'M';
+      btn.style.color = '#ffffff';
     }
 
     function closeModelDropdown(){
@@ -5038,6 +5178,9 @@
     }
 
     if(el.modelTag) el.modelTag.addEventListener('click', toggleModelDropdown);
+    var _composerModelBtn = document.getElementById('composerModelBtn');
+    if(_composerModelBtn) _composerModelBtn.addEventListener('click', openComposerModelPicker);
+    if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
     if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleColorSettings);
     if(el.appVer) el.appVer.addEventListener('click', toggleApiSettings);
 
