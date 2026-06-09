@@ -1428,7 +1428,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.53t';
+    const APP_VERSION = 'v19.54t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3661,20 +3661,24 @@
     }
     function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline){
       if(!_showTokens || !actionsEl) return;
-      // 3-Stage 파이프라인 표시: 3Mode 추궁 · 4.5s · 오류X (또는 3수정)
-      // ※ 3_Agent 모델명은 상단바에서만 표시. 출력문 밑엔 3Mode~ 부터.
+      // 3-Stage 파이프라인 표시: 3Mode 추궁 · Haiku4.5 2.1s + Qwen3.7 1.7s + Gemini 1.9s = 5.7s · 오류X
+      // ※ 3_Agent 모델명은 상단바, 출력문 밑엔 단계별 모델·시간 표시.
       if(pipeline){
         var stages = pipeline.stages || [];
+        var models = pipeline.models || [];
         var modeSpan = document.createElement('span');
         modeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
         modeSpan.textContent = '3Mode' + (pipeline.intent ? ' ' + shortIntent(pipeline.intent) : '');
         actionsEl.appendChild(modeSpan);
         if(stages.length){
-          var parts = stages.map(function(t){ return (t / 1000).toFixed(1); });
           var sum = stages.reduce(function(a, b){ return a + b; }, 0);
+          var parts = stages.map(function(t, i){
+            var m = (models[i] || '').toString().trim();
+            return (m ? m + ' ' : '') + (t / 1000).toFixed(1) + 's';
+          });
           var timeSpan = document.createElement('span');
           timeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
-          timeSpan.textContent = parts.join('+') + '=' + (sum / 1000).toFixed(1) + 's';
+          timeSpan.textContent = parts.join(' + ') + ' = ' + (sum / 1000).toFixed(1) + 's';
           actionsEl.appendChild(timeSpan);
         }
         var statusSpan = document.createElement('span');
@@ -4468,6 +4472,11 @@
         text: result,
         intent: pipelineIntent,
         stages: [stageAnalyzerMs, stageTranslateMs, stageVerifyMs],
+        models: [
+          prettifyModelName(getAgent(1).model),
+          prettifyModelName(getAgent(2).model),
+          prettifyModelName(getAgent(3).model)
+        ],
         modified: pipelineModified
       };
     }
