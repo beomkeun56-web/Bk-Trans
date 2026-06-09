@@ -879,7 +879,7 @@
         </button>
       </div>
       <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">3-Stage 모드 (분석→번역→검증)</span>
+        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">Agent Mode (분석→번역→검증)</span>
         <input type="checkbox" id="opt4Agent" style="transform:scale(1.3); cursor:pointer;" />
       </label>
       <div id="opt4AgentWrap" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); display:none;">
@@ -929,7 +929,7 @@
   <div id="agentConfigOverlay" class="settingsOverlay">
     <section class="settings" style="max-width:520px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,.08);">
-        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:var(--text);">3-Stage 설정 (3 LLM Agent + 코드 용어집)</h2>
+        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:var(--text);">Agent Mode 설정 (3 LLM Agent + 코드 용어집)</h2>
         <button id="agentConfigCloseBtn" class="iconBtn" type="button" aria-label="닫기">
           <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -1428,7 +1428,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.55t';
+    const APP_VERSION = 'v19.56t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1590,15 +1590,15 @@
     }
     function updateModelTag(){
       var pretty = prettifyModelName(getCurrentModelId());
-      // 3-Stage 모드 ON 시: 상단바 모델 태그 = "3_Agent" (파란색, 굵게)
-      var use3Stage = false;
-      try{ use3Stage = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
-      if(use3Stage && el.modelTag){
+      // Agent Mode ON 시: 상단바 모델 태그 = "Agent Mode" (파란색, 굵게)
+      var useAgentMode = false;
+      try{ useAgentMode = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
+      if(useAgentMode && el.modelTag){
         el.modelTag.style.color = '#3b82f6';
         el.modelTag.style.fontWeight = '700';
         el.modelTag.style.fontSize = '';
-        el.modelTag.textContent = '3_Agent';
-        document.title = '3_Agent BK Trans ' + APP_VERSION;
+        el.modelTag.textContent = 'Agent Mode';
+        document.title = 'Agent Mode BK Trans ' + APP_VERSION;
         return;
       }
       if(el.modelTag){
@@ -1937,13 +1937,51 @@
     function renderModelDropdown(){
       if(!el.modelDropdown) return;
       const currentId = getCurrentModelId();
+      var is3Agent = false;
+      try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
       el.modelDropdown.innerHTML = '';
+
+      // ★ 3_Agent 모드 선택 항목 (최상단, 파란색 강조)
+      const agentBtn = document.createElement('button');
+      agentBtn.className = 'modelDropdownItem' + (is3Agent ? ' active' : '');
+      agentBtn.type = 'button';
+      agentBtn.innerHTML = '<div class="mdName" style="color:#3b82f6;">Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(파이프라인)</span></div><div class="mdId">의도+어순 → 번역 → 검증·맥락</div>';
+      agentBtn.addEventListener('click', () => {
+        _use4Agent = true;
+        try{ localStorage.setItem(LS.use4Agent, '1'); } catch(_){}
+        var optEl = document.getElementById('opt4Agent');
+        if(optEl) optEl.checked = true;
+        var wrap = document.getElementById('opt4AgentWrap');
+        if(wrap) wrap.style.display = '';
+        updateModelTag();
+        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
+        closeModelDropdown();
+        toast('Agent Mode ON');
+      });
+      el.modelDropdown.appendChild(agentBtn);
+
+      // 구분선
+      var sep = document.createElement('div');
+      sep.style.cssText = 'border-top:1px solid rgba(255,255,255,.08); margin:6px 0;';
+      el.modelDropdown.appendChild(sep);
+
       currentModelOptions().forEach(m => {
         const btn = document.createElement('button');
-        btn.className = 'modelDropdownItem' + (m.id === currentId ? ' active' : '');
+        // 3_Agent 모드 ON이면 일반 모델 active 표시 안 함
+        btn.className = 'modelDropdownItem' + (!is3Agent && m.id === currentId ? ' active' : '');
         btn.type = 'button';
         btn.innerHTML = '<div class="mdName">' + m.name + '</div><div class="mdId">' + m.id + '</div>';
         btn.addEventListener('click', () => {
+          // 일반 모델 선택 시 3_Agent 모드 자동 해제 (상호 배타)
+          if(_use4Agent){
+            _use4Agent = false;
+            try{ localStorage.setItem(LS.use4Agent, '0'); } catch(_){}
+            var optEl = document.getElementById('opt4Agent');
+            if(optEl) optEl.checked = false;
+            var wrap = document.getElementById('opt4AgentWrap');
+            if(wrap) wrap.style.display = 'none';
+            if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
+          }
           if(el.model) el.model.value = m.id;
           setSavedModel(m.id);
           updateModelTag();
@@ -4593,7 +4631,7 @@
         if(opt4AgentWrap) opt4AgentWrap.style.display = _use4Agent ? '' : 'none';
         if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
         if(typeof updateModelTag === 'function') updateModelTag();
-        toast(_use4Agent ? '3-Stage 모드 ON' : '3-Stage 모드 OFF');
+        toast(_use4Agent ? 'Agent Mode ON' : 'Agent Mode OFF');
       });
       if(opt4AgentWrap) opt4AgentWrap.style.display = _use4Agent ? '' : 'none';
     }
