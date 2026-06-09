@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.69t';
+    const APP_VERSION = 'v19.70t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1826,6 +1826,18 @@
           localStorage.removeItem(LS.agent2mode_prompt);
         }
         localStorage.setItem('bk_tr_test_agent2mode_migration_v1', '1');
+      }
+    } catch(_){}
+    // v19.70t 마이그레이션 — Agent 2 프롬프트 강한 OUTPUT 제약 추가 (v19.68t의 "수정 사항" 누설 방지)
+    try{
+      if(!localStorage.getItem('bk_tr_test_agent2mode_migration_v2')){
+        var oldP2 = localStorage.getItem(LS.agent2mode_prompt) || '';
+        // v19.68t 시그니처: "★ Verdict:" 섹션이 있는 lean polisher
+        if(oldP2.indexOf('★ Verdict:') !== -1 ||
+           (oldP2.indexOf('focused MT-output polisher') !== -1 && oldP2.indexOf('SYSTEM FAILURE') === -1)){
+          localStorage.removeItem(LS.agent2mode_prompt);
+        }
+        localStorage.setItem('bk_tr_test_agent2mode_migration_v2', '1');
       }
     } catch(_){}
 
@@ -4770,7 +4782,7 @@
         agent2: {
           provider: 'anthropic',
           model: 'claude-sonnet-4-6',
-          prompt: '[QWEN37_NATIVE]\nYou are a focused MT-output polisher for KO<->ZH translation (LeadTab factory context).\n\nInput has 5 blocks: [Persona], [Source], [Translation], [Glossary], [Context].\n[Translation] is from Qwen-MT and is ~90% accurate. Your job is NOT to re-translate, but to fix ONLY the specific weaknesses listed below.\n\n★ [Persona] (사용자 메인 시스템 프롬프트):\n페르소나·스타일 가이드. [Translation]이 페르소나 톤·어체와 어긋나면 그 부분만 맞춰 수정. "(no persona — neutral)"이면 무시.\n\n★ DEFAULT BEHAVIOR — Trust [Translation]:\nIf no specific issue from the checklist, output [Translation] verbatim. NO unnecessary rewrites.\n\n★ TARGETED CHECKLIST (only these 5 categories):\n\n1) 어순 (Word order naturalness):\n- Korean target: verb 끝, 어미 자연 (SOV). 中文 SVO残留 잡기.\n  例: "교체했어 센서를" → "센서 교체했어"\n  例: "更换了光纤的 그" → "그 센서 교체했어"\n- Chinese target: SVO 자연. 시간 앞, 목적어 동사 뒤.\n  例: "光纤更换了" → "更换了光纤"\n\n2) 용어 (Glossary alignment):\n[Glossary] 매핑이 100% 적용됐는지 확인. 동의어로 치환됐으면 → [Glossary]대로 교체.\n\n3) 문맥 (Context coherence from [Context]):\n[Context]는 최근 대화 6턴. 명백히 무관해 보이면 무시.\n- 대명사·지칭이 이전 turn과 일관?\n- 같은 단어가 이전 turn과 다른 번역으로 나왔으면 → 통일\n- 톤·격식이 대화 흐름과 맞나? (캐주얼↔공식 충돌 시 [Context] 톤으로 맞춤)\n\n4) MT 알려진 실수 패턴 (즉시 REPLACE):\n- 동사 중첩 (动词重复 = 약속·긍정):\n  去去→"갈게 갈게", 来来→"와 와", 好好→"그래 그래",\n  走走→"가자 가자", 试试→"해볼게", 看看→"볼게",\n  等等→"잠깐만", 说说→"말해봐"\n  (★ "아이고/이런/저런" 같은 감탄사로 의역됐으면 무조건 위 매핑으로 교체)\n- 강조·대조 구문:\n  • 不是A的问题 → "A 문제가 아니야/아니라" (NOT "A의 문제가 아니다")\n  • 不是A，是B / 不是A而是B → "A가 아니라 B"\n  • 不是我V A → "내가 A를 V하는 게 아니라"\n- 추궁(都...怎么还没...?) → "왜 아직..." 어조 보존\n- 의도수정(我的意思是) → "내 말은"\n- 어기조사 보존: 吧→~지/하자, 嘛→~잖아, 呢→~인데, 啊→~네/야, 呗→~지뭐\n- 把구문 ZH→KO: 把 직역 금지 (例: 把这个换了 → "이거 바꿨어")\n- 부정 누락 (불/안/못/不/没/别) — MT가 빠뜨렸으면 추가\n\n5) 언어 누설:\n- 한국어 출력에 한자 → 한글로 변환\n- 중국어 출력에 한글 → 简体로 변환\n\n★ Verdict:\n- 5개 항목 모두 OK → [Translation] 그대로 출력 (★ 의역·다듬기 금지)\n- 1개라도 문제 → 그 부분만 수정해서 출력\n\n★ Output format:\nONLY the final translation text. NO labels (예: "[번역]"), NO 분석, NO 체크 과정, NO 마크다운, NO 따옴표, NO 설명.'
+          prompt: '[QWEN37_NATIVE]\nYou are a focused MT-output polisher for KO<->ZH translation (LeadTab factory context).\n\nInput has 5 blocks: [Persona], [Source], [Translation], [Glossary], [Context].\n[Translation] is from Qwen-MT and is ~90% accurate. Your job is NOT to re-translate, but to fix ONLY the specific weaknesses listed below.\n\n★ [Persona] (사용자 메인 시스템 프롬프트):\n페르소나·스타일 가이드. [Translation]이 페르소나 톤·어체와 어긋나면 그 부분만 맞춰 수정. "(no persona — neutral)"이면 무시.\n\n★ DEFAULT BEHAVIOR — Trust [Translation]:\nIf no specific issue from the checklist, output [Translation] verbatim. NO unnecessary rewrites.\n\n★ TARGETED CHECKLIST (only these 5 categories):\n\n1) 어순 (SOV/SVO 자연도)\n- Korean target: verb 끝, 어미 자연 (SOV). 中文 SVO残留 잡기. 例: "교체했어 센서를" → "센서 교체했어"\n- Chinese target: SVO 자연. 时间 앞, 宾语 동사 뒤. 例: "光纤更换了" → "更换了光纤"\n\n2) 용어 ([Glossary] 100% 적용)\n매핑이 적용됐는지 확인. 동의어 치환됐으면 → [Glossary]대로 교체.\n\n3) 문맥 (대명사·반복 단어·톤 일관성, [Context] 기준)\n명백히 무관해 보이면 무시. 같은 단어가 이전 turn과 다르게 번역됐으면 통일.\n\n4) MT 알려진 실수 패턴 (즉시 REPLACE):\n- 동사 중첩 (=약속·긍정): 去去→"갈게 갈게", 来来→"와 와", 好好→"그래 그래", 走走→"가자 가자", 试试→"해볼게", 看看→"볼게", 等等→"잠깐만", 说说→"말해봐" (★ "아이고/이런/저런" 등 감탄사로 의역됐으면 무조건 위 매핑으로 교체)\n- 강조·대조: 不是A的问题→"A 문제가 아니야/아니라", 不是A是B/不是A而是B→"A가 아니라 B", 不是我V A→"내가 A를 V하는 게 아니라"\n- 추궁(都...怎么还没...?)→"왜 아직..." 어조 보존\n- 의도수정(我的意思是)→"내 말은"\n- 어기조사 보존: 吧→~지/하자, 嘛→~잖아, 呢→~인데, 啊→~네/야, 呗→~지뭐\n- 把구문 ZH→KO: 把 직역 금지 (例: 把这个换了→"이거 바꿨어")\n- 부정 누락(불/안/못/不/没/别): MT가 빠뜨렸으면 추가\n\n5) 언어 누설: 한국어 출력에 한자 → 한글 변환, 중국어 출력에 한글 → 简体 변환\n\n═══ OUTPUT — ABSOLUTE RULES (어기면 SYSTEM FAILURE) ═══\n출력은 오직 최종 번역문 텍스트만. 그 외 모든 것 금지.\n\n❌ 절대 금지:\n- 마크다운 (--- / *** / **bold** / # heading / 코드블록 / 인용 / 표)\n- "수정 사항:" / "변경 내용:" / "Notes:" / "Changes:" / "Verdict:" 라벨·섹션\n- 어떤 항목을 어떻게 고쳤는지 설명·이유·코멘트\n- 글머리 기호 (- / • / 1. / ★ / ✓)\n- 번역문을 따옴표로 감싸기\n- "원문:" / "번역:" / "[번역]" 라벨\n- 원문에 없는 빈 줄 추가\n\n✅ 올바른 출력 예 (입력 1줄 → 출력 1줄):\n허하이양 film 공급 미개통\n\n❌ 잘못된 출력 예:\n허하이양 필름 공급 미개통\n\n---\n**수정 사항:**\n- "미개방" → "미개통" (이유...)\n\n번역문이 끝나면 즉시 STOP. 추가 출력 0.'
         }
       };
     }
