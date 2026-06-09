@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.84t';
+    const APP_VERSION = 'v19.85t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3312,6 +3312,9 @@
         else if(j.usage.prompt_cache_hit_tokens != null) cached = j.usage.prompt_cache_hit_tokens;
         else if(j.usage.cache_read_input_tokens != null) cached = j.usage.cache_read_input_tokens;
         else if(pdet && pdet.cache_tokens != null) cached = pdet.cache_tokens;
+        // Google Gemini implicit caching (direct API + OpenRouter passthrough)
+        else if(j.usage.cachedContentTokenCount != null) cached = j.usage.cachedContentTokenCount;
+        else if(j.usage.cached_content_token_count != null) cached = j.usage.cached_content_token_count;
         try{ console.log('[Usage] full=', JSON.stringify(j.usage), 'cached=', cached); } catch(_){}
         _lastUsage = {
           in: j.usage.prompt_tokens,
@@ -4334,9 +4337,14 @@
         }
         if(stages.length){
           var sum = stages.reduce(function(a, b){ return a + b; }, 0);
+          var rates = pipeline.cacheRates || [];
           var parts = stages.map(function(t, i){
             var b = brandOf(models[i]);
-            return (b ? b + '/' : '') + (t / 1000).toFixed(1) + 's';
+            var seg = (b ? b + '/' : '') + (t / 1000).toFixed(1) + 's';
+            // 캐시 적중률 (>= 1%만 표시 — 0이거나 null이면 표시 안 함)
+            var r = rates[i];
+            if(typeof r === 'number' && r >= 1) seg += ' ' + r + '%';
+            return seg;
           });
           var wrap = document.createElement('div');
           var timeRow = document.createElement('div');
@@ -5210,6 +5218,7 @@
       var modifiedPct = 0;
       var stage2Skipped = false;
       var directionFlipped = false;
+      var stage1Usage2 = null, stage2Usage2 = null;
       try{
         // Stage 1: Qwen MT
         var t1 = Date.now();
@@ -5225,6 +5234,7 @@
         mtTranslation = (mtTranslation || '').trim();
         if(!mtTranslation) mtFailed = true;
         stage1Ms = Date.now() - t1;
+        stage1Usage2 = _lastUsage ? Object.assign({}, _lastUsage) : null;
 
         // Stage 2: Polisher (or skipped if input is simple, or fallback direct translator)
         var ag2 = getAgent2ModeAgent2();
@@ -5262,6 +5272,7 @@
           finalOutput = await callStage(2, ag2.provider, ag2.model, ag2.prompt, stage2User);
           finalOutput = postCleanFinal((finalOutput || '').trim());
           stage2Ms = Date.now() - t2;
+          stage2Usage2 = _lastUsage ? Object.assign({}, _lastUsage) : null;
 
           // ★ 방향 뒤집힘 감지 — Agent 2가 source 언어로 출력한 경우 MT 원본으로 폴백
           function _dominantScript(s){
@@ -5294,11 +5305,17 @@
       var resModels = stage2Skipped
         ? [prettifyModelName(getAgent2ModeMtModel())]
         : [prettifyModelName(getAgent2ModeMtModel()), prettifyModelName(getAgent2ModeAgent2().model)];
+      function _cr2(u){
+        if(!u || !u.in || u.cached == null || u.in <= 0) return null;
+        return Math.round(u.cached / u.in * 100);
+      }
+      var resCacheRates = stage2Skipped ? [_cr2(stage1Usage2)] : [_cr2(stage1Usage2), _cr2(stage2Usage2)];
       return {
         text: (finalOutput || mtTranslation || '').trim(),
         intent: '',
         stages: resStages,
         models: resModels,
+        cacheRates: resCacheRates,
         mt: mtTranslation,
         mtFailed: mtFailed,
         directionFlipped: directionFlipped,
@@ -5408,6 +5425,7 @@
       var pipelineIntent = '';
       var pipelineModified = false;
       var translation = '';
+      var stage1Usage = null, stage2Usage = null, stage3Usage = null;
       try{
         // ===== 3-Stage 파이프라인 (단순화 v19.53t) =====
         // (코드) Glossary 매칭은 위에서 이미 끝남 (glossaryText)
@@ -5437,11 +5455,14 @@
             }
             _mtOut = (_mtOut || '').trim();
             if(_mtOut){
+              var _mtUsage = _lastUsage ? Object.assign({}, _lastUsage) : null;
+              var _mtRate = (_mtUsage && _mtUsage.in && _mtUsage.cached != null) ? Math.round(_mtUsage.cached / _mtUsage.in * 100) : null;
               return {
                 text: _mtOut,
                 intent: '',
                 stages: [Date.now() - _mtStart],
                 models: [prettifyModelName(_mtModel)],
+                cacheRates: [_mtRate],
                 mode: 'plan',
                 stage2Skipped: true,
                 modified: false
@@ -5466,6 +5487,7 @@
         }
         pipelineIntent = overallIntent;
         stageAnalyzerMs = Date.now() - _sT1;
+        var stage1Usage = _lastUsage ? Object.assign({}, _lastUsage) : null;
 
         // Stage 2 (LLM): Translator — 중국어 v68 (Qwen native)
         var _sT2 = Date.now();
@@ -5474,6 +5496,7 @@
         translation = await callOneAgent(2, getAgent(2).prompt, stageTranslateUser);
         translation = (translation || '').trim();
         stageTranslateMs = Date.now() - _sT2;
+        var stage2Usage = _lastUsage ? Object.assign({}, _lastUsage) : null;
 
         // Stage 3 (LLM): Verifier — 검증 + 맥락 (Plan Mode면 생략)
         var finalOutput = '';
@@ -5499,6 +5522,7 @@
           finalOutput = await callOneAgent(3, getAgent(3).prompt, stageVerifyUser);
           finalOutput = (finalOutput || '').trim();
           stageVerifyMs = Date.now() - _sT3;
+          var stage3Usage = _lastUsage ? Object.assign({}, _lastUsage) : null;
         }
 
         // Verifier가 번역을 수정했는지 판정 (Plan Mode면 modified = false)
@@ -5518,11 +5542,23 @@
       var resModels = skipVerifier
         ? [prettifyModelName(getAgent(1).model), prettifyModelName(getAgent(2).model)]
         : [prettifyModelName(getAgent(1).model), prettifyModelName(getAgent(2).model), prettifyModelName(getAgent(3).model)];
+      // 캐시 적중률 (cached / input_tokens) 정수% — usage 없거나 cached 없으면 null
+      function _cacheRate(u){
+        if(!u || !u.in || u.cached == null) return null;
+        var inputTokens = u.in;
+        var cached = u.cached;
+        if(inputTokens <= 0) return null;
+        return Math.round(cached / inputTokens * 100);
+      }
+      var resCacheRates = skipVerifier
+        ? [_cacheRate(stage1Usage), _cacheRate(stage2Usage)]
+        : [_cacheRate(stage1Usage), _cacheRate(stage2Usage), _cacheRate(stage3Usage)];
       return {
         text: result,
         intent: pipelineIntent,
         stages: resStages,
         models: resModels,
+        cacheRates: resCacheRates,
         modified: pipelineModified,
         mode: skipVerifier ? 'plan' : '3agent'
       };
