@@ -966,6 +966,22 @@
     </section>
   </div>
 
+  <div id="agent2ConfigOverlay" class="settingsOverlay">
+    <section class="settings" style="max-width:520px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(16,185,129,.3);">
+        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:#10b981;">2_Agent Mode 설정</h2>
+        <button id="agent2ConfigCloseBtn" class="iconBtn" type="button" aria-label="닫기">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="agent2ConfigBody" style="max-height:70vh; overflow-y:auto;"></div>
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button id="agent2ConfigSaveBtn" type="button" style="flex:1; padding:10px; border:none; border-radius:10px; background:#10b981; color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;">저장</button>
+        <button id="agent2ConfigDefaultBtn" type="button" style="flex:1; padding:10px; border:1px solid rgba(255,255,255,.15); border-radius:10px; background:rgba(255,255,255,.06); color:var(--text); font-size:14px; cursor:pointer; font-family:inherit;">기본값 불러오기</button>
+      </div>
+    </section>
+  </div>
+
   <!-- API 설정 패널 -->
   <div id="apiSettingsOverlay" class="settingsOverlay">
     <section id="apiSettingsPanel" class="settings">
@@ -1455,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.65t';
+    const APP_VERSION = 'v19.66t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2091,10 +2107,12 @@
       try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
       try{ is2Agent = localStorage.getItem(LS.use2Agent) === '1'; } catch(_){}
 
-      // Agent Mode (파이프라인 3단계) 최상단
+      // Agent Mode (파이프라인 3단계) 최상단 + 설정 톱니
+      var agentRow = document.createElement('div');
+      agentRow.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;';
       var agentBtn = document.createElement('button');
       agentBtn.type = 'button';
-      agentBtn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is3Agent ? 'box-shadow:inset 0 0 0 2px #3b82f6;' : '');
+      agentBtn.style.cssText = 'flex:1;text-align:left;padding:10px 14px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is3Agent ? 'box-shadow:inset 0 0 0 2px #3b82f6;' : '');
       agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">Agent Mode (3단계 파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">분석 → 번역 → 검증·맥락</div>';
       agentBtn.addEventListener('click', function(){
         _use4Agent = true;
@@ -2110,12 +2128,25 @@
         document.body.removeChild(overlay);
         toast('Agent Mode ON');
       });
-      popup.appendChild(agentBtn);
+      var agentGear = document.createElement('button');
+      agentGear.type = 'button';
+      agentGear.title = 'Agent Mode 설정';
+      agentGear.style.cssText = 'flex:0 0 44px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.08);color:#3b82f6;font-size:18px;cursor:pointer;font-family:inherit;';
+      agentGear.textContent = '⚙';
+      agentGear.addEventListener('click', function(){
+        document.body.removeChild(overlay);
+        if(typeof openAgentConfig === 'function') openAgentConfig();
+      });
+      agentRow.appendChild(agentBtn);
+      agentRow.appendChild(agentGear);
+      popup.appendChild(agentRow);
 
-      // 2_Agent Mode (Qwen MT → 분석·검증 2단계)
+      // 2_Agent Mode (Qwen MT → 분석·검증 2단계) + 설정 톱니
+      var agent2Row = document.createElement('div');
+      agent2Row.style.cssText = 'display:flex;gap:6px;margin-bottom:10px;';
       var agent2Btn = document.createElement('button');
       agent2Btn.type = 'button';
-      agent2Btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #10b981;border-radius:10px;background:rgba(16,185,129,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is2Agent ? 'box-shadow:inset 0 0 0 2px #10b981;' : '');
+      agent2Btn.style.cssText = 'flex:1;text-align:left;padding:10px 14px;border:1px solid #10b981;border-radius:10px;background:rgba(16,185,129,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is2Agent ? 'box-shadow:inset 0 0 0 2px #10b981;' : '');
       agent2Btn.innerHTML = '<div style="font-weight:700;color:#10b981;">2_Agent Mode (2단계 파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Qwen MT 번역 → 분석·검증 통합 Agent</div>';
       agent2Btn.addEventListener('click', function(){
         _use2Agent = true;
@@ -2131,7 +2162,18 @@
         document.body.removeChild(overlay);
         toast('2_Agent Mode ON');
       });
-      popup.appendChild(agent2Btn);
+      var agent2Gear = document.createElement('button');
+      agent2Gear.type = 'button';
+      agent2Gear.title = '2_Agent Mode 설정';
+      agent2Gear.style.cssText = 'flex:0 0 44px;border:1px solid #10b981;border-radius:10px;background:rgba(16,185,129,.08);color:#10b981;font-size:18px;cursor:pointer;font-family:inherit;';
+      agent2Gear.textContent = '⚙';
+      agent2Gear.addEventListener('click', function(){
+        document.body.removeChild(overlay);
+        if(typeof openAgent2Config === 'function') openAgent2Config();
+      });
+      agent2Row.appendChild(agent2Btn);
+      agent2Row.appendChild(agent2Gear);
+      popup.appendChild(agent2Row);
 
       var providers = [
         { id: 'openrouter', name: 'OpenRouter', models: MODEL_OPTIONS },
@@ -5047,6 +5089,114 @@
         localStorage.removeItem(LS['agent'+i+'Prompt']);
       }
       buildAgentConfigUI();
+      toast('기본값으로 초기화됨');
+    });
+
+    // ====== 2_Agent Mode 설정 UI ======
+    var agent2ConfigOverlay = document.getElementById('agent2ConfigOverlay');
+    var agent2ConfigCloseBtn = document.getElementById('agent2ConfigCloseBtn');
+    var agent2ConfigSaveBtn = document.getElementById('agent2ConfigSaveBtn');
+    var agent2ConfigDefaultBtn = document.getElementById('agent2ConfigDefaultBtn');
+    var agent2ConfigBody = document.getElementById('agent2ConfigBody');
+
+    function buildAgent2ConfigUI(){
+      if(!agent2ConfigBody) return;
+      agent2ConfigBody.innerHTML = '';
+      var def = getAgent2ModeDefaults();
+      var curMtModel = getAgent2ModeMtModel();
+      var curAg2 = getAgent2ModeAgent2();
+
+      // Stage 1: MT 모델 (Qwen MT 계열만)
+      var s1 = document.createElement('div');
+      s1.style.cssText = 'margin-bottom:14px; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(255,255,255,.02);';
+      s1.innerHTML =
+        '<div style="font-weight:700; color:var(--text); margin-bottom:8px; font-size:13px;">Stage 1: Qwen MT 번역</div>' +
+        '<select id="ag2_mtMdl" style="width:100%; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px; font-size:12px;">' +
+          '<option value="qwen-mt-plus">Qwen MT Plus (정확도↑)</option>' +
+          '<option value="qwen-mt-turbo">Qwen MT Turbo (속도+가성비)</option>' +
+          '<option value="qwen-mt-flash">Qwen MT Flash (최속)</option>' +
+        '</select>' +
+        '<div style="font-size:10px; color:var(--muted); margin-top:6px;">시스템 프롬프트 무시 — 순수 MT</div>';
+      agent2ConfigBody.appendChild(s1);
+      var mtSel = s1.querySelector('#ag2_mtMdl');
+      if(mtSel) mtSel.value = curMtModel;
+
+      // Stage 2: 통합 Analyzer + Verifier
+      var s2 = document.createElement('div');
+      s2.style.cssText = 'margin-bottom:14px; padding:10px; border:1px solid rgba(16,185,129,.2); border-radius:10px; background:rgba(16,185,129,.04);';
+      s2.dataset.role = 'agent2';
+      s2.innerHTML =
+        '<div style="font-weight:700; color:var(--text); margin-bottom:8px; font-size:13px;">Stage 2: 분석·검증 통합 Agent</div>' +
+        '<div style="display:flex; gap:6px; margin-bottom:6px;">' +
+          '<select class="ag2_prov" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px; font-size:12px;">' +
+            '<option value="openrouter">OpenRouter</option>' +
+            '<option value="google">Google</option>' +
+            '<option value="anthropic">Anthropic</option>' +
+            '<option value="qwen">Alibaba</option>' +
+          '</select>' +
+          '<select class="ag2_mdl" style="flex:2; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:6px; font-size:12px;"></select>' +
+        '</div>' +
+        '<textarea class="ag2_prompt" placeholder="Agent 2 프롬프트" style="width:100%; min-height:160px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; font-size:11px; font-family:inherit; box-sizing:border-box;"></textarea>';
+      agent2ConfigBody.appendChild(s2);
+
+      var provSel = s2.querySelector('.ag2_prov');
+      var mdlSel = s2.querySelector('.ag2_mdl');
+      var promptTa = s2.querySelector('.ag2_prompt');
+      provSel.value = curAg2.provider || def.agent2.provider;
+
+      function fillModels(prov, currentMdl){
+        var list = [];
+        if(prov === 'google') list = GOOGLE_MODEL_OPTIONS;
+        else if(prov === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
+        else if(prov === 'qwen') list = (typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : []);
+        else list = MODEL_OPTIONS;
+        mdlSel.innerHTML = '';
+        var found = false;
+        list.forEach(function(m){
+          var o = document.createElement('option');
+          o.value = m.id; o.textContent = m.name;
+          if(m.id === currentMdl){ o.selected = true; found = true; }
+          mdlSel.appendChild(o);
+        });
+        if(currentMdl && !found){
+          var custom = document.createElement('option');
+          custom.value = currentMdl; custom.textContent = '(사용자) ' + currentMdl;
+          mdlSel.appendChild(custom);
+          mdlSel.value = currentMdl;
+        }
+      }
+      fillModels(provSel.value, curAg2.model || def.agent2.model);
+      provSel.addEventListener('change', function(){ fillModels(provSel.value, ''); });
+      promptTa.value = curAg2.prompt || def.agent2.prompt;
+    }
+
+    function openAgent2Config(){
+      if(!agent2ConfigOverlay) return;
+      buildAgent2ConfigUI();
+      agent2ConfigOverlay.classList.add('show');
+    }
+    function closeAgent2Config(){ if(agent2ConfigOverlay) agent2ConfigOverlay.classList.remove('show'); }
+    if(agent2ConfigCloseBtn) agent2ConfigCloseBtn.addEventListener('click', closeAgent2Config);
+    if(agent2ConfigOverlay) agent2ConfigOverlay.addEventListener('click', function(e){ if(e.target === agent2ConfigOverlay) closeAgent2Config(); });
+    if(agent2ConfigSaveBtn) agent2ConfigSaveBtn.addEventListener('click', function(){
+      var mtSel = agent2ConfigBody.querySelector('#ag2_mtMdl');
+      var s2 = agent2ConfigBody.querySelector('[data-role="agent2"]');
+      if(mtSel) localStorage.setItem(LS.agent2mode_mtModel, mtSel.value);
+      if(s2){
+        localStorage.setItem(LS.agent2mode_provider, s2.querySelector('.ag2_prov').value || '');
+        localStorage.setItem(LS.agent2mode_model, s2.querySelector('.ag2_mdl').value || '');
+        localStorage.setItem(LS.agent2mode_prompt, s2.querySelector('.ag2_prompt').value || '');
+      }
+      toast('2_Agent 설정 저장');
+      closeAgent2Config();
+    });
+    if(agent2ConfigDefaultBtn) agent2ConfigDefaultBtn.addEventListener('click', function(){
+      if(!confirm('2_Agent 설정을 기본값으로 되돌립니다.')) return;
+      localStorage.removeItem(LS.agent2mode_mtModel);
+      localStorage.removeItem(LS.agent2mode_provider);
+      localStorage.removeItem(LS.agent2mode_model);
+      localStorage.removeItem(LS.agent2mode_prompt);
+      buildAgent2ConfigUI();
       toast('기본값으로 초기화됨');
     });
 
