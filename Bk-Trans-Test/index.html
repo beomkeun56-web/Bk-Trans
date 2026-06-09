@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.74t';
+    const APP_VERSION = 'v19.75t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4135,10 +4135,27 @@
             mtBtn.textContent = hidden ? 'MT 숨김' : 'MT 원본';
           });
           actionsEl.appendChild(mtBtn);
-          // 토글로 보일 MT 원본 행 (initially hidden)
+          // 토글로 보일 MT 원본 행 (initially hidden) — 중국어면 병음 표시 + 복사 버튼
           mtToggleEl = document.createElement('div');
-          mtToggleEl.style.cssText = 'display:none;font-size:11px;color:var(--text);opacity:.85;margin-top:6px;padding:6px 10px;background:rgba(185,28,74,.06);border-left:3px solid #b91c4a;border-radius:4px;white-space:pre-wrap;line-height:1.5;';
-          mtToggleEl.textContent = pipeline.mt;
+          mtToggleEl.style.cssText = 'display:none;margin-top:6px;padding:8px 10px;background:rgba(185,28,74,.06);border-left:3px solid #b91c4a;border-radius:4px;';
+          var mtTextBox = document.createElement('div');
+          mtTextBox.style.cssText = 'font-size:12px;color:var(--text);opacity:.95;white-space:pre-wrap;line-height:1.6;';
+          if(typeof hasChinese === 'function' && hasChinese(pipeline.mt) && typeof renderWithPinyin === 'function'){
+            mtTextBox.innerHTML = renderWithPinyin(pipeline.mt);
+          } else {
+            mtTextBox.textContent = pipeline.mt;
+          }
+          mtToggleEl.appendChild(mtTextBox);
+          // 작은 복사 버튼 (메인 Copy 버튼보다 한 단계 작게)
+          var mtCopyBtn = document.createElement('button');
+          mtCopyBtn.type = 'button';
+          mtCopyBtn.textContent = 'Copy';
+          mtCopyBtn.style.cssText = 'margin-top:6px;font-size:10px;color:var(--muted);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 10px;cursor:pointer;font-family:inherit;';
+          mtCopyBtn.addEventListener('click', async function(ev){
+            ev.stopPropagation();
+            try{ await copyToClipboard(pipeline.mt, false); } catch(_){}
+          });
+          mtToggleEl.appendChild(mtCopyBtn);
         }
         if(stages.length){
           var sum = stages.reduce(function(a, b){ return a + b; }, 0);
