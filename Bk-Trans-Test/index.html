@@ -1428,7 +1428,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.58t';
+    const APP_VERSION = 'v19.59t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3733,9 +3733,10 @@
       return t.slice(0, 2);
     }
     function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline){
-      if(!_showTokens || !actionsEl) return;
-      // 3-Stage 파이프라인 표시: [보고] Haiku/1.8s + Qwen/1.4s + Gemini/2.0s = 5.2s · 3수정
-      // ※ 3_Agent 모델명은 상단바, 출력문 밑엔 단계별 브랜드명·시간만 압축 표시.
+      if(!_showTokens || !actionsEl) return null;
+      // 3-Stage 파이프라인 표시:
+      //   [의도] 수정 → actions 행 (음성출력·Copy·Edit 옆)
+      //   Haiku/1.8s + Qwen/1.4s + Gemini/2.0s = 5.2s → 별도 행 (return)
       if(pipeline){
         var stages = pipeline.stages || [];
         var models = pipeline.models || [];
@@ -3748,27 +3749,27 @@
         modeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
         modeSpan.textContent = '[' + (pipeline.intent ? shortIntent(pipeline.intent) : '3Mode') + ']';
         actionsEl.appendChild(modeSpan);
+        var statusSpan = document.createElement('span');
+        var modified = !!pipeline.modified;
+        statusSpan.style.cssText = 'font-size:10px;color:' + (modified ? '#f59e0b' : '#10b981') + ';opacity:.95;margin-left:6px;font-weight:700;white-space:nowrap;';
+        statusSpan.textContent = modified ? '수정' : '오류X';
+        actionsEl.appendChild(statusSpan);
         if(stages.length){
           var sum = stages.reduce(function(a, b){ return a + b; }, 0);
           var parts = stages.map(function(t, i){
             var b = brandOf(models[i]);
             return (b ? b + '/' : '') + (t / 1000).toFixed(1) + 's';
           });
-          var timeSpan = document.createElement('span');
-          timeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
-          timeSpan.textContent = parts.join(' + ') + ' = ' + (sum / 1000).toFixed(1) + 's';
-          actionsEl.appendChild(timeSpan);
+          var timeRow = document.createElement('div');
+          timeRow.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-top:2px;padding-left:2px;white-space:normal;line-height:1.4;';
+          timeRow.textContent = parts.join(' + ') + ' = ' + (sum / 1000).toFixed(1) + 's';
+          return timeRow;
         }
-        var statusSpan = document.createElement('span');
-        var modified = !!pipeline.modified;
-        statusSpan.style.cssText = 'font-size:10px;color:' + (modified ? '#f59e0b' : '#10b981') + ';opacity:.95;margin-left:8px;font-weight:700;white-space:nowrap;';
-        statusSpan.textContent = modified ? '3수정' : '오류X';
-        actionsEl.appendChild(statusSpan);
-        return;
+        return null;
       }
-      // 일반 표시 (기존 그대로)
+      // 일반 표시 (기존 그대로 — actions 한 줄에)
       var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2);
-      if(!txt) return;
+      if(!txt) return null;
       var s = document.createElement('span');
       s.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-left:8px;white-space:nowrap;';
       s.textContent = txt;
@@ -3806,6 +3807,7 @@
 
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
+        let extraRow = null;
 
         if(m.role === 'user'){
           actions.appendChild(createTtsBtn(dispText));
@@ -3847,12 +3849,13 @@
           editBtn.textContent = 'Edit';
           editBtn.addEventListener('click', () => openEditGuide(lastUserText, m.text, m));
           actions.appendChild(editBtn);
-          appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline);
+          extraRow = appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline);
         }
 
         if(actions.children.length > 0){
           row.appendChild(actions);
         }
+        if(extraRow) row.appendChild(extraRow);
 
         el.chat.appendChild(row);
       }
@@ -4080,8 +4083,9 @@
           openEditGuide(userText, translated, lastAssistant && lastAssistant.role==='assistant' ? lastAssistant : null);
         });
         actions.appendChild(editBtn);
-        appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _displayPromptVer, _ms1, _ms2, _pipelineInfo);
+        var _streamExtraRow = appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _displayPromptVer, _ms1, _ms2, _pipelineInfo);
         streamRow.appendChild(actions);
+        if(_streamExtraRow) streamRow.appendChild(_streamExtraRow);
 
         scrollThrottled();
 
