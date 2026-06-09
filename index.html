@@ -1455,7 +1455,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.63t';
+    const APP_VERSION = 'v19.64t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -2082,15 +2082,18 @@
       providers.forEach(function(prov){
         if(!prov.models || prov.models.length === 0) return;
         var header = document.createElement('div');
-        header.style.cssText = 'font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin:14px 0 6px;letter-spacing:0.5px;';
+        header.style.cssText = 'font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin:10px 0 4px;letter-spacing:0.5px;';
         header.textContent = prov.name;
         popup.appendChild(header);
+        var grid = document.createElement('div');
+        grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:4px;';
+        popup.appendChild(grid);
         prov.models.forEach(function(m){
           var isActive = !is3Agent && currentProv === prov.id && m.id === currentId;
           var btn = document.createElement('button');
           btn.type = 'button';
-          btn.style.cssText = 'display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:' + (isActive ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.03)') + ';color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;';
-          btn.innerHTML = '<div style="font-weight:600;">' + m.name + '</div><div style="font-size:10px;color:var(--muted);margin-top:1px;">' + m.id + '</div>';
+          btn.style.cssText = 'text-align:left;padding:5px 8px;border:1px solid rgba(255,255,255,.08);border-radius:6px;background:' + (isActive ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.03)') + ';color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;line-height:1.25;min-width:0;overflow:hidden;';
+          btn.innerHTML = '<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</div><div style="font-size:9px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.id + '</div>';
           btn.addEventListener('click', function(){
             // Agent Mode 자동 해제
             if(_use4Agent){
@@ -2115,7 +2118,7 @@
             document.body.removeChild(overlay);
             toast(prov.name + ' · ' + m.name);
           });
-          popup.appendChild(btn);
+          grid.appendChild(btn);
         });
       });
 
