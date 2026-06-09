@@ -1455,7 +1455,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.64t';
+    const APP_VERSION = 'v19.65t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1508,6 +1508,11 @@
       routingLongModel: 'bk_tr_test_routingLongModel',
       qwenThinking: 'bk_tr_test_qwenThinking',
       use4Agent: 'bk_tr_test_use4Agent',
+      use2Agent: 'bk_tr_test_use2Agent',
+      agent2mode_provider: 'bk_tr_test_agent2mode_provider',
+      agent2mode_model: 'bk_tr_test_agent2mode_model',
+      agent2mode_prompt: 'bk_tr_test_agent2mode_prompt',
+      agent2mode_mtModel: 'bk_tr_test_agent2mode_mtModel',
       agent1Provider: 'bk_tr_test_agent1Provider',
       agent1Model: 'bk_tr_test_agent1Model',
       agent1Prompt: 'bk_tr_test_agent1Prompt',
@@ -1626,6 +1631,18 @@
         el.modelTag.style.fontSize = '';
         el.modelTag.textContent = 'Agent Mode';
         document.title = 'Agent Mode BK Trans ' + APP_VERSION;
+        if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
+        return;
+      }
+      // 2-Agent Mode ON 시: 초록색
+      var use2AgentMode = false;
+      try{ use2AgentMode = localStorage.getItem(LS.use2Agent) === '1'; } catch(_){}
+      if(use2AgentMode && el.modelTag){
+        el.modelTag.style.color = '#10b981';
+        el.modelTag.style.fontWeight = '700';
+        el.modelTag.style.fontSize = '';
+        el.modelTag.textContent = '2_Agent';
+        document.title = '2_Agent BK Trans ' + APP_VERSION;
         if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
         return;
       }
@@ -1976,18 +1993,20 @@
     function renderModelDropdown(){
       if(!el.modelDropdown) return;
       const currentId = getCurrentModelId();
-      var is3Agent = false;
+      var is3Agent = false, is2Agent = false;
       try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
+      try{ is2Agent = localStorage.getItem(LS.use2Agent) === '1'; } catch(_){}
       el.modelDropdown.innerHTML = '';
 
-      // ★ 3_Agent 모드 선택 항목 (최상단, 파란색 강조)
+      // ★ Agent Mode (파이프라인 3단계)
       const agentBtn = document.createElement('button');
       agentBtn.className = 'modelDropdownItem' + (is3Agent ? ' active' : '');
       agentBtn.type = 'button';
-      agentBtn.innerHTML = '<div class="mdName" style="color:#3b82f6;">Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(파이프라인)</span></div><div class="mdId">의도+어순 → 번역 → 검증·맥락</div>';
+      agentBtn.innerHTML = '<div class="mdName" style="color:#3b82f6;">Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(3단계)</span></div><div class="mdId">분석 → 번역 → 검증·맥락</div>';
       agentBtn.addEventListener('click', () => {
         _use4Agent = true;
-        try{ localStorage.setItem(LS.use4Agent, '1'); } catch(_){}
+        _use2Agent = false;
+        try{ localStorage.setItem(LS.use4Agent, '1'); localStorage.setItem(LS.use2Agent, '0'); } catch(_){}
         var optEl = document.getElementById('opt4Agent');
         if(optEl) optEl.checked = true;
         var wrap = document.getElementById('opt4AgentWrap');
@@ -1999,6 +2018,26 @@
       });
       el.modelDropdown.appendChild(agentBtn);
 
+      // ★ 2_Agent Mode (Qwen MT + 통합 분석·검증)
+      const agent2Btn = document.createElement('button');
+      agent2Btn.className = 'modelDropdownItem' + (is2Agent ? ' active' : '');
+      agent2Btn.type = 'button';
+      agent2Btn.innerHTML = '<div class="mdName" style="color:#10b981;">2_Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(2단계)</span></div><div class="mdId">Qwen MT → 분석·검증 통합</div>';
+      agent2Btn.addEventListener('click', () => {
+        _use2Agent = true;
+        _use4Agent = false;
+        try{ localStorage.setItem(LS.use2Agent, '1'); localStorage.setItem(LS.use4Agent, '0'); } catch(_){}
+        var optEl3 = document.getElementById('opt4Agent');
+        if(optEl3) optEl3.checked = false;
+        var wrap4 = document.getElementById('opt4AgentWrap');
+        if(wrap4) wrap4.style.display = 'none';
+        updateModelTag();
+        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
+        closeModelDropdown();
+        toast('2_Agent Mode ON');
+      });
+      el.modelDropdown.appendChild(agent2Btn);
+
       // 구분선
       var sep = document.createElement('div');
       sep.style.cssText = 'border-top:1px solid rgba(255,255,255,.08); margin:6px 0;';
@@ -2006,15 +2045,15 @@
 
       currentModelOptions().forEach(m => {
         const btn = document.createElement('button');
-        // 3_Agent 모드 ON이면 일반 모델 active 표시 안 함
-        btn.className = 'modelDropdownItem' + (!is3Agent && m.id === currentId ? ' active' : '');
+        btn.className = 'modelDropdownItem' + (!is3Agent && !is2Agent && m.id === currentId ? ' active' : '');
         btn.type = 'button';
         btn.innerHTML = '<div class="mdName">' + m.name + '</div><div class="mdId">' + m.id + '</div>';
         btn.addEventListener('click', () => {
-          // 일반 모델 선택 시 3_Agent 모드 자동 해제 (상호 배타)
-          if(_use4Agent){
+          // 일반 모델 선택 시 Agent Mode·2_Agent 자동 해제
+          if(_use4Agent || _use2Agent){
             _use4Agent = false;
-            try{ localStorage.setItem(LS.use4Agent, '0'); } catch(_){}
+            _use2Agent = false;
+            try{ localStorage.setItem(LS.use4Agent, '0'); localStorage.setItem(LS.use2Agent, '0'); } catch(_){}
             var optEl = document.getElementById('opt4Agent');
             if(optEl) optEl.checked = false;
             var wrap = document.getElementById('opt4AgentWrap');
@@ -2048,17 +2087,19 @@
       var popup = document.createElement('div');
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:16px;width:100%;max-width:520px;max-height:80vh;overflow-y:auto;';
       popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:12px;">제공자·모델 선택</div>';
-      var is3Agent = false;
+      var is3Agent = false, is2Agent = false;
       try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
+      try{ is2Agent = localStorage.getItem(LS.use2Agent) === '1'; } catch(_){}
 
-      // Agent Mode 최상단
+      // Agent Mode (파이프라인 3단계) 최상단
       var agentBtn = document.createElement('button');
       agentBtn.type = 'button';
-      agentBtn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is3Agent ? 'box-shadow:inset 0 0 0 2px #3b82f6;' : '');
-      agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">Agent Mode (파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">의도+어순 → 번역 → 검증·맥락</div>';
+      agentBtn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is3Agent ? 'box-shadow:inset 0 0 0 2px #3b82f6;' : '');
+      agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">Agent Mode (3단계 파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">분석 → 번역 → 검증·맥락</div>';
       agentBtn.addEventListener('click', function(){
         _use4Agent = true;
-        try{ localStorage.setItem(LS.use4Agent, '1'); } catch(_){}
+        _use2Agent = false;
+        try{ localStorage.setItem(LS.use4Agent, '1'); localStorage.setItem(LS.use2Agent, '0'); } catch(_){}
         var optEl = document.getElementById('opt4Agent');
         if(optEl) optEl.checked = true;
         var wrap2 = document.getElementById('opt4AgentWrap');
@@ -2070,6 +2111,27 @@
         toast('Agent Mode ON');
       });
       popup.appendChild(agentBtn);
+
+      // 2_Agent Mode (Qwen MT → 분석·검증 2단계)
+      var agent2Btn = document.createElement('button');
+      agent2Btn.type = 'button';
+      agent2Btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #10b981;border-radius:10px;background:rgba(16,185,129,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is2Agent ? 'box-shadow:inset 0 0 0 2px #10b981;' : '');
+      agent2Btn.innerHTML = '<div style="font-weight:700;color:#10b981;">2_Agent Mode (2단계 파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Qwen MT 번역 → 분석·검증 통합 Agent</div>';
+      agent2Btn.addEventListener('click', function(){
+        _use2Agent = true;
+        _use4Agent = false;
+        try{ localStorage.setItem(LS.use2Agent, '1'); localStorage.setItem(LS.use4Agent, '0'); } catch(_){}
+        var optEl3 = document.getElementById('opt4Agent');
+        if(optEl3) optEl3.checked = false;
+        var wrap4 = document.getElementById('opt4AgentWrap');
+        if(wrap4) wrap4.style.display = 'none';
+        updateModelTag();
+        updateComposerModelBtn();
+        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
+        document.body.removeChild(overlay);
+        toast('2_Agent Mode ON');
+      });
+      popup.appendChild(agent2Btn);
 
       var providers = [
         { id: 'openrouter', name: 'OpenRouter', models: MODEL_OPTIONS },
@@ -2095,10 +2157,11 @@
           btn.style.cssText = 'text-align:left;padding:5px 8px;border:1px solid rgba(255,255,255,.08);border-radius:6px;background:' + (isActive ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.03)') + ';color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;line-height:1.25;min-width:0;overflow:hidden;';
           btn.innerHTML = '<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</div><div style="font-size:9px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.id + '</div>';
           btn.addEventListener('click', function(){
-            // Agent Mode 자동 해제
-            if(_use4Agent){
+            // Agent Mode·2_Agent Mode 자동 해제 (상호 배타)
+            if(_use4Agent || _use2Agent){
               _use4Agent = false;
-              try{ localStorage.setItem(LS.use4Agent, '0'); } catch(_){}
+              _use2Agent = false;
+              try{ localStorage.setItem(LS.use4Agent, '0'); localStorage.setItem(LS.use2Agent, '0'); } catch(_){}
               var optEl2 = document.getElementById('opt4Agent');
               if(optEl2) optEl2.checked = false;
               var wrap3 = document.getElementById('opt4AgentWrap');
@@ -2134,15 +2197,21 @@
       document.body.appendChild(overlay);
     }
 
-    // 버튼 라벨: 현재 모델의 브랜드 두 글자 / Agent Mode면 "AG"
+    // 버튼 라벨: 현재 모델의 브랜드 두 글자 / Agent Mode면 "AG" / 2-Agent면 "2A"
     function updateComposerModelBtn(){
       var btn = document.getElementById('composerModelBtn');
       if(!btn) return;
-      var is3Agent = false;
+      var is3Agent = false, is2Agent = false;
       try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
+      try{ is2Agent = localStorage.getItem(LS.use2Agent) === '1'; } catch(_){}
       if(is3Agent){
         btn.textContent = 'AG';
         btn.style.color = '#3b82f6';
+        return;
+      }
+      if(is2Agent){
+        btn.textContent = '2A';
+        btn.style.color = '#10b981';
         return;
       }
       var pretty = prettifyModelName(getCurrentModelId());
@@ -3594,13 +3663,33 @@
     function retryWithAgentMode(userText){
       if(_isBusy || !userText) return;
       const prev4 = _use4Agent;
+      const prev2 = _use2Agent;
       const prevForce = _forceAgentMode;
       _use4Agent = true;
+      _use2Agent = false;
       _forceAgentMode = true;
       el.input.value = userText;
       send().finally(function(){
         _use4Agent = prev4;
+        _use2Agent = prev2;
         _forceAgentMode = prevForce;
+      });
+    }
+
+    // 1회성 2_Agent Mode 재번역
+    function retryWith2AgentMode(userText){
+      if(_isBusy || !userText) return;
+      const prev4 = _use4Agent;
+      const prev2 = _use2Agent;
+      const prevForce = _force2AgentMode;
+      _use2Agent = true;
+      _use4Agent = false;
+      _force2AgentMode = true;
+      el.input.value = userText;
+      send().finally(function(){
+        _use4Agent = prev4;
+        _use2Agent = prev2;
+        _force2AgentMode = prevForce;
       });
     }
 
@@ -3656,12 +3745,23 @@
       var agentBtn = document.createElement('button');
       agentBtn.type = 'button';
       agentBtn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
-      agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">→ Agent Mode (파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">의도+어순 → 번역 → 검증·맥락 (1회성)</div>';
+      agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">→ Agent Mode (3단계)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">분석 → 번역 → 검증·맥락 (1회성)</div>';
       agentBtn.addEventListener('click', function(){
         document.body.removeChild(overlay);
         retryWithAgentMode(userText);
       });
       popup.appendChild(agentBtn);
+
+      // ★ 2_Agent Mode 1회성 재번역
+      var agent2Btn = document.createElement('button');
+      agent2Btn.type = 'button';
+      agent2Btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #10b981;border-radius:10px;background:rgba(16,185,129,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
+      agent2Btn.innerHTML = '<div style="font-weight:700;color:#10b981;">→ 2_Agent Mode (2단계)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Qwen MT → 분석·검증 통합 (1회성)</div>';
+      agent2Btn.addEventListener('click', function(){
+        document.body.removeChild(overlay);
+        retryWith2AgentMode(userText);
+      });
+      popup.appendChild(agent2Btn);
 
       // Qwen 사용 중일 때만: OpenRouter Gemini 3 Flash 빠른 재번역 옵션 추가
       if(isQwenProvider()){
@@ -4076,7 +4176,26 @@
         let _pipelineInfo = null;
         // 3-Stage 파이프라인: 5단어 이상 입력에만 사용 (짧은 메시지는 일반 흐름)
         // _forceAgentMode: Retry 팝업의 Agent Mode 버튼 1회성 강제 (단어수 무시)
-        if((_use4Agent && _wordCount >= 5) || _forceAgentMode){
+        if(((_use2Agent && _wordCount >= 5) || _force2AgentMode) && !_forceAgentMode){
+          var _currentStep2 = 0;
+          var _pipeRes = await run2AgentPipeline(userText, function(stage, partial){
+            var m = String(stage || '').match(/Stage\s+(\d+)/);
+            if(!m) return;
+            var step = parseInt(m[1], 10);
+            if(step !== _currentStep2){
+              _currentStep2 = step;
+              streamBubble.style.opacity = '1';
+              streamBubble.textContent = '[Step_' + step + ']';
+              scrollThrottled();
+            }
+          });
+          if(_pipeRes && typeof _pipeRes === 'object'){
+            translatedRaw = _pipeRes.text || '';
+            _pipelineInfo = _pipeRes;
+          } else {
+            translatedRaw = _pipeRes || '';
+          }
+        } else if((_use4Agent && _wordCount >= 5) || _forceAgentMode){
           var _currentStep = 0;
           var _pipeRes = await run4AgentPipeline(userText, function(stage, partial){
             // Step만 표시 (내용은 무시) — step 번호 바뀔 때만 갱신
@@ -4562,7 +4681,120 @@
 
     // ====== 4-Agent 모드 ======
     var _use4Agent = localStorage.getItem(LS.use4Agent) === '1';
+    var _use2Agent = localStorage.getItem(LS.use2Agent) === '1';
     var _forceAgentMode = false; // 1회성 Agent Mode 강제 (Retry 팝업 등)
+    var _force2AgentMode = false;
+
+    // 2-Agent Mode 기본값 (Qwen MT → 분석·검증 통합 Agent 2)
+    function getAgent2ModeDefaults(){
+      return {
+        mtModel: 'qwen-mt-plus',
+        agent2: {
+          provider: 'anthropic',
+          model: 'claude-sonnet-4-6',
+          prompt: '[QWEN37_NATIVE]\nYou are an analyzer + verifier for KO<->ZH translation (LeadTab factory context).\n\nInput has 4 blocks: [Source], [Translation], [Glossary], [Context].\n[Translation] is from Qwen-MT (machine translation) — fast but often misses intent, particles, modality, special constructions. Your job: verify and fix.\n\n★ Internal analysis (do NOT output):\nFor [Source], identify:\n- Direction (ko->zh or zh->ko)\n- Overall intent + tone + register (speaker→listener)\n- Per-sentence intent + word-order pattern\n- Key tokens with roles (subj/obj/verb/time/neg/mod/result/marker/particle/quant/name)\n- Particle/ending mappings\n- Modality (의무/가능/추측/의지/금지/허락)\n\n★ Verify [Translation] against analysis — priorities:\n\nPRIORITY 1 — Token coverage:\nEvery critical content word (subj/obj/verb/time/neg/quant/name/result) MUST appear. Negation missing (안/못/不/没/别) = catastrophic.\n\nPRIORITY 2 — Sentence completeness:\nEach source sentence must be reflected.\n\nPRIORITY 3 — Particle/modality preservation:\n- 吧/嘛/呢/啊/呗 ↔ ~지/~잖아/~네/~야/~지뭐\n- 의무(得/必须/要 ↔ ~해야), 가능(能/可以 ↔ ~할 수), 추측(应该/可能 ↔ ~인 것 같), 의지(要/想/我来 ↔ ~할게), 금지(别/不要 ↔ ~하지 마)\n- Verb repetition (动词重复 = 肯定·약속, NEVER as exclamation):\n  去去→갈게 갈게, 来来→와 와, 好好→그래 그래, 走走→가자 가자,\n  试试→해볼게, 看看→볼게, 等等→잠깐만, 说说→말해봐\n  (절대 "아이고/이런/저런" 같은 감탄사로 대체 금지)\n\nPRIORITY 4 — Special constructions:\n- intent_correction (강조·대조):\n  • 不是A的问题 → "A 문제가 아니야/아니라"\n  • 不是A，是B / 不是A而是B → "A가 아니라 B"\n  • 不是我V A → "내가 A를 V하는 게 아니라"\n- interrogation: 都...怎么还没...？ ↔ "왜 아직..."\n- intent_correction ZH: 我的意思是 → "내 말은"\n- complaint (又/老是/总是+부정): "또 ~했네/했어"\n- sarcasm/confirmation/suggestion/hedge: 자연 어미 보존\n- 把구문 ZH→KO: 把 직역 금지\n- 결과보어: 完了→다, 好了→잘, 修好了→고쳤어\n\nPRIORITY 5 — Context coherence (from [Context]):\n[Context]는 최근 대화 6턴. 무관해 보이면 무시.\n- 대명사·지칭이 이전 turn과 일관?\n- 톤·격식이 대화 흐름과 맞나?\n- 반복 단어가 이전과 동일 번역?\n\nPRIORITY 6 — Output language:\n- Korean target → only Hangul (no Hanja leak)\n- Chinese target → only simplified (no Hangul leak)\n\nPRIORITY 7 — Glossary mappings ([Glossary] block):\n100% 적용.\n\nPRIORITY 8 — Word order:\n- Korean SOV natural (verb 뒤에 어미)\n- Chinese SVO natural (時 앞, 賓 뒤)\n- Korean에 SOV残留 없음, Chinese에 stiff 직역 없음\n\n★ Verdict:\n- All OK → output [Translation] verbatim\n- Any issue → fix and output the corrected translation only\n\n★ Output format:\nONLY the final translation text. NO analysis dump, NO labels, NO check process, NO markdown, NO quotes.'
+        }
+      };
+    }
+    function getAgent2ModeAgent2(){
+      var def = getAgent2ModeDefaults().agent2;
+      return {
+        provider: localStorage.getItem(LS.agent2mode_provider) || def.provider,
+        model: localStorage.getItem(LS.agent2mode_model) || def.model,
+        prompt: localStorage.getItem(LS.agent2mode_prompt) || def.prompt
+      };
+    }
+    function getAgent2ModeMtModel(){
+      return localStorage.getItem(LS.agent2mode_mtModel) || getAgent2ModeDefaults().mtModel;
+    }
+
+    // 2-Agent 파이프라인: Qwen MT → 분석·검증 통합 Agent 2
+    async function run2AgentPipeline(userText, onProgress){
+      var origProv = el.apiProvider ? el.apiProvider.value : '';
+      var origMdl = el.model ? el.model.value : '';
+      var origSys = el.systemPrompt ? el.systemPrompt.value : '';
+      var origEnhanced = _useEnhancedPrompt;
+      _useEnhancedPrompt = false;
+
+      // 시스템 용어집 매칭
+      var glossaryText = '';
+      try{
+        if(_useGlossarySys){
+          var gl = getGlossaryFor('sys');
+          var matches = gl.filter(function(e){ return e && e.src && e.tgt && userText.indexOf(e.src) !== -1; });
+          if(matches.length){
+            glossaryText = matches.map(function(e){ return e.src + ' → ' + e.tgt; }).join('\n');
+          }
+        }
+      } catch(_){}
+      var termsBlock = glossaryText || '(시스템 용어집 매칭 없음)';
+
+      async function callStage(idx, prov, mdl, systemPrompt, userContent){
+        if(prov && el.apiProvider) el.apiProvider.value = prov;
+        if(mdl && el.model) el.model.value = mdl;
+        if(el.systemPrompt) el.systemPrompt.value = systemPrompt || '';
+        try{
+          var res = await callOpenRouterStream(userContent, function(partial){
+            if(onProgress) onProgress('Stage ' + idx, partial);
+          });
+          return res || '';
+        } finally {
+          if(el.apiProvider) el.apiProvider.value = origProv;
+          if(el.model) el.model.value = origMdl;
+        }
+      }
+
+      var stage1Ms = 0, stage2Ms = 0;
+      var mtTranslation = '';
+      var finalOutput = '';
+      var modified = false;
+      try{
+        // Stage 1: Qwen MT
+        var t1 = Date.now();
+        if(onProgress) onProgress('Stage 1', '');
+        mtTranslation = await callStage(1, 'qwen', getAgent2ModeMtModel(), '', userText);
+        mtTranslation = (mtTranslation || '').trim();
+        stage1Ms = Date.now() - t1;
+
+        // Stage 2: Analyzer + Verifier
+        var t2 = Date.now();
+        if(onProgress) onProgress('Stage 2', '');
+        var contextBlock = '';
+        try{
+          var recent = (typeof chat !== 'undefined' && chat) ? chat.slice(-7, -1) : [];
+          if(recent && recent.length){
+            contextBlock = recent.map(function(m){
+              var role = m.role === 'user' ? 'User' : 'Bot';
+              return role + ': ' + (m.text || '').replace(/\n/g, ' ').slice(0, 200);
+            }).join('\n');
+          }
+        } catch(_){}
+        if(!contextBlock) contextBlock = '(no prior context)';
+        var ag2 = getAgent2ModeAgent2();
+        var stage2User = '[Source]\n' + userText + '\n\n[Translation]\n' + mtTranslation + '\n\n[Glossary]\n' + termsBlock + '\n\n[Context]\n' + contextBlock;
+        finalOutput = await callStage(2, ag2.provider, ag2.model, ag2.prompt, stage2User);
+        finalOutput = (finalOutput || '').trim();
+        stage2Ms = Date.now() - t2;
+
+        modified = !!(mtTranslation && finalOutput && mtTranslation !== finalOutput);
+        try{ console.log('[2-Stage Pipeline]', { mt: mtTranslation, final: finalOutput, modified: modified, stages: [stage1Ms, stage2Ms] }); } catch(_){}
+      } finally {
+        if(el.apiProvider) el.apiProvider.value = origProv;
+        if(el.model) el.model.value = origMdl;
+        if(el.systemPrompt) el.systemPrompt.value = origSys;
+        _useEnhancedPrompt = origEnhanced;
+      }
+      return {
+        text: (finalOutput || mtTranslation || '').trim(),
+        intent: '',
+        stages: [stage1Ms, stage2Ms],
+        models: [
+          prettifyModelName(getAgent2ModeMtModel()),
+          prettifyModelName(getAgent2ModeAgent2().model)
+        ],
+        modified: modified
+      };
+    }
     // 3-Stage 파이프라인 (v19.53t — 단순화)
     //   Stage 1: Analyzer (의도+어순 통합 분석)
     //   Stage 2: 용어 매핑 (코드, 즉시)
