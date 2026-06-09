@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.88t';
+    const APP_VERSION = 'v19.89t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -5171,6 +5171,12 @@
         if(prov && el.apiProvider) el.apiProvider.value = prov;
         if(mdl && el.model) el.model.value = mdl;
         if(el.systemPrompt) el.systemPrompt.value = systemPrompt || '';
+        // ★ max_tokens 제한 — 모델 verbose 강제 절단
+        //   Stage 1 MT: 600 (번역만)
+        //   Stage 2 Polisher: 800
+        var origMaxTok2 = el.maxTokens ? el.maxTokens.value : '';
+        var stageMaxTok2 = (idx === 1) ? 600 : 800;
+        if(el.maxTokens) el.maxTokens.value = String(stageMaxTok2);
         try{
           var res = await callOpenRouterStream(userContent, function(partial){
             if(onProgress) onProgress('Stage ' + idx, partial);
@@ -5179,6 +5185,7 @@
         } finally {
           if(el.apiProvider) el.apiProvider.value = origProv;
           if(el.model) el.model.value = origMdl;
+          if(el.maxTokens) el.maxTokens.value = origMaxTok2;
         }
       }
 
@@ -5355,7 +5362,7 @@
           name: 'Agent 1: Analyzer (의도+어순)',
           provider: 'qwen',
           model: 'qwen3.7-plus',
-          prompt: '[QWEN37_NATIVE]\nYou are an analyzer + word-order planner for KO<->ZH translation (LeadTab factory context).\n\nProduce ONE compact structured response. Per sentence: intent + pattern + (note only if special).\n\nOutput format (EXACTLY this, nothing else):\n[Direction] ko->zh OR zh->ko\n[Overall] <intent>\n[Tone] <casual|formal|business|intimate|sarcastic|neutral> + <sub-context: apology/report/daily/etc.>\n[Register] <speaker→listener if non-default (boss→junior, friend→friend, customer→staff); omit line if neutral>\n[Sentences]\n1. <sentence1 verbatim>\n   intent: <intent>\n   pattern: <target word-order template using [role] placeholders>\n   note: <ONLY if special — see NOTE rules below; omit field if normal>\n2. <sentence2 verbatim>\n   intent: ...\n   pattern: ...\n   note: ...(if needed)\n\n═══ INTENT (25 options, use English) ═══\ninterrogation, urging, instruction, question, indirect, request, intent_correction, delegation, daily, emotion, report, promise, apology, excuse, agreement, refusal, greeting, exclamation, sarcasm, complaint, suggestion, confirmation, clarification, hedge, general\n\n═══ PATTERN guide ═══\nKorean (SOV): [subj]+(time/place)+(manner)+(obj)+[verb]+ending\nChinese (SVO): [subj]+(time)+[verb]+[obj]+(manner)+particle\n\nIntent-specific patterns:\n- interrogation ko->zh: 都[time]+[subj]+怎么还+没+[verb]+？\n- intent_correction ko->zh: 我的意思是，+[main]\n- intent_correction zh->ko: 不是A的问题→"A 문제가 아니라"; 不是A，是B→"A가 아니라 B"; 不是我V A→"내가 A를 V하는 게 아니라"\n- apology zh->ko: [cause]+해서+[neg]+[verb]+[ending]\n- report ko->zh: [equipment]+[phenomenon]+，+[action]+了\n- daily zh->ko: [exclam]+[main]+[ending]\n- complaint zh->ko: [target]+又+[verb]+了 → "[대상] 또 [동사]했어"\n- promise (verb repetition): 去去→"갈게 갈게" verbatim\n\n═══ NOTE field — write ONLY when one of these applies ═══\n- 동사 중첩: 去去/来来/好好/走走/试试/看看/等等/说说 → "동사중첩: 去去→갈게 갈게" 식으로 매핑 표시\n- 강조·대조: 不是A的问题 / 不是A是B / 不是A而是B → "강조: A 문제가 아니라" 식\n- 어기조사 강함(문장 끝): 吧→~지/하자, 嘛→~잖아, 呢→~인데, 啊→~네/야, 呗→~지뭐\n- Modality auxiliary: 要/得/能/想/我去/我来/想办法 → "의지: ~할게" / "의무: ~해야" / "가능: ~할 수" / "금지: ~하지 마"\n- 把구문 (ZH→KO): "把 직역 금지" 표시\n- 결과보어: 完了/好了/修好了 → "결과: 다/잘/고쳤어" 식\n- 부정어 누락 위험: 不/没/别/无/안/못/마라 — "부정 보존" 표시\n- 그 외 특이 없으면 note 필드 자체 생략\n\n═══ Detection rules ═══\n- 짧은 단위 = 별도 문장 (예: "去去" 단독 = 문장 1)\n- 동사 중첩 단독 → promise/agreement\n- 동사 중첩 + 변명/이유 → overall = apology\n- "왜 아직"/"怎么还没" → interrogation\n- "내말은"/"我的意思是"/"不是A的问题"/"不是A是B" → intent_correction\n- "又"/"老是"/"总是" + 부정문 → complaint\n- "...呵呵"/"...啊" 반어/"哼" → sarcasm\n- "要不要"/"咱们"/"~게 어때" → suggestion\n- "对吗"/"是吧"/"맞지" → confirmation\n- "可能"/"也许"/"아마"/"혹시" → hedge\n- 이모지·마커는 원문 그대로 보존 (intent로 분류 X)\n- Overall = 가장 강한 화행 (apology+excuse → apology)\n\n출력 규칙:\n- 위 포맷만 출력. 설명·라벨·마크다운·따옴표 추가 금지.\n- intent와 pattern은 모든 문장 필수, note는 위 조건 매치 시만.'
+          prompt: '[QWEN37_NATIVE]\nYou are an analyzer + word-order planner for KO<->ZH translation (LeadTab factory context).\n\nProduce ONE compact structured response. Per sentence: intent + pattern + (note only if special).\n\nOutput format (EXACTLY this, nothing else):\n[Direction] ko->zh OR zh->ko\n[Overall] <intent>\n[Tone] <casual|formal|business|intimate|sarcastic|neutral> + <sub-context: apology/report/daily/etc.>\n[Register] <speaker→listener if non-default (boss→junior, friend→friend, customer→staff); omit line if neutral>\n[Sentences]\n1. <sentence1 verbatim>\n   intent: <intent>\n   pattern: <target word-order template using [role] placeholders>\n   note: <ONLY if special — see NOTE rules below; omit field if normal>\n2. <sentence2 verbatim>\n   intent: ...\n   pattern: ...\n   note: ...(if needed)\n\n═══ INTENT (25 options, use English) ═══\ninterrogation, urging, instruction, question, indirect, request, intent_correction, delegation, daily, emotion, report, promise, apology, excuse, agreement, refusal, greeting, exclamation, sarcasm, complaint, suggestion, confirmation, clarification, hedge, general\n\n═══ PATTERN guide ═══\nKorean (SOV): [subj]+(time/place)+(manner)+(obj)+[verb]+ending\nChinese (SVO): [subj]+(time)+[verb]+[obj]+(manner)+particle\n\nIntent-specific patterns:\n- interrogation ko->zh: 都[time]+[subj]+怎么还+没+[verb]+？\n- intent_correction ko->zh: 我的意思是，+[main]\n- intent_correction zh->ko: 不是A的问题→"A 문제가 아니라"; 不是A，是B→"A가 아니라 B"; 不是我V A→"내가 A를 V하는 게 아니라"\n- apology zh->ko: [cause]+해서+[neg]+[verb]+[ending]\n- report ko->zh: [equipment]+[phenomenon]+，+[action]+了\n- daily zh->ko: [exclam]+[main]+[ending]\n- complaint zh->ko: [target]+又+[verb]+了 → "[대상] 또 [동사]했어"\n- promise (verb repetition): 去去→"갈게 갈게" verbatim\n\n═══ NOTE field — write ONLY when one of these applies ═══\n- 동사 중첩: 去去/来来/好好/走走/试试/看看/等等/说说 → "동사중첩: 去去→갈게 갈게" 식으로 매핑 표시\n- 강조·대조: 不是A的问题 / 不是A是B / 不是A而是B → "강조: A 문제가 아니라" 식\n- 어기조사 강함(문장 끝): 吧→~지/하자, 嘛→~잖아, 呢→~인데, 啊→~네/야, 呗→~지뭐\n- Modality auxiliary: 要/得/能/想/我去/我来/想办法 → "의지: ~할게" / "의무: ~해야" / "가능: ~할 수" / "금지: ~하지 마"\n- 把구문 (ZH→KO): "把 직역 금지" 표시\n- 결과보어: 完了/好了/修好了 → "결과: 다/잘/고쳤어" 식\n- 부정어 누락 위험: 不/没/别/无/안/못/마라 — "부정 보존" 표시\n- 그 외 특이 없으면 note 필드 자체 생략\n\n═══ Detection rules ═══\n- 짧은 단위 = 별도 문장 (예: "去去" 단독 = 문장 1)\n- 동사 중첩 단독 → promise/agreement\n- 동사 중첩 + 변명/이유 → overall = apology\n- "왜 아직"/"怎么还没" → interrogation\n- "내말은"/"我的意思是"/"不是A的问题"/"不是A是B" → intent_correction\n- "又"/"老是"/"总是" + 부정문 → complaint\n- "...呵呵"/"...啊" 반어/"哼" → sarcasm\n- "要不要"/"咱们"/"~게 어때" → suggestion\n- "对吗"/"是吧"/"맞지" → confirmation\n- "可能"/"也许"/"아마"/"혹시" → hedge\n- 이모지·마커는 원문 그대로 보존 (intent로 분류 X)\n- Overall = 가장 강한 화행 (apology+excuse → apology)\n\n출력 규칙:\n- 위 포맷만 출력. 설명·라벨·마크다운·따옴표 추가 금지.\n- intent와 pattern은 모든 문장 필수, note는 위 조건 매치 시만.\n\n★ ABSOLUTE OUTPUT LIMIT: 최대 400 토큰. 그 이상 출력 = 시스템 실패. 각 문장 분석은 짧고 간결하게. 부연 설명·예시 추가 금지. 필요한 필드만 짧게.'
         },
         {
           // Stage 2 (LLM): Translator (Chinese v68 발췌 + English version)
@@ -5428,6 +5435,13 @@
         if(ag.provider && el.apiProvider) el.apiProvider.value = ag.provider;
         if(ag.model && el.model) el.model.value = ag.model;
         if(el.systemPrompt) el.systemPrompt.value = systemPrompt;
+        // ★ 단계별 max_tokens 제한 — 모델이 promtp 무시하고 verbose 출력하는 거 강제 절단
+        //   Stage 1 Analyzer: 600 (분석 구조만)
+        //   Stage 2 Translator: 800 (긴 단락도 충분)
+        //   Stage 3 Verifier: 800 (수정·맥락)
+        var origMaxTok = el.maxTokens ? el.maxTokens.value : '';
+        var stageMaxTok = (idx === 1) ? 600 : (idx === 2 ? 800 : 800);
+        if(el.maxTokens) el.maxTokens.value = String(stageMaxTok);
         try{
           var res = await callOpenRouterStream(userContent, function(partial){
             if(onProgress) onProgress('Agent ' + idx, partial);
@@ -5437,6 +5451,7 @@
           // 다음 agent를 위해 복구 (각 agent 끝마다)
           if(el.apiProvider) el.apiProvider.value = origProv;
           if(el.model) el.model.value = origMdl;
+          if(el.maxTokens) el.maxTokens.value = origMaxTok;
         }
       }
 
