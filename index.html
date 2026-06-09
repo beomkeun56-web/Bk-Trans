@@ -1429,7 +1429,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.51t';
+    const APP_VERSION = 'v19.52t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4339,7 +4339,7 @@
           name: 'Agent 4: 검증·출력',
           provider: 'qwen',
           model: 'qwen3.6-flash',
-          prompt: '[QWEN37_NATIVE]\nYou are a translation verifier. Input has 5 blocks: [Source], [Intent], [WordOrder], [Glossary], [Translation].\n\n★ PRIORITY — Per-sentence 1:1 matching:\nCheck all N sentences in [Intent].[Sentences] appear in [Translation].\nIf any missing, add that sentence translation and output.\n\nVerb repetition check (HIGH IMPORTANCE):\n- If [Source] contains 去去/来来/好好/走走/试试/看看/等等, [Translation] MUST have:\n  去去->"갈게 갈게", 来来->"와 와", 好好->"그래 그래",\n  走走->"가자 가자", 试试->"해볼게", 看看->"볼게", 等等->"잠깐만"\n- If translated as exclamation (아이고/그러게/이런/저런), REPLACE with correct mapping.\n\nOther checks:\n* Output language = [WordOrder].Direction? (Korean->Hangul only, Chinese->simplified only)\n* All exclamations/particles/emojis/numbers/units/negations/qualifiers preserved?\n* [Glossary] mappings applied exactly?\n* [Intent].Overall tone alive in [Translation]? (interrogation->interrogative, instruction->imperative, apology->apologetic)\n* No source-language characters leaked (Hanja in Korean output, Hangul in Chinese output)?\n* Korean output uses natural SOV? Chinese uses natural SVO?\n\nVerdict:\n- All OK -> output [Translation] verbatim\n- Missing sentence/expression -> add and output\n- Verb repetition misrendered -> replace using mapping table\n- Language leak -> replace and output\n\nOutput: ONLY final translation text. NO check process, explanation, labels, block names, quotes, markdown.'
+          prompt: '[QWEN37_NATIVE]\nYou are a translation verifier. Input has 6 blocks: [Source], [Intent], [WordOrder], [Glossary], [Translation], [Context].\n\n★ PRIORITY — Per-sentence 1:1 matching:\nCheck all N sentences in [Intent].[Sentences] appear in [Translation].\nIf any missing, add that sentence translation and output.\n\n★ Context coherence (from [Context]):\n[Context] contains recent conversation turns (User/Bot pairs).\n- Are pronouns/references in [Translation] consistent with prior turns?\n  (e.g., if "그것" refers to something mentioned earlier, use same translation)\n- Does tone/register match the conversation flow?\n  (e.g., if prior turns were casual chat, keep casual; if formal report, keep formal)\n- Are repeated terms translated consistently with prior turns?\n  (e.g., if earlier translated 设备 as "장비", keep "장비" not "기계")\n- Does the speech act fit context? (e.g., a "왜?" after a problem report is interrogation, not random question)\n\nVerb repetition check (HIGH IMPORTANCE):\n- If [Source] contains 去去/来来/好好/走走/试试/看看/等等, [Translation] MUST have:\n  去去->"갈게 갈게", 来来->"와 와", 好好->"그래 그래",\n  走走->"가자 가자", 试试->"해볼게", 看看->"볼게", 等等->"잠깐만"\n- If translated as exclamation (아이고/그러게/이런/저런), REPLACE with correct mapping.\n\nOther checks:\n* Output language = [WordOrder].Direction? (Korean->Hangul only, Chinese->simplified only)\n* All exclamations/particles/emojis/numbers/units/negations/qualifiers preserved?\n* [Glossary] mappings applied exactly?\n* [Intent].Overall tone alive in [Translation]?\n* No source-language characters leaked (Hanja in Korean output, Hangul in Chinese output)?\n* Korean output uses natural SOV? Chinese uses natural SVO?\n\nVerdict:\n- All OK -> output [Translation] verbatim\n- Missing sentence/expression -> add and output\n- Verb repetition misrendered -> replace using mapping table\n- Context mismatch -> adjust pronouns/tone/term consistency and output\n- Language leak -> replace and output\n\nOutput: ONLY final translation text. NO check process, explanation, labels, block names, quotes, markdown.'
         }
       ];
     }
@@ -4424,7 +4424,7 @@
         // Stage 2: 어순 계획 (LLM, 의도 + 원문 → 템플릿)
         var _sT2 = Date.now();
         if(onProgress) onProgress('Stage 2: 어순 계획', '');
-        var stage2User = '[의도]\n' + intent + '\n\n[원문]\n' + userText;
+        var stage2User = '[Intent]\n' + intent + '\n\n[Source]\n' + userText;
         var wordOrder = await callOneAgent(2, getAgent(2).prompt, stage2User);
         wordOrder = (wordOrder || '').trim();
         stage2Ms = Date.now() - _sT2;
@@ -4434,15 +4434,28 @@
         // Stage 4: 번역 (LLM, 의도+어순+용어+원문 → 번역)
         var _sT4 = Date.now();
         if(onProgress) onProgress('Stage 4: 번역', '');
-        var stage4User = '[의도]\n' + intent + '\n\n[어순]\n' + wordOrder + '\n\n[용어]\n' + termsBlock + '\n\n[원문]\n' + userText;
+        // Agent 3는 중국어 프롬프트이므로 라벨도 중국어로 (프롬프트와 일치)
+        var stage4User = '[意图]\n' + intent + '\n\n[语序]\n' + wordOrder + '\n\n[术语]\n' + termsBlock + '\n\n[原文]\n' + userText;
         translation = await callOneAgent(3, getAgent(3).prompt, stage4User);
         translation = (translation || '').trim();
         stage4Ms = Date.now() - _sT4;
 
-        // Stage 5: 검증·출력 (LLM, 모든 결과 + 원문 → 최종)
+        // Stage 5: 검증·출력 (LLM, 모든 결과 + 원문 + 맥락 → 최종)
         var _sT5 = Date.now();
         if(onProgress) onProgress('Stage 5: 검증·출력', '');
-        var stage5User = '[원문]\n' + userText + '\n\n[의도]\n' + intent + '\n\n[어순]\n' + wordOrder + '\n\n[용어]\n' + termsBlock + '\n\n[번역]\n' + translation;
+        // 최근 대화 맥락 (최대 6개 메시지, 현재 입력 제외)
+        var contextBlock = '';
+        try{
+          var recent = (typeof chat !== 'undefined' && chat) ? chat.slice(-7, -1) : [];
+          if(recent && recent.length){
+            contextBlock = recent.map(function(m){
+              var role = m.role === 'user' ? 'User' : 'Bot';
+              return role + ': ' + (m.text || '').replace(/\n/g, ' ').slice(0, 200);
+            }).join('\n');
+          }
+        } catch(_){}
+        if(!contextBlock) contextBlock = '(no prior context)';
+        var stage5User = '[Source]\n' + userText + '\n\n[Intent]\n' + intent + '\n\n[WordOrder]\n' + wordOrder + '\n\n[Glossary]\n' + termsBlock + '\n\n[Translation]\n' + translation + '\n\n[Context]\n' + contextBlock;
         var finalOutput = await callOneAgent(4, getAgent(4).prompt, stage5User);
         finalOutput = (finalOutput || '').trim();
         stage5Ms = Date.now() - _sT5;
