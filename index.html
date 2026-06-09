@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.80t';
+    const APP_VERSION = 'v19.81t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4493,7 +4493,7 @@
               streamBubble.textContent = '[Step_' + step + ']';
               scrollThrottled();
             }
-          }, { skipVerifier: true });
+          }, { skipVerifier: true, smartMT: true });
           if(_pipeRes && typeof _pipeRes === 'object'){
             translatedRaw = _pipeRes.text || '';
             _pipelineInfo = _pipeRes;
@@ -5034,6 +5034,46 @@
       return localStorage.getItem(LS.agent2mode_mtModel) || getAgent2ModeDefaults().mtModel;
     }
 
+    // ★ Stage 2 필요 여부 판단 (휴리스틱) — 단순 입력은 MT만으로 충분, 보정 생략 → 속도·토큰 절감
+    // 2st Agent Mode와 Plan Mode가 공유
+    function shouldSkipStage2(text, hasPersona){
+      if(!text) return false;
+      var t = String(text);
+      // 너무 짧으면 (1~2자) 어차피 빠르니 MT만
+      if(t.length < 3) return true;
+      // 페르소나 강하게 설정돼 있으면 → 무조건 LLM 보정 필요 (페르소나 정렬은 LLM만 가능)
+      if(hasPersona) return false;
+      // ★ 보정 필수 신호 (하나라도 매치 → 보정 실행)
+      var triggers = [
+        /不是[^,，。！!？?]{0,20}(的问题|是|而是)/,        // 강조·대조
+        /我的意思是|내\s*말은|내말은/,                       // 의도수정
+        /都[^,，]{0,15}怎么还没|왜\s*아직/,                  // 추궁
+        /(去去|来来|好好|走走|试试|看看|等等|说说)/,         // 동사 중첩
+        /[吧嘛呗啦呢][。.,，！!？?…]*$/,                     // 문장 끝 어기조사
+        /把[^把]{1,15}(了|完|好|掉|过)/,                     // 把구문
+        /又[^又]{1,20}了/,                                   // complaint
+        /(헐|대박|쩐다|ㅋㅋ|ㅎㅎ|레알|개꿀|존맛)/,           // 한국어 캐주얼
+        /(烦死了|累死了|笑死|牛啊|真的假的|啥|要不)/         // 중국어 캐주얼
+      ];
+      for(var i = 0; i < triggers.length; i++){
+        if(triggers[i].test(t)) return false;
+      }
+      // 이모지 (캐주얼 톤·보존 필요)
+      try{ if(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F900}-\u{1F9FF}]/u.test(t)) return false; } catch(_){}
+      // 혼합 script (한국어/중국어 + 영문 단어 2글자+)
+      var hasHan = /[一-鿿]/.test(t);
+      var hasHangul = /[가-힣]/.test(t);
+      var hasLatinWord = /[a-zA-Z]{2,}/.test(t);
+      if((hasHan || hasHangul) && hasLatinWord) return false;
+      // 다문장
+      var sentenceCount = (t.match(/[.!?。！？\n]+/g) || []).length;
+      if(sentenceCount >= 2) return false;
+      // 긴 단문 (40자+) → 어순·문맥 정렬 가치 ↑
+      if(t.length >= 40) return false;
+      // 위 모두 통과 → 단순 입력 → MT만으로 충분
+      return true;
+    }
+
     // 2-Agent 파이프라인: Qwen MT → 분석·검증 통합 Agent 2
     // 개선(v19.71t): A(MT 원본 가시), B(MT 실패 폴백), D(사후 정규식 보정), E(변경 강도 %), Glossary 상한
     async function run2AgentPipeline(userText, onProgress){
@@ -5113,45 +5153,6 @@
           }
         }
         return Math.min(100, Math.round(dp[n] / Math.max(m, n) * 100));
-      }
-
-      // ★ Stage 2 필요 여부 판단 (휴리스틱) — 단순 입력은 MT만으로 충분, Stage 2 생략 → 속도·토큰 절감
-      function shouldSkipStage2(text, hasPersona){
-        if(!text) return false;
-        var t = String(text);
-        // 너무 짧으면 (1~2자) 어차피 빠르니 MT만
-        if(t.length < 3) return true;
-        // 페르소나 강하게 설정돼 있으면 → 무조건 Stage 2 (페르소나 정렬은 LLM만 가능)
-        if(hasPersona) return false;
-        // ★ 보정 필수 신호 (하나라도 매치 → Stage 2 실행)
-        var triggers = [
-          /不是[^,，。！!？?]{0,20}(的问题|是|而是)/,        // 강조·대조
-          /我的意思是|내\s*말은|내말은/,                       // 의도수정
-          /都[^,，]{0,15}怎么还没|왜\s*아직/,                  // 추궁
-          /(去去|来来|好好|走走|试试|看看|等等|说说)/,         // 동사 중첩
-          /[吧嘛呗啦呢][。.,，！!？?…]*$/,                     // 문장 끝 어기조사
-          /把[^把]{1,15}(了|完|好|掉|过)/,                     // 把구문
-          /又[^又]{1,20}了/,                                   // complaint
-          /(헐|대박|쩐다|ㅋㅋ|ㅎㅎ|레알|개꿀|존맛)/,           // 한국어 캐주얼
-          /(烦死了|累死了|笑死|牛啊|真的假的|啥|要不)/         // 중국어 캐주얼
-        ];
-        for(var i = 0; i < triggers.length; i++){
-          if(triggers[i].test(t)) return false;
-        }
-        // 이모지 (캐주얼 톤·보존 필요)
-        try{ if(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F900}-\u{1F9FF}]/u.test(t)) return false; } catch(_){}
-        // 혼합 script (한국어/중국어 + 영문 단어 2글자+)
-        var hasHan = /[一-鿿]/.test(t);
-        var hasHangul = /[가-힣]/.test(t);
-        var hasLatinWord = /[a-zA-Z]{2,}/.test(t);
-        if((hasHan || hasHangul) && hasLatinWord) return false;
-        // 다문장
-        var sentenceCount = (t.match(/[.!?。！？\n]+/g) || []).length;
-        if(sentenceCount >= 2) return false;
-        // 긴 단문 (40자+) → 어순·문맥 정렬 가치 ↑
-        if(t.length >= 40) return false;
-        // 위 모두 통과 → 단순 입력 → MT만으로 충분
-        return true;
       }
 
       var stage1Ms = 0, stage2Ms = 0;
@@ -5308,6 +5309,7 @@
     async function run4AgentPipeline(userText, onProgress, options){
       options = options || {};
       var skipVerifier = !!options.skipVerifier;
+      var smartMT = !!options.smartMT; // Plan Mode: 단순 입력이면 MT만, 복잡하면 Analyzer+Translator
       var origProv = el.apiProvider ? el.apiProvider.value : '';
       var origMdl = el.model ? el.model.value : '';
       var origSys = el.systemPrompt ? el.systemPrompt.value : '';
@@ -5349,6 +5351,44 @@
         // ===== 3-Stage 파이프라인 (단순화 v19.53t) =====
         // (코드) Glossary 매칭은 위에서 이미 끝남 (glossaryText)
         var termsBlock = glossaryText || '(시스템 용어집 매칭 없음)';
+
+        // ★ Plan Mode + smartMT: 단순 입력은 Qwen MT만 사용 (Analyzer+Translator 생략)
+        if(smartMT){
+          var _hasPersona = !!(origSys && origSys.trim().length > 10);
+          if(shouldSkipStage2(userText, _hasPersona)){
+            var _mtStart = Date.now();
+            if(onProgress) onProgress('Stage 1: MT', '');
+            var _mtModel = (typeof getAgent2ModeMtModel === 'function') ? getAgent2ModeMtModel() : 'qwen-mt-plus';
+            if(el.apiProvider) el.apiProvider.value = 'qwen';
+            if(el.model) el.model.value = _mtModel;
+            if(el.systemPrompt) el.systemPrompt.value = '';
+            var _mtOut = '';
+            try{
+              _mtOut = await callOpenRouterStream(userText, function(partial){
+                if(onProgress) onProgress('Stage 1', partial);
+              });
+            } catch(_e){
+              _mtOut = '';
+              try{ console.warn('[Plan smartMT] MT 실패, full Plan으로 폴백'); } catch(_){}
+            } finally {
+              if(el.apiProvider) el.apiProvider.value = origProv;
+              if(el.model) el.model.value = origMdl;
+            }
+            _mtOut = (_mtOut || '').trim();
+            if(_mtOut){
+              return {
+                text: _mtOut,
+                intent: '',
+                stages: [Date.now() - _mtStart],
+                models: [prettifyModelName(_mtModel)],
+                mode: 'plan',
+                stage2Skipped: true,
+                modified: false
+              };
+            }
+            // MT 빈 응답이면 아래 full Plan으로 진행
+          }
+        }
 
         // Stage 1 (LLM): Analyzer — 의도 + 어순 통합 분석
         var _sT1 = Date.now();
