@@ -1428,7 +1428,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.59t';
+    const APP_VERSION = 'v19.60t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3761,7 +3761,7 @@
             return (b ? b + '/' : '') + (t / 1000).toFixed(1) + 's';
           });
           var timeRow = document.createElement('div');
-          timeRow.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-top:2px;padding-left:2px;white-space:normal;line-height:1.4;';
+          timeRow.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-top:3px;padding-left:14px;white-space:normal;line-height:1.4;';
           timeRow.textContent = parts.join(' + ') + ' = ' + (sum / 1000).toFixed(1) + 's';
           return timeRow;
         }
