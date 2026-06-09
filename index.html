@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.79t';
+    const APP_VERSION = 'v19.80t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1525,6 +1525,7 @@
       qwenThinking: 'bk_tr_test_qwenThinking',
       use4Agent: 'bk_tr_test_use4Agent',
       use2Agent: 'bk_tr_test_use2Agent',
+      usePlanMode: 'bk_tr_test_usePlanMode',
       agent2mode_provider: 'bk_tr_test_agent2mode_provider',
       agent2mode_model: 'bk_tr_test_agent2mode_model',
       agent2mode_prompt: 'bk_tr_test_agent2mode_prompt',
@@ -1659,6 +1660,18 @@
         el.modelTag.style.fontSize = '';
         el.modelTag.textContent = '2st Agent Mode';
         document.title = '2st Agent Mode BK Trans ' + APP_VERSION;
+        if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
+        return;
+      }
+      // Plan Mode ON 시: 보라색 (Analyzer + Translator, 검증 없음)
+      var usePlan = false;
+      try{ usePlan = localStorage.getItem(LS.usePlanMode) === '1'; } catch(_){}
+      if(usePlan && el.modelTag){
+        el.modelTag.style.color = '#a855f7';
+        el.modelTag.style.fontWeight = '700';
+        el.modelTag.style.fontSize = '';
+        el.modelTag.textContent = 'Plan Mode';
+        document.title = 'Plan Mode BK Trans ' + APP_VERSION;
         if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
         return;
       }
@@ -2065,9 +2078,10 @@
     function renderModelDropdown(){
       if(!el.modelDropdown) return;
       const currentId = getCurrentModelId();
-      var is3Agent = false, is2Agent = false;
+      var is3Agent = false, is2Agent = false, isPlan = false;
       try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
       try{ is2Agent = localStorage.getItem(LS.use2Agent) === '1'; } catch(_){}
+      try{ isPlan = localStorage.getItem(LS.usePlanMode) === '1'; } catch(_){}
       el.modelDropdown.innerHTML = '';
 
       // ★ Agent Mode (파이프라인 3단계)
@@ -2078,7 +2092,12 @@
       agentBtn.addEventListener('click', () => {
         _use4Agent = true;
         _use2Agent = false;
-        try{ localStorage.setItem(LS.use4Agent, '1'); localStorage.setItem(LS.use2Agent, '0'); } catch(_){}
+        _usePlanMode = false;
+        try{
+          localStorage.setItem(LS.use4Agent, '1');
+          localStorage.setItem(LS.use2Agent, '0');
+          localStorage.setItem(LS.usePlanMode, '0');
+        } catch(_){}
         var optEl = document.getElementById('opt4Agent');
         if(optEl) optEl.checked = true;
         var wrap = document.getElementById('opt4AgentWrap');
@@ -2098,7 +2117,12 @@
       agent2Btn.addEventListener('click', () => {
         _use2Agent = true;
         _use4Agent = false;
-        try{ localStorage.setItem(LS.use2Agent, '1'); localStorage.setItem(LS.use4Agent, '0'); } catch(_){}
+        _usePlanMode = false;
+        try{
+          localStorage.setItem(LS.use2Agent, '1');
+          localStorage.setItem(LS.use4Agent, '0');
+          localStorage.setItem(LS.usePlanMode, '0');
+        } catch(_){}
         var optEl3 = document.getElementById('opt4Agent');
         if(optEl3) optEl3.checked = false;
         var wrap4 = document.getElementById('opt4AgentWrap');
@@ -2110,6 +2134,31 @@
       });
       el.modelDropdown.appendChild(agent2Btn);
 
+      // ★ Plan Mode (Analyzer + Translator, 검증 없음 — 보라색)
+      const planBtnDD = document.createElement('button');
+      planBtnDD.className = 'modelDropdownItem' + (isPlan ? ' active' : '');
+      planBtnDD.type = 'button';
+      planBtnDD.innerHTML = '<div class="mdName" style="color:#a855f7;">Plan Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(2단계)</span></div><div class="mdId">분석 → 번역 (검증 생략)</div>';
+      planBtnDD.addEventListener('click', () => {
+        _usePlanMode = true;
+        _use4Agent = false;
+        _use2Agent = false;
+        try{
+          localStorage.setItem(LS.usePlanMode, '1');
+          localStorage.setItem(LS.use4Agent, '0');
+          localStorage.setItem(LS.use2Agent, '0');
+        } catch(_){}
+        var optEl5 = document.getElementById('opt4Agent');
+        if(optEl5) optEl5.checked = false;
+        var wrap6 = document.getElementById('opt4AgentWrap');
+        if(wrap6) wrap6.style.display = 'none';
+        updateModelTag();
+        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
+        closeModelDropdown();
+        toast('Plan Mode ON');
+      });
+      el.modelDropdown.appendChild(planBtnDD);
+
       // 구분선
       var sep = document.createElement('div');
       sep.style.cssText = 'border-top:1px solid rgba(255,255,255,.08); margin:6px 0;';
@@ -2117,15 +2166,20 @@
 
       currentModelOptions().forEach(m => {
         const btn = document.createElement('button');
-        btn.className = 'modelDropdownItem' + (!is3Agent && !is2Agent && m.id === currentId ? ' active' : '');
+        btn.className = 'modelDropdownItem' + (!is3Agent && !is2Agent && !isPlan && m.id === currentId ? ' active' : '');
         btn.type = 'button';
         btn.innerHTML = '<div class="mdName">' + m.name + '</div><div class="mdId">' + m.id + '</div>';
         btn.addEventListener('click', () => {
-          // 일반 모델 선택 시 Agent Mode·2_Agent 자동 해제
-          if(_use4Agent || _use2Agent){
+          // 일반 모델 선택 시 모든 Agent 모드 자동 해제
+          if(_use4Agent || _use2Agent || _usePlanMode){
             _use4Agent = false;
             _use2Agent = false;
-            try{ localStorage.setItem(LS.use4Agent, '0'); localStorage.setItem(LS.use2Agent, '0'); } catch(_){}
+            _usePlanMode = false;
+            try{
+              localStorage.setItem(LS.use4Agent, '0');
+              localStorage.setItem(LS.use2Agent, '0');
+              localStorage.setItem(LS.usePlanMode, '0');
+            } catch(_){}
             var optEl = document.getElementById('opt4Agent');
             if(optEl) optEl.checked = false;
             var wrap = document.getElementById('opt4AgentWrap');
@@ -2173,7 +2227,12 @@
       agentBtn.addEventListener('click', function(){
         _use4Agent = true;
         _use2Agent = false;
-        try{ localStorage.setItem(LS.use4Agent, '1'); localStorage.setItem(LS.use2Agent, '0'); } catch(_){}
+        _usePlanMode = false;
+        try{
+          localStorage.setItem(LS.use4Agent, '1');
+          localStorage.setItem(LS.use2Agent, '0');
+          localStorage.setItem(LS.usePlanMode, '0');
+        } catch(_){}
         var optEl = document.getElementById('opt4Agent');
         if(optEl) optEl.checked = true;
         var wrap2 = document.getElementById('opt4AgentWrap');
@@ -2207,7 +2266,12 @@
       agent2Btn.addEventListener('click', function(){
         _use2Agent = true;
         _use4Agent = false;
-        try{ localStorage.setItem(LS.use2Agent, '1'); localStorage.setItem(LS.use4Agent, '0'); } catch(_){}
+        _usePlanMode = false;
+        try{
+          localStorage.setItem(LS.use2Agent, '1');
+          localStorage.setItem(LS.use4Agent, '0');
+          localStorage.setItem(LS.usePlanMode, '0');
+        } catch(_){}
         var optEl3 = document.getElementById('opt4Agent');
         if(optEl3) optEl3.checked = false;
         var wrap4 = document.getElementById('opt4AgentWrap');
@@ -2230,6 +2294,47 @@
       agent2Row.appendChild(agent2Btn);
       agent2Row.appendChild(agent2Gear);
       popup.appendChild(agent2Row);
+
+      // Plan Mode (분석 + 번역 — 검증 단계 없음, 보라색)
+      var isPlanMode = false;
+      try{ isPlanMode = localStorage.getItem(LS.usePlanMode) === '1'; } catch(_){}
+      var planRow = document.createElement('div');
+      planRow.style.cssText = 'display:flex;gap:6px;margin-bottom:10px;';
+      var planBtn = document.createElement('button');
+      planBtn.type = 'button';
+      planBtn.style.cssText = 'flex:1;text-align:left;padding:10px 14px;border:1px solid #a855f7;border-radius:10px;background:rgba(168,85,247,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (isPlanMode ? 'box-shadow:inset 0 0 0 2px #a855f7;' : '');
+      planBtn.innerHTML = '<div style="font-weight:700;color:#a855f7;">Plan Mode (2단계 — 검증 생략)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Analyzer (의도+어순) → Translator (검증 없음, 빠름)</div>';
+      planBtn.addEventListener('click', function(){
+        _usePlanMode = true;
+        _use4Agent = false;
+        _use2Agent = false;
+        try{
+          localStorage.setItem(LS.usePlanMode, '1');
+          localStorage.setItem(LS.use4Agent, '0');
+          localStorage.setItem(LS.use2Agent, '0');
+        } catch(_){}
+        var optEl4 = document.getElementById('opt4Agent');
+        if(optEl4) optEl4.checked = false;
+        var wrap5 = document.getElementById('opt4AgentWrap');
+        if(wrap5) wrap5.style.display = 'none';
+        updateModelTag();
+        updateComposerModelBtn();
+        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
+        document.body.removeChild(overlay);
+        toast('Plan Mode ON');
+      });
+      var planGear = document.createElement('button');
+      planGear.type = 'button';
+      planGear.title = 'Plan Mode 설정 (Analyzer·Translator = 3st Agent 설정 공유)';
+      planGear.style.cssText = 'flex:0 0 44px;border:1px solid #a855f7;border-radius:10px;background:rgba(168,85,247,.08);color:#a855f7;font-size:18px;cursor:pointer;font-family:inherit;';
+      planGear.textContent = '⚙';
+      planGear.addEventListener('click', function(){
+        document.body.removeChild(overlay);
+        if(typeof openAgentConfig === 'function') openAgentConfig();
+      });
+      planRow.appendChild(planBtn);
+      planRow.appendChild(planGear);
+      popup.appendChild(planRow);
 
       var providers = [
         { id: 'openrouter', name: 'OpenRouter', models: MODEL_OPTIONS },
@@ -2255,11 +2360,16 @@
           btn.style.cssText = 'text-align:left;padding:5px 8px;border:1px solid rgba(255,255,255,.08);border-radius:6px;background:' + (isActive ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.03)') + ';color:var(--text);font-size:12px;cursor:pointer;font-family:inherit;line-height:1.25;min-width:0;overflow:hidden;';
           btn.innerHTML = '<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</div><div style="font-size:9px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.id + '</div>';
           btn.addEventListener('click', function(){
-            // Agent Mode·2_Agent Mode 자동 해제 (상호 배타)
-            if(_use4Agent || _use2Agent){
+            // Agent Mode·2_Agent·Plan Mode 자동 해제 (상호 배타)
+            if(_use4Agent || _use2Agent || _usePlanMode){
               _use4Agent = false;
               _use2Agent = false;
-              try{ localStorage.setItem(LS.use4Agent, '0'); localStorage.setItem(LS.use2Agent, '0'); } catch(_){}
+              _usePlanMode = false;
+              try{
+                localStorage.setItem(LS.use4Agent, '0');
+                localStorage.setItem(LS.use2Agent, '0');
+                localStorage.setItem(LS.usePlanMode, '0');
+              } catch(_){}
               var optEl2 = document.getElementById('opt4Agent');
               if(optEl2) optEl2.checked = false;
               var wrap3 = document.getElementById('opt4AgentWrap');
@@ -2295,13 +2405,14 @@
       document.body.appendChild(overlay);
     }
 
-    // 버튼 라벨: 현재 모델의 브랜드 두 글자 / Agent Mode면 "AG" / 2-Agent면 "2A"
+    // 버튼 라벨: 현재 모델의 브랜드 두 글자 / Agent Mode면 "AG" / 2-Agent면 "2A" / Plan Mode면 "PM"
     function updateComposerModelBtn(){
       var btn = document.getElementById('composerModelBtn');
       if(!btn) return;
-      var is3Agent = false, is2Agent = false;
+      var is3Agent = false, is2Agent = false, isPlan = false;
       try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
       try{ is2Agent = localStorage.getItem(LS.use2Agent) === '1'; } catch(_){}
+      try{ isPlan = localStorage.getItem(LS.usePlanMode) === '1'; } catch(_){}
       if(is3Agent){
         btn.textContent = 'AG';
         btn.style.color = '#3b82f6';
@@ -2310,6 +2421,11 @@
       if(is2Agent){
         btn.textContent = '2A';
         btn.style.color = '#b91c4a';
+        return;
+      }
+      if(isPlan){
+        btn.textContent = 'PM';
+        btn.style.color = '#a855f7';
         return;
       }
       var pretty = prettifyModelName(getCurrentModelId());
@@ -4363,9 +4479,28 @@
       try{
         let translatedRaw;
         let _pipelineInfo = null;
-        // 3-Stage 파이프라인: 5단어 이상 입력에만 사용 (짧은 메시지는 일반 흐름)
-        // _forceAgentMode: Retry 팝업의 Agent Mode 버튼 1회성 강제 (단어수 무시)
-        if(((_use2Agent && _wordCount >= 5) || _force2AgentMode) && !_forceAgentMode){
+        // 파이프라인 분기: 5단어 이상 입력에만 사용 (짧은 메시지는 일반 흐름)
+        // _forceXxxMode: Retry 팝업 1회성 강제 (단어수 무시)
+        if(((_usePlanMode && _wordCount >= 5) || _forcePlanMode) && !_forceAgentMode && !_force2AgentMode){
+          var _currentStepP = 0;
+          var _pipeRes = await run4AgentPipeline(userText, function(stage, partial){
+            var m = String(stage || '').match(/(?:Stage|Agent)\s+(\d+)/);
+            if(!m) return;
+            var step = parseInt(m[1], 10);
+            if(step !== _currentStepP){
+              _currentStepP = step;
+              streamBubble.style.opacity = '1';
+              streamBubble.textContent = '[Step_' + step + ']';
+              scrollThrottled();
+            }
+          }, { skipVerifier: true });
+          if(_pipeRes && typeof _pipeRes === 'object'){
+            translatedRaw = _pipeRes.text || '';
+            _pipelineInfo = _pipeRes;
+          } else {
+            translatedRaw = _pipeRes || '';
+          }
+        } else if(((_use2Agent && _wordCount >= 5) || _force2AgentMode) && !_forceAgentMode){
           var _currentStep2 = 0;
           var _pipeRes = await run2AgentPipeline(userText, function(stage, partial){
             var m = String(stage || '').match(/Stage\s+(\d+)/);
@@ -4871,8 +5006,10 @@
     // ====== 4-Agent 모드 ======
     var _use4Agent = localStorage.getItem(LS.use4Agent) === '1';
     var _use2Agent = localStorage.getItem(LS.use2Agent) === '1';
+    var _usePlanMode = localStorage.getItem(LS.usePlanMode) === '1';
     var _forceAgentMode = false; // 1회성 Agent Mode 강제 (Retry 팝업 등)
     var _force2AgentMode = false;
+    var _forcePlanMode = false;
 
     // 2-Agent Mode 기본값 (Qwen MT → 분석·검증 통합 Agent 2)
     function getAgent2ModeDefaults(){
@@ -5168,7 +5305,9 @@
       localStorage.setItem(LS['agent'+i+'Prompt'], prmpt || '');
     }
     // 4-Agent 파이프라인 실행
-    async function run4AgentPipeline(userText, onProgress){
+    async function run4AgentPipeline(userText, onProgress, options){
+      options = options || {};
+      var skipVerifier = !!options.skipVerifier;
       var origProv = el.apiProvider ? el.apiProvider.value : '';
       var origMdl = el.model ? el.model.value : '';
       var origSys = el.systemPrompt ? el.systemPrompt.value : '';
@@ -5235,27 +5374,34 @@
         translation = (translation || '').trim();
         stageTranslateMs = Date.now() - _sT2;
 
-        // Stage 3 (LLM): Verifier — 검증 + 맥락
-        var _sT3 = Date.now();
-        if(onProgress) onProgress('Stage 3: Verifier (검증·맥락)', '');
-        var contextBlock = '';
-        try{
-          var recent = (typeof chat !== 'undefined' && chat) ? chat.slice(-7, -1) : [];
-          if(recent && recent.length){
-            contextBlock = recent.map(function(m){
-              var role = m.role === 'user' ? 'User' : 'Bot';
-              return role + ': ' + (m.text || '').replace(/\n/g, ' ').slice(0, 200);
-            }).join('\n');
-          }
-        } catch(_){}
-        if(!contextBlock) contextBlock = '(no prior context)';
-        var stageVerifyUser = '[Source]\n' + userText + '\n\n[Analysis]\n' + analysis + '\n\n[Glossary]\n' + termsBlock + '\n\n[Translation]\n' + translation + '\n\n[Context]\n' + contextBlock;
-        var finalOutput = await callOneAgent(3, getAgent(3).prompt, stageVerifyUser);
-        finalOutput = (finalOutput || '').trim();
-        stageVerifyMs = Date.now() - _sT3;
+        // Stage 3 (LLM): Verifier — 검증 + 맥락 (Plan Mode면 생략)
+        var finalOutput = '';
+        if(skipVerifier){
+          finalOutput = translation;
+          stageVerifyMs = 0;
+          try{ console.log('[Plan Mode] Verifier 생략 → Translator 출력을 최종으로 사용'); } catch(_){}
+        } else {
+          var _sT3 = Date.now();
+          if(onProgress) onProgress('Stage 3: Verifier (검증·맥락)', '');
+          var contextBlock = '';
+          try{
+            var recent = (typeof chat !== 'undefined' && chat) ? chat.slice(-7, -1) : [];
+            if(recent && recent.length){
+              contextBlock = recent.map(function(m){
+                var role = m.role === 'user' ? 'User' : 'Bot';
+                return role + ': ' + (m.text || '').replace(/\n/g, ' ').slice(0, 200);
+              }).join('\n');
+            }
+          } catch(_){}
+          if(!contextBlock) contextBlock = '(no prior context)';
+          var stageVerifyUser = '[Source]\n' + userText + '\n\n[Analysis]\n' + analysis + '\n\n[Glossary]\n' + termsBlock + '\n\n[Translation]\n' + translation + '\n\n[Context]\n' + contextBlock;
+          finalOutput = await callOneAgent(3, getAgent(3).prompt, stageVerifyUser);
+          finalOutput = (finalOutput || '').trim();
+          stageVerifyMs = Date.now() - _sT3;
+        }
 
-        // Verifier가 번역을 수정했는지 판정
-        pipelineModified = !!(translation && finalOutput && translation !== finalOutput);
+        // Verifier가 번역을 수정했는지 판정 (Plan Mode면 modified = false)
+        pipelineModified = !skipVerifier && !!(translation && finalOutput && translation !== finalOutput);
 
         try{ console.log('[3-Stage Pipeline]', { analysis: analysis, terms: termsBlock, translation: translation, final: finalOutput, modified: pipelineModified, stages: [stageAnalyzerMs, stageTranslateMs, stageVerifyMs] }); } catch(_){}
 
@@ -5266,16 +5412,18 @@
         if(el.systemPrompt) el.systemPrompt.value = origSys;
         _useEnhancedPrompt = origEnhanced;
       }
+      // Plan Mode면 stages/models 2개만, 일반 3-Agent는 3개
+      var resStages = skipVerifier ? [stageAnalyzerMs, stageTranslateMs] : [stageAnalyzerMs, stageTranslateMs, stageVerifyMs];
+      var resModels = skipVerifier
+        ? [prettifyModelName(getAgent(1).model), prettifyModelName(getAgent(2).model)]
+        : [prettifyModelName(getAgent(1).model), prettifyModelName(getAgent(2).model), prettifyModelName(getAgent(3).model)];
       return {
         text: result,
         intent: pipelineIntent,
-        stages: [stageAnalyzerMs, stageTranslateMs, stageVerifyMs],
-        models: [
-          prettifyModelName(getAgent(1).model),
-          prettifyModelName(getAgent(2).model),
-          prettifyModelName(getAgent(3).model)
-        ],
-        modified: pipelineModified
+        stages: resStages,
+        models: resModels,
+        modified: pipelineModified,
+        mode: skipVerifier ? 'plan' : '3agent'
       };
     }
 
