@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.78t';
+    const APP_VERSION = 'v19.79t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1858,6 +1858,17 @@
           localStorage.removeItem(LS.agent2mode_prompt);
         }
         localStorage.setItem('bk_tr_test_agent2mode_migration_v4', '1');
+      }
+    } catch(_){}
+    // v19.79t 마이그레이션 — Agent 2 프롬프트 강제 리셋 (TOP RULE 2 미포함 모든 저장 프롬프트 → 새 default)
+    try{
+      if(!localStorage.getItem('bk_tr_test_agent2mode_migration_v5')){
+        var oldP5 = localStorage.getItem(LS.agent2mode_prompt) || '';
+        if(oldP5 && oldP5.indexOf('TOP RULE 2 — PRESERVE MEANING') === -1){
+          localStorage.removeItem(LS.agent2mode_prompt);
+          try{ console.log('[Migration v5] Agent 2 프롬프트 강제 리셋 — TOP RULE 2 없음'); } catch(_){}
+        }
+        localStorage.setItem('bk_tr_test_agent2mode_migration_v5', '1');
       }
     } catch(_){}
 
