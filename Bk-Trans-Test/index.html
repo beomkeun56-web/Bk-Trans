@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.75t';
+    const APP_VERSION = 'v19.76t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4114,6 +4114,13 @@
           mtFailSpan.textContent = 'MT실패→직역';
           actionsEl.appendChild(mtFailSpan);
         }
+        // Stage 2 생략 표시 (단순 입력 → MT만 사용, 속도 절약)
+        if(pipeline.stage2Skipped){
+          var skipSpan = document.createElement('span');
+          skipSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:6px;font-weight:600;white-space:nowrap;font-style:italic;';
+          skipSpan.textContent = 'MT만(보정생략)';
+          actionsEl.appendChild(skipSpan);
+        }
         // 방향 뒤집힘 → MT 폴백 표시
         if(pipeline.directionFlipped){
           var flipSpan = document.createElement('span');
@@ -4951,12 +4958,53 @@
         return Math.min(100, Math.round(dp[n] / Math.max(m, n) * 100));
       }
 
+      // ★ Stage 2 필요 여부 판단 (휴리스틱) — 단순 입력은 MT만으로 충분, Stage 2 생략 → 속도·토큰 절감
+      function shouldSkipStage2(text, hasPersona){
+        if(!text) return false;
+        var t = String(text);
+        // 너무 짧으면 (1~2자) 어차피 빠르니 MT만
+        if(t.length < 3) return true;
+        // 페르소나 강하게 설정돼 있으면 → 무조건 Stage 2 (페르소나 정렬은 LLM만 가능)
+        if(hasPersona) return false;
+        // ★ 보정 필수 신호 (하나라도 매치 → Stage 2 실행)
+        var triggers = [
+          /不是[^,，。！!？?]{0,20}(的问题|是|而是)/,        // 강조·대조
+          /我的意思是|내\s*말은|내말은/,                       // 의도수정
+          /都[^,，]{0,15}怎么还没|왜\s*아직/,                  // 추궁
+          /(去去|来来|好好|走走|试试|看看|等等|说说)/,         // 동사 중첩
+          /[吧嘛呗啦呢][。.,，！!？?…]*$/,                     // 문장 끝 어기조사
+          /把[^把]{1,15}(了|完|好|掉|过)/,                     // 把구문
+          /又[^又]{1,20}了/,                                   // complaint
+          /(헐|대박|쩐다|ㅋㅋ|ㅎㅎ|레알|개꿀|존맛)/,           // 한국어 캐주얼
+          /(烦死了|累死了|笑死|牛啊|真的假的|啥|要不)/         // 중국어 캐주얼
+        ];
+        for(var i = 0; i < triggers.length; i++){
+          if(triggers[i].test(t)) return false;
+        }
+        // 이모지 (캐주얼 톤·보존 필요)
+        try{ if(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F900}-\u{1F9FF}]/u.test(t)) return false; } catch(_){}
+        // 혼합 script (한국어/중국어 + 영문 단어 2글자+)
+        var hasHan = /[一-鿿]/.test(t);
+        var hasHangul = /[가-힣]/.test(t);
+        var hasLatinWord = /[a-zA-Z]{2,}/.test(t);
+        if((hasHan || hasHangul) && hasLatinWord) return false;
+        // 다문장
+        var sentenceCount = (t.match(/[.!?。！？\n]+/g) || []).length;
+        if(sentenceCount >= 2) return false;
+        // 긴 단문 (40자+) → 어순·문맥 정렬 가치 ↑
+        if(t.length >= 40) return false;
+        // 위 모두 통과 → 단순 입력 → MT만으로 충분
+        return true;
+      }
+
       var stage1Ms = 0, stage2Ms = 0;
       var mtTranslation = '';
       var finalOutput = '';
       var modified = false;
       var mtFailed = false;
       var modifiedPct = 0;
+      var stage2Skipped = false;
+      var directionFlipped = false;
       try{
         // Stage 1: Qwen MT
         var t1 = Date.now();
@@ -4973,53 +5021,62 @@
         if(!mtTranslation) mtFailed = true;
         stage1Ms = Date.now() - t1;
 
-        // Stage 2: Polisher (or fallback direct translator)
-        var t2 = Date.now();
-        if(onProgress) onProgress('Stage 2', '');
-        var contextBlock = '';
-        try{
-          var recent = (typeof chat !== 'undefined' && chat) ? chat.slice(-7, -1) : [];
-          if(recent && recent.length){
-            contextBlock = recent.map(function(m){
-              var role = m.role === 'user' ? 'User' : 'Bot';
-              return role + ': ' + (m.text || '').replace(/\n/g, ' ').slice(0, 200);
-            }).join('\n');
-          }
-        } catch(_){}
-        if(!contextBlock) contextBlock = '(no prior context)';
+        // Stage 2: Polisher (or skipped if input is simple, or fallback direct translator)
         var ag2 = getAgent2ModeAgent2();
         var personaBlock = '';
         try{
           var sys = (origSys || '').trim();
           if(sys && sys.length > 10) personaBlock = sys.slice(0, 1500);
         } catch(_){}
+        var hasMeaningfulPersona = !!personaBlock;
         if(!personaBlock) personaBlock = '(no persona — neutral)';
-        // B. MT 실패 시 [Translation]에 명시적 마커 — Agent 2가 직접 번역 모드로 분기
-        var translationBlock = mtFailed ? '(MT 실패 — [Source]를 직접 번역해 주세요. 5개 체크리스트 모두 적용.)' : mtTranslation;
-        var stage2User = '[Persona]\n' + personaBlock + '\n\n[Source]\n' + userText + '\n\n[Translation]\n' + translationBlock + '\n\n[Glossary]\n' + termsBlock + '\n\n[Context]\n' + contextBlock;
-        finalOutput = await callStage(2, ag2.provider, ag2.model, ag2.prompt, stage2User);
-        finalOutput = postCleanFinal((finalOutput || '').trim());
-        stage2Ms = Date.now() - t2;
 
-        // ★ 방향 뒤집힘 감지 — Agent 2가 source 언어로 출력한 경우 MT 원본으로 폴백
-        function _dominantScript(s){
-          if(!s) return 'unknown';
-          var han = (s.match(/[一-鿿]/g) || []).length;
-          var hangul = (s.match(/[가-힣]/g) || []).length;
-          if(han === 0 && hangul === 0) return 'other';
-          return hangul >= han ? 'ko' : 'zh';
-        }
-        var srcScript = _dominantScript(userText);
-        var finalScript = _dominantScript(finalOutput);
-        var directionFlipped = false;
-        if(srcScript !== 'unknown' && srcScript !== 'other' && finalScript === srcScript && mtTranslation && _dominantScript(mtTranslation) !== srcScript){
-          directionFlipped = true;
-          try{ console.warn('[2-Stage] Agent 2 방향 뒤집힘 감지 → MT 원본으로 폴백. src=' + srcScript + ', final=' + finalScript); } catch(_){}
-          finalOutput = mtTranslation; // MT 원본이 올바른 방향이면 그대로 사용
+        // 단순 입력이면 Stage 2 생략 (MT 실패가 아닐 때만)
+        if(!mtFailed && shouldSkipStage2(userText, hasMeaningfulPersona)){
+          stage2Skipped = true;
+          finalOutput = mtTranslation;
+          stage2Ms = 0;
+          try{ console.log('[2-Stage] Stage 2 생략 (단순 입력 — MT만으로 충분)'); } catch(_){}
+        } else {
+          var t2 = Date.now();
+          if(onProgress) onProgress('Stage 2', '');
+          var contextBlock = '';
+          try{
+            var recent = (typeof chat !== 'undefined' && chat) ? chat.slice(-7, -1) : [];
+            if(recent && recent.length){
+              contextBlock = recent.map(function(m){
+                var role = m.role === 'user' ? 'User' : 'Bot';
+                return role + ': ' + (m.text || '').replace(/\n/g, ' ').slice(0, 200);
+              }).join('\n');
+            }
+          } catch(_){}
+          if(!contextBlock) contextBlock = '(no prior context)';
+          // B. MT 실패 시 [Translation]에 명시적 마커 — Agent 2가 직접 번역 모드로 분기
+          var translationBlock = mtFailed ? '(MT 실패 — [Source]를 직접 번역해 주세요. 5개 체크리스트 모두 적용.)' : mtTranslation;
+          var stage2User = '[Persona]\n' + personaBlock + '\n\n[Source]\n' + userText + '\n\n[Translation]\n' + translationBlock + '\n\n[Glossary]\n' + termsBlock + '\n\n[Context]\n' + contextBlock;
+          finalOutput = await callStage(2, ag2.provider, ag2.model, ag2.prompt, stage2User);
+          finalOutput = postCleanFinal((finalOutput || '').trim());
+          stage2Ms = Date.now() - t2;
+
+          // ★ 방향 뒤집힘 감지 — Agent 2가 source 언어로 출력한 경우 MT 원본으로 폴백
+          function _dominantScript(s){
+            if(!s) return 'unknown';
+            var han = (s.match(/[一-鿿]/g) || []).length;
+            var hangul = (s.match(/[가-힣]/g) || []).length;
+            if(han === 0 && hangul === 0) return 'other';
+            return hangul >= han ? 'ko' : 'zh';
+          }
+          var srcScript = _dominantScript(userText);
+          var finalScript = _dominantScript(finalOutput);
+          if(srcScript !== 'unknown' && srcScript !== 'other' && finalScript === srcScript && mtTranslation && _dominantScript(mtTranslation) !== srcScript){
+            directionFlipped = true;
+            try{ console.warn('[2-Stage] Agent 2 방향 뒤집힘 감지 → MT 원본으로 폴백. src=' + srcScript + ', final=' + finalScript); } catch(_){}
+            finalOutput = mtTranslation; // MT 원본이 올바른 방향이면 그대로 사용
+          }
         }
 
-        modified = !!(mtTranslation && finalOutput && mtTranslation !== finalOutput);
-        modifiedPct = mtTranslation ? diffPercent(mtTranslation, finalOutput) : 0;
+        modified = !stage2Skipped && !!(mtTranslation && finalOutput && mtTranslation !== finalOutput);
+        modifiedPct = !stage2Skipped && mtTranslation ? diffPercent(mtTranslation, finalOutput) : 0;
         try{ console.log('[2-Stage Pipeline]', { mt: mtTranslation, final: finalOutput, mtFailed: mtFailed, modified: modified, modifiedPct: modifiedPct, stages: [stage1Ms, stage2Ms] }); } catch(_){}
       } finally {
         if(el.apiProvider) el.apiProvider.value = origProv;
@@ -5027,17 +5084,20 @@
         if(el.systemPrompt) el.systemPrompt.value = origSys;
         _useEnhancedPrompt = origEnhanced;
       }
+      // Stage 2 생략 시 stages 배열에서 stage2 빼고 모델도 1개만
+      var resStages = stage2Skipped ? [stage1Ms] : [stage1Ms, stage2Ms];
+      var resModels = stage2Skipped
+        ? [prettifyModelName(getAgent2ModeMtModel())]
+        : [prettifyModelName(getAgent2ModeMtModel()), prettifyModelName(getAgent2ModeAgent2().model)];
       return {
         text: (finalOutput || mtTranslation || '').trim(),
         intent: '',
-        stages: [stage1Ms, stage2Ms],
-        models: [
-          prettifyModelName(getAgent2ModeMtModel()),
-          prettifyModelName(getAgent2ModeAgent2().model)
-        ],
+        stages: resStages,
+        models: resModels,
         mt: mtTranslation,
         mtFailed: mtFailed,
         directionFlipped: directionFlipped,
+        stage2Skipped: stage2Skipped,
         modified: modified,
         modifiedPct: modifiedPct,
         mode: '2agent'
