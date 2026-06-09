@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.66t';
+    const APP_VERSION = 'v19.67t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -5689,7 +5689,31 @@
         ov.addEventListener('click', function(e){ if(e.target === ov) document.body.removeChild(ov); });
         document.body.appendChild(ov);
       });
-      toolRow.appendChild(seedBtn); toolRow.appendChild(importBtn);
+      var exportBtn = document.createElement('button'); exportBtn.type='button'; exportBtn.textContent='내보내기';
+      exportBtn.style.cssText='flex:1;padding:8px;border:none;border-radius:8px;background:rgba(16,185,129,.18);color:#10b981;font-size:12px;cursor:pointer;font-family:inherit;';
+      exportBtn.addEventListener('click', function(){
+        var arr = currentEntries();
+        if(!arr.length){ toast('내보낼 항목이 없습니다'); return; }
+        // 형식: 한 줄당 "src ↔ tgt" (import와 호환)
+        var headerLine = '# ' + title + ' (' + arr.length + '개) — ' + new Date().toISOString().replace('T',' ').slice(0,19);
+        var bodyLines = arr.map(function(e){ return (e.src || '') + ' ↔ ' + (e.tgt || ''); });
+        var text = headerLine + '\n' + bodyLines.join('\n') + '\n';
+        var fname = 'bk-trans-glossary-' + kind + '-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.txt';
+        try{
+          var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url; a.download = fname;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+          toast('내보내기 완료: ' + arr.length + '개');
+        } catch(err){
+          // 다운로드 실패 시 클립보드로 폴백
+          try{ navigator.clipboard.writeText(text); toast('다운로드 실패 → 클립보드에 복사'); }
+          catch(_){ toast('내보내기 실패'); }
+        }
+      });
+      toolRow.appendChild(seedBtn); toolRow.appendChild(importBtn); toolRow.appendChild(exportBtn);
       popup.appendChild(toolRow);
       var btnRow = document.createElement('div');
       btnRow.style.cssText='display:flex;gap:8px;margin-top:8px;';
