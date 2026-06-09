@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.83t';
+    const APP_VERSION = 'v19.84t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3133,7 +3133,22 @@
         };
         // Anthropic은 temperature 최대 1.0 (top_p/top_k는 보내지 않음)
         if(typeof opts.temperature === 'number') body.temperature = Math.min(opts.temperature, 1);
-        if(systemText) body.system = systemText;
+        if(systemText){
+          // ★ Prompt caching: system prompt가 충분히 길면 (대략 1000+ chars ≈ 500+ tokens)
+          //   array 형식으로 보내고 cache_control: ephemeral 표시 → Anthropic 서버 캐싱
+          //   2번째 호출부터 TTFT ~80% 감소, 토큰 비용 90% 절감
+          //   Sonnet/Opus: 최소 1024 tokens, Haiku: 최소 2048 tokens 캐싱 가능
+          //   짧으면 그냥 string으로 (캐싱 어차피 안 됨)
+          if(systemText.length >= 1000){
+            body.system = [{
+              type: 'text',
+              text: systemText,
+              cache_control: { type: 'ephemeral' }
+            }];
+          } else {
+            body.system = systemText;
+          }
+        }
         return {
           url: url,
           headers: {
@@ -3241,6 +3256,20 @@
       };
       if(p === 'openrouter' && typeof opts.topK === 'number') body.top_k = opts.topK;
       if(opts.stream) body.stream_options = { include_usage: true }; // 토큰 사용량 수신
+
+      // ★ Anthropic Prompt Caching (OpenRouter 경유 Claude 모델) — system 1000자 이상이면 자동 캐싱
+      //   2번째 호출부터 TTFT ~80%↓, 토큰 비용 90%↓ (cached_tokens로 청구)
+      if(p === 'openrouter' && /^anthropic\//i.test(String(opts.model || '')) && Array.isArray(body.messages)){
+        body.messages = body.messages.map(function(m){
+          if(m && m.role === 'system' && typeof m.content === 'string' && m.content.length >= 1000){
+            return {
+              role: 'system',
+              content: [{ type: 'text', text: m.content, cache_control: { type: 'ephemeral' } }]
+            };
+          }
+          return m;
+        });
+      }
       // Qwen3 모델: 사고 깊이 4단계 (off/low/mid/high)
       // 깊이 ↑ → 누락·오역 감소, 응답시간 ↑
       if(p === 'qwen'){
