@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.73t';
+    const APP_VERSION = 'v19.74t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -6031,7 +6031,10 @@
     const inputClearBtn = document.getElementById('inputClearBtn');
     function updateInputCopyBtn(){
       if(!inputBtnWrap || !el.input) return;
-      inputBtnWrap.style.display = el.input.value.trim() ? 'flex' : 'none';
+      var hasText = !!el.input.value.trim();
+      inputBtnWrap.style.display = hasText ? 'flex' : 'none';
+      // 버튼 영역만큼 우측 padding 추가 → 텍스트가 버튼 뒤로 가려지지 않고 줄바꿈
+      el.input.style.paddingRight = hasText ? '96px' : '';
     }
     if(inputCopyBtn){
       inputCopyBtn.addEventListener('click', async () => { await copyToClipboard(el.input.value.trim(), false); });
