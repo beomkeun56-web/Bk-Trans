@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.72t';
+    const APP_VERSION = 'v19.73t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1838,6 +1838,16 @@
           localStorage.removeItem(LS.agent2mode_prompt);
         }
         localStorage.setItem('bk_tr_test_agent2mode_migration_v2', '1');
+      }
+    } catch(_){}
+    // v19.73t 마이그레이션 — Agent 2 프롬프트에 DIRECTION LOCK 추가 (Agent 2가 source 언어로 뒤집는 버그 방지)
+    try{
+      if(!localStorage.getItem('bk_tr_test_agent2mode_migration_v3')){
+        var oldP3 = localStorage.getItem(LS.agent2mode_prompt) || '';
+        if(oldP3.indexOf('focused MT-output polisher') !== -1 && oldP3.indexOf('DIRECTION LOCK') === -1){
+          localStorage.removeItem(LS.agent2mode_prompt);
+        }
+        localStorage.setItem('bk_tr_test_agent2mode_migration_v3', '1');
       }
     } catch(_){}
 
@@ -4104,6 +4114,13 @@
           mtFailSpan.textContent = 'MT실패→직역';
           actionsEl.appendChild(mtFailSpan);
         }
+        // 방향 뒤집힘 → MT 폴백 표시
+        if(pipeline.directionFlipped){
+          var flipSpan = document.createElement('span');
+          flipSpan.style.cssText = 'font-size:10px;color:#ef4444;opacity:.95;margin-left:6px;font-weight:700;white-space:nowrap;';
+          flipSpan.textContent = 'Agent2 방향뒤집→MT사용';
+          actionsEl.appendChild(flipSpan);
+        }
         // A. MT 원본 토글 (2-Agent + MT 결과 있음 + 수정 발생)
         var mtToggleEl = null;
         if(is2Agent && pipeline.mt && pipeline.mt !== pipeline.text){
@@ -4820,7 +4837,7 @@
         agent2: {
           provider: 'anthropic',
           model: 'claude-sonnet-4-6',
-          prompt: '[QWEN37_NATIVE]\nYou are a focused MT-output polisher for KO<->ZH translation (LeadTab factory context).\n\nInput has 5 blocks: [Persona], [Source], [Translation], [Glossary], [Context].\n[Translation] is from Qwen-MT and is ~90% accurate. Your job is NOT to re-translate, but to fix ONLY the specific weaknesses listed below.\n\n★ [Persona] (사용자 메인 시스템 프롬프트):\n페르소나·스타일 가이드. [Translation]이 페르소나 톤·어체와 어긋나면 그 부분만 맞춰 수정. "(no persona — neutral)"이면 무시.\n\n★ DEFAULT BEHAVIOR — Trust [Translation]:\nIf no specific issue from the checklist, output [Translation] verbatim. NO unnecessary rewrites.\n\n★ MT 실패 폴백:\n[Translation]이 "(MT 실패 ..."로 시작하거나 비어있으면 → [Source]를 직접 번역하라. 5개 체크리스트 모두 적용. 출력 형식은 동일.\n\n★ TARGETED CHECKLIST (only these 5 categories):\n\n1) 어순 (SOV/SVO 자연도)\n- Korean target: verb 끝, 어미 자연 (SOV). 中文 SVO残留 잡기. 例: "교체했어 센서를" → "센서 교체했어"\n- Chinese target: SVO 자연. 时间 앞, 宾语 동사 뒤. 例: "光纤更换了" → "更换了光纤"\n\n2) 용어 ([Glossary] 100% 적용)\n매핑이 적용됐는지 확인. 동의어 치환됐으면 → [Glossary]대로 교체.\n\n3) 문맥 (대명사·반복 단어·톤 일관성, [Context] 기준)\n명백히 무관해 보이면 무시. 같은 단어가 이전 turn과 다르게 번역됐으면 통일.\n\n4) MT 알려진 실수 패턴 (즉시 REPLACE):\n- 동사 중첩 (=약속·긍정): 去去→"갈게 갈게", 来来→"와 와", 好好→"그래 그래", 走走→"가자 가자", 试试→"해볼게", 看看→"볼게", 等等→"잠깐만", 说说→"말해봐" (★ "아이고/이런/저런" 등 감탄사로 의역됐으면 무조건 위 매핑으로 교체)\n- 강조·대조: 不是A的问题→"A 문제가 아니야/아니라", 不是A是B/不是A而是B→"A가 아니라 B", 不是我V A→"내가 A를 V하는 게 아니라"\n- 추궁(都...怎么还没...?)→"왜 아직..." 어조 보존\n- 의도수정(我的意思是)→"내 말은"\n- 어기조사 보존: 吧→~지/하자, 嘛→~잖아, 呢→~인데, 啊→~네/야, 呗→~지뭐\n- 把구문 ZH→KO: 把 직역 금지 (例: 把这个换了→"이거 바꿨어")\n- 부정 누락(불/안/못/不/没/别): MT가 빠뜨렸으면 추가\n\n5) 언어 누설: 한국어 출력에 한자 → 한글 변환, 중국어 출력에 한글 → 简体 변환\n\n═══ OUTPUT — ABSOLUTE RULES (어기면 SYSTEM FAILURE) ═══\n출력은 오직 최종 번역문 텍스트만. 그 외 모든 것 금지.\n\n❌ 절대 금지:\n- 마크다운 (--- / *** / **bold** / # heading / 코드블록 / 인용 / 표)\n- "수정 사항:" / "변경 내용:" / "Notes:" / "Changes:" / "Verdict:" 라벨·섹션\n- 어떤 항목을 어떻게 고쳤는지 설명·이유·코멘트\n- 글머리 기호 (- / • / 1. / ★ / ✓)\n- 번역문을 따옴표로 감싸기\n- "원문:" / "번역:" / "[번역]" 라벨\n- 원문에 없는 빈 줄 추가\n\n✅ 올바른 출력 예 (입력 1줄 → 출력 1줄):\n허하이양 film 공급 미개통\n\n❌ 잘못된 출력 예:\n허하이양 필름 공급 미개통\n\n---\n**수정 사항:**\n- "미개방" → "미개통" (이유...)\n\n번역문이 끝나면 즉시 STOP. 추가 출력 0.'
+          prompt: '[QWEN37_NATIVE]\nYou are a focused MT-output polisher for KO<->ZH translation (LeadTab factory context).\n\nInput has 5 blocks: [Persona], [Source], [Translation], [Glossary], [Context].\n[Translation] is from Qwen-MT and is ~90% accurate. Your job is NOT to re-translate, but to fix ONLY the specific weaknesses listed below.\n\n═══ ★ ABSOLUTE TOP RULE — DIRECTION LOCK (어기면 CATASTROPHIC FAILURE) ═══\n출력 언어는 반드시 [Translation]의 언어와 동일. [Source]의 언어와 다른 쪽.\n- [Source] 한글 우세 → 출력 = 中文(简体). 절대 한국어 출력 금지.\n- [Source] 한자 우세 → 출력 = 한국어(한글). 절대 중문 출력 금지.\n- 入力 안에 영문 단어(lead/film/LOT 등) 섞여있어도 방향 판단 무관. 한자·한글 비중으로 결정.\n- "[Translation]이 부족해 보여서 [Source] 언어로 다시 쓰자" → 절대 금지. 그건 SYSTEM FAILURE.\n- 헷갈리면 무조건 [Translation]의 언어 따름.\n\n★ [Persona] (사용자 메인 시스템 프롬프트):\n페르소나·스타일 가이드. [Translation]이 페르소나 톤·어체와 어긋나면 그 부분만 맞춰 수정. "(no persona — neutral)"이면 무시.\n\n★ DEFAULT BEHAVIOR — Trust [Translation]:\nIf no specific issue from the checklist, output [Translation] verbatim. NO unnecessary rewrites.\n\n★ MT 실패 폴백:\n[Translation]이 "(MT 실패 ..."로 시작하거나 비어있으면 → [Source]를 직접 번역하라. 단 위 DIRECTION LOCK 절대 준수. 5개 체크리스트 모두 적용. 출력 형식은 동일.\n\n★ TARGETED CHECKLIST (only these 5 categories):\n\n1) 어순 (SOV/SVO 자연도)\n- Korean target: verb 끝, 어미 자연 (SOV). 中文 SVO残留 잡기. 例: "교체했어 센서를" → "센서 교체했어"\n- Chinese target: SVO 자연. 时间 앞, 宾语 동사 뒤. 例: "光纤更换了" → "更换了光纤"\n\n2) 용어 ([Glossary] 100% 적용)\n매핑이 적용됐는지 확인. 동의어 치환됐으면 → [Glossary]대로 교체.\n\n3) 문맥 (대명사·반복 단어·톤 일관성, [Context] 기준)\n명백히 무관해 보이면 무시. 같은 단어가 이전 turn과 다르게 번역됐으면 통일.\n\n4) MT 알려진 실수 패턴 (즉시 REPLACE):\n- 동사 중첩 (=약속·긍정): 去去→"갈게 갈게", 来来→"와 와", 好好→"그래 그래", 走走→"가자 가자", 试试→"해볼게", 看看→"볼게", 等等→"잠깐만", 说说→"말해봐" (★ "아이고/이런/저런" 등 감탄사로 의역됐으면 무조건 위 매핑으로 교체)\n- 강조·대조: 不是A的问题→"A 문제가 아니야/아니라", 不是A是B/不是A而是B→"A가 아니라 B", 不是我V A→"내가 A를 V하는 게 아니라"\n- 추궁(都...怎么还没...?)→"왜 아직..." 어조 보존\n- 의도수정(我的意思是)→"내 말은"\n- 어기조사 보존: 吧→~지/하자, 嘛→~잖아, 呢→~인데, 啊→~네/야, 呗→~지뭐\n- 把구문 ZH→KO: 把 직역 금지 (例: 把这个换了→"이거 바꿨어")\n- 부정 누락(불/안/못/不/没/别): MT가 빠뜨렸으면 추가\n\n5) 언어 누설: 한국어 출력에 한자 → 한글 변환, 중국어 출력에 한글 → 简体 변환\n\n═══ OUTPUT — ABSOLUTE RULES (어기면 SYSTEM FAILURE) ═══\n출력은 오직 최종 번역문 텍스트만. 그 외 모든 것 금지.\n\n❌ 절대 금지:\n- 마크다운 (--- / *** / **bold** / # heading / 코드블록 / 인용 / 표)\n- "수정 사항:" / "변경 내용:" / "Notes:" / "Changes:" / "Verdict:" 라벨·섹션\n- 어떤 항목을 어떻게 고쳤는지 설명·이유·코멘트\n- 글머리 기호 (- / • / 1. / ★ / ✓)\n- 번역문을 따옴표로 감싸기\n- "원문:" / "번역:" / "[번역]" 라벨\n- 원문에 없는 빈 줄 추가\n\n✅ 올바른 출력 예 (입력 1줄 → 출력 1줄):\n허하이양 film 공급 미개통\n\n❌ 잘못된 출력 예:\n허하이양 필름 공급 미개통\n\n---\n**수정 사항:**\n- "미개방" → "미개통" (이유...)\n\n번역문이 끝나면 즉시 STOP. 추가 출력 0.'
         }
       };
     }
@@ -4967,6 +4984,23 @@
         finalOutput = postCleanFinal((finalOutput || '').trim());
         stage2Ms = Date.now() - t2;
 
+        // ★ 방향 뒤집힘 감지 — Agent 2가 source 언어로 출력한 경우 MT 원본으로 폴백
+        function _dominantScript(s){
+          if(!s) return 'unknown';
+          var han = (s.match(/[一-鿿]/g) || []).length;
+          var hangul = (s.match(/[가-힣]/g) || []).length;
+          if(han === 0 && hangul === 0) return 'other';
+          return hangul >= han ? 'ko' : 'zh';
+        }
+        var srcScript = _dominantScript(userText);
+        var finalScript = _dominantScript(finalOutput);
+        var directionFlipped = false;
+        if(srcScript !== 'unknown' && srcScript !== 'other' && finalScript === srcScript && mtTranslation && _dominantScript(mtTranslation) !== srcScript){
+          directionFlipped = true;
+          try{ console.warn('[2-Stage] Agent 2 방향 뒤집힘 감지 → MT 원본으로 폴백. src=' + srcScript + ', final=' + finalScript); } catch(_){}
+          finalOutput = mtTranslation; // MT 원본이 올바른 방향이면 그대로 사용
+        }
+
         modified = !!(mtTranslation && finalOutput && mtTranslation !== finalOutput);
         modifiedPct = mtTranslation ? diffPercent(mtTranslation, finalOutput) : 0;
         try{ console.log('[2-Stage Pipeline]', { mt: mtTranslation, final: finalOutput, mtFailed: mtFailed, modified: modified, modifiedPct: modifiedPct, stages: [stage1Ms, stage2Ms] }); } catch(_){}
@@ -4986,6 +5020,7 @@
         ],
         mt: mtTranslation,
         mtFailed: mtFailed,
+        directionFlipped: directionFlipped,
         modified: modified,
         modifiedPct: modifiedPct,
         mode: '2agent'
