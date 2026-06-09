@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.87t';
+    const APP_VERSION = 'v19.88t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3140,12 +3140,14 @@
         // Anthropic은 temperature 최대 1.0 (top_p/top_k는 보내지 않음)
         if(typeof opts.temperature === 'number') body.temperature = Math.min(opts.temperature, 1);
         if(systemText){
-          // ★ Prompt caching: system prompt가 충분히 길면 (대략 1000+ chars ≈ 500+ tokens)
-          //   array 형식으로 보내고 cache_control: ephemeral 표시 → Anthropic 서버 캐싱
-          //   2번째 호출부터 TTFT ~80% 감소, 토큰 비용 90% 절감
-          //   Sonnet/Opus: 최소 1024 tokens, Haiku: 최소 2048 tokens 캐싱 가능
-          //   짧으면 그냥 string으로 (캐싱 어차피 안 됨)
-          if(systemText.length >= 1000){
+          // ★ Prompt caching: 모델별 캐싱 최소 토큰 차이 고려
+          //   Sonnet/Opus 4.x: 1024 tokens (~3000 chars) — 활성화
+          //   Haiku 4.x: 2048 tokens (~6000 chars) — 임계값 미달이면 비활성화 (오히려 느려질 수 있음)
+          //   그 외 모델: 보수적으로 string
+          var modelLow = String(opts.model || '').toLowerCase();
+          var isHaiku = modelLow.indexOf('haiku') !== -1;
+          var cacheThreshold = isHaiku ? 6000 : 3000;
+          if(systemText.length >= cacheThreshold){
             body.system = [{
               type: 'text',
               text: systemText,
@@ -3263,11 +3265,15 @@
       if(p === 'openrouter' && typeof opts.topK === 'number') body.top_k = opts.topK;
       if(opts.stream) body.stream_options = { include_usage: true }; // 토큰 사용량 수신
 
-      // ★ Anthropic Prompt Caching (OpenRouter 경유 Claude 모델) — system 1000자 이상이면 자동 캐싱
-      //   2번째 호출부터 TTFT ~80%↓, 토큰 비용 90%↓ (cached_tokens로 청구)
+      // ★ Anthropic Prompt Caching (OpenRouter 경유 Claude 모델)
+      //   Sonnet/Opus: 3000+ chars (~1024 tokens) — 활성
+      //   Haiku: 6000+ chars (~2048 tokens) — 임계값 미달이면 비활성 (Haiku 최소토큰 못 채우면 오히려 처리 오버헤드)
       if(p === 'openrouter' && /^anthropic\//i.test(String(opts.model || '')) && Array.isArray(body.messages)){
+        var orModelLow = String(opts.model || '').toLowerCase();
+        var orIsHaiku = orModelLow.indexOf('haiku') !== -1;
+        var orThreshold = orIsHaiku ? 6000 : 3000;
         body.messages = body.messages.map(function(m){
-          if(m && m.role === 'system' && typeof m.content === 'string' && m.content.length >= 1000){
+          if(m && m.role === 'system' && typeof m.content === 'string' && m.content.length >= orThreshold){
             return {
               role: 'system',
               content: [{ type: 'text', text: m.content, cache_control: { type: 'ephemeral' } }]
