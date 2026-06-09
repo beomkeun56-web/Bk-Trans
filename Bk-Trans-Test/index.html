@@ -968,15 +968,15 @@
 
   <div id="agent2ConfigOverlay" class="settingsOverlay">
     <section class="settings" style="max-width:520px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(16,185,129,.3);">
-        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:#10b981;">2_Agent Mode 설정</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(185,28,74,.3);">
+        <h2 style="margin:0; font-size:calc(16px * var(--textScale)); font-weight:700; color:#b91c4a;">2st Agent Mode 설정</h2>
         <button id="agent2ConfigCloseBtn" class="iconBtn" type="button" aria-label="닫기">
           <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
       <div id="agent2ConfigBody" style="max-height:70vh; overflow-y:auto;"></div>
       <div style="display:flex; gap:8px; margin-top:14px;">
-        <button id="agent2ConfigSaveBtn" type="button" style="flex:1; padding:10px; border:none; border-radius:10px; background:#10b981; color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;">저장</button>
+        <button id="agent2ConfigSaveBtn" type="button" style="flex:1; padding:10px; border:none; border-radius:10px; background:#b91c4a; color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;">저장</button>
         <button id="agent2ConfigDefaultBtn" type="button" style="flex:1; padding:10px; border:1px solid rgba(255,255,255,.15); border-radius:10px; background:rgba(255,255,255,.06); color:var(--text); font-size:14px; cursor:pointer; font-family:inherit;">기본값 불러오기</button>
       </div>
     </section>
@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.68t';
+    const APP_VERSION = 'v19.69t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1638,27 +1638,27 @@
     }
     function updateModelTag(){
       var pretty = prettifyModelName(getCurrentModelId());
-      // Agent Mode ON 시: 상단바 모델 태그 = "Agent Mode" (파란색, 굵게)
+      // 3st Agent Mode ON 시: 상단바 모델 태그 (파란색, 굵게)
       var useAgentMode = false;
       try{ useAgentMode = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
       if(useAgentMode && el.modelTag){
         el.modelTag.style.color = '#3b82f6';
         el.modelTag.style.fontWeight = '700';
         el.modelTag.style.fontSize = '';
-        el.modelTag.textContent = 'Agent Mode';
-        document.title = 'Agent Mode BK Trans ' + APP_VERSION;
+        el.modelTag.textContent = '3st Agent Mode';
+        document.title = '3st Agent Mode BK Trans ' + APP_VERSION;
         if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
         return;
       }
-      // 2-Agent Mode ON 시: 초록색
+      // 2st Agent Mode ON 시: 와인색
       var use2AgentMode = false;
       try{ use2AgentMode = localStorage.getItem(LS.use2Agent) === '1'; } catch(_){}
       if(use2AgentMode && el.modelTag){
-        el.modelTag.style.color = '#10b981';
+        el.modelTag.style.color = '#b91c4a';
         el.modelTag.style.fontWeight = '700';
         el.modelTag.style.fontSize = '';
-        el.modelTag.textContent = '2_Agent';
-        document.title = '2_Agent BK Trans ' + APP_VERSION;
+        el.modelTag.textContent = '2st Agent Mode';
+        document.title = '2st Agent Mode BK Trans ' + APP_VERSION;
         if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
         return;
       }
@@ -2031,7 +2031,7 @@
       const agentBtn = document.createElement('button');
       agentBtn.className = 'modelDropdownItem' + (is3Agent ? ' active' : '');
       agentBtn.type = 'button';
-      agentBtn.innerHTML = '<div class="mdName" style="color:#3b82f6;">Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(3단계)</span></div><div class="mdId">분석 → 번역 → 검증·맥락</div>';
+      agentBtn.innerHTML = '<div class="mdName" style="color:#3b82f6;">3st Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(3단계)</span></div><div class="mdId">분석 → 번역 → 검증·맥락</div>';
       agentBtn.addEventListener('click', () => {
         _use4Agent = true;
         _use2Agent = false;
@@ -2043,7 +2043,7 @@
         updateModelTag();
         if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
         closeModelDropdown();
-        toast('Agent Mode ON');
+        toast('3st Agent Mode ON');
       });
       el.modelDropdown.appendChild(agentBtn);
 
@@ -2051,7 +2051,7 @@
       const agent2Btn = document.createElement('button');
       agent2Btn.className = 'modelDropdownItem' + (is2Agent ? ' active' : '');
       agent2Btn.type = 'button';
-      agent2Btn.innerHTML = '<div class="mdName" style="color:#10b981;">2_Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(2단계)</span></div><div class="mdId">Qwen MT → 분석·검증 통합</div>';
+      agent2Btn.innerHTML = '<div class="mdName" style="color:#b91c4a;">2st Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(2단계)</span></div><div class="mdId">Qwen MT → 분석·검증 통합</div>';
       agent2Btn.addEventListener('click', () => {
         _use2Agent = true;
         _use4Agent = false;
@@ -2063,7 +2063,7 @@
         updateModelTag();
         if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
         closeModelDropdown();
-        toast('2_Agent Mode ON');
+        toast('2st Agent Mode ON');
       });
       el.modelDropdown.appendChild(agent2Btn);
 
@@ -2126,7 +2126,7 @@
       var agentBtn = document.createElement('button');
       agentBtn.type = 'button';
       agentBtn.style.cssText = 'flex:1;text-align:left;padding:10px 14px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is3Agent ? 'box-shadow:inset 0 0 0 2px #3b82f6;' : '');
-      agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">Agent Mode (3단계 파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">분석 → 번역 → 검증·맥락</div>';
+      agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">3st Agent Mode (3단계 파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">분석 → 번역 → 검증·맥락</div>';
       agentBtn.addEventListener('click', function(){
         _use4Agent = true;
         _use2Agent = false;
@@ -2139,7 +2139,7 @@
         updateComposerModelBtn();
         if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
         document.body.removeChild(overlay);
-        toast('Agent Mode ON');
+        toast('3st Agent Mode ON');
       });
       var agentGear = document.createElement('button');
       agentGear.type = 'button';
@@ -2159,8 +2159,8 @@
       agent2Row.style.cssText = 'display:flex;gap:6px;margin-bottom:10px;';
       var agent2Btn = document.createElement('button');
       agent2Btn.type = 'button';
-      agent2Btn.style.cssText = 'flex:1;text-align:left;padding:10px 14px;border:1px solid #10b981;border-radius:10px;background:rgba(16,185,129,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is2Agent ? 'box-shadow:inset 0 0 0 2px #10b981;' : '');
-      agent2Btn.innerHTML = '<div style="font-weight:700;color:#10b981;">2_Agent Mode (2단계 파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Qwen MT 번역 → 분석·검증 통합 Agent</div>';
+      agent2Btn.style.cssText = 'flex:1;text-align:left;padding:10px 14px;border:1px solid #b91c4a;border-radius:10px;background:rgba(185,28,74,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;' + (is2Agent ? 'box-shadow:inset 0 0 0 2px #b91c4a;' : '');
+      agent2Btn.innerHTML = '<div style="font-weight:700;color:#b91c4a;">2st Agent Mode (2단계 파이프라인)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Qwen MT 번역 → 분석·검증 통합 Agent</div>';
       agent2Btn.addEventListener('click', function(){
         _use2Agent = true;
         _use4Agent = false;
@@ -2173,12 +2173,12 @@
         updateComposerModelBtn();
         if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
         document.body.removeChild(overlay);
-        toast('2_Agent Mode ON');
+        toast('2st Agent Mode ON');
       });
       var agent2Gear = document.createElement('button');
       agent2Gear.type = 'button';
-      agent2Gear.title = '2_Agent Mode 설정';
-      agent2Gear.style.cssText = 'flex:0 0 44px;border:1px solid #10b981;border-radius:10px;background:rgba(16,185,129,.08);color:#10b981;font-size:18px;cursor:pointer;font-family:inherit;';
+      agent2Gear.title = '2st Agent Mode 설정';
+      agent2Gear.style.cssText = 'flex:0 0 44px;border:1px solid #b91c4a;border-radius:10px;background:rgba(185,28,74,.08);color:#b91c4a;font-size:18px;cursor:pointer;font-family:inherit;';
       agent2Gear.textContent = '⚙';
       agent2Gear.addEventListener('click', function(){
         document.body.removeChild(overlay);
@@ -2266,7 +2266,7 @@
       }
       if(is2Agent){
         btn.textContent = '2A';
-        btn.style.color = '#10b981';
+        btn.style.color = '#b91c4a';
         return;
       }
       var pretty = prettifyModelName(getCurrentModelId());
@@ -3833,8 +3833,8 @@
       // ★ 2_Agent Mode 1회성 재번역
       var agent2Btn = document.createElement('button');
       agent2Btn.type = 'button';
-      agent2Btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #10b981;border-radius:10px;background:rgba(16,185,129,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
-      agent2Btn.innerHTML = '<div style="font-weight:700;color:#10b981;">→ 2_Agent Mode (2단계)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Qwen MT → 분석·검증 통합 (1회성)</div>';
+      agent2Btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #b91c4a;border-radius:10px;background:rgba(185,28,74,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
+      agent2Btn.innerHTML = '<div style="font-weight:700;color:#b91c4a;">→ 2st Agent Mode (2단계)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Qwen MT → 분석·검증 통합 (1회성)</div>';
       agent2Btn.addEventListener('click', function(){
         document.body.removeChild(overlay);
         retryWith2AgentMode(userText);
@@ -5160,7 +5160,7 @@
 
       // Stage 2: 통합 Analyzer + Verifier
       var s2 = document.createElement('div');
-      s2.style.cssText = 'margin-bottom:14px; padding:10px; border:1px solid rgba(16,185,129,.2); border-radius:10px; background:rgba(16,185,129,.04);';
+      s2.style.cssText = 'margin-bottom:14px; padding:10px; border:1px solid rgba(185,28,74,.2); border-radius:10px; background:rgba(185,28,74,.04);';
       s2.dataset.role = 'agent2';
       s2.innerHTML =
         '<div style="font-weight:700; color:var(--text); margin-bottom:8px; font-size:13px;">Stage 2: 분석·검증 통합 Agent</div>' +
@@ -5224,7 +5224,7 @@
         localStorage.setItem(LS.agent2mode_model, s2.querySelector('.ag2_mdl').value || '');
         localStorage.setItem(LS.agent2mode_prompt, s2.querySelector('.ag2_prompt').value || '');
       }
-      toast('2_Agent 설정 저장');
+      toast('2st Agent 설정 저장');
       closeAgent2Config();
     });
     if(agent2ConfigDefaultBtn) agent2ConfigDefaultBtn.addEventListener('click', function(){
