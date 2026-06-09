@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.71t';
+    const APP_VERSION = 'v19.72t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4304,10 +4304,7 @@
         let _pipelineInfo = null;
         // 3-Stage 파이프라인: 5단어 이상 입력에만 사용 (짧은 메시지는 일반 흐름)
         // _forceAgentMode: Retry 팝업의 Agent Mode 버튼 1회성 강제 (단어수 무시)
-        // C. 2-Agent + 긴 입력(문장 3개↑) → 자동으로 3-Agent로 폴백 (MT 다문 단락 약점 회피)
-        var _sentenceCount2 = (userText.match(/[.!?。！？\n]+/g) || []).length + 1;
-        var _force3stForLong = (_use2Agent && !_force2AgentMode && _sentenceCount2 >= 3);
-        if(((_use2Agent && _wordCount >= 5) || _force2AgentMode) && !_forceAgentMode && !_force3stForLong){
+        if(((_use2Agent && _wordCount >= 5) || _force2AgentMode) && !_forceAgentMode){
           var _currentStep2 = 0;
           var _pipeRes = await run2AgentPipeline(userText, function(stage, partial){
             var m = String(stage || '').match(/Stage\s+(\d+)/);
@@ -4326,7 +4323,7 @@
           } else {
             translatedRaw = _pipeRes || '';
           }
-        } else if(((_use4Agent && _wordCount >= 5) || _forceAgentMode) || _force3stForLong){
+        } else if((_use4Agent && _wordCount >= 5) || _forceAgentMode){
           var _currentStep = 0;
           var _pipeRes = await run4AgentPipeline(userText, function(stage, partial){
             // Step만 표시 (내용은 무시) — step 번호 바뀔 때만 갱신
