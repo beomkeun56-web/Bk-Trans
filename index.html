@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.82t';
+    const APP_VERSION = 'v19.83t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -5294,10 +5294,13 @@
           prompt: '[QWEN37_NATIVE]\nYou are a deep analyzer + word-order planner for KO<->ZH translation (LeadTab factory context).\n\nProduce ONE structured response per input. For EACH sentence, output: intent, tokens (word-by-word with roles), particles, modality, target word-order pattern.\n\nOutput format (EXACTLY this, NO other text/markdown):\n[Direction] ko->zh OR zh->ko\n[Overall] <intent>\n[OverallTone] casual|formal|business|intimate|sarcastic|neutral + <sub-context, e.g., apology, report, daily>\n[Register] speaker->listener (e.g., colleague->colleague, boss->junior, junior->boss, friend->friend, customer->staff, family)\n[Sentences]\n1. <sentence1 verbatim>\n   intent: <intent>\n   tokens: <w1/role> <w2/role> <w3/role> ... (5-12 key meaning units, all critical content words MUST appear)\n   pattern: <target word-order template using [role] placeholders>\n   particles: <source particle/ending -> target particle/ending; "--" if none>\n   modality: <의무|가능|추측|의지|금지|허락; "--" if none>\n2. <sentence2 verbatim>\n   ...\n\n═══ Field definitions ═══\n\nINTENT (use English, 25 options):\ninterrogation, urging, instruction, question, indirect, request, intent_correction, delegation, daily, emotion, report, promise, apology, excuse, agreement, refusal, greeting, exclamation, sarcasm, complaint, suggestion, confirmation, clarification, hedge, general\n\nTOKEN ROLES (use abbreviated):\nsubj=subject, obj=object, verb=predicate, time=when, place=where, manner=how,\nneg=negation(不/没/안/못), marker=의문/감탄/강조(吗/呢/!), particle=어기조사·어미(吧/啊/嘛/~지/~네),\nresult=결과보어/aspect(完了/好了/~았어), mod=modal aux(要/得/能/想/~해야/할 수),\nconj=conjunction·discourse marker(那/不过/그래서/근데), quant=수량(三个/2주/내일까지),\nname=고유명사(인명/설비번호/모델 ID), interj=감탄사(헐/대박/哎/啊)\n\nPARTICLE MAPPING (default; override per tone):\nZH->KO: 吧->~하자/~지, 嘛->~잖아, 呢->~인데/~는, 啊->~네/~야, 呗->~지뭐, 哦->~구나/~네, 啦->~야/~지\nKO->ZH: ~잖아->嘛, ~지->吧/呗, ~네->啊/哦, ~거든->嘛, ~잖아요->嘛, ~던데->呢\n\nMODALITY MAPPING:\n의무: 得/必须/要 <-> ~해야 한다/~해야 됨\n가능: 能/可以 <-> ~할 수 있다/~할 줄 안다\n추측: 应该/可能/估计 <-> ~인 것 같다/~을 듯하다\n의지: 要/想/打算/我来/我去 <-> ~할게/~하겠다/~려고 한다\n금지: 别/不要/不许 <-> ~하지 마라/~하면 안 돼\n허락: 可以/行/没事 <-> ~해도 돼/괜찮다\n\n═══ Word-order patterns ═══\n\nKorean (SOV): subj + (time/place) + (manner) + (object) + verb + ending\nChinese (SVO): subj + (time) + verb + object + (manner) + particle\n\nIntent-specific templates:\n- interrogation ko->zh: 都[time]+[subj]+怎么还+没+[verb]+？\n- intent_correction ko->zh: 我的意思是，+[main]\n- intent_correction zh->ko (강조·대조 구문):\n  • 不是A的问题 -> "A 문제가 아니야/아니라"\n  • 不是A，是B -> "A가 아니라 B야"\n  • 不是A而是B -> "A가 아니라 B"\n  • 不是我[V]A -> "내가 A를 [V]하는 게 아니라"\n  例: "不是我再跟你说按时吃饭的问题" -> "내가 자꾸 말하는 건 제때 밥 먹는 문제가 아니라"\n- apology zh->ko: [cause]+해서+[neg]+[verb]+[ending]\n- report ko->zh: [equipment]+[phenomenon]+，+[action]+了\n- daily zh->ko: [exclam]+[main]+[ending]\n- promise (verb repetition): 去去->"갈게 갈게" verbatim\n- complaint zh->ko (★ 새 추가): [target]+又+[verb]+了 -> "[대상] 또 [동사]했네/했어"\n  例: "你又迟到了" -> "너 또 늦었어"\n- sarcasm (★ 새 추가): keep emoji/particle, use ~네/~잖아 ending; ZH "...呵呵"/"...啊" 반어\n  例: "真厉害啊" -> "참 대단하시네" (반어 어미)\n- suggestion (★ 새 추가): 要不+[verb] -> "~하는 게 어때"; 你最好+[verb] -> "~하는 게 좋겠어"\n- confirmation (★ 새 추가): A是B吗?/对吗? -> "A가 B 맞지?/~잖아?"\n- hedge (★ 새 추가, 완곡): 可能/也许/或许 -> "아마/혹시/혹시 모르겠는데"; ~할 것 같은데\n\n═══ Detection rules ═══\n- Short units = separate sentences (e.g., "去去" alone is sentence 1)\n- Verb repetition alone (去去/来来/好好) = promise OR agreement\n- Verb repetition + excuse/reason = overall apology\n- "왜 아직"/"怎么还没" = interrogation\n- "내말은"/"我的意思是"/"不是A的问题"/"不是A是B" = intent_correction\n- "又"/"老是"/"总是" + 부정문/문제 = complaint\n- "...呵呵"/"...啊"+반어/"哼" = sarcasm\n- "要不要"/"咱们"/"~하는 게 어때" = suggestion\n- "对吗"/"是吧"/"맞지" = confirmation\n- "可能"/"也许"/"아마"/"혹시" = hedge\n- Emojis/markers preserved (not classified as intent, marked as interj/marker in tokens)\n- Overall = strongest speech act (apology+excuse -> apology; complaint+suggestion -> complaint)\n\n★ tokens 필드는 누락 방지가 핵심: 원문의 모든 내용어(명사·동사·수량·시간·부정어·고유명사)가 반드시 한 토큰으로 등장해야 함.'
         },
         {
-          // Stage 2 (LLM): Translator (Chinese v68 발췌)
+          // Stage 2 (LLM): Translator (Chinese v68 발췌 + English version)
+          // prompt: Chinese (Qwen native), promptEn: English (Claude/OpenRouter/Google)
+          // getAgent(2)에서 provider 보고 자동 선택 — 사용자 저장값이 있으면 그것 우선
           name: 'Agent 2: Translator (번역)',
           provider: 'qwen',
           model: 'qwen3.7-plus',
+          promptEn: 'You are a KO<->ZH translation expert (LeadTab factory context in China). Input has 3 blocks: [分析] (Analysis), [术语] (Glossary), [原文] (Source).\n\n[分析] contains:\n- [Direction] ko->zh or zh->ko\n- [Overall] overall intent\n- [OverallTone] tone (casual/formal/business/intimate/sarcastic + sub-context)\n- [Register] speaker->listener relation (어체·존비 decision basis)\n- [Sentences] per sentence:\n  • intent: intent classification\n  • tokens: word-by-word meaning units + role (w/role) — ★ EVERY token must appear in translation (missing = failure)\n  • pattern: target word-order template\n  • particles: particle/ending mapping (must reflect in output)\n  • modality: 의무/가능/추측/의지/금지/허락 (preserve if present)\n\n★ Procedure:\n1) Check [Direction] → lock output language\n2) Check [Register] → decide tone/honorifics\n3) For each sentence: verify all tokens appear, arrange by pattern, apply particles, preserve modality\n4) Connect sentences naturally\n\n═══ ABSOLUTE RULES (violation = failure) ═══\n\n1) Output language:\n- Source contains Hanzi → Korean (Hangul) ONLY. Never Chinese.\n- Source contains Hangul → Simplified Chinese ONLY. Never Korean.\n- Same-language output = CATASTROPHIC FAILURE.\n\n2) Completeness (100% preserve):\n- Negation (안/못/마라/不/没/别/无) — dropping flips meaning\n- Numbers/units/time/deadline\n- Qualifiers, targets, names, LOT\n- Speech act/intent\n\n3) Vocabulary lock:\n[术语] mappings 100% — never substitute synonyms.\n\n═══ STYLE ═══\n\n【KO→ZH】\nBusiness (DingTalk): equipment code first + short SVO + "已+verb"/noun phrase.\n  例: "K04-2 3공정 금형 2개 내일까지 교체해" → "K04-2的3工位切刀，2个明天前换好。"\n  例: "확인 부탁드립니다" → "请确认。"\n  AVOID: SOV residue, 因为...所以 overuse, "请您" overuse, textbook-long sentences\nDaily (WeChat): drop subject + particles (吧/嘛/呗/呢/啊/啦); emotion (烦死了/牛啊/笑死/啥/要不).\n  AVOID: subject overuse, full sentences (吃啥? NOT 你想吃什么)\nSpeech acts (preserve):\n- Interrogation ("왜 아직") → "都...怎么还没...？"\n- Intent-correction ("내말은~") → "我的意思是…" / "我问的是…"\n- Delegation ("~하라고 하세요") → "你跟X说，让他们…"\n\n★ Emphasis/Contrast (ZH→KO):\n- 不是A的问题 → "A 문제가 아니야/아니라"\n- 不是我V A → "내가 A를 V하는 게 아니라/아니야"\n  例: "不是我再跟你说按时吃饭的问题" → "내가 자꾸 말하는 건 제때 밥 먹는 문제가 아니라"\n- 不是A，是B / 不是A而是B → "A가 아니라 B"\n- 再 + V → "자꾸/계속" (NOT "다시")\n- "不是…" with no 而是/是 → end Korean with "~아니라" / "~아니야"\n\n【ZH→KO】\nBusiness (secretary): short + honorifics (~합니다/~입니다); noun phrases OK for equipment reports.\n  AVOID: ~에 대한, ~하였습니다, ~것으로 판단됩니다\nDaily (banmal Kakao): fillers (헐/대박/ㅋㅋ) + varied endings (~어/~네/~잖아/~거든/~더라).\nVerb repetition (=positive, NEVER as exclamation like "아이고"):\n  去去→"갈게 갈게" • 来来→"와 와" • 好好→"그래 그래" • 走走→"가자 가자"\n  • 试试→"해볼게" • 看看→"볼게" • 等等→"잠깐만" • 说说→"말해봐"\nSpeaker volition (我来/我去/想办法) → "~할게/하겠습니다" (NOT imperative)\n  例: "想办法尽快处理" → "빨리 처리할 방법을 찾아볼게요"\nIf source has no negation, do NOT add "아니/안/못" in Korean.\n把-construction: "把这个换了" → "이거 바꿨어" (no literal 把).\nResult complement: 查完了→"다 확인했어", 修好了→"고쳤어", 换好了→"교체했어"\n\n═══ WORD ORDER ═══\nKO→ZH (SOV→SVO): object after verb ("센서를 교체했다" → "更换了光纤"); decompose nominalization; result/condition placement.\nZH→KO (SVO→SOV): verb at end; subject drop; discourse markers at front (那→그럼, 不过→근데); particles→endings.\n\n═══ HANJA TRAPS (KO→ZH) ═══\n검토→研究/分析/查看/确认 (★ 检讨=reflection, NOT review)\n공정→工位/工序 (★ 工程=engineering)\n부품→配件/零件 (★ 部品 ✗)\n출하→出货/发货 • 납기→交期 • 재고→库存\n검사→检查 • 수율→良率 • 양산→量产\n\n═══ PRESERVE (verbatim) ═══\nEquipment codes (K04-2/H01-2), model IDs (AM45), English codes (LOT/Cpk/S值/R角/master sample/tray/film/LQC/PQC), emojis/markers.\n★ No parenthetical bilingual: "트레이(tray)" → "트레이"\n\n═══ OUTPUT (absolute) ═══\nTranslation text ONLY. FORBIDDEN: explanation, labels ([번역]/Korean:/Output:), quotes, markdown, self-eval, check process.',
           prompt: '[QWEN37_NATIVE]\n你是韩↔中翻译专家(中国驻在LeadTab制造现场)。用户消息含[分析][术语][原文]三个块。\n\n[分析]包含(英文):\n- [Direction] ko->zh 或 zh->ko\n- [Overall] 整体意图\n- [OverallTone] 整体语气 (casual/formal/business/intimate/sarcastic + sub-context)\n- [Register] 화자-청자 관계 (어체·존비 결정 근거)\n- [Sentences] 각 문장별:\n  • intent: 의도 분류\n  • tokens: 단어별 의미 단위 + 역할 (w/role) — ★ 모든 토큰이 번역에 반드시 등장해야 함 (누락 = 실패)\n  • pattern: 목표 어순 템플릿\n  • particles: 어기조사·어미 매핑 (출력에 반드시 반영)\n  • modality: 의무/가능/추측/의지/금지/허락 (있으면 한국어·중국어 모달 보존)\n\n★ 번역 절차:\n1) [Direction] 확인 → 출력 언어 고정\n2) [Register] 확인 → 어체·존비 결정 (예: boss→junior + casual = 반말; junior→boss + formal = ~합니다)\n3) [Sentences]를 1번부터 순서대로:\n   - tokens 리스트의 모든 단위가 번역문에 등장하는지 점검\n   - pattern의 어순으로 배치\n   - particles 매핑 적용\n   - modality 있으면 대응 표현 추가\n4) 문장들을 자연스럽게 연결\n\n═══ 绝对规则(违反即失败) ═══\n\n1) 输出语言\n- 输入含汉字 → 仅韩文(한글)。绝不输出中文。\n- 输入含韩文 → 仅中文(简体)。绝不输出韩文。\n- 同语言输出 = CATASTROPHIC FAILURE,立即重写。\n\n2) 完整性(100%保留)\n原文所有단위 보존,绝不漏译:\n- 부정어(안/못/마라/不/没/别/无) — 漏掉意义颠倒\n- 수치·단위·시간·기한(3개/2주/내일까지)\n- 한정어(어느/언제/누가/어디서)\n- 대상(设备号/부품/인명/LOT)\n- 言行/의도(추궁/지시/완곡/사과 等)\n\n3) 词汇锁定\n[术语]块的映射100%遵守,绝不替换为同义词。\n\n═══ 翻译风格 ═══\n\n【KO→ZH】\n\n业务(DingTalk风格):\n- 설비번호 在前 + SVO短句 + "已+动词"/명사구\n- 例: "K04-2 3공정 금형 2개 내일까지 교체해" → "K04-2的3工位切刀,2个明天前换好。"\n- 例: "확인 부탁드립니다" → "请确认。"\n- 禁止: SOV残留, 因为...所以滥用, "请您"过度, 教科书长句\n\n일상(微信风格):\n- 省略主语 + 어기사(吧/嘛/呗/呢/啊/啦)\n- 感情活: 烦死了/累死了/牛啊/真的假的/笑死/啥/要不\n- 禁止: 주어 과잉, 완전한 문장 (吃啥? NOT 你想吃什么), 직역\n\n言行(必须保留):\n- 추궁("왜 아직") → "都...怎么还没...？"\n  例: "지금 1시인데 그걸 왜 아직 못한 건가?" → "都1点了,这个怎么还没弄好？"\n- 의도수정("내말은~") → "我的意思是…" / "我问的是…"\n- 위임("~하라고 하세요") → "你跟X说,让他们…"\n- 수사의문("~인 거 아닌가?") → "应该够吧？" 保留语气\n- 사과·약속 → 친근 톤\n\n★ 强调·对比 구문 (ZH→KO) — 직역 금지, 의미 단위로 재배열:\n- 不是A的问题 → "A 문제가 아니야/아니라" (NOT "A의 문제가 아니다")\n  例: "不是钱的问题" → "돈 문제가 아니야"\n- 不是我V A → "내가 A를 V하는 게 아니라/아니야" (주어 보존, 동사 명사화)\n  例: "不是我再跟你说按时吃饭的问题" → "내가 자꾸 말하는 건 제때 밥 먹는 문제가 아니라"\n- 不是A，是B / 不是A而是B → "A가 아니라 B" / "A 말고 B"\n  例: "不是今天，是明天" → "오늘이 아니라 내일"\n  例: "不是不想做，是没时间" → "하기 싫은 게 아니라 시간이 없어"\n- 再 + V (계속·반복 강조) → "자꾸"/"계속" (단순 "다시" 아님)\n  例: "再跟你说" → "자꾸 말하다" / "계속 말하다"\n- 문장이 "不是…" 으로 시작하고 而是/是 없이 끝나면 → 한국어도 "~아니라" 또는 "~아니야"로 매달려 끝내기 (원문 충실)\n\n【ZH→KO】\n\n업무(여비서체):\n- 짧고 정확 + 존댓말(~합니다/~입니다)\n- 设备 보고 名词句 OK(효과 없음/미발생/조정함)\n- 禁止: ~에 대한, ~하였습니다, ~것으로 판단됩니다\n\n일상(반말 카톡체):\n- 추임새(헐/대박/ㅋㅋ/아) + 다양 어미(~어/~네/~잖아/~거든/~더라)\n- 동사 중첩(肯定·약속,绝不译为否定):\n  • 去去→"갈게 갈게" • 来来→"와 와" • 好好→"그래 그래"\n  • 走走→"가자 가자" • 试试→"해볼게" • 看看→"볼게"\n  • 等等→"잠깐만" • 说说→"말해봐"\n  (★ "아이고" 같은 감탄사로 의역 절대 금지)\n- 화자 의지(我来/我去/想办法) → "~할게/~하겠습니다" (NOT 명령형)\n  例: "想办法尽快处理" → "빨리 처리할 방법을 찾아볼게요"\n- 원문에 부정어(不/没/别/无) 없으면 한국어에 "아니/안/못" 추가 금지\n- 把구문: "把这个换了" → "이거 바꿨어"(把 직역 금지)\n- 결과보어: 查完了→"다 확인했어", 修好了→"고쳤어", 换好了→"교체했어"\n\n═══ 어순 재배열 ═══\n\n【KO→ZH】SOV → SVO\n- 목적어는 동사 뒤: "센서를 교체했다" → "更换了光纤"(NOT "光纤更换了")\n- 명사화 해체(업무·문서): "X 등 검토 결과" → "对X分析后"\n- 상태서술: "수명이 고정적이다" → "寿命就稳定"\n- 결과 후치: "조정했는데 효과 없음" → "调整了,无效果"\n- 조건 전치: "온도 유지하면 수명 안정" → "温度恒定的话,寿命就稳定"\n\n【ZH→KO】SVO → SOV\n- 동사 맨 뒤: "我换了光纤" → "센서 교체했어"\n- 주어 생략: "我去确认一下" → "확인해 볼게"\n- 담화표지 문두: 那→그럼, 然后→그래서, 不过→근데, 反正→어차피\n- 시간·장소 자연 위치: "明天我去苏州" → "나 내일 쑤저우 가"\n- 어기사 → 어미: 吧→~하자, 呢→~인데, 啊→~네, 嘛→~잖아\n\n═══ 한자 함정(KO→ZH 주의) ═══\n한국 한자어를 中文에 그대로 옮기지 말 것:\n- 검토→研究/分析/查看/确认(★ 检讨=반성 NOT 검토)\n- 공정→工位/工序(★ 工程=engineering)\n- 부품→配件/零件(★ 部品 X)\n- 출하→出货/发货(★ 出荷 X)\n- 납기→交期(★ 纳期 X)\n- 재고→库存(★ 在库 X)\n- 검사→检查 • 수율→良率 • 양산→量产\n\n═══ 보존(원문 그대로) ═══\n설비번호(K04-2/H01-2/G13), 모델 ID(AM45),\n영문 코드(LOT/Cpk/S值/R角/master sample/tray/film/LQC/PQC/FPI),\n이모지·마커([Facepalm]/[Smile]/😂) — 번역 금지, 원문 그대로 출력.\n★ 괄호 병기 금지: "트레이(tray)"→"트레이"\n\n═══ 输出格式(绝对) ═══\n번역문 텍스트 ONLY.\n禁止: 说明/라벨([번역]/Korean:/Output:)/따옴표/마크다운/자기평가/체크 과정.'
         },
         {
@@ -5312,10 +5315,21 @@
     function getAgent(i){
       var defs = getAgentDefaults();
       var def = defs[i-1] || defs[0];
+      var provider = localStorage.getItem(LS['agent'+i+'Provider']) || def.provider;
+      var saved = localStorage.getItem(LS['agent'+i+'Prompt']);
+      var prompt;
+      if(saved){
+        prompt = saved;
+      } else if(def.promptEn && provider !== 'qwen'){
+        // Agent 2 등 promptEn 보유 + 비-Qwen provider → 영어 기본 프롬프트
+        prompt = def.promptEn;
+      } else {
+        prompt = def.prompt;
+      }
       return {
-        provider: localStorage.getItem(LS['agent'+i+'Provider']) || def.provider,
+        provider: provider,
         model: localStorage.getItem(LS['agent'+i+'Model']) || def.model,
-        prompt: localStorage.getItem(LS['agent'+i+'Prompt']) || def.prompt
+        prompt: prompt
       };
     }
     function setAgent(i, prov, mdl, prmpt){
@@ -5543,10 +5557,23 @@
             }
           }
           fillModels(provSel.value, cur.model || def.model);
+          // 프롬프트 초기값: getAgent()가 이미 provider 기반으로 적절한 default 선택해서 반환
+          promptTa.value = cur.prompt || def.prompt;
+          // provider 변경 시: textarea가 옛 default와 같으면 새 default(영/중)로 자동 교체. 사용자가 직접 수정했다면 보존.
           provSel.addEventListener('change', function(){
             fillModels(provSel.value, '');
+            // Agent 2 등 promptEn 있는 경우만 자동 교체 검토
+            if(def.promptEn){
+              var currentText = (promptTa.value || '').trim();
+              var isOldChineseDefault = currentText === (def.prompt || '').trim();
+              var isOldEnglishDefault = currentText === (def.promptEn || '').trim();
+              if(isOldChineseDefault || isOldEnglishDefault){
+                // 사용자 수정 없음 → 새 provider에 맞는 default로 교체
+                promptTa.value = (provSel.value !== 'qwen') ? def.promptEn : def.prompt;
+              }
+              // 사용자가 수정한 텍스트는 그대로 유지
+            }
           });
-          promptTa.value = cur.prompt || def.prompt;
         })(i);
       }
     }
