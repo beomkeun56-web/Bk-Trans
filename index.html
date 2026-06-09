@@ -1471,7 +1471,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.70t';
+    const APP_VERSION = 'v19.71t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4073,12 +4073,14 @@
     }
     function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline){
       if(!_showTokens || !actionsEl) return null;
-      // 3-Stage 파이프라인 표시:
-      //   [의도] 수정 → actions 행 (음성출력·Copy·Edit 옆)
-      //   Haiku/1.8s + Qwen/1.4s + Gemini/2.0s = 5.2s → 별도 행 (return)
+      // 파이프라인 표시 (3-Stage / 2-Stage 공통):
+      //   actions 행: [의도/2Mode] 수정(N%)   [MT원본] (2-Agent만)
+      //   별도 행: Model/Xs + ... = Ts
+      //   확장 행 (토글): MT 원본 텍스트 (2-Agent + 수정 발생 시)
       if(pipeline){
         var stages = pipeline.stages || [];
         var models = pipeline.models || [];
+        var is2Agent = pipeline.mode === '2agent' || stages.length === 2;
         var brandOf = function(pretty){
           if(!pretty) return '';
           var first = String(pretty).trim().split(/[\s\-_]/)[0] || '';
@@ -4086,23 +4088,59 @@
         };
         var modeSpan = document.createElement('span');
         modeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
-        modeSpan.textContent = '[' + (pipeline.intent ? shortIntent(pipeline.intent) : '3Mode') + ']';
+        var modeLabel = pipeline.intent ? shortIntent(pipeline.intent) : (is2Agent ? '2Mode' : '3Mode');
+        modeSpan.textContent = '[' + modeLabel + ']';
         actionsEl.appendChild(modeSpan);
         var statusSpan = document.createElement('span');
         var modified = !!pipeline.modified;
+        var pct = (typeof pipeline.modifiedPct === 'number') ? pipeline.modifiedPct : null;
         statusSpan.style.cssText = 'font-size:10px;color:' + (modified ? '#f59e0b' : '#10b981') + ';opacity:.95;margin-left:6px;font-weight:700;white-space:nowrap;';
-        statusSpan.textContent = modified ? '수정' : '오류X';
+        statusSpan.textContent = modified ? ('수정' + (pct !== null && pct > 0 ? ' ' + pct + '%' : '')) : '오류X';
         actionsEl.appendChild(statusSpan);
+        // MT 실패 표시
+        if(pipeline.mtFailed){
+          var mtFailSpan = document.createElement('span');
+          mtFailSpan.style.cssText = 'font-size:10px;color:#ef4444;opacity:.95;margin-left:6px;font-weight:700;white-space:nowrap;';
+          mtFailSpan.textContent = 'MT실패→직역';
+          actionsEl.appendChild(mtFailSpan);
+        }
+        // A. MT 원본 토글 (2-Agent + MT 결과 있음 + 수정 발생)
+        var mtToggleEl = null;
+        if(is2Agent && pipeline.mt && pipeline.mt !== pipeline.text){
+          var mtBtn = document.createElement('button');
+          mtBtn.type = 'button';
+          mtBtn.style.cssText = 'font-size:10px;color:#b91c4a;background:rgba(185,28,74,.1);border:1px solid rgba(185,28,74,.3);border-radius:6px;padding:1px 6px;margin-left:6px;cursor:pointer;font-family:inherit;white-space:nowrap;';
+          mtBtn.textContent = 'MT 원본';
+          mtBtn.addEventListener('click', function(){
+            if(!mtToggleEl) return;
+            var hidden = mtToggleEl.style.display === 'none';
+            mtToggleEl.style.display = hidden ? '' : 'none';
+            mtBtn.textContent = hidden ? 'MT 숨김' : 'MT 원본';
+          });
+          actionsEl.appendChild(mtBtn);
+          // 토글로 보일 MT 원본 행 (initially hidden)
+          mtToggleEl = document.createElement('div');
+          mtToggleEl.style.cssText = 'display:none;font-size:11px;color:var(--text);opacity:.85;margin-top:6px;padding:6px 10px;background:rgba(185,28,74,.06);border-left:3px solid #b91c4a;border-radius:4px;white-space:pre-wrap;line-height:1.5;';
+          mtToggleEl.textContent = pipeline.mt;
+        }
         if(stages.length){
           var sum = stages.reduce(function(a, b){ return a + b; }, 0);
           var parts = stages.map(function(t, i){
             var b = brandOf(models[i]);
             return (b ? b + '/' : '') + (t / 1000).toFixed(1) + 's';
           });
+          var wrap = document.createElement('div');
           var timeRow = document.createElement('div');
           timeRow.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-top:3px;padding-left:14px;white-space:normal;line-height:1.4;';
           timeRow.textContent = parts.join(' + ') + ' = ' + (sum / 1000).toFixed(1) + 's';
-          return timeRow;
+          wrap.appendChild(timeRow);
+          if(mtToggleEl) wrap.appendChild(mtToggleEl);
+          return wrap;
+        }
+        if(mtToggleEl){
+          var wrap2 = document.createElement('div');
+          wrap2.appendChild(mtToggleEl);
+          return wrap2;
         }
         return null;
       }
@@ -4266,7 +4304,10 @@
         let _pipelineInfo = null;
         // 3-Stage 파이프라인: 5단어 이상 입력에만 사용 (짧은 메시지는 일반 흐름)
         // _forceAgentMode: Retry 팝업의 Agent Mode 버튼 1회성 강제 (단어수 무시)
-        if(((_use2Agent && _wordCount >= 5) || _force2AgentMode) && !_forceAgentMode){
+        // C. 2-Agent + 긴 입력(문장 3개↑) → 자동으로 3-Agent로 폴백 (MT 다문 단락 약점 회피)
+        var _sentenceCount2 = (userText.match(/[.!?。！？\n]+/g) || []).length + 1;
+        var _force3stForLong = (_use2Agent && !_force2AgentMode && _sentenceCount2 >= 3);
+        if(((_use2Agent && _wordCount >= 5) || _force2AgentMode) && !_forceAgentMode && !_force3stForLong){
           var _currentStep2 = 0;
           var _pipeRes = await run2AgentPipeline(userText, function(stage, partial){
             var m = String(stage || '').match(/Stage\s+(\d+)/);
@@ -4285,7 +4326,7 @@
           } else {
             translatedRaw = _pipeRes || '';
           }
-        } else if((_use4Agent && _wordCount >= 5) || _forceAgentMode){
+        } else if(((_use4Agent && _wordCount >= 5) || _forceAgentMode) || _force3stForLong){
           var _currentStep = 0;
           var _pipeRes = await run4AgentPipeline(userText, function(stage, partial){
             // Step만 표시 (내용은 무시) — step 번호 바뀔 때만 갱신
@@ -4782,7 +4823,7 @@
         agent2: {
           provider: 'anthropic',
           model: 'claude-sonnet-4-6',
-          prompt: '[QWEN37_NATIVE]\nYou are a focused MT-output polisher for KO<->ZH translation (LeadTab factory context).\n\nInput has 5 blocks: [Persona], [Source], [Translation], [Glossary], [Context].\n[Translation] is from Qwen-MT and is ~90% accurate. Your job is NOT to re-translate, but to fix ONLY the specific weaknesses listed below.\n\n★ [Persona] (사용자 메인 시스템 프롬프트):\n페르소나·스타일 가이드. [Translation]이 페르소나 톤·어체와 어긋나면 그 부분만 맞춰 수정. "(no persona — neutral)"이면 무시.\n\n★ DEFAULT BEHAVIOR — Trust [Translation]:\nIf no specific issue from the checklist, output [Translation] verbatim. NO unnecessary rewrites.\n\n★ TARGETED CHECKLIST (only these 5 categories):\n\n1) 어순 (SOV/SVO 자연도)\n- Korean target: verb 끝, 어미 자연 (SOV). 中文 SVO残留 잡기. 例: "교체했어 센서를" → "센서 교체했어"\n- Chinese target: SVO 자연. 时间 앞, 宾语 동사 뒤. 例: "光纤更换了" → "更换了光纤"\n\n2) 용어 ([Glossary] 100% 적용)\n매핑이 적용됐는지 확인. 동의어 치환됐으면 → [Glossary]대로 교체.\n\n3) 문맥 (대명사·반복 단어·톤 일관성, [Context] 기준)\n명백히 무관해 보이면 무시. 같은 단어가 이전 turn과 다르게 번역됐으면 통일.\n\n4) MT 알려진 실수 패턴 (즉시 REPLACE):\n- 동사 중첩 (=약속·긍정): 去去→"갈게 갈게", 来来→"와 와", 好好→"그래 그래", 走走→"가자 가자", 试试→"해볼게", 看看→"볼게", 等等→"잠깐만", 说说→"말해봐" (★ "아이고/이런/저런" 등 감탄사로 의역됐으면 무조건 위 매핑으로 교체)\n- 강조·대조: 不是A的问题→"A 문제가 아니야/아니라", 不是A是B/不是A而是B→"A가 아니라 B", 不是我V A→"내가 A를 V하는 게 아니라"\n- 추궁(都...怎么还没...?)→"왜 아직..." 어조 보존\n- 의도수정(我的意思是)→"내 말은"\n- 어기조사 보존: 吧→~지/하자, 嘛→~잖아, 呢→~인데, 啊→~네/야, 呗→~지뭐\n- 把구문 ZH→KO: 把 직역 금지 (例: 把这个换了→"이거 바꿨어")\n- 부정 누락(불/안/못/不/没/别): MT가 빠뜨렸으면 추가\n\n5) 언어 누설: 한국어 출력에 한자 → 한글 변환, 중국어 출력에 한글 → 简体 변환\n\n═══ OUTPUT — ABSOLUTE RULES (어기면 SYSTEM FAILURE) ═══\n출력은 오직 최종 번역문 텍스트만. 그 외 모든 것 금지.\n\n❌ 절대 금지:\n- 마크다운 (--- / *** / **bold** / # heading / 코드블록 / 인용 / 표)\n- "수정 사항:" / "변경 내용:" / "Notes:" / "Changes:" / "Verdict:" 라벨·섹션\n- 어떤 항목을 어떻게 고쳤는지 설명·이유·코멘트\n- 글머리 기호 (- / • / 1. / ★ / ✓)\n- 번역문을 따옴표로 감싸기\n- "원문:" / "번역:" / "[번역]" 라벨\n- 원문에 없는 빈 줄 추가\n\n✅ 올바른 출력 예 (입력 1줄 → 출력 1줄):\n허하이양 film 공급 미개통\n\n❌ 잘못된 출력 예:\n허하이양 필름 공급 미개통\n\n---\n**수정 사항:**\n- "미개방" → "미개통" (이유...)\n\n번역문이 끝나면 즉시 STOP. 추가 출력 0.'
+          prompt: '[QWEN37_NATIVE]\nYou are a focused MT-output polisher for KO<->ZH translation (LeadTab factory context).\n\nInput has 5 blocks: [Persona], [Source], [Translation], [Glossary], [Context].\n[Translation] is from Qwen-MT and is ~90% accurate. Your job is NOT to re-translate, but to fix ONLY the specific weaknesses listed below.\n\n★ [Persona] (사용자 메인 시스템 프롬프트):\n페르소나·스타일 가이드. [Translation]이 페르소나 톤·어체와 어긋나면 그 부분만 맞춰 수정. "(no persona — neutral)"이면 무시.\n\n★ DEFAULT BEHAVIOR — Trust [Translation]:\nIf no specific issue from the checklist, output [Translation] verbatim. NO unnecessary rewrites.\n\n★ MT 실패 폴백:\n[Translation]이 "(MT 실패 ..."로 시작하거나 비어있으면 → [Source]를 직접 번역하라. 5개 체크리스트 모두 적용. 출력 형식은 동일.\n\n★ TARGETED CHECKLIST (only these 5 categories):\n\n1) 어순 (SOV/SVO 자연도)\n- Korean target: verb 끝, 어미 자연 (SOV). 中文 SVO残留 잡기. 例: "교체했어 센서를" → "센서 교체했어"\n- Chinese target: SVO 자연. 时间 앞, 宾语 동사 뒤. 例: "光纤更换了" → "更换了光纤"\n\n2) 용어 ([Glossary] 100% 적용)\n매핑이 적용됐는지 확인. 동의어 치환됐으면 → [Glossary]대로 교체.\n\n3) 문맥 (대명사·반복 단어·톤 일관성, [Context] 기준)\n명백히 무관해 보이면 무시. 같은 단어가 이전 turn과 다르게 번역됐으면 통일.\n\n4) MT 알려진 실수 패턴 (즉시 REPLACE):\n- 동사 중첩 (=약속·긍정): 去去→"갈게 갈게", 来来→"와 와", 好好→"그래 그래", 走走→"가자 가자", 试试→"해볼게", 看看→"볼게", 等等→"잠깐만", 说说→"말해봐" (★ "아이고/이런/저런" 등 감탄사로 의역됐으면 무조건 위 매핑으로 교체)\n- 강조·대조: 不是A的问题→"A 문제가 아니야/아니라", 不是A是B/不是A而是B→"A가 아니라 B", 不是我V A→"내가 A를 V하는 게 아니라"\n- 추궁(都...怎么还没...?)→"왜 아직..." 어조 보존\n- 의도수정(我的意思是)→"내 말은"\n- 어기조사 보존: 吧→~지/하자, 嘛→~잖아, 呢→~인데, 啊→~네/야, 呗→~지뭐\n- 把구문 ZH→KO: 把 직역 금지 (例: 把这个换了→"이거 바꿨어")\n- 부정 누락(불/안/못/不/没/别): MT가 빠뜨렸으면 추가\n\n5) 언어 누설: 한국어 출력에 한자 → 한글 변환, 중국어 출력에 한글 → 简体 변환\n\n═══ OUTPUT — ABSOLUTE RULES (어기면 SYSTEM FAILURE) ═══\n출력은 오직 최종 번역문 텍스트만. 그 외 모든 것 금지.\n\n❌ 절대 금지:\n- 마크다운 (--- / *** / **bold** / # heading / 코드블록 / 인용 / 표)\n- "수정 사항:" / "변경 내용:" / "Notes:" / "Changes:" / "Verdict:" 라벨·섹션\n- 어떤 항목을 어떻게 고쳤는지 설명·이유·코멘트\n- 글머리 기호 (- / • / 1. / ★ / ✓)\n- 번역문을 따옴표로 감싸기\n- "원문:" / "번역:" / "[번역]" 라벨\n- 원문에 없는 빈 줄 추가\n\n✅ 올바른 출력 예 (입력 1줄 → 출력 1줄):\n허하이양 film 공급 미개통\n\n❌ 잘못된 출력 예:\n허하이양 필름 공급 미개통\n\n---\n**수정 사항:**\n- "미개방" → "미개통" (이유...)\n\n번역문이 끝나면 즉시 STOP. 추가 출력 0.'
         }
       };
     }
@@ -4799,6 +4840,7 @@
     }
 
     // 2-Agent 파이프라인: Qwen MT → 분석·검증 통합 Agent 2
+    // 개선(v19.71t): A(MT 원본 가시), B(MT 실패 폴백), D(사후 정규식 보정), E(변경 강도 %), Glossary 상한
     async function run2AgentPipeline(userText, onProgress){
       var origProv = el.apiProvider ? el.apiProvider.value : '';
       var origMdl = el.model ? el.model.value : '';
@@ -4806,11 +4848,13 @@
       var origEnhanced = _useEnhancedPrompt;
       _useEnhancedPrompt = false;
 
-      // 용어집 매칭 (sys + user 통합)
+      // 용어집 매칭 (sys + user 통합) + 상한 20개 (긴 src 우선 = 더 특이한 매칭)
       var glossaryText = '';
       try{
-        var matches = matchGlossary(userText);
+        var matches = matchGlossary(userText) || [];
         if(matches.length){
+          matches.sort(function(a, b){ return (b.src || '').length - (a.src || '').length; });
+          if(matches.length > 20) matches = matches.slice(0, 20);
           glossaryText = matches.map(function(e){ return e.src + ' → ' + e.tgt; }).join('\n');
         }
       } catch(_){}
@@ -4831,19 +4875,74 @@
         }
       }
 
+      // D. 사후 정규식 보정 — Agent 2가 가끔 누설하는 라벨·마크다운 strip (안전한 것만)
+      function postCleanFinal(s){
+        if(!s) return s;
+        var out = String(s);
+        // 코드블록 fence 제거 (단독 ``` 라인)
+        out = out.replace(/```[a-zA-Z0-9_-]*\n?/g, '').replace(/```/g, '');
+        // 수평선 (---, ***, ___) 단독 라인 제거
+        out = out.replace(/^\s*[-*_]{3,}\s*$/gm, '');
+        // "수정 사항:" / "변경:" / "Notes:" / "Changes:" / "Verdict:" / "[번역]" 같은 라벨 블록 제거 (라벨 + 뒤따르는 줄들)
+        out = out.replace(/^\s*\*?\*?(수정\s*사항|변경(\s*내용)?|Notes|Changes|Verdict|번역|Translation|결과)\s*:?\s*\*?\*?\s*$/gim, '');
+        // 라벨 inline (예: "[번역] 안녕") 앞쪽 라벨만 제거
+        out = out.replace(/^\s*\[(?:번역|Translation|원문|Source|Output|결과)\]\s*/i, '');
+        // **bold** / *italic* 마커 strip
+        out = out.replace(/\*\*([^*\n]+)\*\*/g, '$1').replace(/\*([^*\n]+)\*/g, '$1');
+        // 앞뒤 따옴표로 통째 감싸진 경우만 제거
+        out = out.replace(/^["“「『](.+)["”」』]\s*$/s, '$1');
+        // 빈 줄 연속 → 1줄로
+        out = out.replace(/\n{3,}/g, '\n\n');
+        return out.trim();
+      }
+
+      // 변경 강도 % (간단 Levenshtein 기반)
+      function diffPercent(a, b){
+        a = String(a || ''); b = String(b || '');
+        if(!a && !b) return 0;
+        if(!a || !b) return 100;
+        // 작은 입력만 정밀 계산 (성능)
+        if(Math.max(a.length, b.length) > 400){
+          var lenDiff = Math.abs(a.length - b.length);
+          return Math.min(100, Math.round(lenDiff / Math.max(a.length, b.length) * 100));
+        }
+        var m = a.length, n = b.length;
+        var dp = new Array(n + 1);
+        for(var j = 0; j <= n; j++) dp[j] = j;
+        for(var i = 1; i <= m; i++){
+          var prev = dp[0]; dp[0] = i;
+          for(var k = 1; k <= n; k++){
+            var tmp = dp[k];
+            dp[k] = (a[i-1] === b[k-1]) ? prev : Math.min(prev, dp[k-1], dp[k]) + 1;
+            prev = tmp;
+          }
+        }
+        return Math.min(100, Math.round(dp[n] / Math.max(m, n) * 100));
+      }
+
       var stage1Ms = 0, stage2Ms = 0;
       var mtTranslation = '';
       var finalOutput = '';
       var modified = false;
+      var mtFailed = false;
+      var modifiedPct = 0;
       try{
         // Stage 1: Qwen MT
         var t1 = Date.now();
         if(onProgress) onProgress('Stage 1', '');
-        mtTranslation = await callStage(1, 'qwen', getAgent2ModeMtModel(), '', userText);
+        try{
+          mtTranslation = await callStage(1, 'qwen', getAgent2ModeMtModel(), '', userText);
+        } catch(err){
+          // B. MT 실패: 에러 메시지 캡처하고 빈 처리 → Stage 2 직접 번역 진입
+          mtTranslation = '';
+          mtFailed = true;
+          try{ console.warn('[2-Stage] MT 실패:', err && err.message); } catch(_){}
+        }
         mtTranslation = (mtTranslation || '').trim();
+        if(!mtTranslation) mtFailed = true;
         stage1Ms = Date.now() - t1;
 
-        // Stage 2: Analyzer + Verifier
+        // Stage 2: Polisher (or fallback direct translator)
         var t2 = Date.now();
         if(onProgress) onProgress('Stage 2', '');
         var contextBlock = '';
@@ -4858,20 +4957,22 @@
         } catch(_){}
         if(!contextBlock) contextBlock = '(no prior context)';
         var ag2 = getAgent2ModeAgent2();
-        // [Persona] = 사용자의 현재 메인 시스템 프롬프트 (있으면 — 페르소나·스타일 가이드 역할)
         var personaBlock = '';
         try{
           var sys = (origSys || '').trim();
           if(sys && sys.length > 10) personaBlock = sys.slice(0, 1500);
         } catch(_){}
         if(!personaBlock) personaBlock = '(no persona — neutral)';
-        var stage2User = '[Persona]\n' + personaBlock + '\n\n[Source]\n' + userText + '\n\n[Translation]\n' + mtTranslation + '\n\n[Glossary]\n' + termsBlock + '\n\n[Context]\n' + contextBlock;
+        // B. MT 실패 시 [Translation]에 명시적 마커 — Agent 2가 직접 번역 모드로 분기
+        var translationBlock = mtFailed ? '(MT 실패 — [Source]를 직접 번역해 주세요. 5개 체크리스트 모두 적용.)' : mtTranslation;
+        var stage2User = '[Persona]\n' + personaBlock + '\n\n[Source]\n' + userText + '\n\n[Translation]\n' + translationBlock + '\n\n[Glossary]\n' + termsBlock + '\n\n[Context]\n' + contextBlock;
         finalOutput = await callStage(2, ag2.provider, ag2.model, ag2.prompt, stage2User);
-        finalOutput = (finalOutput || '').trim();
+        finalOutput = postCleanFinal((finalOutput || '').trim());
         stage2Ms = Date.now() - t2;
 
         modified = !!(mtTranslation && finalOutput && mtTranslation !== finalOutput);
-        try{ console.log('[2-Stage Pipeline]', { mt: mtTranslation, final: finalOutput, modified: modified, stages: [stage1Ms, stage2Ms] }); } catch(_){}
+        modifiedPct = mtTranslation ? diffPercent(mtTranslation, finalOutput) : 0;
+        try{ console.log('[2-Stage Pipeline]', { mt: mtTranslation, final: finalOutput, mtFailed: mtFailed, modified: modified, modifiedPct: modifiedPct, stages: [stage1Ms, stage2Ms] }); } catch(_){}
       } finally {
         if(el.apiProvider) el.apiProvider.value = origProv;
         if(el.model) el.model.value = origMdl;
@@ -4886,7 +4987,11 @@
           prettifyModelName(getAgent2ModeMtModel()),
           prettifyModelName(getAgent2ModeAgent2().model)
         ],
-        modified: modified
+        mt: mtTranslation,
+        mtFailed: mtFailed,
+        modified: modified,
+        modifiedPct: modifiedPct,
+        mode: '2agent'
       };
     }
     // 3-Stage 파이프라인 (v19.53t — 단순화)
