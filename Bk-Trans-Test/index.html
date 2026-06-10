@@ -902,21 +902,9 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
-      <label style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="font-size:calc(14px * var(--textScale)); color:var(--text);">Agent Mode (분석→번역→검증)</span>
-        <input type="checkbox" id="opt4Agent" style="transform:scale(1.3); cursor:pointer;" />
-      </label>
-      <div id="opt4AgentWrap" style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,.05); display:none;">
-        <div style="font-size:calc(11px * var(--textScale)); color:var(--muted); margin-bottom:6px; line-height:1.5;">
-          각 단계가 단일 작업만 수행 → LLM 능력 극대화.<br>
-          Stage 1: 분석 (의도+어순, LLM)<br>
-          (용어): 시스템 용어집 자동 매칭 (코드, 즉시)<br>
-          Stage 2: 번역 실행 (LLM)<br>
-          Stage 3: 검증·맥락·출력 (LLM)<br>
-          ※ 메인 시스템 프롬프트는 우회됨.
-        </div>
-        <button id="opt4AgentConfigBtn" type="button" style="width:100%; padding:10px; border:1px solid rgba(45,107,255,.3); border-radius:10px; background:rgba(45,107,255,.15); color:var(--text); font-size:calc(13px * var(--textScale)); cursor:pointer; font-family:inherit;">⚙️ Agent 설정 (모델·프롬프트)</button>
-      </div>
+      <!-- v20.0t — Agent Mode 토글 제거 (TM 자동 예시 주입으로 통합). 호환용 hidden input만 유지. -->
+      <input type="checkbox" id="opt4Agent" style="display:none;" />
+      <div id="opt4AgentWrap" style="display:none;"><button id="opt4AgentConfigBtn" style="display:none;"></button></div>
       <!-- 숨김 — 기존 로직 호환용 -->
       <input type="checkbox" id="optEnhanced" style="display:none;" />
       <input type="checkbox" id="optSecondPass" style="display:none;" />
@@ -1471,7 +1459,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v19.91t';
+    const APP_VERSION = 'v20.0t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1526,6 +1514,9 @@
       use4Agent: 'bk_tr_test_use4Agent',
       use2Agent: 'bk_tr_test_use2Agent',
       usePlanMode: 'bk_tr_test_usePlanMode',
+      tmPairs: 'bk_tr_test_tmPairs',
+      tmEnabled: 'bk_tr_test_tmEnabled',
+      tmTopK: 'bk_tr_test_tmTopK',
       agent2mode_provider: 'bk_tr_test_agent2mode_provider',
       agent2mode_model: 'bk_tr_test_agent2mode_model',
       agent2mode_prompt: 'bk_tr_test_agent2mode_prompt',
@@ -1893,6 +1884,16 @@
         localStorage.setItem('bk_tr_test_agent2mode_migration_v5', '1');
       }
     } catch(_){}
+    // v20.0t — 모드 재설계: 3st/2st/Plan Mode 강제 OFF (단일 호출 + TM 예시 주입으로 통합)
+    try{
+      if(!localStorage.getItem('bk_tr_test_modeRedesign_v1')){
+        localStorage.setItem(LS.use4Agent, '0');
+        localStorage.setItem(LS.use2Agent, '0');
+        localStorage.setItem(LS.usePlanMode, '0');
+        localStorage.setItem('bk_tr_test_modeRedesign_v1', '1');
+        try{ console.log('[v20.0] Agent 모드 강제 OFF → 단일 호출 + TM 예시 주입으로 통합'); } catch(_){}
+      }
+    } catch(_){}
 
     function loadModelList(lsKey, defaults){
       var saved = localStorage.getItem(lsKey);
@@ -2093,85 +2094,7 @@
       try{ isPlan = localStorage.getItem(LS.usePlanMode) === '1'; } catch(_){}
       el.modelDropdown.innerHTML = '';
 
-      // ★ Agent Mode (파이프라인 3단계)
-      const agentBtn = document.createElement('button');
-      agentBtn.className = 'modelDropdownItem' + (is3Agent ? ' active' : '');
-      agentBtn.type = 'button';
-      agentBtn.innerHTML = '<div class="mdName" style="color:#3b82f6;">3st Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(3단계)</span></div><div class="mdId">분석 → 번역 → 검증·맥락</div>';
-      agentBtn.addEventListener('click', () => {
-        _use4Agent = true;
-        _use2Agent = false;
-        _usePlanMode = false;
-        try{
-          localStorage.setItem(LS.use4Agent, '1');
-          localStorage.setItem(LS.use2Agent, '0');
-          localStorage.setItem(LS.usePlanMode, '0');
-        } catch(_){}
-        var optEl = document.getElementById('opt4Agent');
-        if(optEl) optEl.checked = true;
-        var wrap = document.getElementById('opt4AgentWrap');
-        if(wrap) wrap.style.display = '';
-        updateModelTag();
-        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
-        closeModelDropdown();
-        toast('3st Agent Mode ON');
-      });
-      el.modelDropdown.appendChild(agentBtn);
-
-      // ★ 2_Agent Mode (Qwen MT + 통합 분석·검증)
-      const agent2Btn = document.createElement('button');
-      agent2Btn.className = 'modelDropdownItem' + (is2Agent ? ' active' : '');
-      agent2Btn.type = 'button';
-      agent2Btn.innerHTML = '<div class="mdName" style="color:#b91c4a;">2st Agent Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(2단계)</span></div><div class="mdId">Qwen MT → 분석·검증 통합</div>';
-      agent2Btn.addEventListener('click', () => {
-        _use2Agent = true;
-        _use4Agent = false;
-        _usePlanMode = false;
-        try{
-          localStorage.setItem(LS.use2Agent, '1');
-          localStorage.setItem(LS.use4Agent, '0');
-          localStorage.setItem(LS.usePlanMode, '0');
-        } catch(_){}
-        var optEl3 = document.getElementById('opt4Agent');
-        if(optEl3) optEl3.checked = false;
-        var wrap4 = document.getElementById('opt4AgentWrap');
-        if(wrap4) wrap4.style.display = 'none';
-        updateModelTag();
-        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
-        closeModelDropdown();
-        toast('2st Agent Mode ON');
-      });
-      el.modelDropdown.appendChild(agent2Btn);
-
-      // ★ Plan Mode (Analyzer + Translator, 검증 없음 — 보라색)
-      const planBtnDD = document.createElement('button');
-      planBtnDD.className = 'modelDropdownItem' + (isPlan ? ' active' : '');
-      planBtnDD.type = 'button';
-      planBtnDD.innerHTML = '<div class="mdName" style="color:#a855f7;">Plan Mode <span style="font-size:10px;font-weight:400;color:var(--muted);">(2단계)</span></div><div class="mdId">분석 → 번역 (검증 생략)</div>';
-      planBtnDD.addEventListener('click', () => {
-        _usePlanMode = true;
-        _use4Agent = false;
-        _use2Agent = false;
-        try{
-          localStorage.setItem(LS.usePlanMode, '1');
-          localStorage.setItem(LS.use4Agent, '0');
-          localStorage.setItem(LS.use2Agent, '0');
-        } catch(_){}
-        var optEl5 = document.getElementById('opt4Agent');
-        if(optEl5) optEl5.checked = false;
-        var wrap6 = document.getElementById('opt4AgentWrap');
-        if(wrap6) wrap6.style.display = 'none';
-        updateModelTag();
-        if(typeof updateNewToggleUI === 'function') updateNewToggleUI();
-        closeModelDropdown();
-        toast('Plan Mode ON');
-      });
-      el.modelDropdown.appendChild(planBtnDD);
-
-      // 구분선
-      var sep = document.createElement('div');
-      sep.style.cssText = 'border-top:1px solid rgba(255,255,255,.08); margin:6px 0;';
-      el.modelDropdown.appendChild(sep);
+      // v20.0t — Agent 모드 옵션 모두 제거. 일반 모델만 표시 (TM 예시 주입은 자동 백그라운드).
 
       currentModelOptions().forEach(m => {
         const btn = document.createElement('button');
@@ -2222,6 +2145,8 @@
       var popup = document.createElement('div');
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:16px;width:100%;max-width:520px;max-height:80vh;overflow-y:auto;';
       popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:12px;">제공자·모델 선택</div>';
+      // v20.0t — Agent 모드 옵션 모두 제거. 일반 모델만 표시.
+      var _SKIP_MODES = true; if(false){
       var is3Agent = false, is2Agent = false;
       try{ is3Agent = localStorage.getItem(LS.use4Agent) === '1'; } catch(_){}
       try{ is2Agent = localStorage.getItem(LS.use2Agent) === '1'; } catch(_){}
@@ -2344,6 +2269,7 @@
       planRow.appendChild(planBtn);
       planRow.appendChild(planGear);
       popup.appendChild(planRow);
+      } // end of disabled mode-buttons block
 
       var providers = [
         { id: 'openrouter', name: 'OpenRouter', models: MODEL_OPTIONS },
@@ -3421,6 +3347,13 @@
           }
         }
       } catch(_){}
+      // ★ Translation Memory 자동 주입 — 유사한 과거 번역쌍을 예시로 시스템 프롬프트 끝에 첨부
+      try{
+        if(typeof buildTmExamplesBlock === 'function'){
+          var tmBlock = buildTmExamplesBlock(userText);
+          if(tmBlock) sys += tmBlock;
+        }
+      } catch(_){}
       return [
         { role: 'system', content: sys },
         { role: 'user', content: userText }
@@ -3550,6 +3483,141 @@
     function matchGlossary(userText){
       if(!userText) return [];
       return getActiveGlossary().filter(function(e){ return userText.indexOf(e.src) !== -1; });
+    }
+
+    // ====== Translation Memory (TM) — 사용자 번역쌍 자동 학습 ======
+    // 구조: { src, tgt, grade('gold'|'silver'), guide?, ts, hits, srcLang }
+    // - gold: Edit 후 Copy → 명시적 수정 정답
+    // - silver: 일반 Copy → 암묵적 승인
+    // 같은 src 재저장 시 덮어쓰기 (gold가 silver 위에 덮어쓰는 건 OK, 반대는 금지)
+    var TM_MAX_PAIRS = 2000;
+    var TM_DEFAULT_TOPK = 4;
+    function getTmPairs(){
+      try{ var arr = JSON.parse(localStorage.getItem(LS.tmPairs) || '[]'); return Array.isArray(arr) ? arr : []; }
+      catch(_){ return []; }
+    }
+    function setTmPairs(arr){
+      try{
+        // 상한 초과 시 silver 오래된 것부터 삭제
+        if(arr.length > TM_MAX_PAIRS){
+          arr.sort(function(a, b){
+            // gold 우선, 같으면 최신 우선
+            var gA = a.grade === 'gold' ? 1 : 0;
+            var gB = b.grade === 'gold' ? 1 : 0;
+            if(gA !== gB) return gB - gA;
+            return (b.ts || 0) - (a.ts || 0);
+          });
+          arr = arr.slice(0, TM_MAX_PAIRS);
+        }
+        localStorage.setItem(LS.tmPairs, JSON.stringify(arr));
+      } catch(_){}
+    }
+    function _detectLang(s){
+      if(!s) return 'unknown';
+      var han = (s.match(/[一-鿿]/g) || []).length;
+      var hangul = (s.match(/[가-힯]/g) || []).length;
+      if(han === 0 && hangul === 0) return 'unknown';
+      return hangul >= han ? 'ko' : 'zh';
+    }
+    function addTmPair(src, tgt, grade, guide){
+      src = (src || '').trim(); tgt = (tgt || '').trim();
+      if(!src || !tgt || src === tgt) return;
+      if(src.length < 2 || tgt.length < 2) return; // 너무 짧으면 무시
+      var pairs = getTmPairs();
+      var srcLang = _detectLang(src);
+      var idx = -1;
+      for(var i = 0; i < pairs.length; i++){
+        if(pairs[i].src === src){ idx = i; break; }
+      }
+      var existing = idx >= 0 ? pairs[idx] : null;
+      // gold가 silver를 덮어쓰는 건 OK, silver가 gold를 덮어쓰는 건 금지 (가이드만 갱신 가능)
+      if(existing && existing.grade === 'gold' && grade === 'silver'){
+        existing.ts = Date.now();
+        existing.hits = (existing.hits || 0) + 1;
+        setTmPairs(pairs);
+        return;
+      }
+      var entry = {
+        src: src,
+        tgt: tgt,
+        grade: grade || 'silver',
+        ts: Date.now(),
+        hits: existing ? (existing.hits || 0) : 0,
+        srcLang: srcLang
+      };
+      if(guide) entry.guide = String(guide).slice(0, 200);
+      if(idx >= 0) pairs[idx] = entry;
+      else pairs.push(entry);
+      setTmPairs(pairs);
+      try{ console.log('[TM] saved (' + grade + '): ' + src.slice(0, 30) + ' → ' + tgt.slice(0, 30) + ' (total=' + pairs.length + ')'); } catch(_){}
+    }
+    function removeTmPair(srcOrIdx){
+      var pairs = getTmPairs();
+      var next;
+      if(typeof srcOrIdx === 'number') next = pairs.filter(function(_, i){ return i !== srcOrIdx; });
+      else next = pairs.filter(function(p){ return p.src !== srcOrIdx; });
+      setTmPairs(next);
+    }
+    // n-gram 겹침 기반 유사도 (한자·한글·영문 모두 적용)
+    function _bigrams(s){
+      var t = String(s || '').replace(/\s+/g, '');
+      var set = Object.create(null);
+      for(var i = 0; i < t.length - 1; i++){
+        set[t.substr(i, 2)] = 1;
+      }
+      return set;
+    }
+    function _bigramOverlap(a, b){
+      var A = _bigrams(a); var B = _bigrams(b);
+      var ak = Object.keys(A); if(!ak.length) return 0;
+      var inter = 0;
+      for(var i = 0; i < ak.length; i++){
+        if(B[ak[i]]) inter++;
+      }
+      var bk = Object.keys(B).length || 1;
+      // Jaccard: intersection / union (length-bias 적음)
+      var union = ak.length + bk - inter;
+      return union > 0 ? inter / union : 0;
+    }
+    // 입력과 유사한 쌍 top-K 검색 (소스 언어 같은 것만)
+    function findSimilarPairs(input, k){
+      input = String(input || '').trim();
+      if(!input) return [];
+      k = k || TM_DEFAULT_TOPK;
+      var inputLang = _detectLang(input);
+      var pairs = getTmPairs();
+      if(!pairs.length) return [];
+      var scored = [];
+      for(var i = 0; i < pairs.length; i++){
+        var p = pairs[i];
+        if(!p || !p.src || !p.tgt) continue;
+        // 입력과 소스 언어 다르면 skip (반대 방향 번역에 쓰지 않기)
+        if(inputLang !== 'unknown' && p.srcLang && p.srcLang !== inputLang) continue;
+        var s = _bigramOverlap(input, p.src);
+        if(s < 0.15) continue; // 너무 낮은 유사도는 노이즈
+        // gold +보너스, 최근 +보너스
+        var bonus = (p.grade === 'gold' ? 0.1 : 0);
+        var ageMs = Date.now() - (p.ts || 0);
+        var ageBonus = ageMs < 7 * 24 * 3600 * 1000 ? 0.05 : 0;
+        scored.push({ pair: p, score: s + bonus + ageBonus });
+      }
+      scored.sort(function(a, b){ return b.score - a.score; });
+      return scored.slice(0, k).map(function(x){ return x.pair; });
+    }
+    // 매 번역마다 시스템 프롬프트에 주입할 [참고예시] 블록 생성
+    function buildTmExamplesBlock(input){
+      var enabled = localStorage.getItem(LS.tmEnabled);
+      if(enabled === '0') return '';
+      var topK = parseInt(localStorage.getItem(LS.tmTopK) || String(TM_DEFAULT_TOPK), 10);
+      if(!isFinite(topK) || topK < 1) topK = TM_DEFAULT_TOPK;
+      var matches = findSimilarPairs(input, topK);
+      if(!matches.length) return '';
+      var lines = matches.map(function(p){
+        var line = '原文: ' + p.src + '\n번역: ' + p.tgt;
+        if(p.guide) line += '\n(주의: ' + p.guide + ')';
+        return line;
+      });
+      return '\n\n[참고 예시 — 사용자의 과거 번역. 톤·용어·어순을 이 예시와 일치시켜라]\n' + lines.join('\n\n');
     }
 
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
@@ -3878,15 +3946,19 @@
         if(!_editCtx) return;
         var guide = (_editGuideText && _editGuideText.value.trim()) || '';
         if(!guide){ toast('교정 지침을 입력하세요'); return; }
+        var srcForTM = _editCtx.src || '';
+        var guideForTM = guide;
         closeEditGuide();
         var refinePrompt = '다음 1차 번역을 사용자의 교정 지침대로 다시 작성하라.\n결과 번역문만 출력(설명/라벨 금지).\n\n[교정 지침]\n' + guide;
-        var refineInput = '【원문】\n' + (_editCtx.src||'') + '\n\n【기존 번역】\n' + (_editCtx.trans||'');
+        var refineInput = '【원문】\n' + srcForTM + '\n\n【기존 번역】\n' + (_editCtx.trans||'');
         try{
           var raw = await callRefine(refineInput, refinePrompt, ()=>{});
-          var newTrans = normalizeOutput(_editCtx.src||'', raw);
+          var newTrans = normalizeOutput(srcForTM, raw);
           if(newTrans){
             if(_editCtx.msgRef){ _editCtx.msgRef.text = newTrans; saveChatHistory(); renderChat(); }
-            toast('재번역 완료');
+            // TM: Edit 재번역 결과는 사용자 교정 정답 → gold 저장 (guide 함께 기록)
+            try{ if(typeof addTmPair === 'function') addTmPair(srcForTM, newTrans, 'gold', guideForTM); } catch(_){}
+            toast('재번역 완료 · TM gold 저장');
           } else {
             toast('재번역 결과가 비어있음');
           }
@@ -4029,27 +4101,7 @@
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;min-width:260px;max-width:90vw;';
       popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:14px;">모델 선택 후 재번역</div>';
 
-      // ★ Agent Mode 1회성 재번역 (현재 모드와 무관 — 항상 표시)
-      var agentBtn = document.createElement('button');
-      agentBtn.type = 'button';
-      agentBtn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
-      agentBtn.innerHTML = '<div style="font-weight:700;color:#3b82f6;">→ Agent Mode (3단계)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">분석 → 번역 → 검증·맥락 (1회성)</div>';
-      agentBtn.addEventListener('click', function(){
-        document.body.removeChild(overlay);
-        retryWithAgentMode(userText);
-      });
-      popup.appendChild(agentBtn);
-
-      // ★ 2_Agent Mode 1회성 재번역
-      var agent2Btn = document.createElement('button');
-      agent2Btn.type = 'button';
-      agent2Btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #b91c4a;border-radius:10px;background:rgba(185,28,74,.12);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
-      agent2Btn.innerHTML = '<div style="font-weight:700;color:#b91c4a;">→ 2st Agent Mode (2단계)</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Qwen MT → 분석·검증 통합 (1회성)</div>';
-      agent2Btn.addEventListener('click', function(){
-        document.body.removeChild(overlay);
-        retryWith2AgentMode(userText);
-      });
-      popup.appendChild(agent2Btn);
+      // v20.0t — Agent 모드 1회성 옵션 제거. 모델 선택만 표시.
 
       // Qwen 사용 중일 때만: OpenRouter Gemini 3 Flash 빠른 재번역 옵션 추가
       if(isQwenProvider()){
@@ -4451,7 +4503,11 @@
           copyBtn.className = 'copyPill';
           copyBtn.type = 'button';
           copyBtn.textContent = 'Copy';
-          copyBtn.addEventListener('click', async () => { await copyToClipboard(m.text, false); });
+          copyBtn.addEventListener('click', async () => {
+            await copyToClipboard(m.text, false);
+            // TM: Copy = 사용자가 이 번역을 채택했다는 신호 → silver 저장
+            try{ if(typeof addTmPair === 'function') addTmPair(lastUserText, m.text, 'silver'); } catch(_){}
+          });
           actions.appendChild(copyBtn);
 
           const editBtn = document.createElement('button');
@@ -4536,73 +4592,12 @@
       try{
         let translatedRaw;
         let _pipelineInfo = null;
-        // 파이프라인 분기: 5단어 이상 입력에만 사용 (짧은 메시지는 일반 흐름)
-        // _forceXxxMode: Retry 팝업 1회성 강제 (단어수 무시)
-        if(((_usePlanMode && _wordCount >= 5) || _forcePlanMode) && !_forceAgentMode && !_force2AgentMode){
-          var _currentStepP = 0;
-          var _pipeRes = await run4AgentPipeline(userText, function(stage, partial){
-            var m = String(stage || '').match(/(?:Stage|Agent)\s+(\d+)/);
-            if(!m) return;
-            var step = parseInt(m[1], 10);
-            if(step !== _currentStepP){
-              _currentStepP = step;
-              streamBubble.style.opacity = '1';
-              streamBubble.textContent = '[Step_' + step + ']';
-              scrollThrottled();
-            }
-          }, { skipVerifier: true, smartMT: true });
-          if(_pipeRes && typeof _pipeRes === 'object'){
-            translatedRaw = _pipeRes.text || '';
-            _pipelineInfo = _pipeRes;
-          } else {
-            translatedRaw = _pipeRes || '';
-          }
-        } else if(((_use2Agent && _wordCount >= 5) || _force2AgentMode) && !_forceAgentMode){
-          var _currentStep2 = 0;
-          var _pipeRes = await run2AgentPipeline(userText, function(stage, partial){
-            var m = String(stage || '').match(/Stage\s+(\d+)/);
-            if(!m) return;
-            var step = parseInt(m[1], 10);
-            if(step !== _currentStep2){
-              _currentStep2 = step;
-              streamBubble.style.opacity = '1';
-              streamBubble.textContent = '[Step_' + step + ']';
-              scrollThrottled();
-            }
-          });
-          if(_pipeRes && typeof _pipeRes === 'object'){
-            translatedRaw = _pipeRes.text || '';
-            _pipelineInfo = _pipeRes;
-          } else {
-            translatedRaw = _pipeRes || '';
-          }
-        } else if((_use4Agent && _wordCount >= 5) || _forceAgentMode){
-          var _currentStep = 0;
-          var _pipeRes = await run4AgentPipeline(userText, function(stage, partial){
-            // Step만 표시 (내용은 무시) — step 번호 바뀔 때만 갱신
-            var m = String(stage || '').match(/(?:Stage|Agent)\s+(\d+)/);
-            if(!m) return;
-            var step = parseInt(m[1], 10);
-            if(step !== _currentStep){
-              _currentStep = step;
-              streamBubble.style.opacity = '1';
-              streamBubble.textContent = '[Step_' + step + ']';
-              scrollThrottled();
-            }
-          });
-          if(_pipeRes && typeof _pipeRes === 'object'){
-            translatedRaw = _pipeRes.text || '';
-            _pipelineInfo = _pipeRes;
-          } else {
-            translatedRaw = _pipeRes || '';
-          }
-        } else {
-          translatedRaw = await callOpenRouterStream(userText, (partial) => {
-            streamBubble.style.opacity = '1';
-            streamBubble.textContent = partial;
-            scrollThrottled();
-          });
-        }
+        // ★ v20.0t — 단일 호출 + TM 자동 예시 주입 (Agent 모드 모두 제거)
+        translatedRaw = await callOpenRouterStream(userText, (partial) => {
+          streamBubble.style.opacity = '1';
+          streamBubble.textContent = partial;
+          scrollThrottled();
+        });
         let translated = normalizeOutput(userText, translatedRaw);
         const _ms1 = Date.now() - _t0;
         let _ms2 = 0;
@@ -4729,7 +4724,10 @@
         copyBtn.className = 'copyPill';
         copyBtn.type = 'button';
         copyBtn.textContent = 'Copy';
-        copyBtn.addEventListener('click', async () => { await copyToClipboard(translated, false); });
+        copyBtn.addEventListener('click', async () => {
+          await copyToClipboard(translated, false);
+          try{ if(typeof addTmPair === 'function') addTmPair(userText, translated, 'silver'); } catch(_){}
+        });
         actions.appendChild(copyBtn);
         const editBtn = document.createElement('button');
         editBtn.className = 'copyPill';
