@@ -1485,7 +1485,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.4t';
+    const APP_VERSION = 'v20.5t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4604,6 +4604,10 @@
         } else if(m.role === 'assistant'){
           actions.appendChild(createTtsBtn(m.text));
 
+          // ★ 이 assistant 메시지에 대응하는 source는 "이 메시지 직전의 user 메시지"
+          //   lastUserText는 outer let이라 클릭 시점엔 채팅 마지막 user값으로 덮어져 있음 → 스냅샷 const 필요
+          const srcForThisMsg = lastUserText;
+
           const copyBtn = document.createElement('button');
           copyBtn.className = 'copyPill';
           copyBtn.type = 'button';
@@ -4611,7 +4615,7 @@
           copyBtn.addEventListener('click', async () => {
             await copyToClipboard(m.text, false);
             // TM: Copy = 사용자가 이 번역을 채택했다는 신호 → silver 저장
-            try{ if(typeof addTmPair === 'function') addTmPair(lastUserText, m.text, 'silver'); } catch(_){}
+            try{ if(typeof addTmPair === 'function') addTmPair(srcForThisMsg, m.text, 'silver'); } catch(_){}
           });
           actions.appendChild(copyBtn);
 
@@ -4619,7 +4623,7 @@
           editBtn.className = 'copyPill';
           editBtn.type = 'button';
           editBtn.textContent = 'Edit';
-          editBtn.addEventListener('click', () => openEditGuide(lastUserText, m.text, m));
+          editBtn.addEventListener('click', () => openEditGuide(srcForThisMsg, m.text, m));
           actions.appendChild(editBtn);
           extraRow = appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline);
         }
