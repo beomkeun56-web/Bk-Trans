@@ -823,6 +823,13 @@
                 </svg>
                 <span>용어집</span>
               </button>
+              <button id="topTmBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 2v20M2 12h20"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>번역 메모리</span>
+              </button>
               <button id="topLearningBtn" class="menuDropdownItem" type="button" role="menuitem">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 20l9-7-9-7-9 7 9 7z"></path>
@@ -886,9 +893,23 @@
         <button id="editGuideRetryBtn" class="btn" type="button">이 문장만 재번역 (1회성)</button>
         <button id="editGuideLearnBtn" class="btn secondary" type="button">학습 프롬프트 갱신 (AI가 분석·정리)</button>
       </div>
+      <!-- v20.0 Phase 2: 재번역 결과를 팝업 안에서 표시 + TTS + 병음 + Copy/다시 -->
+      <div id="editResultWrap" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
+        <label style="font-size:calc(12px * var(--textScale)); color:#888; margin-bottom:4px; display:block;">재번역 결과</label>
+        <div id="editResultText" style="background:rgba(45,107,255,.08); border-left:3px solid #2d6bff; border-radius:8px; padding:10px 12px; font-size:calc(14px * var(--textScale)); color:var(--text); max-height:200px; overflow-y:auto; white-space:pre-wrap; line-height:1.6;"></div>
+        <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
+          <button id="editResultTtsBtn" type="button" style="flex:0 0 44px; padding:8px; border:1px solid rgba(255,255,255,.15); border-radius:8px; background:rgba(255,255,255,.06); color:var(--text); font-size:14px; cursor:pointer; font-family:inherit;" title="음성 출력">🔊</button>
+          <button id="editResultCopyBtn" type="button" style="flex:1; padding:10px; border:none; border-radius:8px; background:var(--blue); color:#fff; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit;">✓ Copy &amp; 확정 (gold 저장)</button>
+          <button id="editResultRetryAgainBtn" type="button" style="flex:0 0 100%; padding:10px; border:1px solid rgba(255,255,255,.15); border-radius:8px; background:rgba(255,255,255,.06); color:var(--text); font-size:13px; cursor:pointer; font-family:inherit;">↻ 교정 지침 수정 후 다시 재번역</button>
+        </div>
+        <div style="font-size:10px; color:#888; margin-top:6px; line-height:1.4;">
+          · Copy = 채팅에 적용 + TM gold 저장 + 팝업 닫힘<br>
+          · 닫기(×) = 결과 폐기 (저장 안 됨)
+        </div>
+      </div>
       <div style="font-size:11px; color:#888; margin-top:8px;">
-        · 재번역 = 그 메시지만 즉시 다시 만듦, 저장 안 됨<br>
-        · 학습 갱신 = AI가 피드백을 분석해 기존 학습 프롬프트를 다듬어 저장 (이후 모든 1차 번역에 자동 적용)
+        · 재번역 = 결과를 위 영역에 표시 (저장은 Copy 시)<br>
+        · 학습 갱신 = AI가 피드백을 분석해 기존 학습 프롬프트를 다듬어 저장
       </div>
     </section>
   </div>
@@ -1459,7 +1480,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.0t';
+    const APP_VERSION = 'v20.1t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3926,9 +3947,14 @@
         _editGuideCurr = document.getElementById('editCurrentText');
         _editGuideText = document.getElementById('editGuideText');
       }
-      _editCtx = { src: src || '', trans: trans || '', msgRef: msgRef || null };
+      _editCtx = { src: src || '', trans: trans || '', msgRef: msgRef || null, pendingResult: null, pendingGuide: '' };
       if(_editGuideCurr) _editGuideCurr.textContent = trans || '';
       if(_editGuideText) _editGuideText.value = '';
+      // Phase 2 — 결과 영역 초기화 (닫혀 있음)
+      var _rw = document.getElementById('editResultWrap');
+      if(_rw) _rw.style.display = 'none';
+      var _rt = document.getElementById('editResultText');
+      if(_rt) _rt.textContent = '';
       if(_editGuideOverlay) _editGuideOverlay.classList.add('show');
     }
     function closeEditGuide(){
@@ -3940,29 +3966,80 @@
       var retryBtn = document.getElementById('editGuideRetryBtn');
       var learnBtn = document.getElementById('editGuideLearnBtn');
       var ov = document.getElementById('editGuideOverlay');
+      var resultTtsBtn = document.getElementById('editResultTtsBtn');
+      var resultCopyBtn = document.getElementById('editResultCopyBtn');
+      var resultRetryAgainBtn = document.getElementById('editResultRetryAgainBtn');
       if(closeBtn) closeBtn.addEventListener('click', closeEditGuide);
       if(ov) ov.addEventListener('click', function(e){ if(e.target === ov) closeEditGuide(); });
+      // ★ Phase 2 — 결과 영역 액션 버튼들
+      if(resultTtsBtn) resultTtsBtn.addEventListener('click', function(){
+        var txt = (_editCtx && _editCtx.pendingResult) || '';
+        if(!txt) return;
+        try{
+          if(typeof speakText === 'function') speakText(txt);
+          else if(window.speechSynthesis){
+            var u = new SpeechSynthesisUtterance(txt);
+            try{ u.lang = /[一-鿿]/.test(txt) ? 'zh-CN' : 'ko-KR'; } catch(_){}
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(u);
+          }
+        } catch(_){}
+      });
+      if(resultCopyBtn) resultCopyBtn.addEventListener('click', async function(){
+        if(!_editCtx || !_editCtx.pendingResult){ toast('재번역 결과 없음'); return; }
+        var result = _editCtx.pendingResult;
+        var src = _editCtx.src || '';
+        var guide = _editCtx.pendingGuide || '';
+        // 1) 클립보드 복사
+        try{ await copyToClipboard(result, false); } catch(_){}
+        // 2) 채팅에 적용
+        if(_editCtx.msgRef){ _editCtx.msgRef.text = result; try{ saveChatHistory(); } catch(_){} try{ renderChat(); } catch(_){} }
+        // 3) TM gold 저장 (guide 함께)
+        try{ if(typeof addTmPair === 'function') addTmPair(src, result, 'gold', guide); } catch(_){}
+        toast('✓ 확정: 복사 + 채팅 적용 + TM gold 저장');
+        closeEditGuide();
+      });
+      if(resultRetryAgainBtn) resultRetryAgainBtn.addEventListener('click', function(){
+        // 그냥 retryBtn을 다시 트리거 (현재 textarea의 새 guide 사용)
+        if(retryBtn) retryBtn.click();
+      });
       if(retryBtn) retryBtn.addEventListener('click', async function(){
         if(!_editCtx) return;
         var guide = (_editGuideText && _editGuideText.value.trim()) || '';
         if(!guide){ toast('교정 지침을 입력하세요'); return; }
-        var srcForTM = _editCtx.src || '';
-        var guideForTM = guide;
-        closeEditGuide();
+        // ★ Phase 2 — 결과를 팝업 안에 표시. 저장·적용은 Copy 시.
+        var resultWrap = document.getElementById('editResultWrap');
+        var resultText = document.getElementById('editResultText');
+        if(resultWrap) resultWrap.style.display = '';
+        if(resultText) resultText.textContent = '재번역 중...';
+        retryBtn.disabled = true; retryBtn.textContent = '재번역 중...';
         var refinePrompt = '다음 1차 번역을 사용자의 교정 지침대로 다시 작성하라.\n결과 번역문만 출력(설명/라벨 금지).\n\n[교정 지침]\n' + guide;
-        var refineInput = '【원문】\n' + srcForTM + '\n\n【기존 번역】\n' + (_editCtx.trans||'');
+        var refineInput = '【원문】\n' + (_editCtx.src||'') + '\n\n【기존 번역】\n' + (_editCtx.trans||'');
         try{
-          var raw = await callRefine(refineInput, refinePrompt, ()=>{});
-          var newTrans = normalizeOutput(srcForTM, raw);
+          var raw = await callRefine(refineInput, refinePrompt, function(partial){
+            if(resultText) resultText.textContent = partial || '재번역 중...';
+          });
+          var newTrans = normalizeOutput(_editCtx.src||'', raw);
           if(newTrans){
-            if(_editCtx.msgRef){ _editCtx.msgRef.text = newTrans; saveChatHistory(); renderChat(); }
-            // TM: Edit 재번역 결과는 사용자 교정 정답 → gold 저장 (guide 함께 기록)
-            try{ if(typeof addTmPair === 'function') addTmPair(srcForTM, newTrans, 'gold', guideForTM); } catch(_){}
-            toast('재번역 완료 · TM gold 저장');
+            // 결과 렌더링: 한자 있으면 병음 표시
+            if(resultText){
+              if(typeof hasChinese === 'function' && hasChinese(newTrans) && typeof renderWithPinyin === 'function'){
+                resultText.innerHTML = renderWithPinyin(newTrans);
+              } else {
+                resultText.textContent = newTrans;
+              }
+            }
+            // 결과를 _editCtx에 임시 보관 (Copy 클릭 시 사용)
+            _editCtx.pendingResult = newTrans;
+            _editCtx.pendingGuide = guide;
           } else {
-            toast('재번역 결과가 비어있음');
+            if(resultText) resultText.textContent = '(재번역 결과 비어있음)';
           }
-        } catch(e){ toast('재번역 실패: ' + (e.message||e)); }
+        } catch(e){
+          if(resultText) resultText.textContent = '재번역 실패: ' + (e.message||e);
+        } finally {
+          retryBtn.disabled = false; retryBtn.textContent = '이 문장만 재번역 (1회성)';
+        }
       });
       if(learnBtn) learnBtn.addEventListener('click', async function(){
         var guide = (_editGuideText && _editGuideText.value.trim()) || '';
@@ -6256,6 +6333,222 @@
     var topModelEditorBtn = document.getElementById('topModelEditorBtn');
     if(topModelEditorBtn) topModelEditorBtn.addEventListener('click', showModelEditor);
 
+    // ====== TM (Translation Memory) 관리 UI ======
+    function showTmManager(){
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+      var popup = document.createElement('div');
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:90vw;max-width:560px;max-height:85vh;overflow-y:auto;';
+
+      var pairs = getTmPairs();
+      var goldCount = pairs.filter(function(p){ return p.grade === 'gold'; }).length;
+      var silverCount = pairs.length - goldCount;
+      var tmEnabled = localStorage.getItem(LS.tmEnabled) !== '0';
+      var topK = parseInt(localStorage.getItem(LS.tmTopK) || '4', 10);
+
+      popup.innerHTML =
+        '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">번역 메모리 (TM)</div>' +
+        '<div style="font-size:11px;color:#888;margin-bottom:10px;">' +
+          '총 <b>' + pairs.length + '쌍</b> · gold <b style="color:#fbbf24;">' + goldCount + '</b> · silver <b style="color:#888;">' + silverCount + '</b> · 상한 ' + TM_MAX_PAIRS +
+          '<br>사용자의 Edit/Copy 결과를 자동 수집 → 비슷한 입력 오면 예시로 모델에 주입 → 톤·용어·어순이 점점 사용자에 맞춰짐.' +
+        '</div>' +
+        // 설정 행 (활성화 토글 + Top-K)
+        '<div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; padding:8px; background:rgba(255,255,255,.03); border-radius:8px;">' +
+          '<label style="display:flex; align-items:center; gap:6px; flex:1; font-size:12px; color:var(--text); cursor:pointer;">' +
+            '<input id="tmEnabledChk" type="checkbox" ' + (tmEnabled ? 'checked' : '') + ' style="transform:scale(1.2); cursor:pointer;">' +
+            '예시 자동 주입 활성화' +
+          '</label>' +
+          '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text);">' +
+            '예시 개수' +
+            '<input id="tmTopKInput" type="number" min="1" max="10" value="' + topK + '" style="width:50px; padding:3px 6px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:6px; font-size:12px; text-align:center;">' +
+          '</label>' +
+        '</div>' +
+        // 검색
+        '<input id="tmSearchInput" type="text" placeholder="검색 (원문/번역에서)" style="width:100%; padding:8px 10px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; font-size:13px; margin-bottom:8px; box-sizing:border-box; font-family:inherit;">' +
+        '<div id="tmListBox" style="max-height:45vh; overflow-y:auto; border:1px solid rgba(255,255,255,.08); border-radius:8px;"></div>' +
+        // 액션 버튼들
+        '<div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">' +
+          '<button id="tmExportTxtBtn" type="button" style="flex:1 1 0; padding:8px; border:none; border-radius:8px; background:rgba(16,185,129,.18); color:#10b981; font-size:12px; cursor:pointer; font-family:inherit;">📤 TXT 내보내기</button>' +
+          '<button id="tmExportJsonlBtn" type="button" style="flex:1 1 0; padding:8px; border:none; border-radius:8px; background:rgba(168,85,247,.18); color:#a855f7; font-size:12px; cursor:pointer; font-family:inherit;">📤 JSONL (파인튜닝)</button>' +
+          '<button id="tmImportBtn" type="button" style="flex:1 1 0; padding:8px; border:none; border-radius:8px; background:rgba(45,107,255,.18); color:#9cf; font-size:12px; cursor:pointer; font-family:inherit;">📥 가져오기</button>' +
+          '<button id="tmClearBtn" type="button" style="flex:1 1 0; padding:8px; border:none; border-radius:8px; background:rgba(239,68,68,.18); color:#f87171; font-size:12px; cursor:pointer; font-family:inherit;">🗑 전체 삭제</button>' +
+        '</div>' +
+        '<button id="tmCloseBtn" type="button" style="display:block; width:100%; padding:10px; margin-top:8px; border:none; border-radius:10px; background:rgba(255,255,255,.08); color:var(--muted); font-size:14px; cursor:pointer; font-family:inherit;">닫기</button>';
+
+      overlay.appendChild(popup);
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) document.body.removeChild(overlay); });
+      document.body.appendChild(overlay);
+
+      var listBox = popup.querySelector('#tmListBox');
+      var searchInput = popup.querySelector('#tmSearchInput');
+
+      function renderList(filter){
+        if(!listBox) return;
+        listBox.innerHTML = '';
+        var f = String(filter || '').trim().toLowerCase();
+        var cur = getTmPairs();
+        // 최신 우선
+        cur.sort(function(a, b){ return (b.ts || 0) - (a.ts || 0); });
+        var shown = 0;
+        for(var i = 0; i < cur.length; i++){
+          var p = cur[i];
+          if(f && p.src.toLowerCase().indexOf(f) === -1 && p.tgt.toLowerCase().indexOf(f) === -1) continue;
+          if(shown >= 200) break; // 화면 너무 많이 그리지 않기
+          shown++;
+          var row = document.createElement('div');
+          row.style.cssText = 'padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.05); display:flex; gap:6px; align-items:flex-start;';
+          var col = document.createElement('div');
+          col.style.cssText = 'flex:1; min-width:0; font-size:12px; line-height:1.5;';
+          var badge = p.grade === 'gold' ? '<span style="display:inline-block; padding:1px 6px; background:rgba(251,191,36,.2); color:#fbbf24; border-radius:4px; font-size:9px; font-weight:700; margin-right:4px;">GOLD</span>' : '<span style="display:inline-block; padding:1px 6px; background:rgba(255,255,255,.06); color:#888; border-radius:4px; font-size:9px; font-weight:700; margin-right:4px;">silver</span>';
+          col.innerHTML =
+            '<div style="color:var(--text); word-break:break-word;">' + badge + escapeHtml(p.src) + '</div>' +
+            '<div style="color:var(--muted); margin-top:2px; word-break:break-word; padding-left:4px; border-left:2px solid rgba(255,255,255,.1);">→ ' + escapeHtml(p.tgt) + '</div>' +
+            (p.guide ? '<div style="color:#888; margin-top:2px; font-size:10px; font-style:italic;">(주의: ' + escapeHtml(p.guide) + ')</div>' : '');
+          var delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.textContent = '✕';
+          delBtn.title = '삭제';
+          delBtn.style.cssText = 'flex:0 0 28px; border:none; background:rgba(239,68,68,.15); color:#f87171; border-radius:6px; cursor:pointer; font-size:12px; align-self:center;';
+          (function(srcKey){
+            delBtn.addEventListener('click', function(){
+              removeTmPair(srcKey);
+              renderList(searchInput ? searchInput.value : '');
+            });
+          })(p.src);
+          row.appendChild(col); row.appendChild(delBtn);
+          listBox.appendChild(row);
+        }
+        if(!shown){
+          listBox.innerHTML = '<div style="padding:30px; text-align:center; color:#888; font-size:12px;">' + (f ? '검색 결과 없음' : '아직 저장된 번역쌍 없음. Edit 또는 Copy 사용 시 자동 수집됩니다.') + '</div>';
+        }
+      }
+      renderList('');
+      if(searchInput) searchInput.addEventListener('input', function(){ renderList(searchInput.value); });
+
+      // 토글 + Top-K 저장
+      var tmEnabledChk = popup.querySelector('#tmEnabledChk');
+      if(tmEnabledChk) tmEnabledChk.addEventListener('change', function(){
+        localStorage.setItem(LS.tmEnabled, tmEnabledChk.checked ? '1' : '0');
+        toast('예시 주입 ' + (tmEnabledChk.checked ? 'ON' : 'OFF'));
+      });
+      var tmTopKInput = popup.querySelector('#tmTopKInput');
+      if(tmTopKInput) tmTopKInput.addEventListener('change', function(){
+        var v = parseInt(tmTopKInput.value, 10);
+        if(isFinite(v) && v >= 1 && v <= 10){ localStorage.setItem(LS.tmTopK, String(v)); toast('Top-K = ' + v); }
+      });
+
+      // 내보내기 TXT (가져오기 호환 형식: "src ↔ tgt" 한 줄씩, 첫 줄에 grade 주석)
+      popup.querySelector('#tmExportTxtBtn').addEventListener('click', function(){
+        var arr = getTmPairs();
+        if(!arr.length){ toast('내보낼 항목 없음'); return; }
+        var header = '# Translation Memory (' + arr.length + '쌍) — ' + new Date().toISOString().slice(0, 19).replace('T', ' ');
+        var lines = arr.map(function(p){
+          var prefix = p.grade === 'gold' ? '[gold] ' : '';
+          var line = prefix + p.src + ' ↔ ' + p.tgt;
+          if(p.guide) line += '\t# ' + p.guide.replace(/\n/g, ' ');
+          return line;
+        });
+        var text = header + '\n' + lines.join('\n') + '\n';
+        downloadAs('bk-trans-tm-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.txt', text, 'text/plain;charset=utf-8');
+        toast('내보내기: ' + arr.length + '쌍');
+      });
+
+      // 내보내기 JSONL (Qwen 파인튜닝 입력 형식 — messages 배열)
+      popup.querySelector('#tmExportJsonlBtn').addEventListener('click', function(){
+        var arr = getTmPairs();
+        if(!arr.length){ toast('내보낼 항목 없음'); return; }
+        // gold 우선, silver 후
+        arr.sort(function(a, b){ return (a.grade === 'gold' ? -1 : 1) - (b.grade === 'gold' ? -1 : 1); });
+        var lines = arr.map(function(p){
+          var obj = { messages: [
+            { role: 'system', content: 'You are a KO<->ZH translator. Output only the translation text.' },
+            { role: 'user', content: p.src },
+            { role: 'assistant', content: p.tgt }
+          ] };
+          return JSON.stringify(obj);
+        });
+        downloadAs('bk-trans-tm-finetune-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.jsonl', lines.join('\n') + '\n', 'application/jsonl');
+        toast('JSONL 내보내기: ' + arr.length + '쌍 (파인튜닝용)');
+      });
+
+      // 가져오기
+      popup.querySelector('#tmImportBtn').addEventListener('click', function(){
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.txt,.jsonl,.json';
+        input.addEventListener('change', function(e){
+          var f = e.target.files && e.target.files[0];
+          if(!f) return;
+          var reader = new FileReader();
+          reader.onload = function(){
+            var text = String(reader.result || '');
+            var added = 0;
+            // JSONL 시도
+            var lines = text.split(/\r?\n/);
+            for(var i = 0; i < lines.length; i++){
+              var line = lines[i].trim();
+              if(!line || line.charAt(0) === '#') continue;
+              // JSONL 줄?
+              if(line.charAt(0) === '{'){
+                try{
+                  var obj = JSON.parse(line);
+                  if(obj.messages && obj.messages.length >= 2){
+                    var u = obj.messages.find(function(m){ return m.role === 'user'; });
+                    var a = obj.messages.find(function(m){ return m.role === 'assistant'; });
+                    if(u && a){ addTmPair(u.content, a.content, 'silver'); added++; continue; }
+                  } else if(obj.src && obj.tgt){
+                    addTmPair(obj.src, obj.tgt, obj.grade || 'silver', obj.guide);
+                    added++; continue;
+                  }
+                } catch(_){}
+              }
+              // TXT 형식: [gold] src ↔ tgt # guide
+              var gradeMatch = /^\[(gold|silver)\]\s+/.exec(line);
+              var grade = 'silver';
+              var rest = line;
+              if(gradeMatch){ grade = gradeMatch[1]; rest = line.slice(gradeMatch[0].length); }
+              var guideMatch = /\s*#\s*(.+)$/.exec(rest);
+              var guide = '';
+              if(guideMatch){ guide = guideMatch[1].trim(); rest = rest.slice(0, guideMatch.index); }
+              var parts = rest.split(/\s*[↔⇄⟷]\s*|\s*->\s*|\s*→\s*/);
+              if(parts.length >= 2){
+                addTmPair(parts[0].trim(), parts[1].trim(), grade, guide);
+                added++;
+              }
+            }
+            toast('가져오기: ' + added + '쌍');
+            renderList(searchInput ? searchInput.value : '');
+          };
+          reader.readAsText(f, 'utf-8');
+        });
+        input.click();
+      });
+
+      // 전체 삭제
+      popup.querySelector('#tmClearBtn').addEventListener('click', function(){
+        if(!confirm('번역 메모리 전체 삭제? 되돌릴 수 없음.')) return;
+        localStorage.removeItem(LS.tmPairs);
+        toast('전체 삭제 완료');
+        renderList('');
+      });
+
+      popup.querySelector('#tmCloseBtn').addEventListener('click', function(){ document.body.removeChild(overlay); });
+    }
+
+    // 다운로드 헬퍼 (Blob → a.click → fallback to clipboard)
+    function downloadAs(filename, text, mime){
+      try{
+        var blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+      } catch(_){
+        try{ navigator.clipboard.writeText(text); toast('다운로드 실패 → 클립보드 복사'); } catch(__){}
+      }
+    }
+
     function showGlossaryEditor(kind){
       kind = (kind === 'sys') ? 'sys' : 'user';
       var title = kind === 'sys' ? '시스템 용어집' : '프롬프트 용어집';
@@ -6392,6 +6685,8 @@
       overlay.addEventListener('click', function(e){ if(e.target === overlay) document.body.removeChild(overlay); });
       document.body.appendChild(overlay);
     }
+    var topTmBtn = document.getElementById('topTmBtn');
+    if(topTmBtn) topTmBtn.addEventListener('click', function(){ if(typeof showTmManager === 'function') showTmManager(); });
     var topGlossarySysBtn = document.getElementById('topGlossarySysBtn');
     if(topGlossarySysBtn) topGlossarySysBtn.addEventListener('click', function(){ showGlossaryEditor('sys'); });
 
