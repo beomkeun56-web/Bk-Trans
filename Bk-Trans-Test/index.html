@@ -495,11 +495,13 @@
        → 숫자·기호가 한자에 맞춰 정렬되고, 글자 가로폭도 한자 크기 그대로 */
     /* 병음: native <ruby><rt>로 → 가로폭은 자동으로 병음에 맞춰 늘어나고
        줄 바꿈 시에도 자동으로 공간 확보됨(겹침 없음). */
-    .bubble ruby, .focusText ruby {
+    .bubble ruby, .focusText ruby,
+    #editSourceText ruby, #editCurrentText ruby, #editResultText ruby {
       ruby-position: over;
       ruby-align: center;
     }
-    .bubble rt, .focusText rt {
+    .bubble rt, .focusText rt,
+    #editSourceText rt, #editCurrentText rt, #editResultText rt {
       font-size: 0.55em;
       color: rgba(180,180,180,.75);
       font-weight: 400;
@@ -507,7 +509,8 @@
       letter-spacing: 0;
       line-height: 1.1;
     }
-    .bubble rt::selection, .focusText rt::selection { background: transparent; }
+    .bubble rt::selection, .focusText rt::selection,
+    #editSourceText rt::selection, #editCurrentText rt::selection, #editResultText rt::selection { background: transparent; }
 
     .focusOverlay{
       display:none; position:fixed; top:0; left:0; width:100%; height:100%;
@@ -881,9 +884,13 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:calc(12px * var(--textScale)); color:#888; margin-bottom:4px; display:block;">원문</label>
+        <div id="editSourceText" style="background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:14px 16px; font-size:calc(16px * var(--textScale)); color:#ffffff; max-height:200px; overflow-y:auto; white-space:pre-wrap; line-height:1.7;"></div>
+      </div>
       <div style="margin-bottom:12px;">
         <label style="font-size:calc(12px * var(--textScale)); color:#888; margin-bottom:4px; display:block;">현재 번역</label>
-        <div id="editCurrentText" style="background:rgba(255,255,255,.04); border-radius:10px; padding:10px 12px; font-size:calc(13px * var(--textScale)); color:var(--text); max-height:120px; overflow-y:auto; white-space:pre-wrap;"></div>
+        <div id="editCurrentText" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:14px 16px; font-size:calc(16px * var(--textScale)); color:#ffffff; max-height:200px; overflow-y:auto; white-space:pre-wrap; line-height:1.7;"></div>
       </div>
       <div style="margin-bottom:14px;">
         <label for="editGuideText" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:6px; display:block;">교정 지침 (어떻게 고쳐야 할지 자유롭게)</label>
@@ -1478,7 +1485,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.2t';
+    const APP_VERSION = 'v20.3t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3946,6 +3953,15 @@
         _editGuideText = document.getElementById('editGuideText');
       }
       _editCtx = { src: src || '', trans: trans || '', msgRef: msgRef || null, pendingResult: null, pendingGuide: '' };
+      // 원문 — 한자 있으면 병음 표시
+      var _editSrcEl = document.getElementById('editSourceText');
+      if(_editSrcEl){
+        if(src && typeof hasChinese === 'function' && hasChinese(src) && typeof renderWithPinyin === 'function'){
+          _editSrcEl.innerHTML = renderWithPinyin(src);
+        } else {
+          _editSrcEl.textContent = src || '';
+        }
+      }
       // 현재 번역 — 한자 있으면 병음 표시
       if(_editGuideCurr){
         if(trans && typeof hasChinese === 'function' && hasChinese(trans) && typeof renderWithPinyin === 'function'){
