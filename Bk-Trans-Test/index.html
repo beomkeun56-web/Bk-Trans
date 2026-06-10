@@ -1485,7 +1485,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.3t';
+    const APP_VERSION = 'v20.4t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3820,6 +3820,13 @@
       if(secondMdl && el.model){
         el.model.value = secondMdl;
         switched = true;
+      }
+      // ★ Refine은 system 프롬프트 + 자유 지시 따라야 함. Qwen MT는 system 무시하고 무조건 번역만 함 → 비활성.
+      //   현재 모델이 qwen-mt-* 면 같은 Qwen provider 안에서 qwen3.7-plus로 자동 교체.
+      if(isQwenMtModel()){
+        if(el.model) el.model.value = 'qwen3.7-plus';
+        switched = true;
+        try{ console.log('[Refine] Qwen MT 감지 → qwen3.7-plus로 임시 교체 (MT는 system prompt 무시함)'); } catch(_){}
       }
       try{ console.log('[Refine] provider=' + (el.apiProvider ? el.apiProvider.value : '?') + ', model=' + (el.model ? el.model.value : '?') + ', switched=' + switched + ', secondProvLS=' + secondProv + ', secondMdlLS=' + secondMdl); } catch(_){}
       try{
