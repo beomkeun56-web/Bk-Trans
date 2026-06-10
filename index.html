@@ -890,8 +890,7 @@
         <textarea id="editGuideText" placeholder="예: 더 격식있게 / 직역 말고 의역으로 / '~합니다' 대신 '~해' 같이 반말로" style="min-height:90px;"></textarea>
       </div>
       <div style="display:flex; gap:8px; flex-direction:column;">
-        <button id="editGuideRetryBtn" class="btn" type="button">이 문장만 재번역 (1회성)</button>
-        <button id="editGuideLearnBtn" class="btn secondary" type="button">학습 프롬프트 갱신 (AI가 분석·정리)</button>
+        <button id="editGuideRetryBtn" class="btn" type="button">수정 재번역 및 학습</button>
       </div>
       <!-- v20.0 Phase 2: 재번역 결과를 팝업 안에서 표시 + TTS + 병음 + Copy/다시 -->
       <div id="editResultWrap" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
@@ -908,8 +907,7 @@
         </div>
       </div>
       <div style="font-size:11px; color:#888; margin-top:8px;">
-        · 재번역 = 결과를 위 영역에 표시 (저장은 Copy 시)<br>
-        · 학습 갱신 = AI가 피드백을 분석해 기존 학습 프롬프트를 다듬어 저장
+        · 결과는 위 영역에 표시됩니다. Copy 클릭 시 채팅에 적용 + TM gold 저장.
       </div>
     </section>
   </div>
@@ -1480,7 +1478,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.1t';
+    const APP_VERSION = 'v20.2t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3948,7 +3946,14 @@
         _editGuideText = document.getElementById('editGuideText');
       }
       _editCtx = { src: src || '', trans: trans || '', msgRef: msgRef || null, pendingResult: null, pendingGuide: '' };
-      if(_editGuideCurr) _editGuideCurr.textContent = trans || '';
+      // 현재 번역 — 한자 있으면 병음 표시
+      if(_editGuideCurr){
+        if(trans && typeof hasChinese === 'function' && hasChinese(trans) && typeof renderWithPinyin === 'function'){
+          _editGuideCurr.innerHTML = renderWithPinyin(trans);
+        } else {
+          _editGuideCurr.textContent = trans || '';
+        }
+      }
       if(_editGuideText) _editGuideText.value = '';
       // Phase 2 — 결과 영역 초기화 (닫혀 있음)
       var _rw = document.getElementById('editResultWrap');
