@@ -1507,7 +1507,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.12t';
+    const APP_VERSION = 'v20.13t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1565,6 +1565,7 @@
       tmPairs: 'bk_tr_test_tmPairs',
       tmEnabled: 'bk_tr_test_tmEnabled',
       tmTopK: 'bk_tr_test_tmTopK',
+      tmSilverAuto: 'bk_tr_test_tmSilverAuto',
       editRefineProvider: 'bk_tr_test_editRefineProvider',
       editRefineModel: 'bk_tr_test_editRefineModel',
       editRefinePrompt: 'bk_tr_test_editRefinePrompt',
@@ -4782,8 +4783,12 @@
           copyBtn.textContent = 'Copy';
           copyBtn.addEventListener('click', async () => {
             await copyToClipboard(m.text, false);
-            // TM: Copy = 사용자가 이 번역을 채택했다는 신호 → silver 저장
-            try{ if(typeof addTmPair === 'function') addTmPair(srcForThisMsg, m.text, 'silver'); } catch(_){}
+            // TM: Copy = silver 저장 (기본 OFF — TM 설정에서 켤 수 있음)
+            try{
+              if(localStorage.getItem(LS.tmSilverAuto) === '1' && typeof addTmPair === 'function'){
+                addTmPair(srcForThisMsg, m.text, 'silver');
+              }
+            } catch(_){}
           });
           actions.appendChild(copyBtn);
 
@@ -5003,7 +5008,11 @@
         copyBtn.textContent = 'Copy';
         copyBtn.addEventListener('click', async () => {
           await copyToClipboard(translated, false);
-          try{ if(typeof addTmPair === 'function') addTmPair(userText, translated, 'silver'); } catch(_){}
+          try{
+            if(localStorage.getItem(LS.tmSilverAuto) === '1' && typeof addTmPair === 'function'){
+              addTmPair(userText, translated, 'silver');
+            }
+          } catch(_){}
         });
         actions.appendChild(copyBtn);
         const editBtn = document.createElement('button');
@@ -6553,7 +6562,7 @@
           '<br>사용자의 Edit/Copy 결과를 자동 수집 → 비슷한 입력 오면 예시로 모델에 주입 → 톤·용어·어순이 점점 사용자에 맞춰짐.' +
         '</div>' +
         // 설정 행 (활성화 토글 + Top-K)
-        '<div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; padding:8px; background:rgba(255,255,255,.03); border-radius:8px;">' +
+        '<div style="display:flex; gap:8px; align-items:center; margin-bottom:6px; padding:8px; background:rgba(255,255,255,.03); border-radius:8px;">' +
           '<label style="display:flex; align-items:center; gap:6px; flex:1; font-size:12px; color:var(--text); cursor:pointer;">' +
             '<input id="tmEnabledChk" type="checkbox" ' + (tmEnabled ? 'checked' : '') + ' style="transform:scale(1.2); cursor:pointer;">' +
             '예시 자동 주입 활성화' +
@@ -6561,6 +6570,13 @@
           '<label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text);">' +
             '예시 개수' +
             '<input id="tmTopKInput" type="number" min="1" max="10" value="' + topK + '" style="width:50px; padding:3px 6px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:6px; font-size:12px; text-align:center;">' +
+          '</label>' +
+        '</div>' +
+        // silver 자동 저장 토글 (기본 OFF)
+        '<div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; padding:8px; background:rgba(255,255,255,.03); border-radius:8px;">' +
+          '<label style="display:flex; align-items:center; gap:6px; flex:1; font-size:12px; color:var(--text); cursor:pointer;">' +
+            '<input id="tmSilverChk" type="checkbox" ' + (localStorage.getItem(LS.tmSilverAuto) === '1' ? 'checked' : '') + ' style="transform:scale(1.2); cursor:pointer;">' +
+            'Copy 시 silver 자동 저장 <span style="color:#888; font-size:10px;">(기본 OFF — Edit 확정 gold만 수집)</span>' +
           '</label>' +
         '</div>' +
         // 검색
@@ -6627,6 +6643,11 @@
       if(searchInput) searchInput.addEventListener('input', function(){ renderList(searchInput.value); });
 
       // 토글 + Top-K 저장
+      var tmSilverChk = popup.querySelector('#tmSilverChk');
+      if(tmSilverChk) tmSilverChk.addEventListener('change', function(){
+        localStorage.setItem(LS.tmSilverAuto, tmSilverChk.checked ? '1' : '0');
+        toast('Copy silver 저장 ' + (tmSilverChk.checked ? 'ON' : 'OFF'));
+      });
       var tmEnabledChk = popup.querySelector('#tmEnabledChk');
       if(tmEnabledChk) tmEnabledChk.addEventListener('change', function(){
         localStorage.setItem(LS.tmEnabled, tmEnabledChk.checked ? '1' : '0');
