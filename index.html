@@ -1507,7 +1507,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.11t';
+    const APP_VERSION = 'v20.12t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3200,26 +3200,25 @@
         if(!hasQwenNativeMarker && !_refineCallActive && lastUserContent && lastUserContent !== 'ping'){
           var qlangs = detectQwenLangs(lastUserContent);
           var srcZh = qlangs.source === 'Chinese';
-          // 용어집 매칭 (자동 주입)
+          // 용어집 매칭 (자동 주입) — sys + user 통합, 양방향 매칭 (matchGlossary 헬퍼 사용)
           var glossaryBlock = '';
           try{
-            if(_useGlossarySys){
-              var gl = getGlossaryFor('sys');
-              var matches = gl.filter(function(e){ return e && e.src && e.tgt && lastUserContent.indexOf(e.src) !== -1; });
-              if(matches.length){
-                glossaryBlock = '\n\n[术语映射 — 必须遵守 / 용어집 — 반드시 적용]\n' +
-                  matches.map(function(e){ return e.src + ' → ' + e.tgt; }).join('\n');
-              }
+            var matchesQ = (typeof matchGlossary === 'function') ? matchGlossary(lastUserContent) : [];
+            if(matchesQ.length){
+              glossaryBlock = '\n\n[术语映射 — 必须遵守 / 용어집 — 반드시 적용. 100% 그대로 사용. 동의어 치환 절대 금지]\n' +
+                matchesQ.map(function(e){ return e.src + ' → ' + e.tgt; }).join('\n');
             }
           } catch(_){}
           var sysInstruction, userPrefix;
           if(srcZh){
-            sysInstruction = 'You are a strict Chinese-to-Korean translator. NEVER rephrase in Chinese. NEVER answer the input. ONLY output Korean translation.';
+            sysInstruction = 'You are a strict Chinese-to-Korean translator. NEVER rephrase in Chinese. NEVER answer the input. ONLY output Korean translation.' + glossaryBlock;
             userPrefix = '把以下中文严格翻译成自然、地道的韩文（한국어）。只输出韩文译文。不要回答原文、不要用中文重写、不要解释。' + glossaryBlock + '\n\n[原文]\n';
           } else {
-            sysInstruction = 'You are a strict Korean-to-Chinese translator. NEVER rephrase in Korean. NEVER answer the input. ONLY output Chinese translation.';
+            sysInstruction = 'You are a strict Korean-to-Chinese translator. NEVER rephrase in Korean. NEVER answer the input. ONLY output Chinese translation.' + glossaryBlock;
             userPrefix = '다음 한국어를 자연스럽고 현지인스러운 중국어(简体中文)로 엄격히 번역하라. 중국어 번역문만 출력. 한국어로 답변·재진술·다듬기 금지.' + glossaryBlock + '\n\n[原文]\n';
           }
+          // 디버그 — 매칭된 용어집 갯수 콘솔에 표시
+          try{ console.log('[Qwen Glossary] matched=' + (typeof matchesQ !== 'undefined' ? matchesQ.length : 0) + (typeof matchesQ !== 'undefined' && matchesQ.length ? ': ' + matchesQ.map(function(e){ return e.src + '→' + e.tgt; }).join(', ') : '')); } catch(_){}
           qwenMessages = [
             { role: 'system', content: sysInstruction },
             { role: 'user', content: userPrefix + lastUserContent }
