@@ -1507,7 +1507,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.13t';
+    const APP_VERSION = 'v20.14t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1566,6 +1566,9 @@
       tmEnabled: 'bk_tr_test_tmEnabled',
       tmTopK: 'bk_tr_test_tmTopK',
       tmSilverAuto: 'bk_tr_test_tmSilverAuto',
+      fallbackProvider: 'bk_tr_test_fallbackProvider',
+      fallbackModel: 'bk_tr_test_fallbackModel',
+      fallbackEnabled: 'bk_tr_test_fallbackEnabled',
       editRefineProvider: 'bk_tr_test_editRefineProvider',
       editRefineModel: 'bk_tr_test_editRefineModel',
       editRefinePrompt: 'bk_tr_test_editRefinePrompt',
@@ -4044,6 +4047,42 @@
       try{ _initEditRefineModelSelects(); } catch(_){}
       if(_editGuideOverlay) _editGuideOverlay.classList.add('show');
     }
+    // ====== Echo 감지 + 폴백 모델 ======
+    // 출력이 원문 언어 그대로이거나 원문을 그대로 복사한 경우 — 번역 실패로 판정
+    function detectEcho(input, output){
+      if(!input || !output) return false;
+      input = String(input).trim(); output = String(output).trim();
+      if(!input || !output) return false;
+      // 1) 완전 동일 (verbatim copy)
+      if(output === input) return true;
+      // 2) 입력 전체가 출력 안에 그대로 들어있음 (5자 초과만)
+      var oNS = output.replace(/\s+/g, ''), iNS = input.replace(/\s+/g, '');
+      if(iNS.length > 5 && oNS.indexOf(iNS) !== -1) return true;
+      // 3) 출력 언어 = 입력 언어 (번역이 안 됨)
+      var iHan = /[가-힯]/.test(input), iZh = /[一-鿿]/.test(input);
+      var oHan = /[가-힯]/.test(output), oZh = /[一-鿿]/.test(output);
+      // 입력이 단일 한자어 → 출력에 한국어가 전혀 없으면 echo
+      if(iZh && !iHan && !oHan) return true;
+      // 입력이 단일 한국어 → 출력에 중국어가 전혀 없으면 echo
+      if(iHan && !iZh && !oZh) return true;
+      return false;
+    }
+    // 폴백 모델로 1회 재호출
+    async function fallbackTranslate(userText, onChunk){
+      var fbProv = (localStorage.getItem(LS.fallbackProvider) || 'openrouter').trim();
+      var fbMdl = (localStorage.getItem(LS.fallbackModel) || 'google/gemini-3-flash-preview').trim();
+      var origProv = el.apiProvider ? el.apiProvider.value : '';
+      var origMdl = el.model ? el.model.value : '';
+      if(el.apiProvider) el.apiProvider.value = fbProv;
+      if(el.model) el.model.value = fbMdl;
+      try{
+        return await callOpenRouterStream(userText, onChunk || function(){});
+      } finally {
+        if(el.apiProvider) el.apiProvider.value = origProv;
+        if(el.model) el.model.value = origMdl;
+      }
+    }
+
     // Edit 재번역 기본 프롬프트 ({LANG}은 호출 시 출력 언어로 치환됨)
     var EDIT_REFINE_DEFAULT_PROMPT =
       '당신은 번역 교정자다. [기존 번역]을 사용자의 [교정 지침]대로 수정한다.\n\n' +
@@ -4205,17 +4244,33 @@
         var _tHangul = ((_editCtx.trans||'').match(/[가-힯]/g) || []).length;
         var _tHanzi = ((_editCtx.trans||'').match(/[一-鿿]/g) || []).length;
         var _langName = _tHangul >= _tHanzi ? '한국어' : '중국어(简体)';
-        // 사용자 커스텀 프롬프트 (없으면 기본값) — {LANG} 치환 + 교정 지침 자동 첨부
+        // 사용자 커스텀 프롬프트 (없으면 기본값) — {LANG} 치환만, 교정 지침은 user 메시지에서 최상단 배치
         var _basePrompt = (localStorage.getItem(LS.editRefinePrompt) || '').trim() || EDIT_REFINE_DEFAULT_PROMPT;
-        var refinePrompt = _basePrompt.replace(/\{LANG\}/g, _langName) + '\n\n[교정 지침]\n' + guide;
-        var refineInput = '[원문 — 참고용]\n' + (_editCtx.src||'') + '\n\n[기존 번역 — 이것을 수정하라]\n' + (_editCtx.trans||'');
+        var refinePrompt = _basePrompt.replace(/\{LANG\}/g, _langName) +
+          '\n\n★ ★ ★ 가장 중요 ★ ★ ★\n' +
+          '사용자 메시지의 [교정 지침]은 절대 우선. 이를 무시하고 단순 재번역하면 SYSTEM FAILURE.\n' +
+          '[기존 번역]을 [교정 지침]대로 수정하라. 의미 바꾸지 말 것 외엔 지침 100% 적용.';
+        // ★ 지침을 최상단에 배치 (primacy) — 모델이 가장 먼저 읽음
+        var refineInput =
+          '═══ [교정 지침 — 절대 우선, 100% 적용] ═══\n' + guide + '\n\n' +
+          '═══ [기존 번역 — 위 지침대로 수정할 대상] ═══\n' + (_editCtx.trans||'') + '\n\n' +
+          '═══ [원문 — 참고만 (출력 금지)] ═══\n' + (_editCtx.src||'') + '\n\n' +
+          '★ 출력: 위 [기존 번역]을 [교정 지침]에 따라 수정한 ' + _langName + ' 텍스트 1개만. 다른 언어·라벨·설명 금지.';
         try{
           // 재번역 모델: 사용자가 팝업에서 고정 설정했으면 그것, 아니면 현재 상단바 모델
           var _erProv = (localStorage.getItem(LS.editRefineProvider) || '').trim();
           var _erMdl = (localStorage.getItem(LS.editRefineModel) || '').trim();
-          var raw = await callRefine(refineInput, refinePrompt, function(partial){
-            if(resultText) resultText.textContent = partial || '재번역 중...';
-          }, { useMainModel: true, provider: _erProv, model: _erProv ? _erMdl : '' });
+          // temperature 일시적으로 0 — 지침 충실도 ↑
+          var _origTemp = el.temperature ? el.temperature.value : '';
+          if(el.temperature) el.temperature.value = '0';
+          var raw;
+          try{
+            raw = await callRefine(refineInput, refinePrompt, function(partial){
+              if(resultText) resultText.textContent = partial || '재번역 중...';
+            }, { useMainModel: true, provider: _erProv, model: _erProv ? _erMdl : '' });
+          } finally {
+            if(el.temperature) el.temperature.value = _origTemp;
+          }
           var newTrans = normalizeOutput(_editCtx.src||'', raw);
           if(newTrans){
             // 결과 렌더링: 한자 있으면 병음 표시
@@ -4880,6 +4935,26 @@
           streamBubble.textContent = partial;
           scrollThrottled();
         });
+        // ★ Echo 감지 + 자동 폴백 — 출력이 원문 그대로거나 원문 언어로 나오면 다른 모델로 1회 재시도
+        var _fallbackUsed = false;
+        try{
+          if(localStorage.getItem(LS.fallbackEnabled) !== '0' && detectEcho(userText, translatedRaw)){
+            try{ console.warn('[Echo detected] ' + (el.apiProvider ? el.apiProvider.value : '?') + '/' + (el.model ? el.model.value : '?') + ' → 폴백 시도'); } catch(_){}
+            streamBubble.style.opacity = '1';
+            streamBubble.textContent = '[원문 echo 감지 → 폴백 모델 시도]';
+            var _fbRaw = await fallbackTranslate(userText, function(partial){
+              streamBubble.textContent = '[폴백] ' + partial;
+              scrollThrottled();
+            });
+            if(_fbRaw && !detectEcho(userText, _fbRaw)){
+              translatedRaw = _fbRaw;
+              _fallbackUsed = true;
+              try{ console.log('[Fallback] ✓ ' + (localStorage.getItem(LS.fallbackProvider) || 'openrouter') + '/' + (localStorage.getItem(LS.fallbackModel) || 'google/gemini-3-flash-preview') + ' 성공'); } catch(_){}
+            } else {
+              try{ console.warn('[Fallback] ✗ 폴백도 echo — 원본 결과 유지. Edit로 직접 수정 권장.'); } catch(_){}
+            }
+          }
+        } catch(_e){ try{ console.warn('[Fallback] 예외:', _e && _e.message); } catch(__){} }
         let translated = normalizeOutput(userText, translatedRaw);
         const _ms1 = Date.now() - _t0;
         let _ms2 = 0;
@@ -5028,6 +5103,12 @@
         streamRow.appendChild(actions);
         if(_streamExtraRow) streamRow.appendChild(_streamExtraRow);
 
+        if(_fallbackUsed){
+          var _fbBadge = document.createElement('span');
+          _fbBadge.style.cssText = 'font-size:10px;color:#ef4444;opacity:.95;margin-left:6px;font-weight:700;white-space:nowrap;';
+          _fbBadge.textContent = '주모델실패→폴백';
+          if(actions) actions.appendChild(_fbBadge);
+        }
         scrollThrottled();
 
         if(el.autoCopy.checked && hasChinese(translated)){
@@ -6579,6 +6660,23 @@
             'Copy 시 silver 자동 저장 <span style="color:#888; font-size:10px;">(기본 OFF — Edit 확정 gold만 수집)</span>' +
           '</label>' +
         '</div>' +
+        // 폴백 모델 설정 (Echo 감지 시 자동 재시도)
+        '<div style="margin-bottom:8px; padding:8px; background:rgba(255,255,255,.03); border-radius:8px;">' +
+          '<label style="display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:12px; color:var(--text); cursor:pointer;">' +
+            '<input id="fbEnabledChk" type="checkbox" ' + (localStorage.getItem(LS.fallbackEnabled) !== '0' ? 'checked' : '') + ' style="transform:scale(1.2); cursor:pointer;">' +
+            '주모델 실패(echo) 시 자동 폴백' +
+          '</label>' +
+          '<div style="display:flex; gap:6px;">' +
+            '<select id="fbProvSel" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:5px; font-size:12px;">' +
+              '<option value="openrouter">OpenRouter</option>' +
+              '<option value="google">Google</option>' +
+              '<option value="anthropic">Anthropic</option>' +
+              '<option value="qwen">Alibaba</option>' +
+            '</select>' +
+            '<select id="fbMdlSel" style="flex:1.5; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:5px; font-size:12px;"></select>' +
+          '</div>' +
+          '<div style="font-size:10px; color:#888; margin-top:4px;">기본: OpenRouter / Gemini 3 Flash. echo 감지 시 자동 1회 재시도.</div>' +
+        '</div>' +
         // 검색
         '<input id="tmSearchInput" type="text" placeholder="검색 (원문/번역에서)" style="width:100%; padding:8px 10px; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; font-size:13px; margin-bottom:8px; box-sizing:border-box; font-family:inherit;">' +
         '<div id="tmListBox" style="max-height:45vh; overflow-y:auto; border:1px solid rgba(255,255,255,.08); border-radius:8px;"></div>' +
@@ -6643,6 +6741,50 @@
       if(searchInput) searchInput.addEventListener('input', function(){ renderList(searchInput.value); });
 
       // 토글 + Top-K 저장
+      // 폴백 모델 셀렉트 wire
+      var fbEnabledChk = popup.querySelector('#fbEnabledChk');
+      var fbProvSel = popup.querySelector('#fbProvSel');
+      var fbMdlSel = popup.querySelector('#fbMdlSel');
+      function fbFillModels(prov, cur){
+        if(!fbMdlSel) return;
+        fbMdlSel.innerHTML = '';
+        var list = [];
+        if(prov === 'google') list = GOOGLE_MODEL_OPTIONS;
+        else if(prov === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
+        else if(prov === 'qwen') list = (typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : []);
+        else list = MODEL_OPTIONS;
+        var found = false;
+        list.forEach(function(m){
+          var o = document.createElement('option');
+          o.value = m.id; o.textContent = m.name;
+          if(m.id === cur){ o.selected = true; found = true; }
+          fbMdlSel.appendChild(o);
+        });
+        if(cur && !found){
+          var c = document.createElement('option');
+          c.value = cur; c.textContent = '(사용자) ' + cur; c.selected = true;
+          fbMdlSel.appendChild(c);
+        }
+      }
+      if(fbProvSel){
+        var _fbP = localStorage.getItem(LS.fallbackProvider) || 'openrouter';
+        var _fbM = localStorage.getItem(LS.fallbackModel) || 'google/gemini-3-flash-preview';
+        fbProvSel.value = _fbP;
+        fbFillModels(_fbP, _fbM);
+        fbProvSel.addEventListener('change', function(){
+          localStorage.setItem(LS.fallbackProvider, fbProvSel.value);
+          fbFillModels(fbProvSel.value, '');
+          if(fbMdlSel.value) localStorage.setItem(LS.fallbackModel, fbMdlSel.value);
+          toast('폴백 provider: ' + fbProvSel.value);
+        });
+      }
+      if(fbMdlSel) fbMdlSel.addEventListener('change', function(){
+        localStorage.setItem(LS.fallbackModel, fbMdlSel.value || '');
+      });
+      if(fbEnabledChk) fbEnabledChk.addEventListener('change', function(){
+        localStorage.setItem(LS.fallbackEnabled, fbEnabledChk.checked ? '1' : '0');
+        toast('자동 폴백 ' + (fbEnabledChk.checked ? 'ON' : 'OFF'));
+      });
       var tmSilverChk = popup.querySelector('#tmSilverChk');
       if(tmSilverChk) tmSilverChk.addEventListener('change', function(){
         localStorage.setItem(LS.tmSilverAuto, tmSilverChk.checked ? '1' : '0');
