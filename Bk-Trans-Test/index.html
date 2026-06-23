@@ -1509,7 +1509,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.15t';
+    const APP_VERSION = 'v20.16t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3247,6 +3247,15 @@
       };
       if(p === 'openrouter' && typeof opts.topK === 'number') body.top_k = opts.topK;
       if(opts.stream) body.stream_options = { include_usage: true }; // 토큰 사용량 수신
+
+      // ★ OpenRouter — Google Gemini 모델은 무조건 Google AI Studio로 라우팅 (Vertex 등 다른 backend 차단)
+      //   provider.order = ['google-ai-studio'] + allow_fallbacks: false → AI Studio 사용 불가하면 에러 (다른 곳으로 안 빠짐)
+      if(p === 'openrouter' && /^google\//i.test(String(opts.model || ''))){
+        body.provider = {
+          order: ['google-ai-studio'],
+          allow_fallbacks: false
+        };
+      }
 
       // ★ Anthropic Prompt Caching (OpenRouter 경유 Claude 모델)
       //   Sonnet/Opus: 3000+ chars (~1024 tokens) — 활성
