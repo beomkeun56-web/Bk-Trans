@@ -1519,7 +1519,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.17t';
+    const APP_VERSION = 'v20.18t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3775,12 +3775,23 @@
         stream: true
       });
       _lastEffort = '';
-      if(!google && !anthropic){
+      var _zai = (getProvider() === 'zai');
+      if(!google && !anthropic && !_zai){
         var _mopt = MODEL_OPTIONS.find(function(m){ return m.id === el.model.value.trim(); });
         if(_mopt && _mopt.effort){
           req.body.reasoning = { effort: _mopt.effort };
           _lastEffort = _mopt.effort;
         }
+      }
+      // Z.ai (GLM): effort → thinking 토글. GLM은 reasoning:{effort} 아닌 thinking:{type} 형식.
+      //   off/low → thinking disabled(빠름, 번역에 적합) / medium·high → enabled
+      if(_zai){
+        var _zmopt = (typeof ZAI_MODEL_OPTIONS !== 'undefined' ? ZAI_MODEL_OPTIONS : []).find(function(m){ return m.id === el.model.value.trim(); });
+        var _zeff = (_effortOverride !== undefined) ? _effortOverride : (_zmopt && _zmopt.effort);
+        var _think = (_zeff === 'medium' || _zeff === 'high');
+        req.body.thinking = { type: _think ? 'enabled' : 'disabled' };
+        _lastEffort = _zeff || 'off';
+        try{ console.log('[Z.ai GLM] effort=' + (_zeff||'off') + ' thinking=' + (_think?'enabled':'disabled')); } catch(_){}
       }
       // Gemini: 모델 effort가 지정되면 thinking 수준 조절 (예: low → 사고 시간 단축 = 빠름)
       if(google){
