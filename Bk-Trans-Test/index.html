@@ -906,6 +906,7 @@
             <option value="google">Google</option>
             <option value="anthropic">Anthropic</option>
             <option value="qwen">Alibaba</option>
+            <option value="zai">Z.ai (GLM)</option>
           </select>
           <select id="editRefineModel" style="flex:1.4; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px; font-size:13px; font-family:inherit; display:none;"></select>
         </div>
@@ -1037,6 +1038,7 @@
             <option value="google">Google (Gemini 직접 호출)</option>
             <option value="anthropic">Anthropic (Claude 직접 호출)</option>
             <option value="qwen">Alibaba (Qwen-MT 직접 호출)</option>
+            <option value="zai">Z.ai (GLM 직접 호출)</option>
           </select>
         </div>
 
@@ -1072,6 +1074,14 @@
             <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">bailian.console.aliyun.com 에서 발급</span>
           </label>
           <input id="qwenApiKey" type="password" placeholder="sk-..." autocomplete="off" />
+        </div>
+
+        <div id="zaiKeyWrap" style="margin-bottom:20px; display:none;">
+          <label for="zaiApiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            Z.ai (GLM) API Key
+            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">z.ai 콘솔에서 발급</span>
+          </label>
+          <input id="zaiApiKey" type="password" placeholder="..." autocomplete="off" />
         </div>
 
         <div style="margin-bottom:20px;">
@@ -1549,6 +1559,9 @@
       qwenApiKey: 'bk_tr_test_qwenApiKey',
       qwenModel: 'bk_tr_test_qwenModel',
       qwenCustomModels: 'bk_tr_test_qwenCustomModels',
+      zaiApiKey: 'bk_tr_test_zaiApiKey',
+      zaiModel: 'bk_tr_test_zaiModel',
+      zaiCustomModels: 'bk_tr_test_zaiCustomModels',
       showTokens: 'bk_tr_test_showTokens',
       useSecondPass: 'bk_tr_test_useSecondPass',
       secondPrompt: 'bk_tr_test_secondPrompt',
@@ -1620,6 +1633,7 @@
       googleApiKey: document.getElementById('googleApiKey'),
       anthropicApiKey: document.getElementById('anthropicApiKey'),
       qwenApiKey: document.getElementById('qwenApiKey'),
+      zaiApiKey: document.getElementById('zaiApiKey'),
       model: document.getElementById('model'),
       temperature: document.getElementById('temperature'),
       topP: document.getElementById('topP'),
@@ -1796,6 +1810,13 @@
       { id:'qwen3.7-max', name:'Qwen3.7 Max', effort:'' }
     ];
 
+    // Z.ai (Zhipu GLM) 직접 호출 모델 — OpenAI 호환 paas/v4
+    const ZAI_DEFAULT_MODELS = [
+      { id:'glm-5.2', name:'GLM-5.2', effort:'' },
+      { id:'glm-4.6', name:'GLM-4.6', effort:'' },
+      { id:'glm-4.5-air', name:'GLM-4.5 Air', effort:'' }
+    ];
+
     // v19.13t 마이그레이션 — qwen-plus/max/qwen3-max → qwen3.7-plus/max + qwen3.6-flash 로 교체
     try{
       if(!localStorage.getItem('bk_tr_test_qwenModelMigration_v2')){
@@ -1963,12 +1984,14 @@
     var GOOGLE_MODEL_OPTIONS = loadModelList(LS.googleCustomModels, GOOGLE_DEFAULT_MODELS);
     var ANTHROPIC_MODEL_OPTIONS = loadModelList(LS.anthropicCustomModels, ANTHROPIC_DEFAULT_MODELS);
     var QWEN_MODEL_OPTIONS = loadModelList(LS.qwenCustomModels, QWEN_DEFAULT_MODELS);
+    var ZAI_MODEL_OPTIONS = loadModelList(LS.zaiCustomModels, ZAI_DEFAULT_MODELS);
 
     function currentModelOptions(){
       var p = getProvider();
       if(p === 'google') return GOOGLE_MODEL_OPTIONS;
       if(p === 'anthropic') return ANTHROPIC_MODEL_OPTIONS;
       if(p === 'qwen') return QWEN_MODEL_OPTIONS;
+      if(p === 'zai') return ZAI_MODEL_OPTIONS;
       return MODEL_OPTIONS;
     }
     function modelLsKey(){
@@ -1976,6 +1999,7 @@
       if(p === 'google') return LS.googleModel;
       if(p === 'anthropic') return LS.anthropicModel;
       if(p === 'qwen') return LS.qwenModel;
+      if(p === 'zai') return LS.zaiModel;
       return LS.model;
     }
     function getSavedModel(){
@@ -1997,6 +2021,9 @@
       } else if(p === 'qwen'){
         localStorage.setItem(LS.qwenCustomModels, JSON.stringify(arr));
         QWEN_MODEL_OPTIONS = arr;
+      } else if(p === 'zai'){
+        localStorage.setItem(LS.zaiCustomModels, JSON.stringify(arr));
+        ZAI_MODEL_OPTIONS = arr;
       } else {
         localStorage.setItem(LS.customModels, JSON.stringify(arr));
         MODEL_OPTIONS = arr;
@@ -2332,7 +2359,8 @@
         { id: 'openrouter', name: 'OpenRouter', models: MODEL_OPTIONS },
         { id: 'google', name: 'Google', models: GOOGLE_MODEL_OPTIONS },
         { id: 'anthropic', name: 'Anthropic', models: ANTHROPIC_MODEL_OPTIONS },
-        { id: 'qwen', name: 'Alibaba (Qwen)', models: typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : [] }
+        { id: 'qwen', name: 'Alibaba (Qwen)', models: typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : [] },
+        { id: 'zai', name: 'Z.ai (GLM)', models: typeof ZAI_MODEL_OPTIONS !== 'undefined' ? ZAI_MODEL_OPTIONS : [] }
       ];
       var currentProv = (el.apiProvider && el.apiProvider.value) || 'openrouter';
       var currentId = getCurrentModelId();
@@ -2809,6 +2837,7 @@
       if(el.googleApiKey) el.googleApiKey.value = localStorage.getItem(LS.googleApiKey) || '';
       if(el.anthropicApiKey) el.anthropicApiKey.value = localStorage.getItem(LS.anthropicApiKey) || '';
       if(el.qwenApiKey) el.qwenApiKey.value = localStorage.getItem(LS.qwenApiKey) || '';
+      if(el.zaiApiKey) el.zaiApiKey.value = localStorage.getItem(LS.zaiApiKey) || '';
       updateProviderUI();
 
       el.topP.value = localStorage.getItem(LS.topP) || el.topP.value;
@@ -2829,6 +2858,7 @@
       if(el.googleApiKey) localStorage.setItem(LS.googleApiKey, el.googleApiKey.value.trim());
       if(el.anthropicApiKey) localStorage.setItem(LS.anthropicApiKey, el.anthropicApiKey.value.trim());
       if(el.qwenApiKey) localStorage.setItem(LS.qwenApiKey, el.qwenApiKey.value.trim());
+      if(el.zaiApiKey) localStorage.setItem(LS.zaiApiKey, el.zaiApiKey.value.trim());
       setSavedModel(el.model.value.trim());
       localStorage.setItem(tempLsKey(), el.temperature.value.trim());
       localStorage.setItem(LS.topP, el.topP.value.trim());
@@ -2993,6 +3023,7 @@
     const GOOGLE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
     const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
     const QWEN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+    const ZAI_API_URL = 'https://api.z.ai/api/paas/v4/chat/completions';
 
     function getProvider(){
       return (el.apiProvider && el.apiProvider.value) || localStorage.getItem(LS.apiProvider) || 'openrouter';
@@ -3000,6 +3031,7 @@
     function isGoogleProvider(){ return getProvider() === 'google'; }
     function isAnthropicProvider(){ return getProvider() === 'anthropic'; }
     function isQwenProvider(){ return getProvider() === 'qwen'; }
+    function isZaiProvider(){ return getProvider() === 'zai'; }
     // Alibaba 제공자이면서 qwen-mt-* 모델(번역 전용)인지 — system 프롬프트·temperature 무시, translation_options 모드
     function isQwenMtModel(){
       if(!isQwenProvider()) return false;
@@ -3011,6 +3043,7 @@
       if(p === 'google') return ((el.googleApiKey && el.googleApiKey.value) || '').trim();
       if(p === 'anthropic') return ((el.anthropicApiKey && el.anthropicApiKey.value) || '').trim();
       if(p === 'qwen') return ((el.qwenApiKey && el.qwenApiKey.value) || '').trim();
+      if(p === 'zai') return ((el.zaiApiKey && el.zaiApiKey.value) || '').trim();
       return ((el.apiKey && el.apiKey.value) || '').trim();
     }
     function toRequestModelId(id){
@@ -3019,6 +3052,7 @@
       if(p === 'google') return m.replace(/^google\//, '');
       if(p === 'anthropic') return m.replace(/^anthropic\//, '');
       if(p === 'qwen') return m.replace(/^qwen\//, '');
+      if(p === 'zai') return m.replace(/^zai\//, '');
       return m;
     }
 
@@ -3052,7 +3086,7 @@
     let _prevProvider = null;
     function updateProviderUI(){
       const p = getProvider();
-      const wraps = { openrouter:'openrouterKeyWrap', google:'googleKeyWrap', anthropic:'anthropicKeyWrap', qwen:'qwenKeyWrap' };
+      const wraps = { openrouter:'openrouterKeyWrap', google:'googleKeyWrap', anthropic:'anthropicKeyWrap', qwen:'qwenKeyWrap', zai:'zaiKeyWrap' };
       Object.keys(wraps).forEach(function(k){
         const w = document.getElementById(wraps[k]);
         if(w) w.style.display = (k === p) ? '' : 'none';
@@ -3084,6 +3118,7 @@
       if(p === 'google') return GOOGLE_API_URL;
       if(p === 'anthropic') return ANTHROPIC_API_URL;
       if(p === 'qwen') return QWEN_API_URL;
+      if(p === 'zai') return ZAI_API_URL;
       const custom = el.apiBaseUrl && el.apiBaseUrl.value.trim();
       return custom || DEFAULT_API_URL;
     }
@@ -4180,6 +4215,7 @@
         if(prov === 'google') list = GOOGLE_MODEL_OPTIONS;
         else if(prov === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
         else if(prov === 'qwen') list = (typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : []);
+        else if(prov === 'zai') list = (typeof ZAI_MODEL_OPTIONS !== 'undefined' ? ZAI_MODEL_OPTIONS : []);
         else list = MODEL_OPTIONS;
         var found = false;
         list.forEach(function(m){
@@ -5451,6 +5487,7 @@
       if(prov === 'google') list = GOOGLE_MODEL_OPTIONS;
       else if(prov === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
       else if(prov === 'qwen') list = QWEN_MODEL_OPTIONS;
+      else if(prov === 'zai') list = ZAI_MODEL_OPTIONS;
       else if(prov === 'openrouter') list = MODEL_OPTIONS;
       list.forEach(function(m){
         var opt = document.createElement('option');
@@ -6107,6 +6144,7 @@
             if(provider === 'google') list = GOOGLE_MODEL_OPTIONS;
             else if(provider === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
             else if(provider === 'qwen') list = QWEN_MODEL_OPTIONS;
+            else if(provider === 'zai') list = ZAI_MODEL_OPTIONS;
             else list = MODEL_OPTIONS;
             list.forEach(function(m){
               var o = document.createElement('option');
@@ -6259,6 +6297,7 @@
         if(prov === 'google') list = GOOGLE_MODEL_OPTIONS;
         else if(prov === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
         else if(prov === 'qwen') list = (typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : []);
+        else if(prov === 'zai') list = (typeof ZAI_MODEL_OPTIONS !== 'undefined' ? ZAI_MODEL_OPTIONS : []);
         else list = MODEL_OPTIONS;
         mdlSel.innerHTML = '';
         var found = false;
@@ -6356,6 +6395,7 @@
       if(prov === 'google') list = GOOGLE_MODEL_OPTIONS;
       else if(prov === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
       else if(prov === 'qwen') list = QWEN_MODEL_OPTIONS;
+      else if(prov === 'zai') list = ZAI_MODEL_OPTIONS;
       else if(prov === 'openrouter') list = MODEL_OPTIONS;
       list.forEach(function(m){
         var opt = document.createElement('option');
@@ -6851,6 +6891,7 @@
         if(prov === 'google') list = GOOGLE_MODEL_OPTIONS;
         else if(prov === 'anthropic') list = ANTHROPIC_MODEL_OPTIONS;
         else if(prov === 'qwen') list = (typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : []);
+        else if(prov === 'zai') list = (typeof ZAI_MODEL_OPTIONS !== 'undefined' ? ZAI_MODEL_OPTIONS : []);
         else list = MODEL_OPTIONS;
         var found = false;
         list.forEach(function(m){
