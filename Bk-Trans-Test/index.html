@@ -1567,7 +1567,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.24t';
+    const APP_VERSION = 'v20.25t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -6776,7 +6776,14 @@
       _clipboardCheckTimer = setTimeout(tryOnce, delays[0]);
     }
 
-    checkClipboard();
+    // 콜드 스타트: 즉시 호출하면 앱 준비 전이라 입력만 채우고 번역이 안 걸림.
+    // → 로드 완료 후 + 재시도 폴링(scheduleClipboardCheck)으로 준비되면 자동번역.
+    function _initialClipboardKick(){ try{ scheduleClipboardCheck(); }catch(e){} }
+    if(document.readyState === 'complete'){
+      setTimeout(_initialClipboardKick, 250);
+    } else {
+      window.addEventListener('load', function(){ setTimeout(_initialClipboardKick, 250); });
+    }
     window.addEventListener('focus', scheduleClipboardCheck);
     document.addEventListener('visibilitychange', () => {
       if(!document.hidden) scheduleClipboardCheck();
