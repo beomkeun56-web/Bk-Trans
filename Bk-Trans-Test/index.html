@@ -67,7 +67,7 @@
       --copyBtnBg: #1a1f2a;
 
       /* 입력창 커스터마이징 */
-      --inputMinHeight: 72px;
+      --inputMinHeight: 56px;
       --inputMaxHeight: 240px;
       --inputMaxWidth: 860px;
       --composerPadding: 10px;
@@ -753,12 +753,24 @@
     }
     #tbToggle:hover{ background:rgba(255,255,255,.12); color:#fff; }
     #tbToggle.tbOpen{ color:#fff; background:rgba(255,255,255,.14); }
+    #tbReload{
+      position:fixed; top:6px; right:44px; z-index:9999;
+      width:30px; height:30px; border-radius:50%;
+      background:rgba(255,255,255,.06); color:rgba(255,255,255,.45);
+      border:1px solid rgba(255,255,255,.10);
+      font-size:16px; line-height:28px; text-align:center;
+      cursor:pointer; padding:0; font-family:inherit;
+      transition:opacity .2s, background .2s;
+    }
+    #tbReload:hover{ background:rgba(255,255,255,.12); color:#fff; }
+    #tbReload:active{ transform:rotate(180deg); }
   </style>
 </head>
 
 <body>
   <div id="focusOverlay" class="focusOverlay"><div class="focusText" id="focusText"></div></div>
   <header>
+    <button id="tbReload" type="button" aria-label="새로고침" title="새로고침">↻</button>
     <button id="tbToggle" type="button" aria-label="상단바 표시/숨김" title="상단바">✦</button>
     <div class="headerInner">
       <div class="topbar">
@@ -1443,8 +1455,8 @@
         <div style="margin-bottom:24px;">
           <label for="inputMinHeightSlider" style="font-size:calc(13px * var(--menuScale)); font-weight:600; margin-bottom:12px; display:block;">입력창 최소 높이</label>
           <div class="row" style="align-items:center; gap:12px;">
-            <input id="inputMinHeightSlider" type="range" min="48" max="120" step="4" value="72" style="flex:1 1 auto;" />
-            <div id="inputMinHeightVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">72px</div>
+            <input id="inputMinHeightSlider" type="range" min="40" max="120" step="4" value="56" style="flex:1 1 auto;" />
+            <div id="inputMinHeightVal" class="hint" style="min-width:70px; text-align:center; font-weight:600; font-size:calc(14px * var(--menuScale));">56px</div>
             <button id="inputMinHeightResetBtn" class="btn secondary" type="button">초기화</button>
           </div>
         </div>
@@ -1555,7 +1567,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.21t';
+    const APP_VERSION = 'v20.22t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -6855,6 +6867,8 @@
     (function(){
       var bar = document.querySelector('.topbar');
       var tog = document.getElementById('tbToggle');
+      var rld = document.getElementById('tbReload');
+      if(rld) rld.addEventListener('click', function(e){ e.stopPropagation(); location.reload(); });
       if(!bar || !tog) return;
       var KEY = 'bk_tr_topbarVisible';
       function apply(vis){
