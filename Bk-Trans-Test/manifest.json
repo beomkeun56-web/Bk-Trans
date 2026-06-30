@@ -2,6 +2,7 @@
   "name": "BK Trans",
   "short_name": "BK Trans",
   "description": "한중 번역기",
+  "id": "/Bk-Trans/Bk-Trans-Test/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,11 +10,8 @@
   "background_color": "#050505",
   "theme_color": "#050505",
   "icons": [
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%23050505'/%3E%3Ctext x='256' y='332' font-family='Arial,sans-serif' font-size='210' font-weight='700' fill='%23ffffff' text-anchor='middle'%3EBK%3C/text%3E%3C/svg%3E",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
