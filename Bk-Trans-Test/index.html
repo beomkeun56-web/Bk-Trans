@@ -17,9 +17,11 @@
   <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin />
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin />
   <link rel="preconnect" href="https://openrouter.ai" crossorigin />
+  <link rel="preconnect" href="https://api.z.ai" crossorigin />
   <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com" />
   <link rel="dns-prefetch" href="https://api.anthropic.com" />
   <link rel="dns-prefetch" href="https://openrouter.ai" />
+  <link rel="dns-prefetch" href="https://api.z.ai" />
 
   <!-- 병음(pinyin) 표시용: 중국어 글자 위에 발음을 ruby로 렌더 -->
   <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3/dist/index.js" defer></script>
@@ -1567,7 +1569,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.26t';
+    const APP_VERSION = 'v20.27t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3800,6 +3802,41 @@
       }catch(e){ _isTWAcache = false; }
       return _isTWAcache;
     }
+
+    // ===== TWA 지연 완화: 연결 데우기(preconnect) + Wake Lock (v20.27t) =====
+    var _lastWarmAt = 0;
+    function _apiOrigin(){
+      try{ return new URL((typeof getApiUrl==='function'? getApiUrl() : DEFAULT_API_URL)).origin; }
+      catch(e){ return 'https://openrouter.ai'; }
+    }
+    function _warmConnections(force){
+      try{
+        var now = Date.now();
+        if(!force && (now - _lastWarmAt) < 8000) return;  // 8초 내 중복 방지
+        _lastWarmAt = now;
+        var origin = _apiOrigin();
+        var id = 'warm-pc';
+        var old = document.getElementById(id); if(old) old.remove();
+        var l = document.createElement('link');
+        l.id = id; l.rel = 'preconnect'; l.href = origin; l.crossOrigin = 'anonymous';
+        document.head.appendChild(l);
+      }catch(e){}
+    }
+    // Wake Lock — 사용 중 화면 활성 유지(throttle 완화)
+    var _wakeLock = null;
+    async function _acquireWakeLock(){
+      try{
+        if('wakeLock' in navigator && document.visibilityState === 'visible'){
+          _wakeLock = await navigator.wakeLock.request('screen');
+          _wakeLock.addEventListener('release', function(){ _wakeLock = null; });
+        }
+      }catch(e){}
+    }
+    document.addEventListener('visibilitychange', function(){
+      if(document.visibilityState === 'visible'){ _warmConnections(true); _acquireWakeLock(); }
+    });
+    window.addEventListener('focus', function(){ _warmConnections(true); });
+    _warmConnections(true); _acquireWakeLock();
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
       const google = isGoogleProvider();
       const anthropic = isAnthropicProvider();
@@ -3864,6 +3901,7 @@
         const _gap = CONFIG.MIN_REQUEST_GAP_MS - (Date.now() - _lastApiCallAt);
         if(_gap > 0) await new Promise(r => setTimeout(r, _gap));
       }
+      try{ _warmConnections(false); }catch(e){}
       _lastApiCallAt = Date.now();
 
       const ac = new AbortController();
