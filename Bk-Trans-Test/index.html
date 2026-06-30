@@ -1567,7 +1567,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.23t';
+    const APP_VERSION = 'v20.24t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -6727,7 +6727,7 @@
       try{
         if(_isBusy || _autoSending) return;
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
-        if(!document.hasFocus || !document.hasFocus()) return;
+        // (hasFocus 차단 제거: 팝업 복귀 시 포커스 지연 때문에 막혔음. readText 실패는 catch로 무시)
 
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
@@ -6762,10 +6762,18 @@
 
     function scheduleClipboardCheck(){
       if(_clipboardCheckTimer) clearTimeout(_clipboardCheckTimer);
-      _clipboardCheckTimer = setTimeout(() => {
+      // 팝업/앱 복귀 시 포커스·클립보드 권한이 늦게 들어옴 → 짧게 여러 번 재시도
+      var delays = [120, 400, 800, 1400];
+      var i = 0;
+      function tryOnce(){
         _clipboardCheckTimer = 0;
+        if(_isBusy || _autoSending) return;            // 이미 번역 시작했으면 중단
+        if(el.input && el.input.value.trim()) return;  // 입력칸 이미 채워졌으면 중단
         checkClipboard();
-      }, CONFIG.CLIPBOARD_DEBOUNCE_MS);
+        i++;
+        if(i < delays.length){ _clipboardCheckTimer = setTimeout(tryOnce, delays[i]); }
+      }
+      _clipboardCheckTimer = setTimeout(tryOnce, delays[0]);
     }
 
     checkClipboard();
