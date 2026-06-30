@@ -1567,7 +1567,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.25t';
+    const APP_VERSION = 'v20.26t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -3789,6 +3789,17 @@
       return '\n\n[참고 예시 — 사용자의 과거 번역. 톤·용어·어순을 이 예시와 일치시켜라. "이전 번역"은 사용자가 거부한 번역이므로 같은 실수 반복 금지]\n' + lines.join('\n\n');
     }
 
+    // TWA(안드로이드 앱)는 SSE 스트림이 버퍼링돼 느림 → 앱에선 non-stream. 웹은 stream 유지.
+    var _isTWAcache = null;
+    function _isTWA(){
+      if(_isTWAcache !== null) return _isTWAcache;
+      try{
+        _isTWAcache = document.referrer.startsWith('android-app://')
+          || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+          || (navigator.standalone === true);
+      }catch(e){ _isTWAcache = false; }
+      return _isTWAcache;
+    }
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
       const google = isGoogleProvider();
       const anthropic = isAnthropicProvider();
@@ -3820,7 +3831,7 @@
         topP: topP,
         topK: topK,
         maxTokens: dynMax,
-        stream: true
+        stream: !_isTWA()
       });
       _lastEffort = '';
       var _zai = (getProvider() === 'zai');
@@ -3885,6 +3896,18 @@
 
       let full = '';
       _lastUsage = null;
+
+      if(_isTWA()){
+        // non-stream: 응답을 한 번에 JSON 파싱 (TWA SSE 지연 회피)
+        const j = await res.json();
+        try{ captureUsage(j); }catch(e){}
+        var _c = '';
+        try{ _c = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || ''; }catch(e){}
+        full = _c;
+        const vis = stripThinkingTags(full);
+        if(vis) onChunk(vis);
+        return stripThinkingTags(full);
+      }
 
       if(res.body && res.body.getReader){
         const reader = res.body.getReader();
