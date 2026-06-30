@@ -739,12 +739,27 @@
       .composerInner{border-radius:16px}
       #input{padding: 20px 50px 20px 16px; min-height: var(--inputMinHeight)}
     }
+
+    /* 상단바 토글 — 평소 숨김, ✦ 버튼으로 표시 */
+    .topbar.tbHidden{ display:none !important; }
+    #tbToggle{
+      position:fixed; top:6px; right:8px; z-index:9999;
+      width:30px; height:30px; border-radius:50%;
+      background:rgba(255,255,255,.06); color:rgba(255,255,255,.45);
+      border:1px solid rgba(255,255,255,.10);
+      font-size:15px; line-height:28px; text-align:center;
+      cursor:pointer; padding:0; font-family:inherit;
+      transition:opacity .2s, background .2s;
+    }
+    #tbToggle:hover{ background:rgba(255,255,255,.12); color:#fff; }
+    #tbToggle.tbOpen{ color:#fff; background:rgba(255,255,255,.14); }
   </style>
 </head>
 
 <body>
   <div id="focusOverlay" class="focusOverlay"><div class="focusText" id="focusText"></div></div>
   <header>
+    <button id="tbToggle" type="button" aria-label="상단바 표시/숨김" title="상단바">✦</button>
     <div class="headerInner">
       <div class="topbar">
         <span class="ver" id="modelTag">Model</span>
@@ -6835,6 +6850,26 @@
     if(_expAllBtn) _expAllBtn.addEventListener('click', bkExportAll);
     var _impAllBtn = document.getElementById('topImportAllBtn');
     if(_impAllBtn) _impAllBtn.addEventListener('click', function(){ _bkImportAllInput.click(); });
+
+    // ===== 상단바 토글: 평소 숨김, ✦ 탭하면 표시 =====
+    (function(){
+      var bar = document.querySelector('.topbar');
+      var tog = document.getElementById('tbToggle');
+      if(!bar || !tog) return;
+      var KEY = 'bk_tr_topbarVisible';
+      function apply(vis){
+        if(vis){ bar.classList.remove('tbHidden'); tog.classList.add('tbOpen'); }
+        else   { bar.classList.add('tbHidden');   tog.classList.remove('tbOpen'); }
+      }
+      // 기본 = 숨김 (저장값 'on'일 때만 표시)
+      apply(localStorage.getItem(KEY) === 'on');
+      tog.addEventListener('click', function(e){
+        e.stopPropagation();
+        var willShow = bar.classList.contains('tbHidden');
+        apply(willShow);
+        try{ localStorage.setItem(KEY, willShow ? 'on' : 'off'); }catch{}
+      });
+    })();
     var topModelEditorBtn = document.getElementById('topModelEditorBtn');
     if(topModelEditorBtn) topModelEditorBtn.addEventListener('click', showModelEditor);
 
