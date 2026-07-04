@@ -1569,7 +1569,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.27t';
+    const APP_VERSION = 'v20.28t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -5032,7 +5032,9 @@
       }
 
       let lastUserText = '';
-      for(const m of chat){
+      let lastUserRowId = '';
+      for(let _i = 0; _i < chat.length; _i++){
+        const m = chat[_i];
         if(m.role === 'user') lastUserText = m.text;
 
         // 사용자 메시지의 방향 마커 '#'은 화면에선 숨김 (전송/재번역엔 유지)
@@ -5040,6 +5042,12 @@
 
         const row = document.createElement('div');
         row.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+        // 원문(user) row는 고유 id 부여 + 기본 숨김(원문 토글 기능). 번역문의 '원문' 버튼이 이 row를 펼침.
+        if(m.role === 'user'){
+          lastUserRowId = 'srcRow_' + _i;
+          row.id = lastUserRowId;
+          if(localStorage.getItem('bkShowSource') !== '1'){ row.style.display = 'none'; }
+        }
 
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
@@ -5108,6 +5116,24 @@
           editBtn.textContent = 'Edit';
           editBtn.addEventListener('click', () => openEditGuide(srcForThisMsg, m.text, m));
           actions.appendChild(editBtn);
+
+          // ★ 원문 토글 버튼: 이 번역문 바로 위 원문(user row)을 펼침/접힘. 평소엔 원문 숨김 → 번역문이 화면에 더 많이 보임.
+          const srcRowId = lastUserRowId;
+          if(srcRowId){
+            const srcBtn = document.createElement('button');
+            srcBtn.className = 'copyPill';
+            srcBtn.type = 'button';
+            var _srcRowShown = (localStorage.getItem('bkShowSource') === '1');
+            srcBtn.textContent = _srcRowShown ? '원문▲' : '원문▼';
+            srcBtn.addEventListener('click', () => {
+              var srcRow = document.getElementById(srcRowId);
+              if(!srcRow) return;
+              var nowHidden = (srcRow.style.display === 'none');
+              srcRow.style.display = nowHidden ? '' : 'none';
+              srcBtn.textContent = nowHidden ? '원문▲' : '원문▼';
+            });
+            actions.appendChild(srcBtn);
+          }
           extraRow = appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline);
         }
 
@@ -5354,6 +5380,26 @@
           openEditGuide(userText, translated, lastAssistant && lastAssistant.role==='assistant' ? lastAssistant : null);
         });
         actions.appendChild(editBtn);
+
+        // ★ 원문 토글 버튼(스트리밍 렌더). 직전 renderChat이 그린 마지막 user row(srcRow_<idx>)를 펼침/접힘.
+        var _lastUserIdx = -1;
+        for(var _ui = chat.length - 1; _ui >= 0; _ui--){ if(chat[_ui].role === 'user'){ _lastUserIdx = _ui; break; } }
+        if(_lastUserIdx >= 0){
+          var _streamSrcRowId = 'srcRow_' + _lastUserIdx;
+          var streamSrcBtn = document.createElement('button');
+          streamSrcBtn.className = 'copyPill';
+          streamSrcBtn.type = 'button';
+          var _streamSrcShown = (localStorage.getItem('bkShowSource') === '1');
+          streamSrcBtn.textContent = _streamSrcShown ? '원문▲' : '원문▼';
+          streamSrcBtn.addEventListener('click', function(){
+            var srcRow = document.getElementById(_streamSrcRowId);
+            if(!srcRow) return;
+            var nowHidden = (srcRow.style.display === 'none');
+            srcRow.style.display = nowHidden ? '' : 'none';
+            streamSrcBtn.textContent = nowHidden ? '원문▲' : '원문▼';
+          });
+          actions.appendChild(streamSrcBtn);
+        }
         var _streamExtraRow = appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _displayPromptVer, _ms1, _ms2, _pipelineInfo);
         streamRow.appendChild(actions);
         if(_streamExtraRow) streamRow.appendChild(_streamExtraRow);
