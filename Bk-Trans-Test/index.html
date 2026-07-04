@@ -1569,7 +1569,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.28t';
+    const APP_VERSION = 'v20.29t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -5123,14 +5123,12 @@
             const srcBtn = document.createElement('button');
             srcBtn.className = 'copyPill';
             srcBtn.type = 'button';
-            var _srcRowShown = (localStorage.getItem('bkShowSource') === '1');
-            srcBtn.textContent = _srcRowShown ? '원문▲' : '원문▼';
+            srcBtn.textContent = '원문';
             srcBtn.addEventListener('click', () => {
               var srcRow = document.getElementById(srcRowId);
               if(!srcRow) return;
               var nowHidden = (srcRow.style.display === 'none');
               srcRow.style.display = nowHidden ? '' : 'none';
-              srcBtn.textContent = nowHidden ? '원문▲' : '원문▼';
             });
             actions.appendChild(srcBtn);
           }
@@ -5389,14 +5387,12 @@
           var streamSrcBtn = document.createElement('button');
           streamSrcBtn.className = 'copyPill';
           streamSrcBtn.type = 'button';
-          var _streamSrcShown = (localStorage.getItem('bkShowSource') === '1');
-          streamSrcBtn.textContent = _streamSrcShown ? '원문▲' : '원문▼';
+          streamSrcBtn.textContent = '원문';
           streamSrcBtn.addEventListener('click', function(){
             var srcRow = document.getElementById(_streamSrcRowId);
             if(!srcRow) return;
             var nowHidden = (srcRow.style.display === 'none');
             srcRow.style.display = nowHidden ? '' : 'none';
-            streamSrcBtn.textContent = nowHidden ? '원문▲' : '원문▼';
           });
           actions.appendChild(streamSrcBtn);
         }
