@@ -1569,7 +1569,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.29t';
+    const APP_VERSION = 'v20.30t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -6882,10 +6882,23 @@
     // 콜드 스타트: 즉시 호출하면 앱 준비 전이라 입력만 채우고 번역이 안 걸림.
     // → 로드 완료 후 + 재시도 폴링(scheduleClipboardCheck)으로 준비되면 자동번역.
     function _initialClipboardKick(){ try{ scheduleClipboardCheck(); }catch(e){} }
+    // ★ 앱 실행 시 입력창에 커서+키보드 자동 표시(재시도형). 클립보드 자동번역과 별개로 동작.
+    //   모바일 브라우저는 사용자 제스처 없는 focus를 막을 수 있어 재시도로 확률을 높인다(OS가 막으면 코드 한계).
+    function _autoFocusInput(){
+      try{
+        if(!el.input) return;
+        el.input.focus();
+        // 커서를 텍스트 끝으로 (기존 입력값 있을 때)
+        var v = el.input.value || '';
+        el.input.setSelectionRange(v.length, v.length);
+      }catch(_){}
+    }
+    function _kickInputFocus(){ [120, 350, 700, 1200].forEach(function(ms){ setTimeout(_autoFocusInput, ms); }); }
     if(document.readyState === 'complete'){
       setTimeout(_initialClipboardKick, 250);
+      _kickInputFocus();
     } else {
-      window.addEventListener('load', function(){ setTimeout(_initialClipboardKick, 250); });
+      window.addEventListener('load', function(){ setTimeout(_initialClipboardKick, 250); _kickInputFocus(); });
     }
     window.addEventListener('focus', scheduleClipboardCheck);
     document.addEventListener('visibilitychange', () => {
