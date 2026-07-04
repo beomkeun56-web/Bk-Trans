@@ -1569,7 +1569,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.30t';
+    const APP_VERSION = 'v20.31t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -4866,9 +4866,23 @@
       var m = sys.match(/\bv\d+(?:\.\d+)?[a-z]*/i);
       return m ? m[0] : '';
     }
+    // 모델명 3단어 축약: [첫단어 첫글자]+[버전숫자]+[뒤 영문단어 첫글자]
+    //   Gemini 3 Flash→G3F / Sonnet 4.6→S4.6 / GLM 4.6→G4.6 / Qwen 3 Max→Q3M
+    function abbrevModelName(name){
+      if(!name) return name;
+      var toks = String(name).trim().split(/\s+/).filter(Boolean);
+      if(toks.length === 0) return name;
+      var out = '';
+      for(var i = 0; i < toks.length; i++){
+        var t = toks[i];
+        if(/^\d/.test(t)){ out += t; }              // 버전 숫자(4.6 등)는 통째로
+        else { out += t.charAt(0).toUpperCase(); }   // 단어는 첫 글자만
+      }
+      return out;
+    }
     function usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2){
       var seg = [];
-      if(modelName) seg.push(modelName);
+      if(modelName) seg.push(abbrevModelName(modelName));
       var el2 = effLabel(effort);
       if(el2) seg.push(el2);
       if(ms2 != null && ms2 > 0 && ms1 != null){
