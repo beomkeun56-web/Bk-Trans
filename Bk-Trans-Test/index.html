@@ -1569,7 +1569,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.32t';
+    const APP_VERSION = 'v20.33t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -6910,11 +6910,19 @@
         return String(t || '').trim();
       }catch(_){ return ''; }
     }
+    // 주소에서 ?text=/#text= 를 제거해 기본 주소로 되돌림(새 탭 누적 완화 — 항상 같은 깨끗한 주소 유지)
+    function _cleanUrl(){
+      try{
+        var base = location.origin + location.pathname;
+        if(location.href !== base) history.replaceState(null, '', base);
+      }catch(_){}
+    }
     async function checkURLText(){
       try{
         if(_isBusy || _autoSending) return;
         var trimmed = _readUrlText();
-        if(!trimmed) return;
+        if(!trimmed){ return; }
+        _cleanUrl();                                    // 값 읽자마자 주소 청소
         if(_lastUrlText === trimmed) return;            // 같은 값 중복 처리 방지
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
         if(trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN) return;
