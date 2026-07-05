@@ -1569,7 +1569,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.31t';
+    const APP_VERSION = 'v20.32t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -6893,9 +6893,42 @@
       _clipboardCheckTimer = setTimeout(tryOnce, delays[0]);
     }
 
+    // ★ URL 파라미터 자동번역: 주소에 ?text=중국어 또는 #text=중국어 가 있으면 그 값을 자동 번역.
+    //   클립보드 방식과 병행(둘 다 무해). 알림마다 독립 URL이라 클립보드 덮어쓰기(씹힘)가 없음.
+    //   같은 URL 재방문으로 페이지가 새로고침 안 돼도 focus/visibility 때 재확인해 처리.
+    var _lastUrlText = '';
+    function _readUrlText(){
+      try{
+        var t = '';
+        // ?text= 우선, 없으면 #text=
+        var sp = new URLSearchParams(location.search || '');
+        if(sp.has('text')) t = sp.get('text') || '';
+        if(!t && location.hash){
+          var hp = new URLSearchParams(location.hash.replace(/^#/, ''));
+          if(hp.has('text')) t = hp.get('text') || '';
+        }
+        return String(t || '').trim();
+      }catch(_){ return ''; }
+    }
+    async function checkURLText(){
+      try{
+        if(_isBusy || _autoSending) return;
+        var trimmed = _readUrlText();
+        if(!trimmed) return;
+        if(_lastUrlText === trimmed) return;            // 같은 값 중복 처리 방지
+        if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
+        if(trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN) return;
+        _lastUrlText = trimmed;
+        updateLastClipboard(trimmed);                  // 클립보드 체크와 중복 방지 공유
+        if(isChatDuplicate(trimmed)) return;
+        _autoSending = true;
+        try{ el.input.value = trimmed; await send(); }
+        finally{ _autoSending = false; }
+      }catch(_){}
+    }
     // 콜드 스타트: 즉시 호출하면 앱 준비 전이라 입력만 채우고 번역이 안 걸림.
     // → 로드 완료 후 + 재시도 폴링(scheduleClipboardCheck)으로 준비되면 자동번역.
-    function _initialClipboardKick(){ try{ scheduleClipboardCheck(); }catch(e){} }
+    function _initialClipboardKick(){ try{ checkURLText(); scheduleClipboardCheck(); }catch(e){} }
     // ★ 앱 실행 시 입력창에 커서+키보드 자동 표시(재시도형). 클립보드 자동번역과 별개로 동작.
     //   모바일 브라우저는 사용자 제스처 없는 focus를 막을 수 있어 재시도로 확률을 높인다(OS가 막으면 코드 한계).
     function _autoFocusInput(){
@@ -6914,10 +6947,12 @@
     } else {
       window.addEventListener('load', function(){ setTimeout(_initialClipboardKick, 250); _kickInputFocus(); });
     }
-    window.addEventListener('focus', scheduleClipboardCheck);
+    window.addEventListener('focus', function(){ checkURLText(); scheduleClipboardCheck(); });
     document.addEventListener('visibilitychange', () => {
-      if(!document.hidden) scheduleClipboardCheck();
+      if(!document.hidden){ checkURLText(); scheduleClipboardCheck(); }
     });
+    // URL 해시가 바뀌면(같은 페이지 유지 채로 #text= 갱신 시) 즉시 재확인
+    window.addEventListener('hashchange', checkURLText);
     if(el.input){
       el.input.addEventListener('focus', scheduleClipboardCheck);
       el.input.addEventListener('paste', scheduleClipboardCheck);
