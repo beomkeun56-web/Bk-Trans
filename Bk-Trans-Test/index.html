@@ -1606,7 +1606,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.35t';
+    const APP_VERSION = 'v20.36t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -5499,6 +5499,9 @@
         }
 
         setConnState('ok');
+        // 스트리밍 직후엔 병음(ruby)이 늦게 로드돼 말풍선 폭이 좁게 잡혀 줄바꿈됨(새로고침하면 정상).
+        // → 두 프레임 뒤 renderChat으로 다시 그려 새로고침과 동일한 폭으로 맞춤.
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){ try{ renderChat(); }catch(_){} }); });
       } catch(err){
         const msg = (err && err.message) ? err.message : String(err);
         const isAbort = (err && err.name === 'AbortError');
