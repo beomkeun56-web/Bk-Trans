@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.37t';
+    const APP_VERSION = 'v20.38t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -5217,6 +5217,17 @@
       if(src === 'clip') return 'Clip';
       return 'Typing';
     }
+    // ★ 입력 초안 보존: 입력 중 새 알림(URL 재실행)으로 리로드돼도 쓰던 글이 안 사라지게.
+    //   타이핑할 때마다 localStorage에 저장 → 리로드·자동번역 후 입력창이 비면 복원.
+    var _draftKey = 'bk_input_draft';
+    function _saveDraft(){ try{ localStorage.setItem(_draftKey, el.input.value); }catch(_){} }
+    function _clearDraft(){ try{ localStorage.removeItem(_draftKey); }catch(_){} }
+    function _restoreDraft(){
+      try{
+        var d = localStorage.getItem(_draftKey) || '';
+        if(d && el.input && !el.input.value.trim()){ el.input.value = d; autoResizeInput(); }
+      }catch(_){}
+    }
     async function send(){
       if(_isBusy){ abortCurrentRequest(); return; }
 
@@ -5225,6 +5236,7 @@
 
       var _src = _pendingSource;   // 이번 번역의 출처 확정
       _pendingSource = 'typing';   // 다음 기본값 복원
+      if(_src === 'typing') _clearDraft();   // 직접 입력을 전송했으면 초안 소비
 
       hideCopyBar();
 
@@ -6936,6 +6948,7 @@
           await send();
         } finally {
           _autoSending = false;
+          _restoreDraft();   // 자동번역이 입력창을 비운 뒤, 쓰던 초안 복원
         }
       } catch(err){
       }
@@ -6995,7 +7008,7 @@
         if(isChatDuplicate(trimmed)) return;
         _autoSending = true;
         try{ el.input.value = trimmed; _pendingSource = 'url'; await send(); }
-        finally{ _autoSending = false; }
+        finally{ _autoSending = false; _restoreDraft(); }   // 자동번역 후 쓰던 초안 복원
       }catch(_){}
     }
     // 콜드 스타트: 즉시 호출하면 앱 준비 전이라 입력만 채우고 번역이 안 걸림.
@@ -7028,7 +7041,13 @@
     if(el.input){
       el.input.addEventListener('focus', scheduleClipboardCheck);
       el.input.addEventListener('paste', scheduleClipboardCheck);
+      // ★ 타이핑할 때마다 초안 저장(리로드 대비)
+      el.input.addEventListener('input', _saveDraft);
     }
+    // 로드 후 복원 폴백: 자동번역이 없거나 끝난 뒤 입력창이 비어 있으면 초안 복원
+    // (클립보드 자동체크 마지막 재시도 ~1.65초 이후로 잡아 자동번역을 막지 않게)
+    setTimeout(_restoreDraft, 1800);
+    setTimeout(_restoreDraft, 3500);
     if(el.chat){
       el.chat.addEventListener('click', scheduleClipboardCheck);
     }
@@ -7706,7 +7725,7 @@
       inputCopyBtn.addEventListener('click', async () => { await copyToClipboard(el.input.value.trim(), false); });
     }
     if(inputClearBtn){
-      inputClearBtn.addEventListener('click', () => { el.input.value = ''; autoResizeInput(); updateInputCopyBtn(); el.input.focus(); });
+      inputClearBtn.addEventListener('click', () => { el.input.value = ''; _clearDraft(); autoResizeInput(); updateInputCopyBtn(); el.input.focus(); });
     }
     updateInputCopyBtn();
 
