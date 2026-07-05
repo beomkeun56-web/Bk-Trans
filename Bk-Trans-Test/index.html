@@ -481,7 +481,10 @@
       border-radius: 18px;
       padding: 12px 14px;
       white-space: pre-wrap;
-      word-break: break-word;
+      /* CJK(중국어)는 글자 중간에서 쪼개지지 않게 keep-all. 병음 ruby가 넘치면 어절 단위로만 줄바꿈.
+         긴 URL 등 어절 없는 문자열은 overflow-wrap으로 최후에만 강제 줄바꿈. */
+      word-break: keep-all;
+      overflow-wrap: anywhere;
       line-height: 1.6;
       font-size: calc(15px * var(--chatScale));
     }
@@ -1603,7 +1606,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.34t';
+    const APP_VERSION = 'v20.35t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
