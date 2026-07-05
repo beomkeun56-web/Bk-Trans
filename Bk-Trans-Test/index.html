@@ -64,6 +64,10 @@
       --inputBg: #2e3440;
       --userBubbleBg: #2e3440;
       --assistantBubbleBg: #1e2430;
+      /* 번역 출처별 출력 말풍선 색 (URL=진초록 / Clip=진갈색 / Typing=기존 어둠) */
+      --asstUrlBg: #14532d;
+      --asstClipBg: #5c3a1e;
+      --asstTypingBg: #1e2430;
       --sendBtnBg: #2d6bff;
       --headerBg: #0b0f14;
       --copyBtnBg: #1a1f2a;
@@ -1278,16 +1282,46 @@
             </div>
           </div>
           <div class="colorItem">
-            <div class="hint" style="margin-bottom:4px;">출력말풍선</div>
+            <div class="hint" style="margin-bottom:4px;">출력말풍선 · URL 번역</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
-              <input id="colorAssistantBubbleBg" type="color" value="#1e2430" style="width:50px; height:36px; flex-shrink:0;" />
-              <input id="colorAssistantBubbleBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAssistantBubbleBg" />
+              <input id="colorAsstUrlBg" type="color" value="#14532d" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAsstUrlBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAsstUrlBg" />
             </div>
-            <div class="colorSwatches" data-target="colorAssistantBubbleBg">
+            <div class="colorSwatches" data-target="colorAsstUrlBg">
+              <button class="cSwatch" type="button" data-color="#14532d" style="background:#14532d"></button>
+              <button class="cSwatch" type="button" data-color="#166534" style="background:#166534"></button>
+              <button class="cSwatch" type="button" data-color="#0f3d24" style="background:#0f3d24"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">출력말풍선 · Clip 번역</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorAsstClipBg" type="color" value="#5c3a1e" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAsstClipBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAsstClipBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorAsstClipBg">
+              <button class="cSwatch" type="button" data-color="#5c3a1e" style="background:#5c3a1e"></button>
+              <button class="cSwatch" type="button" data-color="#7c4a1e" style="background:#7c4a1e"></button>
+              <button class="cSwatch" type="button" data-color="#4a2f18" style="background:#4a2f18"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+              <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
+              <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">출력말풍선 · Typing(직접입력)</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorAsstTypingBg" type="color" value="#1e2430" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAsstTypingBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAsstTypingBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorAsstTypingBg">
               <button class="cSwatch" type="button" data-color="#000000" style="background:#000000"></button>
-              <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
               <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
               <button class="cSwatch" type="button" data-color="#0e1420" style="background:#0e1420"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
               <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
               <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
             </div>
@@ -1569,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.33t';
+    const APP_VERSION = 'v20.34t';
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -1588,7 +1622,9 @@
       colorChatBg: 'bk_tr_test_color_chat_bg',
       colorInputBg: 'bk_tr_test_color_input_bg',
       colorUserBubbleBg: 'bk_tr_test_color_user_bubble_bg',
-      colorAssistantBubbleBg: 'bk_tr_test_color_assistant_bubble_bg',
+      colorAsstUrlBg: 'bk_tr_test_color_asst_url_bg',
+      colorAsstClipBg: 'bk_tr_test_color_asst_clip_bg',
+      colorAsstTypingBg: 'bk_tr_test_color_asst_typing_bg',
       colorSendBtnBg: 'bk_tr_test_color_send_btn_bg',
       colorHeaderBg: 'bk_tr_test_color_header_bg',
       colorCopyBtnBg: 'bk_tr_test_color_copy_btn_bg',
@@ -1715,7 +1751,9 @@
       colorChatBg: document.getElementById('colorChatBg'),
       colorInputBg: document.getElementById('colorInputBg'),
       colorUserBubbleBg: document.getElementById('colorUserBubbleBg'),
-      colorAssistantBubbleBg: document.getElementById('colorAssistantBubbleBg'),
+      colorAsstUrlBg: document.getElementById('colorAsstUrlBg'),
+      colorAsstClipBg: document.getElementById('colorAsstClipBg'),
+      colorAsstTypingBg: document.getElementById('colorAsstTypingBg'),
       colorSendBtnBg: document.getElementById('colorSendBtnBg'),
       colorHeaderBg: document.getElementById('colorHeaderBg'),
       colorCopyBtnBg: document.getElementById('colorCopyBtnBg'),
@@ -2653,7 +2691,9 @@
       chatBg: '#0e1420',
       inputBg: '#2e3440',
       userBubbleBg: '#2e3440',
-      assistantBubbleBg: '#1e2430',
+      asstUrlBg: '#14532d',
+      asstClipBg: '#5c3a1e',
+      asstTypingBg: '#1e2430',
       sendBtnBg: '#2d6bff',
       headerBg: '#0b0f14',
       copyBtnBg: '#1a1f2a'
@@ -2686,7 +2726,9 @@
       loadColor(LS.colorChatBg, 'colorChatBg', '--chatBg', COLOR_DEFAULTS.chatBg);
       loadColor(LS.colorInputBg, 'colorInputBg', '--inputBg', COLOR_DEFAULTS.inputBg);
       loadColor(LS.colorUserBubbleBg, 'colorUserBubbleBg', '--userBubbleBg', COLOR_DEFAULTS.userBubbleBg);
-      loadColor(LS.colorAssistantBubbleBg, 'colorAssistantBubbleBg', '--assistantBubbleBg', COLOR_DEFAULTS.assistantBubbleBg);
+      loadColor(LS.colorAsstUrlBg, 'colorAsstUrlBg', '--asstUrlBg', COLOR_DEFAULTS.asstUrlBg);
+      loadColor(LS.colorAsstClipBg, 'colorAsstClipBg', '--asstClipBg', COLOR_DEFAULTS.asstClipBg);
+      loadColor(LS.colorAsstTypingBg, 'colorAsstTypingBg', '--asstTypingBg', COLOR_DEFAULTS.asstTypingBg);
       loadColor(LS.colorSendBtnBg, 'colorSendBtnBg', '--sendBtnBg', COLOR_DEFAULTS.sendBtnBg);
       loadColor(LS.colorHeaderBg, 'colorHeaderBg', '--headerBg', COLOR_DEFAULTS.headerBg);
       loadColor(LS.colorCopyBtnBg, 'colorCopyBtnBg', '--copyBtnBg', COLOR_DEFAULTS.copyBtnBg);
@@ -4880,7 +4922,7 @@
       }
       return out;
     }
-    function usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2){
+    function usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source){
       var seg = [];
       if(modelName) seg.push(abbrevModelName(modelName));
       var el2 = effLabel(effort);
@@ -4891,11 +4933,8 @@
         seg.push((ms / 1000).toFixed(1) + '초');
       }
       if(promptVer) seg.push(promptVer);
-      // 캐시 명중 표시 (입력 토큰 중 캐시에서 가져온 비율)
-      if(u && u.cached && u.in){
-        var pct = Math.round((u.cached / u.in) * 100);
-        if(pct >= 5) seg.push('CS' + pct + '%');
-      }
+      // 출처 표시 (캐싱 CS% 대체): Clip / URL / Typing
+      seg.push(srcLabel(source));
       return seg.join('  ·  ');
     }
     // 의도를 한국어 2글자로 압축 (English Agent 출력도 한글로 매핑)
@@ -4919,7 +4958,7 @@
       if(krMap[t]) return krMap[t];
       return t.slice(0, 2);
     }
-    function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline){
+    function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline, source){
       if(!_showTokens || !actionsEl) return null;
       // 파이프라인 표시 (3-Stage / 2-Stage 공통):
       //   actions 행: [의도/2Mode] 수정(N%)   [MT원본] (2-Agent만)
@@ -5029,7 +5068,7 @@
         return null;
       }
       // 일반 표시 (기존 그대로 — actions 한 줄에)
-      var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2);
+      var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source);
       if(!txt) return null;
       var s = document.createElement('span');
       s.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-left:8px;white-space:nowrap;';
@@ -5069,6 +5108,10 @@
           bubble.innerHTML = renderWithPinyin(dispText);
         } else {
           bubble.textContent = dispText;
+        }
+        // 번역문(assistant) 말풍선은 출처별 색 적용(오류 메시지는 제외)
+        if(m.role === 'assistant' && !(m.text && m.text.startsWith('오류:'))){
+          bubble.style.background = srcBubbleColor(m.source);
         }
         bubble.style.cursor = 'pointer';
         bubble.addEventListener('click', () => showFocusOverlay(dispText));
@@ -5146,7 +5189,7 @@
             });
             actions.appendChild(srcBtn);
           }
-          extraRow = appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline);
+          extraRow = appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline, m.source);
         }
 
         if(actions.children.length > 0){
@@ -5161,11 +5204,27 @@
     }
 
 
+    // 번역 출처: 'url'(URL 파라미터) / 'clip'(클립보드 자동) / 'typing'(직접 입력). send() 시작 시 소비.
+    var _pendingSource = 'typing';
+    // 출처별 출력 말풍선 배경색 (source 없는 옛 기록은 typing색). usage줄 라벨도 여기 기준.
+    function srcBubbleColor(src){
+      if(src === 'url') return 'var(--asstUrlBg)';
+      if(src === 'clip') return 'var(--asstClipBg)';
+      return 'var(--asstTypingBg)';
+    }
+    function srcLabel(src){
+      if(src === 'url') return 'URL';
+      if(src === 'clip') return 'Clip';
+      return 'Typing';
+    }
     async function send(){
       if(_isBusy){ abortCurrentRequest(); return; }
 
       const userText = el.input.value.trim();
       if(!userText) return;
+
+      var _src = _pendingSource;   // 이번 번역의 출처 확정
+      _pendingSource = 'typing';   // 다음 기본값 복원
 
       hideCopyBar();
 
@@ -5354,7 +5413,7 @@
         // 메시지 model 필드엔 promptVer 제거 위해 빈값 설정 (pipeline 있으면 v## 표시 안 함).
         var _displayModel = _modelName;
         var _displayPromptVer = _pipelineInfo ? '' : _promptVer;
-        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _displayModel, usage: _lastUsage, ms: _ms, ms1: _ms1, ms2: _ms2, effort: _lastEffort, promptVer: _displayPromptVer, pipeline: _pipelineInfo });
+        chat.push({ role:'assistant', text: translated, ts: Date.now(), model: _displayModel, usage: _lastUsage, ms: _ms, ms1: _ms1, ms2: _ms2, effort: _lastEffort, promptVer: _displayPromptVer, pipeline: _pipelineInfo, source: _src });
         trimChatToMaxInputs();
         saveChatHistory();
 
@@ -5363,6 +5422,7 @@
         } else {
           streamBubble.textContent = translated;
         }
+        streamBubble.style.background = srcBubbleColor(_src);   // 출처별 말풍선 색
         streamBubble.style.opacity = '1';
         streamBubble.style.cursor = 'pointer';
         streamBubble.addEventListener('click', () => showFocusOverlay(translated));
@@ -5410,7 +5470,7 @@
           });
           actions.appendChild(streamSrcBtn);
         }
-        var _streamExtraRow = appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _displayPromptVer, _ms1, _ms2, _pipelineInfo);
+        var _streamExtraRow = appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _displayPromptVer, _ms1, _ms2, _pipelineInfo, _src);
         streamRow.appendChild(actions);
         if(_streamExtraRow) streamRow.appendChild(_streamExtraRow);
 
@@ -6869,6 +6929,7 @@
         _autoSending = true;
         try{
           el.input.value = trimmed;
+          _pendingSource = 'clip';
           await send();
         } finally {
           _autoSending = false;
@@ -6930,7 +6991,7 @@
         updateLastClipboard(trimmed);                  // 클립보드 체크와 중복 방지 공유
         if(isChatDuplicate(trimmed)) return;
         _autoSending = true;
-        try{ el.input.value = trimmed; await send(); }
+        try{ el.input.value = trimmed; _pendingSource = 'url'; await send(); }
         finally{ _autoSending = false; }
       }catch(_){}
     }
@@ -7873,7 +7934,9 @@
     bindColorPicker(el.colorChatBg, LS.colorChatBg, '--chatBg');
     bindColorPicker(el.colorInputBg, LS.colorInputBg, '--inputBg');
     bindColorPicker(el.colorUserBubbleBg, LS.colorUserBubbleBg, '--userBubbleBg');
-    bindColorPicker(el.colorAssistantBubbleBg, LS.colorAssistantBubbleBg, '--assistantBubbleBg');
+    bindColorPicker(el.colorAsstUrlBg, LS.colorAsstUrlBg, '--asstUrlBg');
+    bindColorPicker(el.colorAsstClipBg, LS.colorAsstClipBg, '--asstClipBg');
+    bindColorPicker(el.colorAsstTypingBg, LS.colorAsstTypingBg, '--asstTypingBg');
     bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
     bindColorPicker(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg');
     bindColorPicker(el.colorCopyBtnBg, LS.colorCopyBtnBg, '--copyBtnBg');
