@@ -1603,7 +1603,68 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.38t';
+    const APP_VERSION = 'v20.39t';
+
+    // ===== Service Worker 등록 (v20.39t) =====
+    // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
+    // 크롬 공룡/오류 화면 대신 캐시된 앱 셸이 뜨게 한다. API 요청은 sw.js가 가로채지 않음.
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', function(){
+        navigator.serviceWorker.register('sw.js').catch(function(e){
+          try{ console.warn('[SW] register failed', e); }catch(_){}
+        });
+      });
+    }
+
+    // ===== 오프라인/온라인 상태 배너 + 복귀 자동복구 (v20.39t) =====
+    // 잠금 후 깨어났을 때 "끊긴 건지 앱이 죽은 건지" 헷갈리지 않게 얇은 배너로 알리고,
+    // 네트워크가 돌아오면 죽은 연결을 새로(_warmConnections) + 실패했던 번역을 1회 자동 재시도.
+    var _netRetryPending = false;   // 네트워크 오류로 실패한 번역이 있으면 true
+    var _netRetryText = '';         // 재시도할 원문
+    // 온라인 복귀 시 마지막 실패 번역 1회 자동 재시도: 원문을 입력창에 되살리고 send() 재호출.
+    function _retryLastOnReconnect(){
+      try{
+        var t = _netRetryText; _netRetryText = '';
+        if(!t) return;
+        if(typeof el === 'undefined' || !el || !el.input) return;
+        if(typeof _isBusy !== 'undefined' && _isBusy) return;   // 진행 중이면 건드리지 않음
+        el.input.value = t;
+        if(typeof send === 'function'){ setTimeout(function(){ try{ send(); }catch(_){} }, 400); }
+      }catch(e){}
+    }
+    function _showOfflineBanner(show){
+      try{
+        var id = 'offlineBanner';
+        var b = document.getElementById(id);
+        if(show){
+          if(!b){
+            b = document.createElement('div');
+            b.id = id;
+            b.textContent = '오프라인 — 연결 대기 중';
+            b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
+              + 'background:#7a1f1f;color:#fff;font-size:12px;text-align:center;'
+              + 'padding:4px 8px;letter-spacing:.3px;';
+            document.body.appendChild(b);
+          }
+        } else if(b){ b.remove(); }
+      }catch(e){}
+    }
+    window.addEventListener('online', function(){
+      _showOfflineBanner(false);
+      try{ if(typeof _warmConnections === 'function') _warmConnections(true); }catch(e){}
+      // 네트워크 오류로 실패했던 마지막 번역을 1회 자동 재시도(있을 때만).
+      try{
+        if(_netRetryPending && typeof _retryLastOnReconnect === 'function'){
+          _netRetryPending = false;
+          _retryLastOnReconnect();
+        }
+      }catch(e){}
+    });
+    window.addEventListener('offline', function(){ _showOfflineBanner(true); });
+    // 로드 시점에 이미 오프라인이면 배너 표시
+    window.addEventListener('load', function(){
+      try{ if(navigator.onLine === false) _showOfflineBanner(true); }catch(e){}
+    });
 
     const LS = {
       apiKey: 'bk_tr_test_apiKey',
@@ -5523,6 +5584,18 @@
           chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now(), model: prettifyModelName(getCurrentModelId()) });
           trimChatToMaxInputs();
           toast('요청 실패: ' + msg);
+          // ★ 네트워크 오류(오프라인/연결 끊김)면 온라인 복귀 시 자동 재시도 예약 (v20.39t)
+          //   fetch 실패는 TypeError('Failed to fetch'), 또는 onLine=false. 서버 HTTP 오류는 제외.
+          try{
+            var _isNetErr = (navigator.onLine === false)
+              || (err && (err.name === 'TypeError'
+                   || /Failed to fetch|NetworkError|network|ERR_/i.test(msg)));
+            if(_isNetErr){
+              _netRetryText = userText;   // 실패한 원문 보관
+              _netRetryPending = true;
+              if(navigator.onLine === false) _showOfflineBanner(true);
+            }
+          }catch(_){}
         }
         saveChatHistory();
         renderChat();
