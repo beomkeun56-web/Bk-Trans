@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.40t';
+    const APP_VERSION = 'v20.41t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6980,13 +6980,8 @@
       localStorage.setItem(LS_LAST_CLIP, text);
     }
 
-    // 자동번역 중복 스킵: 가장 최근 원문(user)과 같을 때만 막는다(연속 중복만 차단).
-    //   전체 이력 비교(chat.some)는 과거에 한 번 나온 문장까지 영구 차단해 재번역을 막았음(v20.40t 완화).
     function isChatDuplicate(text){
-      for(var i = chat.length - 1; i >= 0; i--){
-        if(chat[i].role === 'user'){ return chat[i].text === text; }
-      }
-      return false;
+      return chat.some(m => m.text === text);
     }
 
     let _autoSending = false;
