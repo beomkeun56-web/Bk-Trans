@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.41t';
+    const APP_VERSION = 'v20.42t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4706,6 +4706,41 @@
       send();
     }
 
+    // ===== 자동번역(URL/clip) 네트워크오류 시 자동 재시도 (v20.42t) =====
+    //   cold start 첫 요청이 Failed to fetch로 실패하면, 그 오류 말풍선을 '맨 끝'이 아니라
+    //   retryId로 찾아 그 자리에서 번역문으로 교체한다 → 연속 다건도 각각 독립 처리됨.
+    //   1회만(_autoRetried). 재시도의 실패는 자동재시도 안 걸림(무한방지) = catch에서 autoSrc를 안 넘김.
+    var _errSeq = 0;                    // 오류 말풍선 고유 id 생성용
+    var _autoRetried = {};              // retryId → true (1회 제한)
+    function _autoRetryError(retryId){
+      try{
+        if(!retryId || _autoRetried[retryId]) return;
+        // 진행 중이면 잠시 뒤로 미룸(앞 건 끝난 뒤 처리 → 서로 안 뭉갬)
+        if(_isBusy){ setTimeout(function(){ _autoRetryError(retryId); }, 200); return; }
+        // chat에서 이 retryId의 오류 항목 인덱스 찾기
+        var idx = -1;
+        for(var i = chat.length - 1; i >= 0; i--){
+          if(chat[i] && chat[i].retryId === retryId){ idx = i; break; }
+        }
+        if(idx < 0) return;                                  // 이미 교체됨 → 중단
+        var errItem = chat[idx];
+        if(!(errItem.role === 'assistant' && errItem.text.startsWith('오류:'))) return;
+        var src = errItem.retrySrc;
+        if(!src) return;
+        _autoRetried[retryId] = true;                        // 1회 소비
+        // 오류 항목 + 바로 앞 user(원문) 항목을 그 자리에서 제거
+        chat.splice(idx, 1);
+        if(idx - 1 >= 0 && chat[idx - 1] && chat[idx - 1].role === 'user' && chat[idx - 1].text === src){
+          chat.splice(idx - 1, 1);
+        }
+        saveChatHistory();
+        renderChat();
+        // 원문으로 재번역(재시도의 실패는 수동 재번역으로 → autoSrc 안 실림)
+        el.input.value = src;
+        send();
+      }catch(e){}
+    }
+
     // 1회성 Agent Mode 재번역 (현재 _use4Agent 상태와 무관, 단어수 제한도 우회)
     function retryWithAgentMode(userText){
       if(_isBusy || !userText) return;
@@ -5581,10 +5616,13 @@
           toast('번역 취소됨');
           chat.pop();
         } else {
-          chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now(), model: prettifyModelName(getCurrentModelId()) });
+          // 오류 말풍선에 고유 retryId + 원문(retrySrc)을 심어, 자동 재시도가 '맨 끝'이 아니라
+          // 이 항목을 정확히 찾아 교체할 수 있게 한다(연속 다건 안전).
+          var _rid = 'e' + (++_errSeq);
+          chat.push({ role:'assistant', text: '오류: ' + msg, ts: Date.now(), model: prettifyModelName(getCurrentModelId()), retryId: _rid, retrySrc: userText });
           trimChatToMaxInputs();
           toast('요청 실패: ' + msg);
-          // ★ 네트워크 오류(오프라인/연결 끊김)면 온라인 복귀 시 자동 재시도 예약 (v20.39t)
+          // ★ 네트워크 오류(오프라인/연결 끊김) 처리 (v20.39t~42t)
           //   fetch 실패는 TypeError('Failed to fetch'), 또는 onLine=false. 서버 HTTP 오류는 제외.
           try{
             var _isNetErr = (navigator.onLine === false)
@@ -5594,6 +5632,11 @@
               _netRetryText = userText;   // 실패한 원문 보관
               _netRetryPending = true;
               if(navigator.onLine === false) _showOfflineBanner(true);
+              // ★ v20.42t: 자동번역(URL/clip)이었으면 0.5초 뒤 자동 재시도(이 오류를 번역문으로 교체).
+              //   재시도로 부른 send()는 _src가 'typing'이라 그 실패는 재예약 안 됨 → 무한방지.
+              if(_src === 'url' || _src === 'clip'){
+                setTimeout((function(id){ return function(){ _autoRetryError(id); }; })(_rid), 500);
+              }
             }
           }catch(_){}
         }
