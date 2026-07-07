@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.42t';
+    const APP_VERSION = 'v20.43t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -7110,26 +7110,90 @@
         if(location.href !== base) history.replaceState(null, '', base);
       }catch(_){}
     }
+    // ===== URL 자동번역 영속 큐 + 진단 로그 (v20.43t) =====
+    //  문제: 번역 중 새 알림 URL이 오면 (a)busy 가드서 버려지거나 (b)URL이 앱을 리로드해 진행중 번역이 통째 초기화 → 씹힘.
+    //  해결: URL값을 버리지 않고 localStorage 큐에 적재(리로드돼도 유지) → busy 끝나면 순차 drain. 각 단계 로그 기록.
+    var LS_URL_QUEUE = 'bk_url_queue';
+    var LS_UW_LOG = 'bk_uw_log';
+    var _uwSeq = 0;
+    function _uwLog(evt, text){
+      try{
+        var arr = JSON.parse(localStorage.getItem(LS_UW_LOG) || '[]');
+        if(!Array.isArray(arr)) arr = [];
+        var d = new Date();
+        var ts = d.toTimeString().slice(0,8) + '.' + String(d.getMilliseconds()).padStart(3,'0');
+        arr.push({ t: ts, e: evt, x: (text || '').slice(0, 40) });
+        if(arr.length > 100) arr = arr.slice(arr.length - 100);   // 최근 100건 링버퍼
+        localStorage.setItem(LS_UW_LOG, JSON.stringify(arr));
+      }catch(_){}
+    }
+    // 콘솔에서 _uwDump() 치면 로그 확인. _uwClear()로 비움.
+    window._uwDump = function(){ try{ var a = JSON.parse(localStorage.getItem(LS_UW_LOG)||'[]'); console.table(a); return a; }catch(e){ return []; } };
+    window._uwClear = function(){ try{ localStorage.removeItem(LS_UW_LOG); }catch(_){} return 'cleared'; };
+    function _loadUrlQueue(){ try{ var a = JSON.parse(localStorage.getItem(LS_URL_QUEUE)||'[]'); return Array.isArray(a)? a : []; }catch(_){ return []; } }
+    function _saveUrlQueue(q){ try{ localStorage.setItem(LS_URL_QUEUE, JSON.stringify(q)); }catch(_){} }
+    // 큐에 적재(꼬리 중복 제외). 실제 URL 소비는 _drainUrlQueue가 담당.
+    function _enqueueUrl(text){
+      var q = _loadUrlQueue();
+      if(q.length && q[q.length-1].text === text){ _uwLog('skip-dup-tail', text); return; }  // 큐 꼬리와 동일하면 스킵
+      var id = 'u' + Date.now() + '_' + (++_uwSeq);
+      q.push({ id: id, text: text });
+      _saveUrlQueue(q);
+      _uwLog('enqueue(' + q.length + ')', text);
+    }
+    var _draining = false;
+    async function _drainUrlQueue(){
+      if(_draining) return;
+      if(_isBusy || _autoSending){ _uwLog('drain-wait-busy', ''); return; }   // 진행 중이면 완료 후 재호출됨
+      var q = _loadUrlQueue();
+      if(!q.length) return;
+      _draining = true;
+      try{
+        var item = q[0];                                // 맨 앞(완료 확정 전까지 큐에 남겨둠 = 리로드 견딤)
+        var trimmed = item.text;
+        // 필터: 언어/길이/중복. 부적합하면 소비만 하고 다음으로.
+        if(!trimmed || (!hasKorean(trimmed) && !hasChinese(trimmed)) || trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN || isChatDuplicate(trimmed)){
+          _uwLog('drop-filter', trimmed);
+          q.shift(); _saveUrlQueue(q);
+          _draining = false;
+          return _drainUrlQueue();
+        }
+        _lastUrlText = trimmed;
+        updateLastClipboard(trimmed);
+        _autoSending = true;
+        _uwLog('translate-start', trimmed);
+        try{
+          el.input.value = trimmed; _pendingSource = 'url';
+          await send();
+          _uwLog('translate-done', trimmed);
+        } catch(e){
+          _uwLog('translate-err', trimmed);
+        } finally {
+          _autoSending = false; _restoreDraft();
+          // 완료(성공/실패) → 큐에서 제거 후 다음 처리
+          var q2 = _loadUrlQueue();
+          if(q2.length && q2[0].id === item.id){ q2.shift(); _saveUrlQueue(q2); }
+          _draining = false;
+        }
+        return _drainUrlQueue();                         // 다음 항목 이어서(비었으면 즉시 리턴)
+      } finally {
+        _draining = false;
+      }
+    }
     async function checkURLText(){
       try{
-        if(_isBusy || _autoSending) return;
         var trimmed = _readUrlText();
         if(!trimmed){ return; }
-        _cleanUrl();                                    // 값 읽자마자 주소 청소
-        if(_lastUrlText === trimmed) return;            // 같은 값 중복 처리 방지
-        if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
-        if(trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN) return;
-        _lastUrlText = trimmed;
-        updateLastClipboard(trimmed);                  // 클립보드 체크와 중복 방지 공유
-        if(isChatDuplicate(trimmed)) return;
-        _autoSending = true;
-        try{ el.input.value = trimmed; _pendingSource = 'url'; await send(); }
-        finally{ _autoSending = false; _restoreDraft(); }   // 자동번역 후 쓰던 초안 복원
+        _cleanUrl();                                    // 값 읽자마자 주소 청소(값은 아래서 큐에 이미 확보)
+        _uwLog('url-recv', trimmed);
+        _enqueueUrl(trimmed);                           // ★버리지 않고 큐 적재 → 리로드/busy 무관하게 보존
+        _drainUrlQueue();                               // busy면 내부서 대기, 아니면 순차 처리
       }catch(_){}
     }
     // 콜드 스타트: 즉시 호출하면 앱 준비 전이라 입력만 채우고 번역이 안 걸림.
     // → 로드 완료 후 + 재시도 폴링(scheduleClipboardCheck)으로 준비되면 자동번역.
-    function _initialClipboardKick(){ try{ checkURLText(); scheduleClipboardCheck(); }catch(e){} }
+    //  ★ 리로드로 새로 떠도 localStorage 큐에 남은 미처리 URL을 이어서 처리(진행중이던 번역이 리로드로 날아가도 큐가 보존).
+    function _initialClipboardKick(){ try{ checkURLText(); _drainUrlQueue(); scheduleClipboardCheck(); }catch(e){} }
     // ★ 앱 실행 시 입력창에 커서+키보드 자동 표시(재시도형). 클립보드 자동번역과 별개로 동작.
     //   모바일 브라우저는 사용자 제스처 없는 focus를 막을 수 있어 재시도로 확률을 높인다(OS가 막으면 코드 한계).
     function _autoFocusInput(){
