@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.45t';
+    const APP_VERSION = 'v20.46t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4810,32 +4810,34 @@
       try{
         if(_bootRetryDone) return;          // 부팅당 1회만
         _bootRetryDone = true;
-        if(navigator.onLine === false) return;   // 오프라인이면 시작 안 함(온라인 복귀 시 재시도 로직 별도)
-        var handled = {};                   // 이번 라운드에 이미 처리한 원문(중복/무한 방지)
-        // 최대 20건까지만(폭주 방지). 매 반복마다 chat을 새로 훑어 '가장 위의 미처리 오류'를 처리.
-        for(var guard = 0; guard < 20; guard++){
+        if(navigator.onLine === false) return;   // 오프라인이면 시작 안 함
+        // ★ v20.46t 버그수정: 이전엔 '원문 텍스트'로 처리여부를 추적해, 원문이 같은 오류가
+        //   여럿이면 첫 개만 되고 나머지가 스킵됐다(+ 잘못된 _isBusy break로 조기중단).
+        //   → 처리 추적을 '오류 객체 자체(참조)'로 바꾸고, 각 오류에 고유 retryId를 부여해 확실히 구분.
+        var handled = [];                   // 이미 처리(성공/영구실패)한 오류 '객체' 참조 목록
+        for(var guard = 0; guard < 50; guard++){
           if(navigator.onLine === false) break;
-          // 위에서부터 첫 '오류:' 항목 찾기
-          var errIdx = -1;
+          if(_isBusy){ await new Promise(function(r){ setTimeout(r, 300); }); }  // 바쁘면 잠깐 대기(중단 아님)
+          // 위에서부터 아직 처리 안 한 첫 '오류:' 항목(객체)을 찾는다.
+          var errObj = null;
           for(var i = 0; i < chat.length; i++){
             var it = chat[i];
-            if(it && it.role === 'assistant' && typeof it.text === 'string' && it.text.indexOf('오류:') === 0){
-              // 원문 = 이 오류 바로 앞 user 항목
-              var srcItem = (i - 1 >= 0 && chat[i-1] && chat[i-1].role === 'user') ? chat[i-1] : null;
-              var src = srcItem ? srcItem.text : (it.retrySrc || '');
-              if(src && !handled[src]){ errIdx = i; break; }
+            if(it && it.role === 'assistant' && typeof it.text === 'string'
+               && it.text.indexOf('오류:') === 0 && handled.indexOf(it) < 0){
+              errObj = it; break;
             }
           }
-          if(errIdx < 0) break;             // 더 처리할 오류 없음 → 종료
-          var errItem = chat[errIdx];
-          var srcText = (errIdx - 1 >= 0 && chat[errIdx-1] && chat[errIdx-1].role === 'user')
-                        ? chat[errIdx-1].text : (errItem.retrySrc || '');
-          if(!srcText){ break; }
-          handled[srcText] = true;          // 이 원문은 이번 라운드에서 재시도 소비(재실패해도 다시 안 잡힘=무한방지)
-          if(_isBusy){ break; }             // 이례적으로 바쁘면 이번 라운드 중단(사용자 조작 우선)
-          // ★ 제자리 교체: 오류를 미리 지우지 않고, _retryInPlace가 그 자리에서 번역문으로 바꿈.
-          //   성공하면 오류 자리에 번역문이 들어가고, 실패하면 원래 오류가 그대로 남는다.
-          try{ await _retryInPlace(srcText, errItem.retryId); }catch(_){}
+          if(!errObj) break;                // 더 처리할 오류 없음 → 종료
+          handled.push(errObj);             // 이 오류는 이번 라운드에서 1회 소비(재실패해도 다시 안 잡힘)
+          // 오류에 retryId가 없으면(구 항목) 지금 부여해 _retryInPlace가 정확히 찾게 함.
+          if(!errObj.retryId){ errObj.retryId = 'boot' + (guard) + '_' + (chat.indexOf(errObj)); }
+          // 원문 = 이 오류 바로 앞 user 항목(없으면 retrySrc).
+          var eIdx = chat.indexOf(errObj);
+          var srcText = (eIdx - 1 >= 0 && chat[eIdx-1] && chat[eIdx-1].role === 'user')
+                        ? chat[eIdx-1].text : (errObj.retrySrc || '');
+          if(!srcText){ continue; }         // 원문 못 찾으면 이 건만 건너뛰고 다음 오류로(중단 아님)
+          // 제자리 교체 재번역. 성공하면 오류가 번역문으로 바뀌고, 실패하면 오류로 남는다.
+          try{ await _retryInPlace(srcText, errObj.retryId); }catch(_){}
         }
       }catch(e){}
     }
