@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.44t';
+    const APP_VERSION = 'v20.45t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4696,64 +4696,66 @@
     }
     focusOverlay.addEventListener('click', () => focusOverlay.classList.remove('active'));
 
-    // ===== 제자리 재번역 공통 헬퍼 (v20.44t) =====
-    //   오류 말풍선을 '그 자리에서' 번역문으로 교체한다(맨 아래로 안 내려감).
-    //   방법: send()는 원문+결과를 맨 끝에 push하므로, 성공하면 그 결과 쌍을
-    //   원래 오류 위치로 옮기고 오류/기존원문을 제거한다. 실패하면 원위치 유지.
-    //   send() 자체는 건드리지 않아 안전(스트리밍·병음·자동복사·라우팅 무손상).
+    // ===== 제자리 재번역 공통 헬퍼 (v20.45t 재설계 — 단순화) =====
+    //   오류 말풍선을 '그 자리에서' 번역문으로 교체(맨 아래로 안 내려감).
+    //   ★ v20.44t 실패 원인: send() 중 trimChatToMaxInputs()가 배열 앞을 shift로 잘라
+    //     인덱스 기반 '이동'이 어긋났다. → 이동 대신 '덮어쓰기'로 단순화.
+    //   방법: 오류 항목(참조)을 잡아둔다. send()로 재번역하면 결과가 맨 끝에 생기는데,
+    //     성공하면 그 결과 텍스트를 원래 오류 객체에 '덮어써서' 번역문으로 바꾸고,
+    //     맨 끝에 새로 생긴 [원문·번역문] 쌍은 제거한다. 순서는 그대로라 renderChat이면 끝.
     async function _retryInPlace(userText, retryId){
       if(!userText) return false;
-      // 1) 대상 오류의 현재 인덱스 찾기(retryId 우선, 없으면 맨 끝 오류)
-      var errIdx = -1;
+      // 1) 대상 오류 '객체' 참조 확보(retryId 우선, 없으면 맨 끝 오류).
+      var errObj = null;
       if(retryId){
         for(var i = chat.length - 1; i >= 0; i--){
-          if(chat[i] && chat[i].retryId === retryId){ errIdx = i; break; }
+          if(chat[i] && chat[i].retryId === retryId){ errObj = chat[i]; break; }
         }
       }
-      if(errIdx < 0){
+      if(!errObj){
         var last = chat.length - 1;
         if(last >= 0 && chat[last] && chat[last].role === 'assistant'
            && typeof chat[last].text === 'string' && chat[last].text.indexOf('오류:') === 0){
-          errIdx = last;
+          errObj = chat[last];
         }
       }
-      if(errIdx < 0) return false;
-      // 원문 항목 = 오류 바로 앞 user(있으면). 없으면 오류만 교체.
-      var hasSrcRow = (errIdx - 1 >= 0 && chat[errIdx-1] && chat[errIdx-1].role === 'user' && chat[errIdx-1].text === userText);
-      var insertAt = hasSrcRow ? (errIdx - 1) : errIdx;   // 교체가 들어갈 시작 위치
-      var lenBefore = chat.length;
+      if(!errObj) return false;
 
-      // 2) 재번역 실행(결과는 맨 끝에 원문+번역문 쌍으로 생김)
+      // 2) 재번역(성공 시 맨 끝에 [원문 user, 번역문 assistant]가 새로 생김).
       el.input.value = userText;
       _pendingSource = 'typing';
       try{ await send(); }catch(_){ return false; }
 
-      // 3) send 결과 판정: 맨 끝 2개가 [user, assistant]인지, assistant가 오류인지
-      var n = chat.length;
-      if(n < lenBefore + 1) return false;                 // 아무것도 안 생김(취소 등)
-      var newAsst = chat[n-1];
-      var newUsr  = (n-2 >= 0 && chat[n-2] && chat[n-2].role === 'user') ? chat[n-2] : null;
-      if(!newAsst || newAsst.role !== 'assistant') return false;
+      // 3) 방금 생긴 결과 = 맨 끝 assistant.
+      var newAsst = chat.length ? chat[chat.length-1] : null;
+      if(!newAsst || newAsst === errObj || newAsst.role !== 'assistant') return false;
+      var newUsr = (chat.length-2 >= 0 && chat[chat.length-2] && chat[chat.length-2].role === 'user'
+                    && chat[chat.length-2].text === userText) ? chat[chat.length-2] : null;
       var failed = (typeof newAsst.text === 'string' && newAsst.text.indexOf('오류:') === 0);
 
+      // 4) 맨 끝 새 결과 쌍을 제거(성공/실패 공통 — 원래 자리에서 처리하니 맨끝 중복 불필요).
+      var ai = chat.indexOf(newAsst); if(ai >= 0) chat.splice(ai, 1);
+      if(newUsr){ var ui = chat.indexOf(newUsr); if(ui >= 0) chat.splice(ui, 1); }
+
       if(failed){
-        // 실패: 새로 생긴 결과 쌍을 제거하고, 원래 오류를 그 자리에 그대로 둔다(중복 방지).
-        chat.splice(n-1, 1);                              // 새 오류 제거
-        if(newUsr){ chat.splice(n-2, 1); }                // 새 원문 제거
+        // 실패: 원래 오류를 그 자리에 그대로 둔다(덮어쓰지 않음).
         saveChatHistory(); renderChat();
         return false;
       }
 
-      // 4) 성공: 맨 끝 결과 쌍을 잘라내어 원래 오류 자리에 꽂는다.
-      var moved = [];
-      if(newUsr){ moved = chat.splice(n-2, 2); }          // [user, assistant]
-      else       { moved = chat.splice(n-1, 1); }         // [assistant]만
-      // 원래 오류(+기존 원문) 제거
-      if(hasSrcRow){ chat.splice(errIdx-1, 2); }          // [기존user, 오류]
-      else         { chat.splice(errIdx, 1); }            // [오류]만
-      // 제거로 인덱스가 당겨졌으니 insertAt 보정: 제거 위치가 insertAt 이전이 아니면 그대로.
-      // (insertAt은 항상 제거 구간의 시작과 같으므로 그 자리에 삽입하면 됨)
-      Array.prototype.splice.apply(chat, [insertAt, 0].concat(moved));
+      // 5) 성공: 원래 오류 객체를 '번역문'으로 덮어써서 제자리 교체(이동 없음 → trim 무관).
+      errObj.text   = newAsst.text;
+      errObj.role   = 'assistant';
+      errObj.model  = newAsst.model;
+      errObj.usage  = newAsst.usage;
+      errObj.ms     = newAsst.ms;   errObj.ms1 = newAsst.ms1;   errObj.ms2 = newAsst.ms2;
+      errObj.effort = newAsst.effort;
+      errObj.promptVer = newAsst.promptVer;
+      errObj.pipeline  = newAsst.pipeline;
+      errObj.source = newAsst.source;
+      errObj.ts     = newAsst.ts || Date.now();
+      // 오류 표식 제거(다시 오류로 오인되지 않게)
+      delete errObj.retryId; delete errObj.retrySrc;
       saveChatHistory(); renderChat();
       return true;
     }
