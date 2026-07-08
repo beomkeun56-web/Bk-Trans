@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.47t';
+    const APP_VERSION = 'v20.48t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4719,17 +4719,18 @@
       }
       if(!errObj) return false;
 
-      // 2) 재번역 — 통합 큐 경유(입력창 경쟁 없음). 워커가 send()를 돌리고, 끝나면 여기서 후처리.
-      //    enqueueTx는 콜백 기반이라 Promise로 감싸 완료를 기다린다.
+      // 2) 재번역 — 통합 큐 경유(입력창 경쟁 없음). 워커가 send()를 돌리고, 결과 꼬리 참조를
+      //    onDone(res)으로 건네준다. ★ v20.48t: chat 꼬리를 여기서 다시 읽으면, 다음 잡이 이미
+      //    push한 항목을 자기 결과로 오인해 오류 교체가 안 되던 버그가 생김 → 워커가 캡처한 res 사용.
+      var _r = null;
       try{
-        await new Promise(function(resolve){ enqueueTx(userText, 'typing', resolve); });
+        _r = await new Promise(function(resolve){ enqueueTx(userText, 'typing', resolve); });
       }catch(_){ return false; }
 
-      // 3) 방금 생긴 결과 = 맨 끝 assistant.
-      var newAsst = chat.length ? chat[chat.length-1] : null;
+      // 3) 워커가 넘겨준 이 잡의 결과(참조).
+      var newAsst = _r && _r.asst;
       if(!newAsst || newAsst === errObj || newAsst.role !== 'assistant') return false;
-      var newUsr = (chat.length-2 >= 0 && chat[chat.length-2] && chat[chat.length-2].role === 'user'
-                    && chat[chat.length-2].text === userText) ? chat[chat.length-2] : null;
+      var newUsr = (_r.usr && _r.usr.role === 'user' && _r.usr.text === userText) ? _r.usr : null;
       var failed = (typeof newAsst.text === 'string' && newAsst.text.indexOf('오류:') === 0);
 
       // 4) 맨 끝 새 결과 쌍을 제거(성공/실패 공통 — 원래 자리에서 처리하니 맨끝 중복 불필요).
@@ -5455,7 +5456,14 @@
           el.input.value = job.text;
           _pendingSource = job.source;
           try{ await send(); }catch(_){}
-          try{ if(job.onDone) job.onDone(); }catch(_){}
+          // ★ v20.48t: send() 직후(아직 동기 구간, 다음 잡이 push하기 전)에 이 잡의 결과 꼬리를
+          //   참조로 캡처해 onDone에 넘긴다. 소비자가 나중에 chat 꼬리를 다시 읽으면, 다음 잡이
+          //   이미 push한 항목을 자기 결과로 오인하는 버그(오류 미교체)가 생기므로.
+          var _res = {
+            asst: chat.length ? chat[chat.length-1] : null,
+            usr:  chat.length > 1 ? chat[chat.length-2] : null
+          };
+          try{ if(job.onDone) job.onDone(_res); }catch(_){}
           // send()가 입력창을 비웠으므로 초안 복원은 _restoreDraft가 담당(중복복원 방지 위해 여기선 생략).
         }
       } finally {
