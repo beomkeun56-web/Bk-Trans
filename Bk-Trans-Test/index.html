@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.46t';
+    const APP_VERSION = 'v20.47t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -1652,13 +1652,11 @@
     window.addEventListener('online', function(){
       _showOfflineBanner(false);
       try{ if(typeof _warmConnections === 'function') _warmConnections(true); }catch(e){}
-      // 네트워크 오류로 실패했던 마지막 번역을 1회 자동 재시도(있을 때만).
-      try{
-        if(_netRetryPending && typeof _retryLastOnReconnect === 'function'){
-          _netRetryPending = false;
-          _retryLastOnReconnect();
-        }
-      }catch(e){}
+      // ★ v20.47t: 온라인 복귀 시 '마지막 1개'만 재시도하던 경로(_retryLastOnReconnect) 폐기.
+      //   쌓인 오류 전부를 순차 처리하는 부팅 재번역기 + URL 큐 드레인을 호출(전부 통합 큐 경유).
+      _netRetryPending = false;
+      try{ if(typeof _autoRetranslateErrorsOnBoot === 'function') _autoRetranslateErrorsOnBoot(); }catch(e){}
+      try{ if(typeof _drainUrlQueue === 'function') _drainUrlQueue(); }catch(e){}
     });
     window.addEventListener('offline', function(){ _showOfflineBanner(true); });
     // 로드 시점에 이미 오프라인이면 배너 표시
@@ -4721,10 +4719,11 @@
       }
       if(!errObj) return false;
 
-      // 2) 재번역(성공 시 맨 끝에 [원문 user, 번역문 assistant]가 새로 생김).
-      el.input.value = userText;
-      _pendingSource = 'typing';
-      try{ await send(); }catch(_){ return false; }
+      // 2) 재번역 — 통합 큐 경유(입력창 경쟁 없음). 워커가 send()를 돌리고, 끝나면 여기서 후처리.
+      //    enqueueTx는 콜백 기반이라 Promise로 감싸 완료를 기다린다.
+      try{
+        await new Promise(function(resolve){ enqueueTx(userText, 'typing', resolve); });
+      }catch(_){ return false; }
 
       // 3) 방금 생긴 결과 = 맨 끝 assistant.
       var newAsst = chat.length ? chat[chat.length-1] : null;
@@ -4805,11 +4804,11 @@
     //   요청: 네트워크 오류(주로 URL 자동번역 cold start 실패)로 남은 '오류:' 말풍선들을
     //   앱을 열면 물어보지 않고 위→아래 순서로 하나씩 자동 재번역해 번역문으로 교체한다.
     //   오류가 없으면 아무것도 안 함. 재번역이 또 실패하면 그 원문은 이번 라운드에서 스킵(무한방지).
-    var _bootRetryDone = false;
+    var _bootRetryRunning = false;   // ★ v20.47t: 실행 중 잠금(부팅 setTimeout·online 이벤트 중복 방지)
     async function _autoRetranslateErrorsOnBoot(){
+      if(_bootRetryRunning) return;       // 이미 재번역 루프가 돌면 중복 실행 금지
+      _bootRetryRunning = true;
       try{
-        if(_bootRetryDone) return;          // 부팅당 1회만
-        _bootRetryDone = true;
         if(navigator.onLine === false) return;   // 오프라인이면 시작 안 함
         // ★ v20.46t 버그수정: 이전엔 '원문 텍스트'로 처리여부를 추적해, 원문이 같은 오류가
         //   여럿이면 첫 개만 되고 나머지가 스킵됐다(+ 잘못된 _isBusy break로 조기중단).
@@ -4840,6 +4839,7 @@
           try{ await _retryInPlace(srcText, errObj.retryId); }catch(_){}
         }
       }catch(e){}
+      finally{ _bootRetryRunning = false; }   // ★ 잠금 해제(online 이벤트 등에서 다시 돌 수 있게)
     }
 
     // 1회성 Agent Mode 재번역 (현재 _use4Agent 상태와 무관, 단어수 제한도 우회)
@@ -5426,6 +5426,43 @@
         if(d && el.input && !el.input.value.trim()){ el.input.value = d; autoResizeInput(); }
       }catch(_){}
     }
+
+    // ===== 통합 번역 큐 (v20.47t) =====
+    //  배경: 클립보드·URL·부팅재번역·온라인복귀 등 여러 트리거가 각자 el.input.value를 채우고 send()를
+    //  호출해, 입력창을 공유하며 경쟁했다(가드끼리 오작동 = TOCTOU 레이스). "알림 와도 번역 안 되고 클립이
+    //  입력창에 남는" 버그, "쌓인 오류 중 최근 1개만 되는" 버그 모두 이 경쟁이 원인.
+    //  해결(페이블 설계): 프로그램적 번역은 전부 이 큐에 넣고, 워커 하나만 입력창을 만진다.
+    //  워커는 '입력창 쓰기 → send()'를 사이에 await 없이 원자적으로 실행해 레이스를 없앤다.
+    var _txQueue = [];            // {text, source, onDone}
+    var _txWorkerRunning = false;
+    function enqueueTx(text, source, onDone){
+      if(!text) return;
+      _txQueue.push({ text: text, source: source || 'typing', onDone: onDone || null });
+      _txWorker();
+    }
+    async function _txWorker(){
+      if(_txWorkerRunning) return;   // 워커는 하나만
+      _txWorkerRunning = true;
+      try{
+        while(_txQueue.length){
+          // 진행 중인 번역(사용자 수동 등)이 끝날 때까지 대기 — abort 유발 없이 양보.
+          while(_isBusy){ await new Promise(function(r){ setTimeout(r, 150); }); }
+          var job = _txQueue.shift();
+          if(!job || !job.text) continue;
+          // ★ 쓰기 직후 send() — 사이에 await 없음 = 끼어들 틈 없음(원자적).
+          var _bk = null;
+          try{ _bk = (el.input && el.input.value) ? el.input.value : ''; }catch(_){}   // 사용자 초안 백업
+          el.input.value = job.text;
+          _pendingSource = job.source;
+          try{ await send(); }catch(_){}
+          try{ if(job.onDone) job.onDone(); }catch(_){}
+          // send()가 입력창을 비웠으므로 초안 복원은 _restoreDraft가 담당(중복복원 방지 위해 여기선 생략).
+        }
+      } finally {
+        _txWorkerRunning = false;
+      }
+    }
+
     async function send(){
       if(_isBusy){ abortCurrentRequest(); return; }
 
@@ -7138,7 +7175,8 @@
 
     async function checkClipboard(){
       try{
-        if(_isBusy || _autoSending) return;
+        // ★ v20.47t: busy/autoSending이어도 큐에 넣을 수 있으므로 여기서 조기포기 안 함.
+        //   (기존엔 busy면 return해서 알림을 놓쳤다.) 큐가 순서를 보장하니 스킵 개념 불필요.
         if(!navigator.clipboard || !navigator.clipboard.readText) return;
         // (hasFocus 차단 제거: 팝업 복귀 시 포커스 지연 때문에 막혔음. readText 실패는 catch로 무시)
 
@@ -7162,15 +7200,8 @@
         updateLastClipboard(trimmed);
         if(isChatDuplicate(trimmed)) return;
 
-        _autoSending = true;
-        try{
-          el.input.value = trimmed;
-          _pendingSource = 'clip';
-          await send();
-        } finally {
-          _autoSending = false;
-          _restoreDraft();   // 자동번역이 입력창을 비운 뒤, 쓰던 초안 복원
-        }
+        // ★ 직접 send() 대신 통합 큐로. 입력창 경쟁 없이 순차 처리됨.
+        enqueueTx(trimmed, 'clip');
       } catch(err){
       }
     }
@@ -7182,8 +7213,9 @@
       var i = 0;
       function tryOnce(){
         _clipboardCheckTimer = 0;
-        if(_isBusy || _autoSending) return;            // 이미 번역 시작했으면 중단
-        if(el.input && el.input.value.trim()) return;  // 입력칸 이미 채워졌으면 중단
+        // ★ v20.47t: busy/입력칸참 가드 제거. checkClipboard가 큐에 넣으므로 busy여도 안전하고,
+        //   워커가 입력창을 채운 순간을 '사용자 초안'으로 오인해 클립을 버리던 버그를 없앤다.
+        //   (중복은 _lastClipboardText가, 순서는 큐가 담당)
         checkClipboard();
         i++;
         if(i < delays.length){ _clipboardCheckTimer = setTimeout(tryOnce, delays[i]); }
@@ -7246,43 +7278,38 @@
       _saveUrlQueue(q);
       _uwLog('enqueue(' + q.length + ')', text);
     }
-    var _draining = false;
-    async function _drainUrlQueue(){
-      if(_draining) return;
-      if(_isBusy || _autoSending){ _uwLog('drain-wait-busy', ''); return; }   // 진행 중이면 완료 후 재호출됨
+    var _urlEnqueued = {};   // 이미 통합 큐로 넘긴 URL 항목 id(중복 방지)
+    // ★ v20.47t 단순화: localStorage URL 큐(리로드 견딤)의 항목들을 통합 큐(enqueueTx)로 넘긴다.
+    //   실제 순차 실행·busy 대기는 통합 워커가 담당. 여기선 적재/필터/localStorage 정리만.
+    function _drainUrlQueue(){
       var q = _loadUrlQueue();
       if(!q.length) return;
-      _draining = true;
-      try{
-        var item = q[0];                                // 맨 앞(완료 확정 전까지 큐에 남겨둠 = 리로드 견딤)
-        var trimmed = item.text;
-        // 필터: 언어/길이/중복. 부적합하면 소비만 하고 다음으로.
-        if(!trimmed || (!hasKorean(trimmed) && !hasChinese(trimmed)) || trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN || isChatDuplicate(trimmed)){
-          _uwLog('drop-filter', trimmed);
-          q.shift(); _saveUrlQueue(q);
-          _draining = false;
-          return _drainUrlQueue();
-        }
-        _lastUrlText = trimmed;
-        updateLastClipboard(trimmed);
-        _autoSending = true;
-        _uwLog('translate-start', trimmed);
-        try{
-          el.input.value = trimmed; _pendingSource = 'url';
-          await send();
-          _uwLog('translate-done', trimmed);
-        } catch(e){
-          _uwLog('translate-err', trimmed);
-        } finally {
-          _autoSending = false; _restoreDraft();
-          // 완료(성공/실패) → 큐에서 제거 후 다음 처리
-          var q2 = _loadUrlQueue();
-          if(q2.length && q2[0].id === item.id){ q2.shift(); _saveUrlQueue(q2); }
-          _draining = false;
-        }
-        return _drainUrlQueue();                         // 다음 항목 이어서(비었으면 즉시 리턴)
-      } finally {
-        _draining = false;
+      for(var k = 0; k < q.length; k++){
+        (function(item){
+          if(!item || _urlEnqueued[item.id]) return;      // 이미 넘긴 건 스킵
+          var trimmed = item.text;
+          // 필터: 언어/길이/중복. 부적합하면 localStorage에서 바로 제거.
+          if(!trimmed || (!hasKorean(trimmed) && !hasChinese(trimmed))
+             || trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN || isChatDuplicate(trimmed)){
+            _uwLog('drop-filter', trimmed);
+            var qd = _loadUrlQueue();
+            var idx = qd.findIndex(function(x){ return x.id === item.id; });
+            if(idx >= 0){ qd.splice(idx, 1); _saveUrlQueue(qd); }
+            return;
+          }
+          _urlEnqueued[item.id] = true;
+          _lastUrlText = trimmed;
+          updateLastClipboard(trimmed);
+          _uwLog('enqueue-tx', trimmed);
+          enqueueTx(trimmed, 'url', function(){
+            _uwLog('translate-done', trimmed);
+            // 완료 → localStorage 큐에서 이 항목 제거(리로드 견딤 목적 달성).
+            var q2 = _loadUrlQueue();
+            var i2 = q2.findIndex(function(x){ return x.id === item.id; });
+            if(i2 >= 0){ q2.splice(i2, 1); _saveUrlQueue(q2); }
+            delete _urlEnqueued[item.id];
+          });
+        })(q[k]);
       }
     }
     async function checkURLText(){
