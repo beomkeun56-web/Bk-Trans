@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.43t';
+    const APP_VERSION = 'v20.44t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4696,12 +4696,32 @@
     }
     focusOverlay.addEventListener('click', () => focusOverlay.classList.remove('active'));
 
-    function retryTranslate(userText){
+    // 수동 Retry. retryId가 있으면 그 오류 항목을 정확히 찾아 교체(다건 오류에서 누른 것만 교체).
+    //   없으면(구버전 항목) 예전 방식: 맨 끝 오류 pop.
+    function retryTranslate(userText, retryId){
       if(_isBusy || !userText) return;
-      const lastErr = chat.length > 0 && chat[chat.length - 1];
-      if(lastErr && lastErr.role === 'assistant' && lastErr.text.startsWith('오류:')) chat.pop();
-      const lastUsr = chat.length > 0 && chat[chat.length - 1];
-      if(lastUsr && lastUsr.role === 'user' && lastUsr.text === userText) chat.pop();
+      var removed = false;
+      if(retryId){
+        for(var i = chat.length - 1; i >= 0; i--){
+          if(chat[i] && chat[i].retryId === retryId){
+            chat.splice(i, 1);                                   // 이 오류 제거
+            if(i - 1 >= 0 && chat[i-1] && chat[i-1].role === 'user' && chat[i-1].text === userText){
+              chat.splice(i - 1, 1);                             // 그 앞 원문도 제거
+            }
+            removed = true;
+            break;
+          }
+        }
+      }
+      if(!removed){
+        // 폴백: 맨 끝이 오류면 그 오류 + 앞 원문 제거(retryId 없는 구 항목 대비)
+        const lastErr = chat.length > 0 && chat[chat.length - 1];
+        if(lastErr && lastErr.role === 'assistant' && lastErr.text.startsWith('오류:')) chat.pop();
+        const lastUsr = chat.length > 0 && chat[chat.length - 1];
+        if(lastUsr && lastUsr.role === 'user' && lastUsr.text === userText) chat.pop();
+      }
+      saveChatHistory();
+      renderChat();
       el.input.value = userText;
       send();
     }
@@ -4738,6 +4758,54 @@
         // 원문으로 재번역(재시도의 실패는 수동 재번역으로 → autoSrc 안 실림)
         el.input.value = src;
         send();
+      }catch(e){}
+    }
+
+    // ===== 앱 시작 시 쌓인 오류 자동 순차 재번역 (v20.44t) =====
+    //   요청: 네트워크 오류(주로 URL 자동번역 cold start 실패)로 남은 '오류:' 말풍선들을
+    //   앱을 열면 물어보지 않고 위→아래 순서로 하나씩 자동 재번역해 번역문으로 교체한다.
+    //   오류가 없으면 아무것도 안 함. 재번역이 또 실패하면 그 원문은 이번 라운드에서 스킵(무한방지).
+    var _bootRetryDone = false;
+    async function _autoRetranslateErrorsOnBoot(){
+      try{
+        if(_bootRetryDone) return;          // 부팅당 1회만
+        _bootRetryDone = true;
+        if(navigator.onLine === false) return;   // 오프라인이면 시작 안 함(온라인 복귀 시 재시도 로직 별도)
+        var handled = {};                   // 이번 라운드에 이미 처리한 원문(중복/무한 방지)
+        // 최대 20건까지만(폭주 방지). 매 반복마다 chat을 새로 훑어 '가장 위의 미처리 오류'를 처리.
+        for(var guard = 0; guard < 20; guard++){
+          if(navigator.onLine === false) break;
+          // 위에서부터 첫 '오류:' 항목 찾기
+          var errIdx = -1;
+          for(var i = 0; i < chat.length; i++){
+            var it = chat[i];
+            if(it && it.role === 'assistant' && typeof it.text === 'string' && it.text.indexOf('오류:') === 0){
+              // 원문 = 이 오류 바로 앞 user 항목
+              var srcItem = (i - 1 >= 0 && chat[i-1] && chat[i-1].role === 'user') ? chat[i-1] : null;
+              var src = srcItem ? srcItem.text : (it.retrySrc || '');
+              if(src && !handled[src]){ errIdx = i; break; }
+            }
+          }
+          if(errIdx < 0) break;             // 더 처리할 오류 없음 → 종료
+          var errItem = chat[errIdx];
+          var srcText = (errIdx - 1 >= 0 && chat[errIdx-1] && chat[errIdx-1].role === 'user')
+                        ? chat[errIdx-1].text : (errItem.retrySrc || '');
+          if(!srcText){ break; }
+          handled[srcText] = true;          // 이 원문은 이번 라운드에서 재시도 소비
+          // 오류 항목 + 그 앞 원문 user 항목 제거 → send()가 다시 push하며 자연스럽게 자리 이동
+          chat.splice(errIdx, 1);
+          if(errIdx - 1 >= 0 && chat[errIdx-1] && chat[errIdx-1].role === 'user' && chat[errIdx-1].text === srcText){
+            chat.splice(errIdx - 1, 1);
+          }
+          saveChatHistory();
+          renderChat();
+          // 순차 재번역: 앞 건이 끝날 때까지 대기(_isBusy 방지)
+          if(_isBusy){ break; }             // 이례적으로 바쁘면 이번 라운드 중단(사용자 조작 우선)
+          el.input.value = srcText;
+          _pendingSource = 'typing';        // 재시도는 typing 취급(자동재시도 재예약 안 걸림)
+          try{ await send(); }catch(_){}
+          // send 실패 시 새 '오류:'가 handled[srcText] 덕에 다시 안 잡힘 → 무한루프 방지
+        }
       }catch(e){}
     }
 
@@ -5235,11 +5303,12 @@
           actions.appendChild(editBtn);
         } else if(m.role === 'assistant' && m.text.startsWith('오류:')){
           const srcText = lastUserText;
+          const errRetryId = m.retryId;   // 이 오류 항목 고유 id (다건 오류에서 이 항목만 정확히 교체)
           const retryBtn = document.createElement('button');
           retryBtn.className = 'retryPill';
           retryBtn.type = 'button';
           retryBtn.textContent = 'Retry';
-          retryBtn.addEventListener('click', () => retryTranslate(srcText));
+          retryBtn.addEventListener('click', () => retryTranslate(srcText, errRetryId));
           actions.appendChild(retryBtn);
         } else if(m.role === 'assistant'){
           actions.appendChild(createTtsBtn(m.text));
@@ -7005,6 +7074,9 @@
     loadChatHistory();
     updateModelDatalist();
     renderChat();
+    // ★ v20.44t: 앱 시작 시 쌓인 '오류:' 말풍선을 자동 순차 재번역(오류 없으면 아무것도 안 함).
+    //   렌더·초기화가 안정된 뒤 실행되게 살짝 지연.
+    setTimeout(function(){ try{ _autoRetranslateErrorsOnBoot(); }catch(_){} }, 800);
     // pinyin-pro는 defer로 로드 → DOM 완료 후 도착하면 병음 포함해 다시 렌더
     if(typeof window.pinyinPro === 'undefined'){
       document.addEventListener('DOMContentLoaded', function(){
