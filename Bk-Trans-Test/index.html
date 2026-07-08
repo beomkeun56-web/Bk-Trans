@@ -4696,34 +4696,72 @@
     }
     focusOverlay.addEventListener('click', () => focusOverlay.classList.remove('active'));
 
-    // 수동 Retry. retryId가 있으면 그 오류 항목을 정확히 찾아 교체(다건 오류에서 누른 것만 교체).
-    //   없으면(구버전 항목) 예전 방식: 맨 끝 오류 pop.
-    function retryTranslate(userText, retryId){
-      if(_isBusy || !userText) return;
-      var removed = false;
+    // ===== 제자리 재번역 공통 헬퍼 (v20.44t) =====
+    //   오류 말풍선을 '그 자리에서' 번역문으로 교체한다(맨 아래로 안 내려감).
+    //   방법: send()는 원문+결과를 맨 끝에 push하므로, 성공하면 그 결과 쌍을
+    //   원래 오류 위치로 옮기고 오류/기존원문을 제거한다. 실패하면 원위치 유지.
+    //   send() 자체는 건드리지 않아 안전(스트리밍·병음·자동복사·라우팅 무손상).
+    async function _retryInPlace(userText, retryId){
+      if(!userText) return false;
+      // 1) 대상 오류의 현재 인덱스 찾기(retryId 우선, 없으면 맨 끝 오류)
+      var errIdx = -1;
       if(retryId){
         for(var i = chat.length - 1; i >= 0; i--){
-          if(chat[i] && chat[i].retryId === retryId){
-            chat.splice(i, 1);                                   // 이 오류 제거
-            if(i - 1 >= 0 && chat[i-1] && chat[i-1].role === 'user' && chat[i-1].text === userText){
-              chat.splice(i - 1, 1);                             // 그 앞 원문도 제거
-            }
-            removed = true;
-            break;
-          }
+          if(chat[i] && chat[i].retryId === retryId){ errIdx = i; break; }
         }
       }
-      if(!removed){
-        // 폴백: 맨 끝이 오류면 그 오류 + 앞 원문 제거(retryId 없는 구 항목 대비)
-        const lastErr = chat.length > 0 && chat[chat.length - 1];
-        if(lastErr && lastErr.role === 'assistant' && lastErr.text.startsWith('오류:')) chat.pop();
-        const lastUsr = chat.length > 0 && chat[chat.length - 1];
-        if(lastUsr && lastUsr.role === 'user' && lastUsr.text === userText) chat.pop();
+      if(errIdx < 0){
+        var last = chat.length - 1;
+        if(last >= 0 && chat[last] && chat[last].role === 'assistant'
+           && typeof chat[last].text === 'string' && chat[last].text.indexOf('오류:') === 0){
+          errIdx = last;
+        }
       }
-      saveChatHistory();
-      renderChat();
+      if(errIdx < 0) return false;
+      // 원문 항목 = 오류 바로 앞 user(있으면). 없으면 오류만 교체.
+      var hasSrcRow = (errIdx - 1 >= 0 && chat[errIdx-1] && chat[errIdx-1].role === 'user' && chat[errIdx-1].text === userText);
+      var insertAt = hasSrcRow ? (errIdx - 1) : errIdx;   // 교체가 들어갈 시작 위치
+      var lenBefore = chat.length;
+
+      // 2) 재번역 실행(결과는 맨 끝에 원문+번역문 쌍으로 생김)
       el.input.value = userText;
-      send();
+      _pendingSource = 'typing';
+      try{ await send(); }catch(_){ return false; }
+
+      // 3) send 결과 판정: 맨 끝 2개가 [user, assistant]인지, assistant가 오류인지
+      var n = chat.length;
+      if(n < lenBefore + 1) return false;                 // 아무것도 안 생김(취소 등)
+      var newAsst = chat[n-1];
+      var newUsr  = (n-2 >= 0 && chat[n-2] && chat[n-2].role === 'user') ? chat[n-2] : null;
+      if(!newAsst || newAsst.role !== 'assistant') return false;
+      var failed = (typeof newAsst.text === 'string' && newAsst.text.indexOf('오류:') === 0);
+
+      if(failed){
+        // 실패: 새로 생긴 결과 쌍을 제거하고, 원래 오류를 그 자리에 그대로 둔다(중복 방지).
+        chat.splice(n-1, 1);                              // 새 오류 제거
+        if(newUsr){ chat.splice(n-2, 1); }                // 새 원문 제거
+        saveChatHistory(); renderChat();
+        return false;
+      }
+
+      // 4) 성공: 맨 끝 결과 쌍을 잘라내어 원래 오류 자리에 꽂는다.
+      var moved = [];
+      if(newUsr){ moved = chat.splice(n-2, 2); }          // [user, assistant]
+      else       { moved = chat.splice(n-1, 1); }         // [assistant]만
+      // 원래 오류(+기존 원문) 제거
+      if(hasSrcRow){ chat.splice(errIdx-1, 2); }          // [기존user, 오류]
+      else         { chat.splice(errIdx, 1); }            // [오류]만
+      // 제거로 인덱스가 당겨졌으니 insertAt 보정: 제거 위치가 insertAt 이전이 아니면 그대로.
+      // (insertAt은 항상 제거 구간의 시작과 같으므로 그 자리에 삽입하면 됨)
+      Array.prototype.splice.apply(chat, [insertAt, 0].concat(moved));
+      saveChatHistory(); renderChat();
+      return true;
+    }
+
+    // 수동 Retry — 제자리 교체. 다건 오류에서 누른 항목만, 그 자리에서 번역문으로 바뀜.
+    function retryTranslate(userText, retryId){
+      if(_isBusy || !userText) return;
+      _retryInPlace(userText, retryId);
     }
 
     // ===== 자동번역(URL/clip) 네트워크오류 시 자동 재시도 (v20.42t) =====
@@ -4791,20 +4829,11 @@
           var srcText = (errIdx - 1 >= 0 && chat[errIdx-1] && chat[errIdx-1].role === 'user')
                         ? chat[errIdx-1].text : (errItem.retrySrc || '');
           if(!srcText){ break; }
-          handled[srcText] = true;          // 이 원문은 이번 라운드에서 재시도 소비
-          // 오류 항목 + 그 앞 원문 user 항목 제거 → send()가 다시 push하며 자연스럽게 자리 이동
-          chat.splice(errIdx, 1);
-          if(errIdx - 1 >= 0 && chat[errIdx-1] && chat[errIdx-1].role === 'user' && chat[errIdx-1].text === srcText){
-            chat.splice(errIdx - 1, 1);
-          }
-          saveChatHistory();
-          renderChat();
-          // 순차 재번역: 앞 건이 끝날 때까지 대기(_isBusy 방지)
+          handled[srcText] = true;          // 이 원문은 이번 라운드에서 재시도 소비(재실패해도 다시 안 잡힘=무한방지)
           if(_isBusy){ break; }             // 이례적으로 바쁘면 이번 라운드 중단(사용자 조작 우선)
-          el.input.value = srcText;
-          _pendingSource = 'typing';        // 재시도는 typing 취급(자동재시도 재예약 안 걸림)
-          try{ await send(); }catch(_){}
-          // send 실패 시 새 '오류:'가 handled[srcText] 덕에 다시 안 잡힘 → 무한루프 방지
+          // ★ 제자리 교체: 오류를 미리 지우지 않고, _retryInPlace가 그 자리에서 번역문으로 바꿈.
+          //   성공하면 오류 자리에 번역문이 들어가고, 실패하면 원래 오류가 그대로 남는다.
+          try{ await _retryInPlace(srcText, errItem.retryId); }catch(_){}
         }
       }catch(e){}
     }
