@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.48t';
+    const APP_VERSION = 'v20.49t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2934,6 +2934,11 @@
       CLIPBOARD_DEBOUNCE_MS: 150,
       MIN_REQUEST_GAP_MS: 300,
       QUALITY_TEST_GAP_MS: 4000,
+      // 같은 문장이 이 시간 안에 다시 오면 중복으로 보고 건너뜀(v20.49t).
+      // 짧으면 리로드 직후 유령 클립이 재번역되고, 길면 반복 알림이 씹힌다.
+      DUP_WINDOW_MS: 30000,
+      // URL 자동번역 적재 직후 이만큼은 클립보드를 번역하지 않고 소비만 한다(v20.49t).
+      CLIP_SUPPRESS_MS: 5000,
     };
 
     let chat = [];
@@ -7173,13 +7178,44 @@
       localStorage.setItem(LS_LAST_CLIP, text);
     }
 
-    function isChatDuplicate(text){
-      return chat.some(m => m.text === text);
+    // ===== 중복 판정: 내용기반 → 시간창 기반 (v20.49t) =====
+    //  기존 isChatDuplicate(text)는 최근 100건 대화에 같은 문장이 있으면 무조건 버렸다.
+    //  → 같은 중국어 알림이 반복되면 정상 입력이어도 영영 번역이 안 됐다.
+    //  시간창으로 바꾸면 "리로드 직후 유령 클립 재번역 방지"와 "반복 알림 번역"을 동시에 만족한다.
+    //  ★ localStorage에 두는 이유: URL 알림마다 앱이 리로드되므로 메모리 변수는 살아남지 못한다.
+    var LS_RECENT_TR = 'bk_recent_tr';
+    function _loadRecentTr(){
+      try{ var a = JSON.parse(localStorage.getItem(LS_RECENT_TR) || '[]'); return Array.isArray(a) ? a : []; }
+      catch(_){ return []; }
     }
+    // 창을 벗어난 항목은 읽을 때마다 정리(별도 GC 불필요)
+    function _pruneRecentTr(now){
+      var cut = now - CONFIG.DUP_WINDOW_MS;
+      return _loadRecentTr().filter(function(r){ return r && r.t > cut; });
+    }
+    function isRecentDuplicate(text){
+      var now = Date.now();
+      var arr = _pruneRecentTr(now);
+      try{ localStorage.setItem(LS_RECENT_TR, JSON.stringify(arr)); }catch(_){}
+      return arr.some(function(r){ return r.x === text; });
+    }
+    // ★ 통합 큐 '적재 시점'에 찍는다. _drainUrlQueue가 한 번에 여러 항목을 루프로 넣으므로,
+    //   완료 시점에 찍으면 같은 배치 안의 중복이 둘 다 통과해버린다.
+    function markRecentTr(text){
+      var now = Date.now();
+      var arr = _pruneRecentTr(now);
+      arr.push({ x: text, t: now });
+      if(arr.length > 50) arr = arr.slice(arr.length - 50);
+      try{ localStorage.setItem(LS_RECENT_TR, JSON.stringify(arr)); }catch(_){}
+    }
+    window._trDump = function(){ try{ console.table(_loadRecentTr()); return _loadRecentTr(); }catch(e){ return []; } };
+    window._trClear = function(){ try{ localStorage.removeItem(LS_RECENT_TR); }catch(_){} return 'cleared'; };
 
     let _autoSending = false;
     let _clipboardCheckTimer = 0;
     let _lastLongTextWarn = '';
+    // URL 자동번역 적재 직후 클립보드 자동번역 억제 시각(v20.49t)
+    var _suppressClipUntil = 0;
 
     async function checkClipboard(){
       try{
@@ -7191,6 +7227,16 @@
         const clipText = await navigator.clipboard.readText();
         const trimmed = String(clipText || '').trim();
         if(!trimmed) return;
+
+        // ★ v20.49t: URL 자동번역이 막 적재됐으면, 클립보드에 남은 옛 텍스트를 번역하지 않고
+        //   baseline만 찍어 조용히 소비한다. (예전엔 _drainUrlQueue가 URL 텍스트를 baseline으로
+        //   거짓 기록해서, 정작 클립보드의 옛 중국어가 '새 텍스트'로 부활해 또 번역됐다.)
+        //   여기서 이미 클립보드 내용을 손에 쥐고 있으므로 readText를 다시 부르지 않는다.
+        if(Date.now() < _suppressClipUntil){
+          updateLastClipboard(trimmed);
+          _uwLog('clip-swallow', trimmed);
+          return;
+        }
 
         if(_lastClipboardText === trimmed) return;
         if(!hasKorean(trimmed) && !hasChinese(trimmed)) return;
@@ -7206,9 +7252,10 @@
         }
 
         updateLastClipboard(trimmed);
-        if(isChatDuplicate(trimmed)) return;
+        if(isRecentDuplicate(trimmed)){ _uwLog('dup-window(clip)', trimmed); return; }
 
         // ★ 직접 send() 대신 통합 큐로. 입력창 경쟁 없이 순차 처리됨.
+        markRecentTr(trimmed);
         enqueueTx(trimmed, 'clip');
       } catch(err){
       }
@@ -7297,8 +7344,9 @@
           if(!item || _urlEnqueued[item.id]) return;      // 이미 넘긴 건 스킵
           var trimmed = item.text;
           // 필터: 언어/길이/중복. 부적합하면 localStorage에서 바로 제거.
+          //  ★ v20.49t: isChatDuplicate → isRecentDuplicate. 창을 벗어난 반복 알림은 통과시킨다.
           if(!trimmed || (!hasKorean(trimmed) && !hasChinese(trimmed))
-             || trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN || isChatDuplicate(trimmed)){
+             || trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN || isRecentDuplicate(trimmed)){
             _uwLog('drop-filter', trimmed);
             var qd = _loadUrlQueue();
             var idx = qd.findIndex(function(x){ return x.id === item.id; });
@@ -7307,7 +7355,12 @@
           }
           _urlEnqueued[item.id] = true;
           _lastUrlText = trimmed;
-          updateLastClipboard(trimmed);
+          // ★ v20.49t: updateLastClipboard(trimmed) 제거. URL 텍스트를 '클립보드에서 본 것'으로
+          //   거짓 기록하면, 정작 클립보드에 남은 옛 중국어가 baseline과 달라져 부활해 또 번역됐다.
+          //   대신 억제창을 동기로 세워둔다. _drainUrlQueue는 동기 함수이고 클립보드 폴링은
+          //   최소 120ms 뒤에 도니, 폴링이 도착할 땐 이미 억제창이 서 있다(checkClipboard가 소비).
+          _suppressClipUntil = Date.now() + CONFIG.CLIP_SUPPRESS_MS;
+          markRecentTr(trimmed);
           _uwLog('enqueue-tx', trimmed);
           enqueueTx(trimmed, 'url', function(){
             _uwLog('translate-done', trimmed);
