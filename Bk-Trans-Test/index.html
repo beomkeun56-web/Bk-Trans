@@ -1603,7 +1603,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.50t';
+    const APP_VERSION = 'v20.51t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -1639,10 +1639,9 @@
     window.addEventListener('online', function(){
       _showOfflineBanner(false);
       try{ if(typeof _warmConnections === 'function') _warmConnections(true); }catch(e){}
-      // ★ v20.50t: 온라인 복귀 시 남은 오류 전부 + URL 큐를 통합 큐로 순차 복구.
-      //   쌓인 오류 전부를 순차 처리하는 부팅 재번역기 + URL 큐 드레인을 호출(전부 통합 큐 경유).
-      try{ if(typeof _retranslatePendingErrors === 'function') _retranslatePendingErrors(); }catch(e){}
+      // ★ v20.51t: live URL을 먼저 큐에 태우고, 오류 자동재번역은 URL 작업이 없을 때만 뒤에서 처리.
       try{ if(typeof _drainUrlQueue === 'function') _drainUrlQueue(); }catch(e){}
+      try{ if(typeof _deferErrorRetranslate === 'function') _deferErrorRetranslate(500); }catch(e){}
     });
     window.addEventListener('offline', function(){ _showOfflineBanner(true); });
     // 로드 시점에 이미 오프라인이면 배너 표시
@@ -4793,6 +4792,7 @@
     var _bootRetryRunning = false;   // ★ v20.47t: 실행 중 잠금(부팅 setTimeout·online 이벤트 중복 방지)
     async function _retranslatePendingErrors(){
       if(_bootRetryRunning) return;       // 이미 재번역 루프가 돌면 중복 실행 금지
+      if(typeof _hasUrlWork === 'function' && _hasUrlWork()){ _deferErrorRetranslate(700); return; }
       _bootRetryRunning = true;
       try{
         if(navigator.onLine === false) return;   // 오프라인이면 시작 안 함
@@ -5423,9 +5423,73 @@
     var _txQueue = [];            // {text, source, onDone}
     var _txCurrent = null;
     var _txWorkerRunning = false;
+    var _idleRenderTimer = 0;
+    function _scheduleIdleRenderChat(delay){
+      if(_idleRenderTimer) clearTimeout(_idleRenderTimer);
+      _idleRenderTimer = setTimeout(function(){
+        _idleRenderTimer = 0;
+        if(_isBusy || _txWorkerRunning || _txQueue.length){ _scheduleIdleRenderChat(250); return; }
+        try{ renderChat(); }catch(_){}
+      }, delay || 80);
+    }
+    function _hasUrlWork(){
+      try{
+        if(_txCurrent && _txCurrent.source === 'url') return true;
+        for(var i = 0; i < _txQueue.length; i++){
+          if(_txQueue[i] && _txQueue[i].source === 'url') return true;
+        }
+      }catch(_){}
+      try{
+        var q = _loadUrlQueue();
+        for(var qi = 0; qi < q.length; qi++){
+          if(q[qi] && q[qi].text && (!_urlEnqueued || !_urlEnqueued[q[qi].id])) return true;
+        }
+      }catch(_){}
+      return false;
+    }
+    var _pendingErrorRetryTimer = 0;
+    function _deferErrorRetranslate(delay){
+      if(_pendingErrorRetryTimer) clearTimeout(_pendingErrorRetryTimer);
+      _pendingErrorRetryTimer = setTimeout(function(){
+        _pendingErrorRetryTimer = 0;
+        try{
+          if(_hasUrlWork()){ _deferErrorRetranslate(700); return; }
+          _retranslatePendingErrors();
+        }catch(_){}
+      }, delay || 500);
+    }
+    var _autoCopyQueue = [];
+    var _autoCopyRunning = false;
+    async function _enqueueAutoCopy(text){
+      if(!text) return;
+      _autoCopyQueue.push(text);
+      if(_autoCopyRunning) return;
+      _autoCopyRunning = true;
+      try{
+        while(_autoCopyQueue.length){
+          var t = _autoCopyQueue.shift();
+          try{
+            var ok = await copyToClipboard(t, true);
+            if(ok){ toast('중국어 자동 복사 완료'); updateLastClipboard(t); }
+            else { showCopyBar(t); toast('자동 복사 제한 → 아래 바 탭'); }
+          }catch(_){}
+        }
+      }finally{
+        _autoCopyRunning = false;
+      }
+    }
     function enqueueTx(text, source, onDone){
       if(!text) return;
-      _txQueue.push({ text: text, source: source || 'typing', onDone: onDone || null });
+      var job = { text: text, source: source || 'typing', onDone: onDone || null };
+      if(job.source === 'url'){
+        var pos = _txQueue.length;
+        for(var i = 0; i < _txQueue.length; i++){
+          if(_txQueue[i] && _txQueue[i].source !== 'url'){ pos = i; break; }
+        }
+        _txQueue.splice(pos, 0, job);
+      } else {
+        _txQueue.push(job);
+      }
       _txWorker();
     }
     async function _txWorker(){
@@ -5468,13 +5532,14 @@
 
       var _src = _pendingSource;   // 이번 번역의 출처 확정
       _pendingSource = 'typing';   // 다음 기본값 복원
+      var _fastUrl = !!(opts.programmatic && _src === 'url');
       if(_src === 'typing') _clearDraft();   // 직접 입력을 전송했으면 초안 소비
 
       hideCopyBar();
 
       var userObj = { role:'user', text:userText, ts:Date.now() };
       chat.push(userObj);
-      renderChat();
+      if(!_fastUrl) renderChat();
 
       el.input.value = '';
       autoResizeInput();
@@ -5662,6 +5727,27 @@
         chat.push(asstObj);
         trimChatToMaxInputs();
         saveChatHistory();
+
+        if(_fastUrl){
+          if(hasChinese(translated)){
+            streamBubble.innerHTML = renderWithPinyin(translated);
+          } else {
+            streamBubble.textContent = translated;
+          }
+          streamBubble.style.background = srcBubbleColor(_src);
+          streamBubble.style.opacity = '1';
+          streamBubble.style.cursor = 'pointer';
+          streamBubble.addEventListener('click', () => showFocusOverlay(translated));
+          if(el.autoCopy.checked && hasChinese(translated)){
+            _enqueueAutoCopy(translated);
+          } else {
+            hideCopyBar();
+          }
+          setConnState('ok');
+          scrollThrottled();
+          _scheduleIdleRenderChat(100);
+          return { ok: true, usr: userObj, asst: asstObj };
+        }
 
         if(hasChinese(translated)){
           streamBubble.innerHTML = renderWithPinyin(translated);
@@ -7150,7 +7236,7 @@
     renderChat();
     // ★ v20.44t: 앱 시작 시 쌓인 '오류:' 말풍선을 자동 순차 재번역(오류 없으면 아무것도 안 함).
     //   렌더·초기화가 안정된 뒤 실행되게 살짝 지연.
-    setTimeout(function(){ try{ _retranslatePendingErrors(); }catch(_){} }, 800);
+    setTimeout(function(){ try{ _deferErrorRetranslate(800); }catch(_){} }, 800);
     // pinyin-pro는 defer로 로드 → DOM 완료 후 도착하면 병음 포함해 다시 렌더
     if(typeof window.pinyinPro === 'undefined'){
       document.addEventListener('DOMContentLoaded', function(){
@@ -7397,7 +7483,7 @@
         _resumeTimer = 0;
         try{ checkURLText(); }catch(_){}
         try{ _drainUrlQueue(); }catch(_){}
-        try{ _retranslatePendingErrors(); }catch(_){}
+        try{ _deferErrorRetranslate(500); }catch(_){}
         try{ scheduleClipboardCheck(); }catch(_){}
       }, 300);
     }
