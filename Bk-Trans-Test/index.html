@@ -759,7 +759,7 @@
     }
     #tbToggle:hover{ background:rgba(255,255,255,.12); color:#fff; }
     #tbToggle.tbOpen{ color:#fff; background:rgba(255,255,255,.14); }
-    #tbReload{
+    #tbReload, #tbClear{
       position:fixed; top:42px; right:8px; z-index:9999;
       width:30px; height:30px; border-radius:50%;
       background:rgba(255,255,255,.06); color:rgba(255,255,255,.45);
@@ -768,8 +768,12 @@
       cursor:pointer; padding:0; font-family:inherit;
       transition:opacity .2s, background .2s;
     }
-    #tbReload:hover{ background:rgba(255,255,255,.12); color:#fff; }
+    #tbClear{ top:76px; display:flex; align-items:center; justify-content:center; }
+    #tbClear svg{ width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    #tbReload:hover, #tbClear:hover{ background:rgba(255,255,255,.12); color:#fff; }
+    #tbClear:hover{ color:var(--danger); border-color:rgba(255,107,107,.28); }
     #tbReload:active{ transform:rotate(180deg); }
+    #tbClear:active{ transform:scale(.92); }
   </style>
 </head>
 
@@ -777,6 +781,14 @@
   <div id="focusOverlay" class="focusOverlay"><div class="focusText" id="focusText"></div></div>
   <header>
     <button id="tbReload" type="button" aria-label="새로고침" title="새로고침">↻</button>
+    <button id="tbClear" type="button" aria-label="대화기록 삭제" title="대화기록 삭제">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <line x1="10" y1="11" x2="10" y2="17"></line>
+        <line x1="14" y1="11" x2="14" y2="17"></line>
+      </svg>
+    </button>
     <button id="tbToggle" type="button" aria-label="상단바 표시/숨김" title="상단바">✦</button>
     <div class="headerInner">
       <div class="topbar">
@@ -1603,7 +1615,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.51t';
+    const APP_VERSION = 'v20.52t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -7594,7 +7606,9 @@
       var bar = document.querySelector('.topbar');
       var tog = document.getElementById('tbToggle');
       var rld = document.getElementById('tbReload');
+      var clr = document.getElementById('tbClear');
       if(rld) rld.addEventListener('click', function(e){ e.stopPropagation(); location.reload(); });
+      if(clr) clr.addEventListener('click', function(e){ e.stopPropagation(); clearChatOnly(); });
       if(!bar || !tog) return;
       var KEY = 'bk_tr_topbarVisible';
       function apply(vis){
