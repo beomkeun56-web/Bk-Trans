@@ -1615,7 +1615,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.54t';
+    const APP_VERSION = 'v20.55t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2938,6 +2938,66 @@
     const MAX_INPUTS_PER_PAGE = CONFIG.MAX_INPUTS_PER_PAGE;
     const MAX_MESSAGES = CONFIG.MAX_MESSAGES;
 
+    function _newStableId(prefix){
+      prefix = prefix || 'id';
+      try{
+        if(window.crypto && typeof window.crypto.randomUUID === 'function'){
+          return prefix + '_' + window.crypto.randomUUID();
+        }
+      }catch(_){}
+      return prefix + '_' + Date.now().toString(36) + '_'
+        + Math.random().toString(36).slice(2, 10);
+    }
+    function _isErrorMessage(m){
+      return !!(m && m.role === 'assistant'
+        && (m.status === 'failed' || (typeof m.text === 'string' && m.text.indexOf('오류:') === 0)));
+    }
+    function _findChatMessageById(messageId){
+      if(!messageId) return null;
+      for(var i = chat.length - 1; i >= 0; i--){
+        var m = chat[i];
+        if(m && (m.messageId === messageId || m.retryId === messageId)) return m;
+      }
+      return null;
+    }
+    // v20.55t: 예전 오류 ID(e1/e2)는 리로드마다 다시 만들어져 중복될 수 있었다.
+    // 저장된 대화까지 포함해 메시지·작업 ID를 한 번 보정하고, 오류 대상은 messageId로 통일한다.
+    function _migrateChatRecords(){
+      var changed = false;
+      var seenMessageIds = {};
+      var pendingJobId = '';
+      for(var i = 0; i < chat.length; i++){
+        var m = chat[i];
+        if(!m || typeof m !== 'object') continue;
+        if(!m.messageId || seenMessageIds[m.messageId]){
+          m.messageId = _newStableId(m.role === 'user' ? 'usr' : 'msg');
+          changed = true;
+        }
+        seenMessageIds[m.messageId] = true;
+        if(m.role === 'user'){
+          if(!m.jobId){ m.jobId = _newStableId('job'); changed = true; }
+          pendingJobId = m.jobId;
+          continue;
+        }
+        if(m.role === 'assistant'){
+          if(!m.jobId){ m.jobId = pendingJobId || _newStableId('job'); changed = true; }
+          if(_isErrorMessage(m)){
+            if(m.retryId !== m.messageId){ m.retryId = m.messageId; changed = true; }
+            if(m.status !== 'failed'){ m.status = 'failed'; changed = true; }
+            if(m.retrying){ delete m.retrying; changed = true; }
+            if(!m.retrySrc && i > 0 && chat[i-1] && chat[i-1].role === 'user'){
+              m.retrySrc = chat[i-1].text || '';
+              changed = true;
+            }
+          } else if(m.status !== 'done'){
+            m.status = 'done';
+            changed = true;
+          }
+        }
+      }
+      return changed;
+    }
+
     function saveChatHistory(){
       try{ localStorage.setItem(LS.chatHistory, JSON.stringify(chat)); } catch{}
     }
@@ -2945,6 +3005,8 @@
       try{
         const saved = localStorage.getItem(LS.chatHistory);
         if(saved){ chat = JSON.parse(saved); }
+        if(!Array.isArray(chat)) chat = [];
+        if(_migrateChatRecords()) saveChatHistory();
       } catch{ chat = []; }
     }
 
@@ -4692,108 +4754,64 @@
     }
     focusOverlay.addEventListener('click', () => focusOverlay.classList.remove('active'));
 
-    // ===== 제자리 재번역 공통 헬퍼 (v20.45t 재설계 — 단순화) =====
-    //   오류 말풍선을 '그 자리에서' 번역문으로 교체(맨 아래로 안 내려감).
-    //   ★ v20.44t 실패 원인: send() 중 trimChatToMaxInputs()가 배열 앞을 shift로 잘라
-    //     인덱스 기반 '이동'이 어긋났다. → 이동 대신 '덮어쓰기'로 단순화.
-    //   방법: 오류 항목(참조)을 잡아둔다. send()로 재번역하면 결과가 맨 끝에 생기는데,
-    //     성공하면 그 결과 텍스트를 원래 오류 객체에 '덮어써서' 번역문으로 바꾸고,
-    //     맨 끝에 새로 생긴 [원문·번역문] 쌍은 제거한다. 순서는 그대로라 renderChat이면 끝.
-    async function _retryInPlace(userText, retryId, source){
-      if(!userText) return false;
-      // 1) 대상 오류 '객체' 참조 확보(retryId 우선, 없으면 맨 끝 오류).
-      var errObj = null;
-      if(retryId){
-        for(var i = chat.length - 1; i >= 0; i--){
-          if(chat[i] && chat[i].retryId === retryId){ errObj = chat[i]; break; }
+    // ===== 안정 ID 기반 제자리 재번역 (v20.55t) =====
+    // 재번역용 임시 대화쌍을 만들지 않고, send()가 targetMessageId의 말풍선을 직접 갱신한다.
+    // 같은 오류에 자동·부팅·수동 Retry가 겹쳐도 요청은 하나만 실행한다.
+    var _retryInFlight = {};
+    async function _retryInPlace(userText, targetMessageId, source){
+      if(!userText || !targetMessageId) return false;
+      var target = _findChatMessageById(targetMessageId);
+      if(!target) return false;
+      if(!_isErrorMessage(target)){
+        try{ _completeUrlQueueJob(target.jobId || '', target.messageId || targetMessageId); }catch(_){}
+        return true;
+      }
+      if(!target.messageId){ target.messageId = _newStableId('msg'); saveChatHistory(); }
+      targetMessageId = target.messageId;
+      if(_retryInFlight[targetMessageId]) return _retryInFlight[targetMessageId];
+
+      var task = (async function(){
+        var res = null;
+        try{
+          res = await new Promise(function(resolve){
+            enqueueTx(userText, source || 'retry', resolve, {
+              targetMessageId: targetMessageId,
+              jobId: target.jobId || ''
+            });
+          });
+        }catch(_){ return false; }
+        if(res && res.ok){
+          var updated = _findChatMessageById(targetMessageId);
+          try{ _completeUrlQueueJob((updated && updated.jobId) || target.jobId || '', targetMessageId); }catch(_){}
+          return true;
         }
-      }
-      if(!errObj){
-        var last = chat.length - 1;
-        if(last >= 0 && chat[last] && chat[last].role === 'assistant'
-           && typeof chat[last].text === 'string' && chat[last].text.indexOf('오류:') === 0){
-          errObj = chat[last];
-        }
-      }
-      if(!errObj) return false;
-
-      // 2) 재번역 — 통합 큐 경유(입력창 경쟁 없음). 워커가 send()를 돌리고, 결과 꼬리 참조를
-      //    onDone(res)으로 건네준다. ★ v20.48t: chat 꼬리를 여기서 다시 읽으면, 다음 잡이 이미
-      //    push한 항목을 자기 결과로 오인해 오류 교체가 안 되던 버그가 생김 → 워커가 캡처한 res 사용.
-      var _r = null;
-      try{
-        _r = await new Promise(function(resolve){ enqueueTx(userText, source || 'retry', resolve); });
-      }catch(_){ return false; }
-
-      // 3) 워커가 넘겨준 이 잡의 결과(참조).
-      if(!_r || (!_r.ok && !_r.error)){
-        errObj.retryN = (errObj.retryN || 0) + 1;
-        saveChatHistory(); renderChat();
         return false;
-      }
-      var newAsst = _r.asst;
-      if(!newAsst || newAsst === errObj || newAsst.role !== 'assistant'){
-        errObj.retryN = (errObj.retryN || 0) + 1;
-        saveChatHistory(); renderChat();
-        return false;
-      }
-      var newUsr = (_r.usr && _r.usr.role === 'user' && _r.usr.text === userText) ? _r.usr : null;
-
-      // 4) 맨 끝 새 결과 쌍을 제거(성공/실패 공통 — 원래 자리에서 처리하니 맨끝 중복 불필요).
-      var ai = chat.indexOf(newAsst); if(ai >= 0) chat.splice(ai, 1);
-      if(newUsr){ var ui = chat.indexOf(newUsr); if(ui >= 0) chat.splice(ui, 1); }
-
-      if(_r.error){
-        // 실패: 원래 오류를 그 자리에 그대로 둔다(덮어쓰지 않음).
-        errObj.retryN = (errObj.retryN || 0) + 1;
-        saveChatHistory(); renderChat();
-        return false;
-      }
-
-      // 5) 성공: 원래 오류 객체를 '번역문'으로 덮어써서 제자리 교체(이동 없음 → trim 무관).
-      errObj.text   = newAsst.text;
-      errObj.role   = 'assistant';
-      errObj.model  = newAsst.model;
-      errObj.usage  = newAsst.usage;
-      errObj.ms     = newAsst.ms;   errObj.ms1 = newAsst.ms1;   errObj.ms2 = newAsst.ms2;
-      errObj.effort = newAsst.effort;
-      errObj.promptVer = newAsst.promptVer;
-      errObj.pipeline  = newAsst.pipeline;
-      errObj.source = newAsst.source;
-      errObj.ts     = newAsst.ts || Date.now();
-      // 오류 표식 제거(다시 오류로 오인되지 않게)
-      delete errObj.retryId; delete errObj.retrySrc; delete errObj.retryN;
-      saveChatHistory(); renderChat();
-      return true;
+      })();
+      _retryInFlight[targetMessageId] = task;
+      try{ return await task; }
+      finally{ delete _retryInFlight[targetMessageId]; }
     }
 
     // 수동 Retry — 제자리 교체. 다건 오류에서 누른 항목만, 그 자리에서 번역문으로 바뀜.
-    function retryTranslate(userText, retryId){
+    function retryTranslate(userText, targetMessageId){
       if(!userText) return;
-      _retryInPlace(userText, retryId, 'retry');
+      _retryInPlace(userText, targetMessageId, 'retry');
     }
 
     // ===== 자동번역(URL/clip) 네트워크오류 시 자동 재시도 (v20.42t) =====
     //   cold start 첫 요청이 Failed to fetch로 실패하면, 그 오류 말풍선을 '맨 끝'이 아니라
     //   retryId로 찾아 그 자리에서 번역문으로 교체한다 → 연속 다건도 각각 독립 처리됨.
     //   1회만(_autoRetried). 재시도의 실패는 자동재시도 안 걸림(무한방지) = catch에서 autoSrc를 안 넘김.
-    var _errSeq = 0;                    // 오류 말풍선 고유 id 생성용
-    var _autoRetried = {};              // retryId → true (1회 제한)
-    function _autoRetryError(retryId){
+    var _autoRetried = {};              // messageId → true (현재 앱 실행 중 1회 제한)
+    function _autoRetryError(targetMessageId){
       try{
-        if(!retryId || _autoRetried[retryId]) return;
-        // chat에서 이 retryId의 오류 항목 인덱스 찾기
-        var idx = -1;
-        for(var i = chat.length - 1; i >= 0; i--){
-          if(chat[i] && chat[i].retryId === retryId){ idx = i; break; }
-        }
-        if(idx < 0) return;                                  // 이미 교체됨 → 중단
-        var errItem = chat[idx];
-        if(!(errItem.role === 'assistant' && errItem.text.startsWith('오류:'))) return;
+        if(!targetMessageId || _autoRetried[targetMessageId]) return;
+        var errItem = _findChatMessageById(targetMessageId);
+        if(!errItem || !_isErrorMessage(errItem)) return;
         var src = errItem.retrySrc;
         if(!src) return;
-        _autoRetried[retryId] = true;                        // 1회 소비
-        _retryInPlace(src, retryId, 'retry');
+        _autoRetried[targetMessageId] = true;
+        _retryInPlace(src, targetMessageId, 'retry');
       }catch(e){}
     }
 
@@ -4811,7 +4829,7 @@
         // ★ v20.46t 버그수정: 이전엔 '원문 텍스트'로 처리여부를 추적해, 원문이 같은 오류가
         //   여럿이면 첫 개만 되고 나머지가 스킵됐다(+ 잘못된 _isBusy break로 조기중단).
         //   → 처리 추적을 '오류 객체 자체(참조)'로 바꾸고, 각 오류에 고유 retryId를 부여해 확실히 구분.
-        var handled = [];                   // 이미 처리(성공/영구실패)한 오류 '객체' 참조 목록
+        var handled = {};                   // 이번 복구 라운드에서 처리한 messageId
         for(var guard = 0; guard < 50; guard++){
           if(navigator.onLine === false) break;
           if(_isBusy){ await new Promise(function(r){ setTimeout(r, 300); }); }  // 바쁘면 잠깐 대기(중단 아님)
@@ -4820,22 +4838,23 @@
           for(var i = 0; i < chat.length; i++){
             var it = chat[i];
             if(it && it.role === 'assistant' && typeof it.text === 'string'
-               && it.text.indexOf('오류:') === 0 && handled.indexOf(it) < 0){
-              if((it.retryN || 0) >= 3){ handled.push(it); continue; }
+               && _isErrorMessage(it) && !handled[it.messageId || it.retryId]){
+              if(it.retryable === false){ handled[it.messageId || it.retryId || ('hold_' + i)] = true; continue; }
               errObj = it; break;
             }
           }
           if(!errObj) break;                // 더 처리할 오류 없음 → 종료
-          handled.push(errObj);             // 이 오류는 이번 라운드에서 1회 소비(재실패해도 다시 안 잡힘)
-          // 오류에 retryId가 없으면(구 항목) 지금 부여해 _retryInPlace가 정확히 찾게 함.
-          if(!errObj.retryId){ errObj.retryId = 'boot' + (guard) + '_' + (chat.indexOf(errObj)); }
-          // 원문 = 이 오류 바로 앞 user 항목(없으면 retrySrc).
+          if(!errObj.messageId) errObj.messageId = _newStableId('msg');
+          errObj.retryId = errObj.messageId;
+          handled[errObj.messageId] = true;  // 재실패해도 같은 라운드에서는 다시 잡지 않음
+          // 저장된 원문을 우선 사용. 구 기록에만 바로 앞 user 항목을 폴백으로 사용한다.
           var eIdx = chat.indexOf(errObj);
-          var srcText = (eIdx - 1 >= 0 && chat[eIdx-1] && chat[eIdx-1].role === 'user')
-                        ? chat[eIdx-1].text : (errObj.retrySrc || '');
+          var srcText = errObj.retrySrc || ((eIdx - 1 >= 0 && chat[eIdx-1] && chat[eIdx-1].role === 'user')
+                        ? chat[eIdx-1].text : '');
           if(!srcText){ continue; }         // 원문 못 찾으면 이 건만 건너뛰고 다음 오류로(중단 아님)
-          // 제자리 교체 재번역. 성공하면 오류가 번역문으로 바뀌고, 실패하면 오류로 남는다.
-          try{ await _retryInPlace(srcText, errObj.retryId, 'retry'); }catch(_){}
+          errObj.retrySrc = srcText;
+          saveChatHistory();
+          try{ await _retryInPlace(srcText, errObj.messageId, 'retry'); }catch(_){}
         }
       }catch(e){}
       finally{ _bootRetryRunning = false; }   // ★ 잠금 해제(online 이벤트 등에서 다시 돌 수 있게)
@@ -5291,6 +5310,9 @@
 
         const row = document.createElement('div');
         row.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+        if(m.messageId) row.dataset.messageId = m.messageId;
+        if(m.jobId) row.dataset.jobId = m.jobId;
+        if(m.status) row.dataset.status = m.status;
         // 원문(user) row는 고유 id 부여 + 기본 숨김(원문 토글 기능). 번역문의 '원문' 버튼이 이 row를 펼침.
         if(m.role === 'user'){
           lastUserRowId = 'srcRow_' + _i;
@@ -5306,7 +5328,7 @@
           bubble.textContent = dispText;
         }
         // 번역문(assistant) 말풍선은 출처별 색 적용(오류 메시지는 제외)
-        if(m.role === 'assistant' && !(m.text && m.text.startsWith('오류:'))){
+        if(m.role === 'assistant' && !_isErrorMessage(m)){
           bubble.style.background = srcBubbleColor(m.source);
         }
         bubble.style.cursor = 'pointer';
@@ -5333,14 +5355,15 @@
           editBtn.textContent = 'Edit';
           editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
           actions.appendChild(editBtn);
-        } else if(m.role === 'assistant' && m.text.startsWith('오류:')){
-          const srcText = lastUserText;
-          const errRetryId = m.retryId;   // 이 오류 항목 고유 id (다건 오류에서 이 항목만 정확히 교체)
+        } else if(_isErrorMessage(m)){
+          const srcText = m.retrySrc || lastUserText;
+          const errTargetId = m.messageId || m.retryId;
           const retryBtn = document.createElement('button');
           retryBtn.className = 'retryPill';
           retryBtn.type = 'button';
-          retryBtn.textContent = 'Retry';
-          retryBtn.addEventListener('click', () => retryTranslate(srcText, errRetryId));
+          retryBtn.textContent = m.retrying ? '재번역 중...' : 'Retry';
+          retryBtn.disabled = !!m.retrying;
+          retryBtn.addEventListener('click', () => retryTranslate(srcText, errTargetId));
           actions.appendChild(retryBtn);
         } else if(m.role === 'assistant'){
           actions.appendChild(createTtsBtn(m.text));
@@ -5454,7 +5477,10 @@
       try{
         var q = _loadUrlQueue();
         for(var qi = 0; qi < q.length; qi++){
-          if(q[qi] && q[qi].text && (!_urlEnqueued || !_urlEnqueued[q[qi].id])) return true;
+          var item = q[qi];
+          if(!item || !item.text) continue;
+          if(_urlEnqueued && _urlEnqueued[item.id]) return true;
+          if(item.status !== 'failed') return true;
         }
       }catch(_){}
       return false;
@@ -5490,9 +5516,16 @@
         _autoCopyRunning = false;
       }
     }
-    function enqueueTx(text, source, onDone){
+    function enqueueTx(text, source, onDone, jobOpts){
       if(!text) return;
-      var job = { text: text, source: source || 'typing', onDone: onDone || null };
+      jobOpts = jobOpts || {};
+      var job = {
+        text: text,
+        source: source || 'typing',
+        onDone: onDone || null,
+        jobId: jobOpts.jobId || _newStableId('job'),
+        targetMessageId: jobOpts.targetMessageId || ''
+      };
       if(job.source === 'url'){
         var pos = _txQueue.length;
         for(var i = 0; i < _txQueue.length; i++){
@@ -5520,7 +5553,13 @@
           el.input.value = job.text;
           _pendingSource = job.source;
           var _res = null;
-          try{ _res = await send({ programmatic: true }); }catch(_){}
+          try{
+            _res = await send({
+              programmatic: true,
+              jobId: job.jobId,
+              targetMessageId: job.targetMessageId
+            });
+          }catch(_){}
           try{ if(job.onDone) job.onDone(_res); }catch(_){}
           _txCurrent = null;
           // send()가 입력창을 비웠으므로 초안 복원은 _restoreDraft가 담당(중복복원 방지 위해 여기선 생략).
@@ -5542,16 +5581,34 @@
       const userText = el.input.value.trim();
       if(!userText) return { skipped: true };
 
+      var _targetMessageId = opts.targetMessageId || '';
+      var _targetObj = _targetMessageId ? _findChatMessageById(_targetMessageId) : null;
+      if(_targetMessageId && !_targetObj) return { targetMissing: true };
+      var _jobId = opts.jobId || (_targetObj && _targetObj.jobId) || _newStableId('job');
+      if(_targetObj){
+        _targetObj.retrying = true;
+        _targetObj.status = 'retrying';
+        saveChatHistory();
+        renderChat();
+      }
+
       var _src = _pendingSource;   // 이번 번역의 출처 확정
       _pendingSource = 'typing';   // 다음 기본값 복원
-      var _fastUrl = !!(opts.programmatic && _src === 'url');
+      var _fastUrl = !!(opts.programmatic && _src === 'url' && !_targetObj);
       if(_src === 'typing') _clearDraft();   // 직접 입력을 전송했으면 초안 소비
 
       hideCopyBar();
 
-      var userObj = { role:'user', text:userText, ts:Date.now() };
-      chat.push(userObj);
-      if(!_fastUrl) renderChat();
+      var userObj = null;
+      if(_targetObj){
+        for(var _ju = chat.length - 1; _ju >= 0; _ju--){
+          if(chat[_ju] && chat[_ju].role === 'user' && chat[_ju].jobId === _jobId){ userObj = chat[_ju]; break; }
+        }
+      } else {
+        userObj = { role:'user', text:userText, ts:Date.now(), messageId:_newStableId('usr'), jobId:_jobId };
+        chat.push(userObj);
+        if(!_fastUrl) renderChat();
+      }
 
       el.input.value = '';
       autoResizeInput();
@@ -5565,7 +5622,7 @@
       streamBubble.textContent = '번역 중...';
       streamBubble.style.opacity = '0.5';
       streamRow.appendChild(streamBubble);
-      el.chat.insertBefore(streamRow, el.bottomAnchor);
+      if(!_targetObj) el.chat.insertBefore(streamRow, el.bottomAnchor);
 
       let _scrollRaf = 0;
       function scrollThrottled(){
@@ -5735,7 +5792,43 @@
         // 메시지 model 필드엔 promptVer 제거 위해 빈값 설정 (pipeline 있으면 v## 표시 안 함).
         var _displayModel = _modelName;
         var _displayPromptVer = _pipelineInfo ? '' : _promptVer;
-        var asstObj = { role:'assistant', text: translated, ts: Date.now(), model: _displayModel, usage: _lastUsage, ms: _ms, ms1: _ms1, ms2: _ms2, effort: _lastEffort, promptVer: _displayPromptVer, pipeline: _pipelineInfo, source: _src };
+        var asstObj = {
+          role:'assistant', text:translated, ts:Date.now(), model:_displayModel,
+          usage:_lastUsage, ms:_ms, ms1:_ms1, ms2:_ms2, effort:_lastEffort,
+          promptVer:_displayPromptVer, pipeline:_pipelineInfo, source:_src,
+          messageId:_newStableId('msg'), jobId:_jobId, status:'done'
+        };
+
+        // 오류 재번역은 임시 대화쌍을 추가하지 않고 원래 말풍선을 안정 ID로 직접 갱신한다.
+        if(_targetObj){
+          var liveTarget = _findChatMessageById(_targetMessageId);
+          if(!liveTarget) return { targetMissing:true };
+          var originalSource = liveTarget.source || _src;
+          liveTarget.text = asstObj.text;
+          liveTarget.role = 'assistant';
+          liveTarget.model = asstObj.model;
+          liveTarget.usage = asstObj.usage;
+          liveTarget.ms = asstObj.ms; liveTarget.ms1 = asstObj.ms1; liveTarget.ms2 = asstObj.ms2;
+          liveTarget.effort = asstObj.effort;
+          liveTarget.promptVer = asstObj.promptVer;
+          liveTarget.pipeline = asstObj.pipeline;
+          liveTarget.source = originalSource;
+          liveTarget.ts = asstObj.ts;
+          liveTarget.jobId = _jobId;
+          liveTarget.status = 'done';
+          delete liveTarget.retryId; delete liveTarget.retrySrc; delete liveTarget.retryN;
+          delete liveTarget.lastError; delete liveTarget.lastErrorAt; delete liveTarget.retryable;
+          delete liveTarget.retrying;
+          saveChatHistory();
+          try{ _completeUrlQueueJob(_jobId, _targetMessageId); }catch(_){}
+          if(streamRow.parentNode) streamRow.remove();
+          if(el.autoCopy.checked && hasChinese(translated)) _enqueueAutoCopy(translated);
+          else hideCopyBar();
+          setConnState('ok');
+          renderChat();
+          return { ok:true, usr:userObj, asst:liveTarget, targetUpdated:true };
+        }
+
         chat.push(asstObj);
         trimChatToMaxInputs();
         saveChatHistory();
@@ -5757,6 +5850,7 @@
           }
           setConnState('ok');
           scrollThrottled();
+          try{ _completeUrlQueueJob(_jobId, asstObj.messageId); }catch(_){}
           _scheduleIdleRenderChat(100);
           return { ok: true, usr: userObj, asst: asstObj };
         }
@@ -5847,23 +5941,61 @@
       } catch(err){
         const msg = (err && err.message) ? err.message : String(err);
         const isAbort = (err && err.name === 'AbortError');
+        const _permanentHttpError = !!((err && (err.status === 400 || err.status === 401
+          || err.status === 403 || err.status === 404 || err.status === 422))
+          || /API\s*Key.*(?:비어|없|missing)|missing.*API\s*key/i.test(msg));
+        const _retryableError = !_permanentHttpError;
         if(streamRow.parentNode) streamRow.remove();
 
         if(isAbort){
           toast('번역 취소됨');
-          chat.pop();
+          if(!_targetObj) chat.pop();
+          else {
+            var abortedTarget = _findChatMessageById(_targetMessageId);
+            if(abortedTarget){ abortedTarget.status = 'failed'; delete abortedTarget.retrying; }
+          }
           saveChatHistory();
           renderChat();
           setConnState('warn');
           return { aborted: true };
         } else {
-          // 오류 말풍선에 고유 retryId + 원문(retrySrc)을 심어, 자동 재시도가 '맨 끝'이 아니라
-          // 이 항목을 정확히 찾아 교체할 수 있게 한다(연속 다건 안전).
-          var _rid = 'e' + (++_errSeq);
-          var errObj = { role:'assistant', text: '오류: ' + msg, ts: Date.now(), model: prettifyModelName(getCurrentModelId()), retryId: _rid, retrySrc: userText };
-          chat.push(errObj);
-          trimChatToMaxInputs();
+          var errObj = null;
+          if(_targetObj){
+            // 재번역 실패: 새 오류를 만들지 않고 원래 대상만 실패 상태로 유지한다.
+            errObj = _findChatMessageById(_targetMessageId);
+            if(errObj){
+              errObj.text = '오류: ' + msg;
+              errObj.status = 'failed';
+              errObj.retryId = errObj.messageId;
+              errObj.retrySrc = userText;
+              errObj.retryN = (errObj.retryN || 0) + 1;
+              errObj.lastError = msg;
+              errObj.lastErrorAt = Date.now();
+              errObj.retryable = _retryableError;
+              delete errObj.retrying;
+              if(!errObj.jobId) errObj.jobId = _jobId;
+            }
+          } else {
+            var _rid = _newStableId('msg');
+            errObj = {
+              role:'assistant', text:'오류: ' + msg, ts:Date.now(),
+              model:prettifyModelName(getCurrentModelId()), messageId:_rid,
+              jobId:_jobId, status:'failed', retryId:_rid, retrySrc:userText,
+              source:_src, retryN:0, lastError:msg, lastErrorAt:Date.now()
+            };
+            errObj.retryable = _retryableError;
+            chat.push(errObj);
+            trimChatToMaxInputs();
+          }
           toast('요청 실패: ' + msg);
+          if(_src === 'url' && errObj){
+            try{
+              _updateUrlQueueItem(_jobId, {
+                status:'failed', targetMessageId:errObj.messageId,
+                retryable:_retryableError, attempts:(errObj.retryN || 0) + 1
+              });
+            }catch(_){}
+          }
           // ★ 네트워크 오류(오프라인/연결 끊김) 처리 (v20.39t~42t)
           //   fetch 실패는 TypeError('Failed to fetch'), 또는 onLine=false. 서버 HTTP 오류는 제외.
           try{
@@ -5873,9 +6005,11 @@
             if(_isNetErr){
               if(navigator.onLine === false) _showOfflineBanner(true);
               // ★ v20.42t: 자동번역(URL/clip)이었으면 0.5초 뒤 자동 재시도(이 오류를 번역문으로 교체).
-              //   재시도로 부른 send()는 _src가 'typing'이라 그 실패는 재예약 안 됨 → 무한방지.
               if(_src === 'url' || _src === 'clip'){
-                setTimeout((function(id){ return function(){ _autoRetryError(id); }; })(_rid), 500);
+                var _autoTargetId = errObj && errObj.messageId;
+                if(_autoTargetId){
+                  setTimeout((function(id){ return function(){ _autoRetryError(id); }; })(_autoTargetId), 500);
+                }
               }
             }
           }catch(_){}
@@ -7400,12 +7534,40 @@
         if(!Array.isArray(a)) return [];
         return a.map(function(item){
           if(!item || typeof item !== 'object') return item;
+          if(!item.id) item.id = _newStableId('url');
           if(typeof item.at !== 'number') item.at = 0;
+          if(!item.status) item.status = 'queued';
+          if(typeof item.attempts !== 'number') item.attempts = 0;
           return item;
         });
       }catch(_){ return []; }
     }
     function _saveUrlQueue(q){ try{ localStorage.setItem(LS_URL_QUEUE, JSON.stringify(q)); }catch(_){} }
+    function _updateUrlQueueItem(id, patch){
+      var q = _loadUrlQueue();
+      var idx = q.findIndex(function(x){ return x && x.id === id; });
+      if(idx < 0) return false;
+      var item = q[idx];
+      for(var k in patch){ if(Object.prototype.hasOwnProperty.call(patch, k)) item[k] = patch[k]; }
+      item.updatedAt = Date.now();
+      _saveUrlQueue(q);
+      return true;
+    }
+    function _removeUrlQueueItem(id){
+      var q = _loadUrlQueue();
+      var next = q.filter(function(x){ return !(x && x.id === id); });
+      if(next.length !== q.length) _saveUrlQueue(next);
+    }
+    function _completeUrlQueueJob(jobId, targetMessageId){
+      var q = _loadUrlQueue();
+      var next = q.filter(function(x){
+        if(!x) return false;
+        if(jobId && x.id === jobId) return false;
+        if(targetMessageId && x.targetMessageId === targetMessageId) return false;
+        return true;
+      });
+      if(next.length !== q.length) _saveUrlQueue(next);
+    }
     // 큐에 적재(짧은 시간창 내 미처리 중복 제외). 실제 URL 소비는 _drainUrlQueue가 담당.
     function _enqueueUrl(text){
       var q = _loadUrlQueue();
@@ -7416,8 +7578,8 @@
           return;
         }
       }
-      var id = 'u' + Date.now() + '_' + (++_uwSeq);
-      q.push({ id: id, text: text, at: now });
+      var id = _newStableId('url');
+      q.push({ id:id, text:text, at:now, status:'queued', attempts:0 });
       _saveUrlQueue(q);
       _uwLog('enqueue(' + q.length + ')', text);
     }
@@ -7440,19 +7602,68 @@
             if(idx >= 0){ qd.splice(idx, 1); _saveUrlQueue(qd); }
             return;
           }
+
+          // 이전 실패가 이미 오류 말풍선을 만들었다면 같은 jobId/말풍선을 직접 재번역한다.
+          if(item.targetMessageId){
+            var target = _findChatMessageById(item.targetMessageId);
+            if(target && !_isErrorMessage(target)){
+              _removeUrlQueueItem(item.id);
+              _uwLog('already-complete', trimmed);
+              return;
+            }
+            if(target && _isErrorMessage(target)){
+              if(item.retryable === false || target.retryable === false){
+                _uwLog('hold-config-error', trimmed);
+                return;
+              }
+              _urlEnqueued[item.id] = true;
+              _updateUrlQueueItem(item.id, { status:'running' });
+              _uwLog('retry-target', trimmed);
+              _retryInPlace(trimmed, target.messageId, 'url').then(function(ok){
+                if(ok){
+                  _removeUrlQueueItem(item.id);
+                  _uwLog('retry-done', trimmed);
+                } else {
+                  _updateUrlQueueItem(item.id, {
+                    status:'failed',
+                    attempts:(item.attempts || 0) + 1,
+                    targetMessageId:target.messageId
+                  });
+                  _uwLog('retry-keep', trimmed);
+                }
+              }).catch(function(){
+                _updateUrlQueueItem(item.id, { status:'failed', attempts:(item.attempts || 0) + 1 });
+              }).finally(function(){
+                delete _urlEnqueued[item.id];
+              });
+              return;
+            }
+            // 대상이 대화 정리로 사라진 경우 원문은 보존하고 새 작업으로 복구한다.
+            item.targetMessageId = '';
+            item.status = 'queued';
+            _updateUrlQueueItem(item.id, { targetMessageId:'', status:'queued' });
+          }
+
           _urlEnqueued[item.id] = true;
+          _updateUrlQueueItem(item.id, { status:'running' });
           _lastUrlText = trimmed;
           _uwLog('enqueue-tx', trimmed);
           enqueueTx(trimmed, 'url', function(res){
-            var hasResult = !!(res && (res.ok || res.error || res.aborted));
-            _uwLog(hasResult ? 'translate-done' : 'translate-keep', trimmed);
-            if(hasResult){
-              var q2 = _loadUrlQueue();
-              var i2 = q2.findIndex(function(x){ return x.id === item.id; });
-              if(i2 >= 0){ q2.splice(i2, 1); _saveUrlQueue(q2); }
+            if(res && res.ok){
+              _removeUrlQueueItem(item.id);
+              _uwLog('translate-done', trimmed);
+            } else {
+              var targetId = res && res.asst && res.asst.messageId ? res.asst.messageId : '';
+              _updateUrlQueueItem(item.id, {
+                status:(res && res.error) ? 'failed' : 'queued',
+                attempts:(item.attempts || 0) + ((res && res.error) ? 1 : 0),
+                targetMessageId:targetId || item.targetMessageId || '',
+                retryable:!(res && res.asst && res.asst.retryable === false)
+              });
+              _uwLog((res && res.error) ? 'translate-failed-keep' : 'translate-keep', trimmed);
             }
             delete _urlEnqueued[item.id];
-          });
+          }, { jobId:item.id });
         })(q[k]);
       }
     }
