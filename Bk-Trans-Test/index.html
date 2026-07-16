@@ -1615,7 +1615,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.55t';
+    const APP_VERSION = 'v20.56t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -7708,6 +7708,10 @@
         try{ _drainUrlQueue(); }catch(_){}
         try{ _deferErrorRetranslate(500); }catch(_){}
         try{ scheduleClipboardCheck(); }catch(_){}
+        // ★resume 레이아웃 안정 후 입력창 높이 재계산(잠금해제 시 오측정 교정) v20.56t
+        try{ requestAnimationFrame(function(){ requestAnimationFrame(function(){
+          try{ autoResizeInput(); }catch(_){}
+        }); }); }catch(_){}
       }, 300);
     }
     window.addEventListener('focus', _onResume);
@@ -8370,6 +8374,13 @@
 
     function autoResizeInput(){
       if(!el.input) return;
+      // ★빈 입력창은 scrollHeight를 믿지 않고 인라인 높이 제거→CSS min-height로 복귀.
+      //   (Android 잠금해제 직후 레이아웃 불안정 시 scrollHeight 오측정→입력창이 커진 채 남던 버그 v20.56t)
+      if(!(el.input.value || '').trim()){
+        el.input.style.height = '';
+        if(typeof updateMainPaddingBottom === 'function') setTimeout(updateMainPaddingBottom, 10);
+        return;
+      }
       el.input.style.height = 'auto';
       el.input.style.height = Math.min(el.input.scrollHeight, 240) + 'px';
       if(typeof updateMainPaddingBottom === 'function'){
