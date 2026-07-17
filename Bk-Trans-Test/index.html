@@ -1615,7 +1615,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.56t';
+    const APP_VERSION = 'v20.57t';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -3334,6 +3334,11 @@
       return custom || DEFAULT_API_URL;
     }
 
+    // ★발신자 표기 제거(방향 판정 전용): 맨 앞 "한글이름[/직책] : 또는 ,"(위챗/페이수 전달 형식).
+    //   이름이 앞에 붙어 한글 카운트가 올라가 방향이 뒤집히던 문제 수정 v20.57t. 번역 입력은 안 건드림.
+    function _stripSenderName(s){
+      return String(s || '').replace(/^\s*[가-힣][가-힣A-Za-z0-9]*(\s*\/\s*[가-힣A-Za-z0-9]+)?\s*[:：,，]\s*/, '');
+    }
     // Qwen-MT 전용: 입력 텍스트에서 source/target 언어 자동 감지
     function detectQwenLangs(text){
       var s = String(text || '');
@@ -3401,7 +3406,7 @@
         // Qwen-MT: system 프롬프트 무시(번역 전용 모델), translation_options 필수
         var userMsgs = (opts.messages || []).filter(function(m){ return m.role !== 'system'; });
         var lastUser = userMsgs.length ? userMsgs[userMsgs.length-1].content : '';
-        var langs = detectQwenLangs(lastUser);
+        var langs = detectQwenLangs(_stripSenderName(lastUser));
         var qbody = {
           model: opts.model,
           messages: userMsgs.length ? userMsgs : [{ role:'user', content: lastUser || ' ' }],
@@ -3450,7 +3455,7 @@
         }
         // ★ Refine(교정) 호출 중에는 오버라이드 금지 — 교정 프롬프트가 버려지고 강제 번역되는 사고 방지
         if(!hasQwenNativeMarker && !_refineCallActive && lastUserContent && lastUserContent !== 'ping'){
-          var qlangs = detectQwenLangs(lastUserContent);
+          var qlangs = detectQwenLangs(_stripSenderName(lastUserContent));
           var srcZh = qlangs.source === 'Chinese';
           // 용어집 매칭 (자동 주입) — sys + user 통합, 양방향 매칭 (matchGlossary 헬퍼 사용)
           var glossaryBlock = '';
@@ -3642,6 +3647,9 @@
 
     function buildContextMessages(userText){
       let sys = el.systemPrompt.value || defaultSystemPrompt();
+      // ★발신자 표기 유지(항상 주입): 위챗/페이수 전달문이 "한글 이름/직책 : 또는 ,"로 시작하면
+      //   그 라벨은 번역하지 말고 원문 그대로 두고, 라벨 뒤 내용(중국어)만 번역한다. v20.57t
+      sys += '\n\n[발신자 표기 규칙] 입력이 한국어 이름/직책 라벨(예: "공잉/파트장 :", "장젠/공정사 ,", "주강휘/팀장 :")로 시작하면, 그 라벨은 번역하지 말고 원문 그대로 유지하고 라벨 뒤의 내용만 번역하라. 라벨 뒤가 중국어면 반드시 한국어로 번역하라.';
       // ★ Refine 호출: 학습 프롬프트·TM 예시는 생략 (교정 의도 오염 방지)
       //   단, 시스템 용어집은 주입 — 사용자가 지정한 단어 매핑은 교정 시에도 강제 적용
       if(_refineCallActive){
