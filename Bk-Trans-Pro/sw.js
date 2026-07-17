@@ -6,8 +6,8 @@
  *  - 캐시명에 버전을 박아 배포마다 자동 교체(skipWaiting+clients.claim).
  * 이 파일은 index.html 배포 시 함께 갱신할 것. CACHE_VER를 APP_VERSION과 맞춘다.
  */
-const CACHE_VER = 'v20.57t';
-const CACHE_NAME = 'bk-trans-shell-' + CACHE_VER;
+const CACHE_VER = 'v20.57p1';
+const CACHE_NAME = 'bktrans-pro-shell-' + CACHE_VER;
 const SHELL = [
   './',
   './index.html',
@@ -31,7 +31,7 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((k) => k.startsWith('bk-trans-shell-') && k !== CACHE_NAME)
+        keys.filter((k) => k.startsWith('bktrans-pro-shell-') && k !== CACHE_NAME)
             .map((k) => caches.delete(k))
       )
     ).then(() => self.clients.claim())

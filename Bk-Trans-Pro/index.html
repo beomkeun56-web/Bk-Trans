@@ -1615,7 +1615,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57t';
+    const APP_VERSION = 'v20.57p1';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -3888,6 +3888,19 @@
       else pairs.push(entry);
       setTmPairs(pairs);
       try{ console.log('[TM] saved (' + grade + '): ' + src.slice(0, 30) + ' → ' + tgt.slice(0, 30) + ' (total=' + pairs.length + ')'); } catch(_){}
+      // ★두뇌서버 학습(Pro): gold 교정은 서버 /correct 로 자동 전송 → 예시 성장(다음 팩 갱신에 반영)
+      try{
+        if((grade || '') === 'gold'){
+          var _b = (typeof getApiUrl === 'function' ? getApiUrl() : '');
+          if(_b.indexOf('sslip.io') >= 0 || _b.indexOf('/v1/chat') >= 0){
+            var _origin = new URL(_b).origin;
+            var _k = (typeof getActiveApiKey === 'function' ? getActiveApiKey() : '');
+            fetch(_origin + '/correct', { method:'POST',
+              headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _k},
+              body: JSON.stringify({ src: src, tgt: tgt }) }).catch(function(){});
+          }
+        }
+      } catch(_){}
     }
     function removeTmPair(srcOrIdx){
       var pairs = getTmPairs();
