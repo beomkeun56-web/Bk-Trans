@@ -990,14 +990,14 @@ label[for="maxTokens"], #maxTokens,
         <textarea id="editGuideText" placeholder="예: 더 격식있게 / 직역 말고 의역으로 / '~합니다' 대신 '~해' 같이 반말로" style="min-height:90px;"></textarea>
       </div>
       <div style="margin-bottom:10px;">
-        <label style="font-size:calc(12px * var(--textScale)); color:#888; margin-bottom:4px; display:block;">재번역 모델 (기본=빠른 모델, 이상하면 상위 모델로)</label>
+        <label style="font-size:calc(12px * var(--textScale)); color:#888; margin-bottom:4px; display:block;">재번역 모델</label>
         <div style="display:flex; gap:6px;">
           <select id="editRefineProv" style="display:none;"><option value="openrouter" selected>brain</option></select>
           <select id="editRefineModel" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px; font-size:13px; font-family:inherit;">
-            <option value="gemini-3.1-flash-lite">기본 (Gemini 3.1 Flash-Lite · 1초)</option>
-            <option value="gemini-3-flash-preview">Gemini 3 Flash — 중간 (6초)</option>
-            <option value="gemini-3.5-flash">Gemini 3.5 Flash — 상위 (3초)</option>
-            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro — 최상위 (13초)</option>
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option>
+            <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
+            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
           </select>
         </div>
         <button id="editRefinePromptToggle" type="button" style="margin-top:6px; padding:4px 10px; border:1px solid rgba(255,255,255,.12); border-radius:6px; background:rgba(255,255,255,.04); color:var(--muted); font-size:11px; cursor:pointer; font-family:inherit;">✎ 재번역 프롬프트 설정</button>
@@ -1639,7 +1639,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p8';
+    const APP_VERSION = 'v20.57p9';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -1872,10 +1872,10 @@ label[for="maxTokens"], #maxTokens,
     }
     // ★Pro: 두뇌서버 모델 표기명(태그) — 서버가 실제 쓰는 모델을 그대로 보여준다
     var BRAIN_TAG = {
-      'gemini-3.1-flash-lite': 'G3.1FL',
-      'gemini-3-flash-preview': 'G3F',
-      'gemini-3.5-flash': 'G3.5F',
-      'gemini-3.1-pro-preview': 'G3.1Pro'
+      'gemini-3.1-flash-lite': 'Gemini 3.1 Flash-Lite',
+      'gemini-3-flash-preview': 'Gemini 3 Flash',
+      'gemini-3.5-flash': 'Gemini 3.5 Flash',
+      'gemini-3.1-pro-preview': 'Gemini 3.1 Pro'
     };
     function prettifyBrainModel(id){
       var base = String(id || '').split('/').pop();
@@ -2183,10 +2183,10 @@ label[for="maxTokens"], #maxTokens,
     // ★Pro: 번역은 두뇌서버가 수행하고, 서버는 화이트리스트 3모델만 허용(그 외는 기본으로 처리).
     //   그래서 재번역 팝업엔 이 3개만 노출한다(제공자 선택·타사 모델 제거).
     var BRAIN_MODEL_OPTIONS = [
-      { id:'gemini-3.1-flash-lite', name:'기본 · Gemini 3.1 Flash-Lite (1초)', effort:'' },
-      { id:'gemini-3-flash-preview', name:'Gemini 3 Flash — 중간 (6초)', effort:'' },
-      { id:'gemini-3.5-flash', name:'Gemini 3.5 Flash — 상위 (3초)', effort:'' },
-      { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro — 최상위 (13초)', effort:'' }
+      { id:'gemini-3.1-flash-lite', name:'Gemini 3.1 Flash-Lite', effort:'' },
+      { id:'gemini-3-flash-preview', name:'Gemini 3 Flash', effort:'' },
+      { id:'gemini-3.5-flash', name:'Gemini 3.5 Flash', effort:'' },
+      { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro', effort:'' }
     ];
     function currentModelOptions(){
       return BRAIN_MODEL_OPTIONS;
