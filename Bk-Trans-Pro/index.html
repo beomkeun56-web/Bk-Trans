@@ -796,7 +796,7 @@ label[for="temperature"], #temperature,
 label[for="topP"], #topP, label[for="topK"], #topK,
 label[for="maxTokens"], #maxTokens,
 /* 재번역 팝업의 모델/프롬프트 선택(서버가 재번역도 동일 두뇌로 처리) */
-#editRefineProv, #editRefineModel, #editRefinePromptToggle, #editRefinePromptWrap,
+#editRefinePromptToggle, #editRefinePromptWrap,
 /* 용어집 사용 토글 줄 */
 #optGlossarySys
 { display:none !important; }
@@ -990,17 +990,14 @@ label[for="maxTokens"], #maxTokens,
         <textarea id="editGuideText" placeholder="예: 더 격식있게 / 직역 말고 의역으로 / '~합니다' 대신 '~해' 같이 반말로" style="min-height:90px;"></textarea>
       </div>
       <div style="margin-bottom:10px;">
-        <label style="font-size:calc(12px * var(--textScale)); color:#888; margin-bottom:4px; display:block;">재번역 모델</label>
+        <label style="font-size:calc(12px * var(--textScale)); color:#888; margin-bottom:4px; display:block;">재번역 모델 (기본=빠른 모델, 이상하면 상위 모델로)</label>
         <div style="display:flex; gap:6px;">
-          <select id="editRefineProv" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px; font-size:13px; font-family:inherit;">
-            <option value="">현재 모델 따름</option>
-            <option value="openrouter">OpenRouter</option>
-            <option value="google">Google</option>
-            <option value="anthropic">Anthropic</option>
-            <option value="qwen">Alibaba</option>
-            <option value="zai">Z.ai (GLM)</option>
+          <select id="editRefineProv" style="display:none;"><option value="openrouter" selected>brain</option></select>
+          <select id="editRefineModel" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px; font-size:13px; font-family:inherit;">
+            <option value="">기본 (Gemini 3.1 Flash-Lite · 1초)</option>
+            <option value="gemini-3.5-flash">Gemini 3.5 Flash — 상위 (3초)</option>
+            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro — 최상위 (13초)</option>
           </select>
-          <select id="editRefineModel" style="flex:1.4; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px; font-size:13px; font-family:inherit; display:none;"></select>
         </div>
         <button id="editRefinePromptToggle" type="button" style="margin-top:6px; padding:4px 10px; border:1px solid rgba(255,255,255,.12); border-radius:6px; background:rgba(255,255,255,.04); color:var(--muted); font-size:11px; cursor:pointer; font-family:inherit;">✎ 재번역 프롬프트 설정</button>
         <div id="editRefinePromptWrap" style="display:none; margin-top:6px;">
@@ -1641,7 +1638,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p3';
+    const APP_VERSION = 'v20.57p4';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4536,6 +4533,9 @@ label[for="maxTokens"], #maxTokens,
       var savedProv = (localStorage.getItem(LS.editRefineProvider) || '').trim();
       var savedMdl = (localStorage.getItem(LS.editRefineModel) || '').trim();
       function fillModels(prov, cur){
+        // ★Pro: 재번역 모델은 HTML 고정 3옵션(기본/3.5/3.1pro) — 목록 재생성 안 함
+        if(cur){ for(var i=0;i<mdlSel.options.length;i++){ if(mdlSel.options[i].value===cur) mdlSel.selectedIndex=i; } }
+        return;
         mdlSel.innerHTML = '';
         if(!prov){ mdlSel.style.display = 'none'; return; }
         mdlSel.style.display = '';
@@ -4666,7 +4666,7 @@ label[for="maxTokens"], #maxTokens,
         var _origTemp = el.temperature ? el.temperature.value : '';
         if(el.temperature) el.temperature.value = '0.3'; // 다른 해석 유도 — 약간의 다양성
         try{
-          var _erProv = (localStorage.getItem(LS.editRefineProvider) || '').trim();
+          var _erProv = 'openrouter';  // ★Pro: 항상 두뇌서버 경유(모델만 오버라이드)
           var _erMdl = (localStorage.getItem(LS.editRefineModel) || '').trim();
           var raw = await callRefine(altInput, altSys, function(partial){
             if(resultText) resultText.textContent = partial || '재해석 중...';
@@ -4721,7 +4721,7 @@ label[for="maxTokens"], #maxTokens,
           '★ 출력: 위 [기존 번역]을 [교정 지침]에 따라 수정한 ' + _langName + ' 텍스트 1개만. 다른 언어·라벨·설명 금지.';
         try{
           // 재번역 모델: 사용자가 팝업에서 고정 설정했으면 그것, 아니면 현재 상단바 모델
-          var _erProv = (localStorage.getItem(LS.editRefineProvider) || '').trim();
+          var _erProv = 'openrouter';  // ★Pro: 항상 두뇌서버 경유(모델만 오버라이드)
           var _erMdl = (localStorage.getItem(LS.editRefineModel) || '').trim();
           // temperature 일시적으로 0 — 지침 충실도 ↑
           var _origTemp = el.temperature ? el.temperature.value : '';
