@@ -1638,7 +1638,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p4';
+    const APP_VERSION = 'v20.57p5';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2153,13 +2153,15 @@ label[for="maxTokens"], #maxTokens,
     var QWEN_MODEL_OPTIONS = loadModelList(LS.qwenCustomModels, QWEN_DEFAULT_MODELS);
     var ZAI_MODEL_OPTIONS = loadModelList(LS.zaiCustomModels, ZAI_DEFAULT_MODELS);
 
+    // ★Pro: 번역은 두뇌서버가 수행하고, 서버는 화이트리스트 3모델만 허용(그 외는 기본으로 처리).
+    //   그래서 재번역 팝업엔 이 3개만 노출한다(제공자 선택·타사 모델 제거).
+    var BRAIN_MODEL_OPTIONS = [
+      { id:'', name:'기본 · Gemini 3.1 Flash-Lite (1초)', effort:'' },
+      { id:'gemini-3.5-flash', name:'Gemini 3.5 Flash — 상위 (3초)', effort:'' },
+      { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro — 최상위 (13초)', effort:'' }
+    ];
     function currentModelOptions(){
-      var p = getProvider();
-      if(p === 'google') return GOOGLE_MODEL_OPTIONS;
-      if(p === 'anthropic') return ANTHROPIC_MODEL_OPTIONS;
-      if(p === 'qwen') return QWEN_MODEL_OPTIONS;
-      if(p === 'zai') return ZAI_MODEL_OPTIONS;
-      return MODEL_OPTIONS;
+      return BRAIN_MODEL_OPTIONS;
     }
     function modelLsKey(){
       var p = getProvider();
@@ -4992,7 +4994,7 @@ label[for="maxTokens"], #maxTokens,
       // v20.0t — Agent 모드 1회성 옵션 제거. 모델 선택만 표시.
 
       // Qwen 사용 중일 때만: OpenRouter Gemini 3 Flash 빠른 재번역 옵션 추가
-      if(isQwenProvider()){
+      if(false){  // ★Pro: 타 제공자 퀵버튼 미사용
         var geminiQuickBtn = document.createElement('button');
         geminiQuickBtn.type = 'button';
         geminiQuickBtn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;margin-bottom:10px;border:1px solid #3b82f6;border-radius:10px;background:rgba(59,130,246,.15);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;';
@@ -5013,7 +5015,7 @@ label[for="maxTokens"], #maxTokens,
       currentModelOptions().forEach(function(m){
         var bg = (m.id === currentId ? 'rgba(45,107,255,.2)' : 'rgba(255,255,255,.05)');
         // Google 모델: effort 설정 여부와 무관하게 재번역 시 low/mid/high 선택 제공
-        if(isGoogleProvider()){
+        if(false){  // ★Pro: effort(low/mid/high) 분기 미사용 — 두뇌서버가 thinking 제어
           var wrap = document.createElement('div');
           wrap.style.cssText = 'margin-bottom:6px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:' + bg + ';padding:10px 14px;';
           wrap.innerHTML = '<div style="font-weight:600;color:var(--text);font-size:14px;">' + m.name + '</div><div style="font-size:11px;color:var(--muted);margin:2px 0 8px;">' + m.id + '</div>';
