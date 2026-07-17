@@ -775,6 +775,32 @@
     #tbReload:active{ transform:rotate(180deg); }
     #tbClear:active{ transform:scale(.92); }
   </style>
+<style id="pro-hide-menus">
+/* ★Pro: 서버(두뇌)가 대신 처리하는 메뉴를 화면에서 숨김. 기능 코드는 유지(값은 계속 동작). */
+/* 드롭다운 메뉴 항목 */
+#topQualityBtn, #topEnhanceBtn, #topExportPromptBtn, #topImportPromptBtn,
+#topModelEditorBtn, #topGlossarySysBtn, #topTmBtn, #topLearningBtn, #topTokenToggleBtn,
+/* 컴포저 모델 선택 버튼(M) */
+#composerModelBtn,
+/* API 설정 패널 내부 — 서버가 담당(프롬프트·용어집·모델·타 제공자) */
+label[for="apiProvider"], #apiProvider,
+label[for="apiBaseUrl"], #apiBaseUrl,
+label[for="googleApiKey"], #googleApiKey,
+label[for="anthropicApiKey"], #anthropicApiKey,
+label[for="qwenApiKey"], #qwenApiKey,
+label[for="zaiApiKey"], #zaiApiKey,
+label[for="systemPrompt"], #systemPrompt,
+label[for="secondPrompt"], #secondPrompt,
+label[for="model"], #model,
+label[for="temperature"], #temperature,
+label[for="topP"], #topP, label[for="topK"], #topK,
+label[for="maxTokens"], #maxTokens,
+/* 재번역 팝업의 모델/프롬프트 선택(서버가 재번역도 동일 두뇌로 처리) */
+#editRefineProv, #editRefineModel, #editRefinePromptToggle, #editRefinePromptWrap,
+/* 용어집 사용 토글 줄 */
+#optGlossarySys
+{ display:none !important; }
+</style>
 </head>
 
 <body>
@@ -1615,7 +1641,7 @@
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p1';
+    const APP_VERSION = 'v20.57p2';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
