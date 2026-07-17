@@ -1639,7 +1639,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p6';
+    const APP_VERSION = 'v20.57p7';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4476,6 +4476,19 @@ label[for="maxTokens"], #maxTokens,
       if(iHan && !iZh && !oZh) return true;
       return false;
     }
+    // ★두뇌서버에 폴백 발생 기록(학습 후보 — gold 아님. 서버가 검증 후 패턴만 승격)
+    function reportFallback(src, first, second, model, reason){
+      try{
+        var b = (typeof getApiUrl === 'function' ? getApiUrl() : '');
+        if(b.indexOf('sslip.io') < 0 && b.indexOf('/v1/chat') < 0) return;
+        var origin = new URL(b).origin;
+        var k = (typeof getActiveApiKey === 'function' ? getActiveApiKey() : '');
+        fetch(origin + '/fallback', { method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer ' + k},
+          body: JSON.stringify({ src:src, first:first, second:second, model:model, reason:reason })
+        }).catch(function(){});
+      } catch(_){}
+    }
     // 폴백 모델로 1회 재호출
     async function fallbackTranslate(userText, onChunk){
       var fbProv = (localStorage.getItem(LS.fallbackProvider) || 'openrouter').trim();
@@ -5728,11 +5741,14 @@ label[for="maxTokens"], #maxTokens,
               streamBubble.textContent = '[폴백] ' + partial;
               scrollThrottled();
             });
+            var _fbModel = (localStorage.getItem(LS.fallbackModel) || 'google/gemini-3-flash-preview');
             if(_fbRaw && !detectEcho(userText, _fbRaw)){
+              reportFallback(userText, translatedRaw, _fbRaw, _fbModel, 'echo→폴백성공');
               translatedRaw = _fbRaw;
               _fallbackUsed = true;
               try{ console.log('[Fallback] ✓ ' + (localStorage.getItem(LS.fallbackProvider) || 'openrouter') + '/' + (localStorage.getItem(LS.fallbackModel) || 'google/gemini-3-flash-preview') + ' 성공'); } catch(_){}
             } else {
+              reportFallback(userText, translatedRaw, _fbRaw || '', _fbModel, 'echo→폴백도실패');
               try{ console.warn('[Fallback] ✗ 폴백도 echo — 원본 결과 유지. Edit로 직접 수정 권장.'); } catch(_){}
             }
           }
