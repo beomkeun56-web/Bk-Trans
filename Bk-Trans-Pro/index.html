@@ -779,9 +779,9 @@
 /* ★Pro: 서버(두뇌)가 대신 처리하는 메뉴를 화면에서 숨김. 기능 코드는 유지(값은 계속 동작). */
 /* 드롭다운 메뉴 항목 */
 #topQualityBtn, #topEnhanceBtn, #topExportPromptBtn, #topImportPromptBtn,
-#topModelEditorBtn, #topGlossarySysBtn, #topTmBtn, #topLearningBtn, #topTokenToggleBtn,
-/* 컴포저 모델 선택 버튼(M) */
-#composerModelBtn,
+#topModelEditorBtn, #topGlossarySysBtn, #topTmBtn, #topLearningBtn,
+/* 컴포저 모델 선택 버튼(M) · 상단바 New 버튼(프롬프트 토글) */
+#composerModelBtn, #newPromptToggle,
 /* API 설정 패널 내부 — 서버가 담당(프롬프트·용어집·모델·타 제공자) */
 label[for="apiProvider"], #apiProvider,
 label[for="apiBaseUrl"], #apiBaseUrl,
@@ -1639,7 +1639,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p9';
+    const APP_VERSION = 'v20.57p10';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
