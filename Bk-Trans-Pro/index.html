@@ -1639,7 +1639,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p10';
+    const APP_VERSION = 'v20.57p11';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -5412,11 +5412,7 @@ label[for="maxTokens"], #maxTokens,
 
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
-        if(hasChinese(dispText)){
-          bubble.innerHTML = renderWithPinyin(dispText);
-        } else {
-          bubble.textContent = dispText;
-        }
+        bubble.textContent = dispText;   // 대화이력은 병음 미표시(전체화면 클릭 시에만 병음)
         // 번역문(assistant) 말풍선은 출처별 색 적용(오류 메시지는 제외)
         if(m.role === 'assistant' && !_isErrorMessage(m)){
           bubble.style.background = srcBubbleColor(m.source);
@@ -5927,11 +5923,7 @@ label[for="maxTokens"], #maxTokens,
         saveChatHistory();
 
         if(_fastUrl){
-          if(hasChinese(translated)){
-            streamBubble.innerHTML = renderWithPinyin(translated);
-          } else {
-            streamBubble.textContent = translated;
-          }
+          streamBubble.textContent = translated;   // 대화이력은 병음 미표시(전체화면 클릭 시에만 병음)
           streamBubble.style.background = srcBubbleColor(_src);
           streamBubble.style.opacity = '1';
           streamBubble.style.cursor = 'pointer';
@@ -5948,11 +5940,7 @@ label[for="maxTokens"], #maxTokens,
           return { ok: true, usr: userObj, asst: asstObj };
         }
 
-        if(hasChinese(translated)){
-          streamBubble.innerHTML = renderWithPinyin(translated);
-        } else {
-          streamBubble.textContent = translated;
-        }
+        streamBubble.textContent = translated;   // 대화이력은 병음 미표시(전체화면 클릭 시에만 병음)
         streamBubble.style.background = srcBubbleColor(_src);   // 출처별 말풍선 색
         streamBubble.style.opacity = '1';
         streamBubble.style.cursor = 'pointer';
