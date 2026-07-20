@@ -1639,7 +1639,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p11';
+    const APP_VERSION = 'v20.57p12';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -3387,10 +3387,11 @@ label[for="maxTokens"], #maxTokens,
       return custom || DEFAULT_API_URL;
     }
 
-    // ★발신자 표기 제거(방향 판정 전용): 맨 앞 "한글이름[/직책] : 또는 ,"(위챗/페이수 전달 형식).
+    // ★발신자 표기 제거(방향 판정 전용): 맨 앞 "[번호]한글이름[/직책] : 또는 ,"(위챗/페이수 전달 형식).
     //   이름이 앞에 붙어 한글 카운트가 올라가 방향이 뒤집히던 문제 수정 v20.57t. 번역 입력은 안 건드림.
+    //   v20.57p12: 전달 번호 접두어([2] 등)와 부서명 속 _ . - (MT_POLE)도 라벨로 인식.
     function _stripSenderName(s){
-      return String(s || '').replace(/^\s*[가-힣][가-힣A-Za-z0-9]*(\s*\/\s*[가-힣A-Za-z0-9]+)?\s*[:：,，]\s*/, '');
+      return String(s || '').replace(/^\s*(?:[\[\(（【]\s*\d{1,3}\s*[\]\)）】]\s*)?[가-힣][가-힣A-Za-z0-9_.\-]*(\s*\/\s*[가-힣A-Za-z0-9_.\-]+)?\s*[:：,，]\s*/, '');
     }
     // Qwen-MT 전용: 입력 텍스트에서 source/target 언어 자동 감지
     function detectQwenLangs(text){
