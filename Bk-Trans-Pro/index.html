@@ -1639,7 +1639,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p12';
+    const APP_VERSION = 'v20.57p13';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2980,7 +2980,7 @@ label[for="maxTokens"], #maxTokens,
       MAX_INPUTS_PER_PAGE: 50,
       MAX_MESSAGES: 100,
       AUTO_TRANSLATE_MAX_LEN: 300,
-      REQUEST_TIMEOUT_MS: 20000,
+      REQUEST_TIMEOUT_MS: 8000,
       CLIPBOARD_DEBOUNCE_MS: 150,
       MIN_REQUEST_GAP_MS: 300,
       QUALITY_TEST_GAP_MS: 4000,
@@ -4152,6 +4152,14 @@ label[for="maxTokens"], #maxTokens,
           body: JSON.stringify(req.body),
           signal: ac.signal
         });
+      } catch(e){
+        // 타임아웃 abort와 사용자 취소를 구분한다(reason='timeout'). 타임아웃만 재시도 대상.
+        if(ac.signal && ac.signal.reason === 'timeout'){
+          const te = new Error('요청 시간 초과');
+          te.name = 'TimeoutError'; te.isTimeout = true;
+          throw te;
+        }
+        throw e;
       } finally {
         clearTimeout(timeout);
       }
@@ -4240,8 +4248,12 @@ label[for="maxTokens"], #maxTokens,
       } catch(err){
         const status = err && err.status;
         const retriable = !status || status === 408 || status === 429 || (status >= 500 && status < 600);
-        const isAbort = err && (err.name === 'AbortError' || String(err.message || '').includes('abort'));
-        if(!retriable || isAbort) throw err;
+        const isTimeout = !!(err && err.isTimeout);
+        // 사용자가 직접 취소한 abort만 즉시 중단. 타임아웃은 회선 순단일 수 있으므로 1회 재시도.
+        const isUserAbort = !isTimeout && err &&
+              (err.name === 'AbortError' || String(err.message || '').includes('abort'));
+        if(isUserAbort) throw err;
+        if(!retriable && !isTimeout) throw err;
         await new Promise(r => setTimeout(r, 400));
         return await callOpenRouterStreamOnce(userText, onChunk, timeoutMs);
       }
