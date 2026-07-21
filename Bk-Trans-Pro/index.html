@@ -1639,7 +1639,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p14';
+    const APP_VERSION = 'v20.57p15';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -7680,20 +7680,6 @@ label[for="maxTokens"], #maxTokens,
     var _urlEnqueued = {};   // 이미 통합 큐로 넘긴 URL 항목 id(중복 방지)
     // ★ v20.47t 단순화: localStorage URL 큐(리로드 견딤)의 항목들을 통합 큐(enqueueTx)로 넘긴다.
     //   실제 순차 실행·busy 대기는 통합 워커가 담당. 여기선 적재/필터/localStorage 정리만.
-    // URL 자동번역 전용: 이미 한국어인(한글 우세) 전달 메시지는 번역하지 않는다.
-    //   (2026-07-20 범근님 지시: 직접입력은 무조건 방향대로 번역하되, URL 자동경로에서
-    //    한국어가 많으면 그대로 둘 것. 예: "A 폴 FSE …/책임: 원소재 업체 …외 1명 …내방 예정")
-    //   직접 입력 경로(sendMessage)에는 적용하지 않는다 — 한→중 번역은 그대로 작동.
-    function _urlShouldSkipKoDominant(text){
-      var body = _stripSenderName(String(text || '').trim());
-      // '#' 강제 한→중 지시는 존중(스킵 안 함)
-      if(body.charAt(0) === '#') return false;
-      var ko = (body.match(/[\uAC00-\uD7AF]/g) || []).length;
-      var zh = (body.match(/[\u4E00-\u9FFF\u3400-\u4DBF]/g) || []).length;
-      // 한글이 하나라도 있고 한자보다 많거나 같으면 = 이미 한국어 문장 → 스킵
-      return ko > 0 && ko >= zh;
-    }
-
     function _drainUrlQueue(){
       var q = _loadUrlQueue();
       if(!q.length) return;
@@ -7702,11 +7688,9 @@ label[for="maxTokens"], #maxTokens,
           if(!item || _urlEnqueued[item.id]) return;      // 이미 넘긴 건 스킵
           var trimmed = item.text;
           // 필터: 언어/길이. URL은 사용자가 명시적으로 보낸 입력이므로 내용 중복으로 버리지 않는다.
-          //   + 한글 우세(이미 한국어) 전달 메시지는 번역하지 않고 원문 그대로 표시.
           if(!trimmed || (!hasKorean(trimmed) && !hasChinese(trimmed))
-             || trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN
-             || _urlShouldSkipKoDominant(trimmed)){
-            _uwLog(_urlShouldSkipKoDominant(trimmed) ? 'skip-ko-dominant' : 'drop-filter', trimmed);
+             || trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN){
+            _uwLog('drop-filter', trimmed);
             var qd = _loadUrlQueue();
             var idx = qd.findIndex(function(x){ return x.id === item.id; });
             if(idx >= 0){ qd.splice(idx, 1); _saveUrlQueue(qd); }
