@@ -68,6 +68,10 @@
       --asstUrlBg: #14532d;
       --asstClipBg: #5c3a1e;
       --asstTypingBg: #1e2430;
+      /* ★메신저별 말풍선 색 (MacroDroid URL의 app= 값으로 구분, 2026-07-22). 색은 조정 가능 */
+      --asstAlipayBg: #15458c;   /* 알리페이 = 파랑 */
+      --asstWechatBg: #0b6b3a;   /* 위챗 = 초록 */
+      --asstFeishuBg: #5b3a8c;   /* 페이수 = 보라 */
       --sendBtnBg: #2d6bff;
       --headerBg: #0b0f14;
       --copyBtnBg: #1a1f2a;
@@ -1639,7 +1643,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p16';
+    const APP_VERSION = 'v20.57p17';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -5527,11 +5531,17 @@ label[for="maxTokens"], #maxTokens,
     var _pendingSource = 'typing';
     // 출처별 출력 말풍선 배경색 (source 없는 옛 기록은 typing색). usage줄 라벨도 여기 기준.
     function srcBubbleColor(src){
+      if(src === 'alipay') return 'var(--asstAlipayBg)';
+      if(src === 'wechat') return 'var(--asstWechatBg)';
+      if(src === 'feishu') return 'var(--asstFeishuBg)';
       if(src === 'url') return 'var(--asstUrlBg)';
       if(src === 'clip') return 'var(--asstClipBg)';
       return 'var(--asstTypingBg)';
     }
     function srcLabel(src){
+      if(src === 'alipay') return '알리페이';
+      if(src === 'wechat') return '위챗';
+      if(src === 'feishu') return '페이수';
       if(src === 'url') return 'URL';
       if(src === 'clip') return 'Clip';
       return 'Typing';
@@ -7595,6 +7605,19 @@ label[for="maxTokens"], #maxTokens,
         return String(t || '').trim();
       }catch(_){ return ''; }
     }
+    // ★MacroDroid가 URL에 붙인 앱 식별자(?app=alipay/wechat/feishu) 읽기 — 메신저별 말풍선 색·라벨용(2026-07-22)
+    function _readUrlApp(){
+      try{
+        var sp = new URLSearchParams(location.search || '');
+        var v = sp.has('app') ? sp.get('app') : '';
+        if(!v && location.hash){
+          var hp = new URLSearchParams(location.hash.replace(/^#/, ''));
+          v = hp.has('app') ? hp.get('app') : '';
+        }
+        v = String(v || '').trim().toLowerCase();
+        return /^(alipay|wechat|feishu|line|kakao)$/.test(v) ? v : '';
+      }catch(_){ return ''; }
+    }
     // 주소에서 ?text=/#text= 를 제거해 기본 주소로 되돌림(새 탭 누적 완화 — 항상 같은 깨끗한 주소 유지)
     function _cleanUrl(){
       try{
@@ -7663,7 +7686,7 @@ label[for="maxTokens"], #maxTokens,
       if(next.length !== q.length) _saveUrlQueue(next);
     }
     // 큐에 적재(짧은 시간창 내 미처리 중복 제외). 실제 URL 소비는 _drainUrlQueue가 담당.
-    function _enqueueUrl(text){
+    function _enqueueUrl(text, app){
       var q = _loadUrlQueue();
       var now = Date.now();
       for(var i = 0; i < q.length; i++){
@@ -7673,7 +7696,7 @@ label[for="maxTokens"], #maxTokens,
         }
       }
       var id = _newStableId('url');
-      q.push({ id:id, text:text, at:now, status:'queued', attempts:0 });
+      q.push({ id:id, text:text, app:(app || ''), at:now, status:'queued', attempts:0 });
       _saveUrlQueue(q);
       _uwLog('enqueue(' + q.length + ')', text);
     }
@@ -7758,7 +7781,7 @@ label[for="maxTokens"], #maxTokens,
           _updateUrlQueueItem(item.id, { status:'running' });
           _lastUrlText = trimmed;
           _uwLog('enqueue-tx', trimmed);
-          enqueueTx(trimmed, 'url', function(res){
+          enqueueTx(trimmed, (item.app || 'url'), function(res){
             if(res && res.ok){
               _removeUrlQueueItem(item.id);
               _uwLog('translate-done', trimmed);
@@ -7780,10 +7803,11 @@ label[for="maxTokens"], #maxTokens,
     async function checkURLText(){
       try{
         var trimmed = _readUrlText();
+        var app = _readUrlApp();                        // 어느 메신저에서 왔는지(MacroDroid가 붙임)
         if(!trimmed){ return; }
         _cleanUrl();                                    // 값 읽자마자 주소 청소(값은 아래서 큐에 이미 확보)
-        _uwLog('url-recv', trimmed);
-        _enqueueUrl(trimmed);                           // ★버리지 않고 큐 적재 → 리로드/busy 무관하게 보존
+        _uwLog('url-recv' + (app ? '(' + app + ')' : ''), trimmed);
+        _enqueueUrl(trimmed, app);                      // ★버리지 않고 큐 적재 → 리로드/busy 무관하게 보존
         _drainUrlQueue();                               // busy면 내부서 대기, 아니면 순차 처리
       }catch(_){}
     }
