@@ -1323,6 +1323,45 @@ label[for="maxTokens"], #maxTokens,
             </div>
           </div>
           <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">출력말풍선 · 위챗</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorAsstWechatBg" type="color" value="#0b6b3a" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAsstWechatBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAsstWechatBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorAsstWechatBg">
+              <button class="cSwatch" type="button" data-color="#0b6b3a" style="background:#0b6b3a"></button>
+              <button class="cSwatch" type="button" data-color="#07603a" style="background:#07603a"></button>
+              <button class="cSwatch" type="button" data-color="#14532d" style="background:#14532d"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">출력말풍선 · 알리페이</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorAsstAlipayBg" type="color" value="#15458c" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAsstAlipayBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAsstAlipayBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorAsstAlipayBg">
+              <button class="cSwatch" type="button" data-color="#15458c" style="background:#15458c"></button>
+              <button class="cSwatch" type="button" data-color="#1668dc" style="background:#1668dc"></button>
+              <button class="cSwatch" type="button" data-color="#0f3460" style="background:#0f3460"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">출력말풍선 · 페이수</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorAsstFeishuBg" type="color" value="#5b3a8c" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAsstFeishuBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAsstFeishuBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorAsstFeishuBg">
+              <button class="cSwatch" type="button" data-color="#5b3a8c" style="background:#5b3a8c"></button>
+              <button class="cSwatch" type="button" data-color="#6d28d9" style="background:#6d28d9"></button>
+              <button class="cSwatch" type="button" data-color="#3b2a63" style="background:#3b2a63"></button>
+              <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
+            </div>
+          </div>
+          <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">출력말풍선 · URL 번역</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorAsstUrlBg" type="color" value="#14532d" style="width:50px; height:36px; flex-shrink:0;" />
@@ -1365,6 +1404,19 @@ label[for="maxTokens"], #maxTokens,
               <button class="cSwatch" type="button" data-color="#1e2430" style="background:#1e2430"></button>
               <button class="cSwatch" type="button" data-color="#111827" style="background:#111827"></button>
               <button class="cSwatch" type="button" data-color="#1f2937" style="background:#1f2937"></button>
+            </div>
+          </div>
+          <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">정보줄 글자색 (모델·초·출처)</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorMetaText" type="color" value="#9fb0c0" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorMetaTextText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorMetaText" />
+            </div>
+            <div class="colorSwatches" data-target="colorMetaText">
+              <button class="cSwatch" type="button" data-color="#9fb0c0" style="background:#9fb0c0"></button>
+              <button class="cSwatch" type="button" data-color="#c9d4de" style="background:#c9d4de"></button>
+              <button class="cSwatch" type="button" data-color="#8b93a3" style="background:#8b93a3"></button>
+              <button class="cSwatch" type="button" data-color="#6e7681" style="background:#6e7681"></button>
             </div>
           </div>
           <div class="colorItem">
@@ -1458,31 +1510,7 @@ label[for="maxTokens"], #maxTokens,
           </div>
         </div>
 
-        <div style="margin-bottom:24px;">
-          <div style="font-size:calc(14px * var(--menuScale)); font-weight:700; margin-bottom:6px; color:var(--text);">말풍선 · 정보줄 색상</div>
-          <div class="hint" style="font-size:calc(11px * var(--menuScale)); margin-bottom:14px;">번역 출처별 말풍선 배경과 아래 정보줄(모델·초·출처) 글자색</div>
-          <div id="colorGrid" style="display:grid; grid-template-columns:1fr auto; gap:10px 14px; align-items:center;">
-            <label for="colWechat" style="font-size:calc(13px * var(--menuScale));">위챗 말풍선</label>
-            <input id="colWechat" type="color" data-cssvar="--asstWechatBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
-            <label for="colAlipay" style="font-size:calc(13px * var(--menuScale));">알리페이 말풍선</label>
-            <input id="colAlipay" type="color" data-cssvar="--asstAlipayBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
-            <label for="colFeishu" style="font-size:calc(13px * var(--menuScale));">페이수 말풍선</label>
-            <input id="colFeishu" type="color" data-cssvar="--asstFeishuBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
-            <label for="colUrl" style="font-size:calc(13px * var(--menuScale));">URL(기타 앱) 말풍선</label>
-            <input id="colUrl" type="color" data-cssvar="--asstUrlBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
-            <label for="colClip" style="font-size:calc(13px * var(--menuScale));">Clip(복사) 말풍선</label>
-            <input id="colClip" type="color" data-cssvar="--asstClipBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
-            <label for="colTyping" style="font-size:calc(13px * var(--menuScale));">직접 입력 말풍선</label>
-            <input id="colTyping" type="color" data-cssvar="--asstTypingBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
-            <label for="colMeta" style="font-size:calc(13px * var(--menuScale));">정보줄 글자 (모델·초·출처)</label>
-            <input id="colMeta" type="color" data-cssvar="--metaText" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
-          </div>
-          <div class="row" style="margin-top:14px;">
-            <button id="colorResetBtn" class="btn secondary" type="button">색상 전체 초기화</button>
-          </div>
-        </div>
-
-        <div style="margin-bottom:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08);">
+                <div style="margin-bottom:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08);">
           <div style="font-size:calc(14px * var(--menuScale)); font-weight:700; margin-bottom:16px; color:var(--text);">상단바 커스터마이징</div>
         </div>
 
@@ -1668,7 +1696,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p19';
+    const APP_VERSION = 'v20.57p20';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -1734,6 +1762,10 @@ label[for="maxTokens"], #maxTokens,
       colorAsstUrlBg: 'bk_tr_pro_color_asst_url_bg',
       colorAsstClipBg: 'bk_tr_pro_color_asst_clip_bg',
       colorAsstTypingBg: 'bk_tr_pro_color_asst_typing_bg',
+      colorAsstWechatBg: 'bk_tr_pro_color_asst_wechat_bg',
+      colorAsstAlipayBg: 'bk_tr_pro_color_asst_alipay_bg',
+      colorAsstFeishuBg: 'bk_tr_pro_color_asst_feishu_bg',
+      colorMetaText: 'bk_tr_pro_color_meta_text',
       colorSendBtnBg: 'bk_tr_pro_color_send_btn_bg',
       colorHeaderBg: 'bk_tr_pro_color_header_bg',
       colorCopyBtnBg: 'bk_tr_pro_color_copy_btn_bg',
@@ -1863,6 +1895,10 @@ label[for="maxTokens"], #maxTokens,
       colorAsstUrlBg: document.getElementById('colorAsstUrlBg'),
       colorAsstClipBg: document.getElementById('colorAsstClipBg'),
       colorAsstTypingBg: document.getElementById('colorAsstTypingBg'),
+      colorAsstWechatBg: document.getElementById('colorAsstWechatBg'),
+      colorAsstAlipayBg: document.getElementById('colorAsstAlipayBg'),
+      colorAsstFeishuBg: document.getElementById('colorAsstFeishuBg'),
+      colorMetaText: document.getElementById('colorMetaText'),
       colorSendBtnBg: document.getElementById('colorSendBtnBg'),
       colorHeaderBg: document.getElementById('colorHeaderBg'),
       colorCopyBtnBg: document.getElementById('colorCopyBtnBg'),
@@ -2832,6 +2868,10 @@ label[for="maxTokens"], #maxTokens,
       asstUrlBg: '#14532d',
       asstClipBg: '#5c3a1e',
       asstTypingBg: '#1e2430',
+      asstWechatBg: '#0b6b3a',
+      asstAlipayBg: '#15458c',
+      asstFeishuBg: '#5b3a8c',
+      metaText: '#9fb0c0',
       sendBtnBg: '#2d6bff',
       headerBg: '#0b0f14',
       copyBtnBg: '#1a1f2a'
@@ -2867,6 +2907,10 @@ label[for="maxTokens"], #maxTokens,
       loadColor(LS.colorAsstUrlBg, 'colorAsstUrlBg', '--asstUrlBg', COLOR_DEFAULTS.asstUrlBg);
       loadColor(LS.colorAsstClipBg, 'colorAsstClipBg', '--asstClipBg', COLOR_DEFAULTS.asstClipBg);
       loadColor(LS.colorAsstTypingBg, 'colorAsstTypingBg', '--asstTypingBg', COLOR_DEFAULTS.asstTypingBg);
+      loadColor(LS.colorAsstWechatBg, 'colorAsstWechatBg', '--asstWechatBg', COLOR_DEFAULTS.asstWechatBg);
+      loadColor(LS.colorAsstAlipayBg, 'colorAsstAlipayBg', '--asstAlipayBg', COLOR_DEFAULTS.asstAlipayBg);
+      loadColor(LS.colorAsstFeishuBg, 'colorAsstFeishuBg', '--asstFeishuBg', COLOR_DEFAULTS.asstFeishuBg);
+      loadColor(LS.colorMetaText, 'colorMetaText', '--metaText', COLOR_DEFAULTS.metaText);
       loadColor(LS.colorSendBtnBg, 'colorSendBtnBg', '--sendBtnBg', COLOR_DEFAULTS.sendBtnBg);
       loadColor(LS.colorHeaderBg, 'colorHeaderBg', '--headerBg', COLOR_DEFAULTS.headerBg);
       loadColor(LS.colorCopyBtnBg, 'colorCopyBtnBg', '--copyBtnBg', COLOR_DEFAULTS.copyBtnBg);
@@ -7642,13 +7686,10 @@ label[for="maxTokens"], #maxTokens,
         v = String(v || '').trim().toLowerCase();
         // MacroDroid 알림 트리거의 {not_app_package}를 그대로 받는 경우 — 패키지명→메신저 매핑
         // (매크로 쪽 IF 분기 불필요, URL에 &app={not_app_package}만 붙이면 됨. 2026-07-22)
-        var PKG = {
-          'com.tencent.mm': 'wechat',
-          'com.eg.android.alipaygphone': 'alipay',
-          'com.ss.android.lark': 'feishu',      // 페이수(중국판)
-          'com.larksuite.suite': 'feishu'       // Lark(국제판)
-        };
-        if(PKG[v]) return PKG[v];
+        // 패키지명 부분일치 — 페이수는 판(중국/국제/기업)마다 패키지가 달라 정확일치로는 놓침(2026-07-22 실사고)
+        if(v.indexOf('lark') >= 0 || v.indexOf('feishu') >= 0) return 'feishu';
+        if(v.indexOf('tencent.mm') >= 0) return 'wechat';
+        if(v.indexOf('alipay') >= 0) return 'alipay';
         return /^(alipay|wechat|feishu|line|kakao)$/.test(v) ? v : '';
       }catch(_){ return ''; }
     }
@@ -8701,48 +8742,6 @@ label[for="maxTokens"], #maxTokens,
       });
     }
 
-    // ── 말풍선·정보줄 색상 커스터마이징 (2026-07-22) ──
-    //   저장: localStorage bk_tr_pro_customColors = {"--asstWechatBg":"#0b6b3a", ...}
-    //   적용: :root 인라인 CSS 변수 오버라이드(기본값은 스타일시트에 남아 초기화 시 복원됨)
-    (function(){
-      var LSKEY = 'bk_tr_pro_customColors';
-      var inputs = Array.prototype.slice.call(document.querySelectorAll('#colorGrid input[data-cssvar]'));
-      if(!inputs.length) return;
-      function loadSaved(){
-        try{ return JSON.parse(localStorage.getItem(LSKEY) || '{}') || {}; }catch(_){ return {}; }
-      }
-      function cssDefault(v){
-        try{ return (getComputedStyle(document.documentElement).getPropertyValue(v) || '').trim(); }catch(_){ return ''; }
-      }
-      function applyAll(saved){
-        for(var k in saved){
-          if(saved[k]) document.documentElement.style.setProperty(k, saved[k]);
-        }
-      }
-      var saved = loadSaved();
-      applyAll(saved);
-      inputs.forEach(function(inp){
-        var v = inp.getAttribute('data-cssvar');
-        var cur = saved[v] || cssDefault(v);
-        if(/^#[0-9a-fA-F]{6}$/.test(cur)) inp.value = cur;
-        inp.addEventListener('input', function(){
-          document.documentElement.style.setProperty(v, inp.value);
-          var m = loadSaved(); m[v] = inp.value;
-          try{ localStorage.setItem(LSKEY, JSON.stringify(m)); }catch(_){}
-        });
-      });
-      var rst = document.getElementById('colorResetBtn');
-      if(rst) rst.addEventListener('click', function(){
-        try{ localStorage.removeItem(LSKEY); }catch(_){}
-        inputs.forEach(function(inp){
-          var v = inp.getAttribute('data-cssvar');
-          document.documentElement.style.removeProperty(v);
-          var d = cssDefault(v);
-          if(/^#[0-9a-fA-F]{6}$/.test(d)) inp.value = d;
-        });
-      });
-    })();
-
     function updateMainPaddingBottom(){
       const composer = document.querySelector('.composer');
       if(!composer) return;
@@ -8860,6 +8859,10 @@ label[for="maxTokens"], #maxTokens,
     bindColorPicker(el.colorAsstUrlBg, LS.colorAsstUrlBg, '--asstUrlBg');
     bindColorPicker(el.colorAsstClipBg, LS.colorAsstClipBg, '--asstClipBg');
     bindColorPicker(el.colorAsstTypingBg, LS.colorAsstTypingBg, '--asstTypingBg');
+    bindColorPicker(el.colorAsstWechatBg, LS.colorAsstWechatBg, '--asstWechatBg');
+    bindColorPicker(el.colorAsstAlipayBg, LS.colorAsstAlipayBg, '--asstAlipayBg');
+    bindColorPicker(el.colorAsstFeishuBg, LS.colorAsstFeishuBg, '--asstFeishuBg');
+    bindColorPicker(el.colorMetaText, LS.colorMetaText, '--metaText');
     bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
     bindColorPicker(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg');
     bindColorPicker(el.colorCopyBtnBg, LS.colorCopyBtnBg, '--copyBtnBg');
