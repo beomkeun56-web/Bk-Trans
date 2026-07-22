@@ -1643,7 +1643,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p17';
+    const APP_VERSION = 'v20.57p18';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -7615,6 +7615,15 @@ label[for="maxTokens"], #maxTokens,
           v = hp.has('app') ? hp.get('app') : '';
         }
         v = String(v || '').trim().toLowerCase();
+        // MacroDroid 알림 트리거의 {not_app_package}를 그대로 받는 경우 — 패키지명→메신저 매핑
+        // (매크로 쪽 IF 분기 불필요, URL에 &app={not_app_package}만 붙이면 됨. 2026-07-22)
+        var PKG = {
+          'com.tencent.mm': 'wechat',
+          'com.eg.android.alipaygphone': 'alipay',
+          'com.ss.android.lark': 'feishu',      // 페이수(중국판)
+          'com.larksuite.suite': 'feishu'       // Lark(국제판)
+        };
+        if(PKG[v]) return PKG[v];
         return /^(alipay|wechat|feishu|line|kakao)$/.test(v) ? v : '';
       }catch(_){ return ''; }
     }
