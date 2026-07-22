@@ -2926,7 +2926,7 @@
     const CONFIG = {
       MAX_INPUTS_PER_PAGE: 50,
       MAX_MESSAGES: 100,
-      AUTO_TRANSLATE_MAX_LEN: 300,
+      AUTO_TRANSLATE_MAX_LEN: 0,
       REQUEST_TIMEOUT_MS: 20000,
       CLIPBOARD_DEBOUNCE_MS: 150,
       MIN_REQUEST_GAP_MS: 300,
@@ -8765,5 +8765,7 @@
       toast('권장: HTTPS에서 사용하세요(키 보안)');
     }
   </script>
+
+<div style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#7a1f1f;color:#fff;font-size:13px;padding:8px 12px;text-align:center;font-family:sans-serif;">이 구버전 앱은 자동번역이 중지되었습니다(OpenRouter 비용 유출 방지). 번역은 Pro 앱을 사용하세요: <a href="https://beomkeun56-web.github.io/Bk-Trans/Bk-Trans-Pro/" style="color:#ffd54f;">Bk-Trans-Pro 열기</a></div>
 </body>
 </html>
