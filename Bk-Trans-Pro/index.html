@@ -72,6 +72,7 @@
       --asstAlipayBg: #15458c;   /* 알리페이 = 파랑 */
       --asstWechatBg: #0b6b3a;   /* 위챗 = 초록 */
       --asstFeishuBg: #5b3a8c;   /* 페이수 = 보라 */
+      --metaText: #9fb0c0;       /* 말풍선 아래 정보줄(모델·초·출처) 글자색 */
       --sendBtnBg: #2d6bff;
       --headerBg: #0b0f14;
       --copyBtnBg: #1a1f2a;
@@ -1457,6 +1458,30 @@ label[for="maxTokens"], #maxTokens,
           </div>
         </div>
 
+        <div style="margin-bottom:24px;">
+          <div style="font-size:calc(14px * var(--menuScale)); font-weight:700; margin-bottom:6px; color:var(--text);">말풍선 · 정보줄 색상</div>
+          <div class="hint" style="font-size:calc(11px * var(--menuScale)); margin-bottom:14px;">번역 출처별 말풍선 배경과 아래 정보줄(모델·초·출처) 글자색</div>
+          <div id="colorGrid" style="display:grid; grid-template-columns:1fr auto; gap:10px 14px; align-items:center;">
+            <label for="colWechat" style="font-size:calc(13px * var(--menuScale));">위챗 말풍선</label>
+            <input id="colWechat" type="color" data-cssvar="--asstWechatBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
+            <label for="colAlipay" style="font-size:calc(13px * var(--menuScale));">알리페이 말풍선</label>
+            <input id="colAlipay" type="color" data-cssvar="--asstAlipayBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
+            <label for="colFeishu" style="font-size:calc(13px * var(--menuScale));">페이수 말풍선</label>
+            <input id="colFeishu" type="color" data-cssvar="--asstFeishuBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
+            <label for="colUrl" style="font-size:calc(13px * var(--menuScale));">URL(기타 앱) 말풍선</label>
+            <input id="colUrl" type="color" data-cssvar="--asstUrlBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
+            <label for="colClip" style="font-size:calc(13px * var(--menuScale));">Clip(복사) 말풍선</label>
+            <input id="colClip" type="color" data-cssvar="--asstClipBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
+            <label for="colTyping" style="font-size:calc(13px * var(--menuScale));">직접 입력 말풍선</label>
+            <input id="colTyping" type="color" data-cssvar="--asstTypingBg" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
+            <label for="colMeta" style="font-size:calc(13px * var(--menuScale));">정보줄 글자 (모델·초·출처)</label>
+            <input id="colMeta" type="color" data-cssvar="--metaText" style="width:52px; height:30px; border:1px solid rgba(255,255,255,.15); border-radius:6px; background:none; padding:2px; cursor:pointer;" />
+          </div>
+          <div class="row" style="margin-top:14px;">
+            <button id="colorResetBtn" class="btn secondary" type="button">색상 전체 초기화</button>
+          </div>
+        </div>
+
         <div style="margin-bottom:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08);">
           <div style="font-size:calc(14px * var(--menuScale)); font-weight:700; margin-bottom:16px; color:var(--text);">상단바 커스터마이징</div>
         </div>
@@ -1643,7 +1668,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p18';
+    const APP_VERSION = 'v20.57p19';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -5296,7 +5321,7 @@ label[for="maxTokens"], #maxTokens,
           return first.replace(/[0-9.]+.*$/, '') || first;
         };
         var modeSpan = document.createElement('span');
-        modeSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:8px;white-space:nowrap;';
+        modeSpan.style.cssText = 'font-size:10px;color:var(--metaText);opacity:.85;margin-left:8px;white-space:nowrap;';
         var modeLabel = pipeline.intent ? shortIntent(pipeline.intent) : (is2Agent ? '2Mode' : '3Mode');
         modeSpan.textContent = '[' + modeLabel + ']';
         actionsEl.appendChild(modeSpan);
@@ -5316,7 +5341,7 @@ label[for="maxTokens"], #maxTokens,
         // Stage 2 생략 표시 (단순 입력 → MT만 사용, 속도 절약)
         if(pipeline.stage2Skipped){
           var skipSpan = document.createElement('span');
-          skipSpan.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-left:6px;font-weight:600;white-space:nowrap;font-style:italic;';
+          skipSpan.style.cssText = 'font-size:10px;color:var(--metaText);opacity:.85;margin-left:6px;font-weight:600;white-space:nowrap;font-style:italic;';
           skipSpan.textContent = 'MT만(보정생략)';
           actionsEl.appendChild(skipSpan);
         }
@@ -5356,7 +5381,7 @@ label[for="maxTokens"], #maxTokens,
           var mtCopyBtn = document.createElement('button');
           mtCopyBtn.type = 'button';
           mtCopyBtn.textContent = 'Copy';
-          mtCopyBtn.style.cssText = 'margin-top:6px;font-size:10px;color:var(--muted);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 10px;cursor:pointer;font-family:inherit;';
+          mtCopyBtn.style.cssText = 'margin-top:6px;font-size:10px;color:var(--metaText);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 10px;cursor:pointer;font-family:inherit;';
           mtCopyBtn.addEventListener('click', async function(ev){
             ev.stopPropagation();
             try{ await copyToClipboard(pipeline.mt, false); } catch(_){}
@@ -5376,7 +5401,7 @@ label[for="maxTokens"], #maxTokens,
           });
           var wrap = document.createElement('div');
           var timeRow = document.createElement('div');
-          timeRow.style.cssText = 'font-size:10px;color:var(--muted);opacity:.85;margin-top:3px;padding-left:14px;white-space:normal;line-height:1.4;';
+          timeRow.style.cssText = 'font-size:10px;color:var(--metaText);opacity:.85;margin-top:3px;padding-left:14px;white-space:normal;line-height:1.4;';
           timeRow.textContent = parts.join(' + ') + ' = ' + (sum / 1000).toFixed(1) + 's';
           wrap.appendChild(timeRow);
           if(mtToggleEl) wrap.appendChild(mtToggleEl);
@@ -5393,7 +5418,7 @@ label[for="maxTokens"], #maxTokens,
       var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source);
       if(!txt) return null;
       var s = document.createElement('span');
-      s.style.cssText = 'font-size:10px;color:var(--muted);opacity:.7;margin-left:8px;white-space:nowrap;';
+      s.style.cssText = 'font-size:10px;color:var(--metaText);opacity:.7;margin-left:8px;white-space:nowrap;';
       s.textContent = txt;
       actionsEl.appendChild(s);
     }
@@ -8675,6 +8700,48 @@ label[for="maxTokens"], #maxTokens,
         try{ localStorage.setItem('bk_tr_pro_chatScale', '1'); } catch {}
       });
     }
+
+    // ── 말풍선·정보줄 색상 커스터마이징 (2026-07-22) ──
+    //   저장: localStorage bk_tr_pro_customColors = {"--asstWechatBg":"#0b6b3a", ...}
+    //   적용: :root 인라인 CSS 변수 오버라이드(기본값은 스타일시트에 남아 초기화 시 복원됨)
+    (function(){
+      var LSKEY = 'bk_tr_pro_customColors';
+      var inputs = Array.prototype.slice.call(document.querySelectorAll('#colorGrid input[data-cssvar]'));
+      if(!inputs.length) return;
+      function loadSaved(){
+        try{ return JSON.parse(localStorage.getItem(LSKEY) || '{}') || {}; }catch(_){ return {}; }
+      }
+      function cssDefault(v){
+        try{ return (getComputedStyle(document.documentElement).getPropertyValue(v) || '').trim(); }catch(_){ return ''; }
+      }
+      function applyAll(saved){
+        for(var k in saved){
+          if(saved[k]) document.documentElement.style.setProperty(k, saved[k]);
+        }
+      }
+      var saved = loadSaved();
+      applyAll(saved);
+      inputs.forEach(function(inp){
+        var v = inp.getAttribute('data-cssvar');
+        var cur = saved[v] || cssDefault(v);
+        if(/^#[0-9a-fA-F]{6}$/.test(cur)) inp.value = cur;
+        inp.addEventListener('input', function(){
+          document.documentElement.style.setProperty(v, inp.value);
+          var m = loadSaved(); m[v] = inp.value;
+          try{ localStorage.setItem(LSKEY, JSON.stringify(m)); }catch(_){}
+        });
+      });
+      var rst = document.getElementById('colorResetBtn');
+      if(rst) rst.addEventListener('click', function(){
+        try{ localStorage.removeItem(LSKEY); }catch(_){}
+        inputs.forEach(function(inp){
+          var v = inp.getAttribute('data-cssvar');
+          document.documentElement.style.removeProperty(v);
+          var d = cssDefault(v);
+          if(/^#[0-9a-fA-F]{6}$/.test(d)) inp.value = d;
+        });
+      });
+    })();
 
     function updateMainPaddingBottom(){
       const composer = document.querySelector('.composer');
