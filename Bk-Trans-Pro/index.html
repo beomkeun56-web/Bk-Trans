@@ -1696,7 +1696,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p21';
+    const APP_VERSION = 'v20.57p22';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -7597,7 +7597,9 @@ label[for="maxTokens"], #maxTokens,
       try{
         var start = Math.max(0, chat.length - 200);
         for(var ci = chat.length - 1; ci >= start; ci--){
-          if(chat[ci] && chat[ci].role === 'user' && _normKnownText(chat[ci].text) === n) return true;
+          // 원문(user)뿐 아니라 번역문(assistant)도 대조 — 번역 결과를 복사해둔 클립보드가
+          // '새 텍스트'로 오인돼 번역문을 또 번역하던 문제(2026-07-22 범근님 지적)
+          if(chat[ci] && _normKnownText(chat[ci].text) === n) return true;
         }
       }catch(_){}
       return false;
