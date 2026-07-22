@@ -1697,7 +1697,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p23';
+    const APP_VERSION = 'v20.57p24';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -1953,6 +1953,8 @@ label[for="maxTokens"], #maxTokens,
     try{
       if(!localStorage.getItem('bk_tr_pro_model_migrated_v2')){
         var _ok = ['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-3-flash-preview','gemini-3.5-flash','gemini-3.1-pro-preview'];
+        // ★번역 본체 3.5-flash-lite 전환에 맞춰, 옛 기본값 3.1-flash-lite 저장분을 3.5-flash-lite로 1회 이관(2026-07-22)
+        try{ if(localStorage.getItem('bk_tr_pro_brainModelMigrated35') !== '1'){ ['bk_tr_pro_model','bk_tr_pro_brainModel'].forEach(function(k){ if(localStorage.getItem(k) === 'gemini-3.1-flash-lite') localStorage.setItem(k, 'gemini-3.5-flash-lite'); }); localStorage.setItem('bk_tr_pro_brainModelMigrated35','1'); } }catch(_){}
         ['bk_tr_pro_model','bk_tr_pro_googleModel','bk_tr_pro_editRefineModel'].forEach(function(k){
           var v = (localStorage.getItem(k) || '').split('/').pop();
           if(v && _ok.indexOf(v) < 0) localStorage.setItem(k, 'gemini-3.1-flash-lite');
@@ -2250,6 +2252,7 @@ label[for="maxTokens"], #maxTokens,
     // ★Pro: 번역은 두뇌서버가 수행하고, 서버는 화이트리스트 3모델만 허용(그 외는 기본으로 처리).
     //   그래서 재번역 팝업엔 이 3개만 노출한다(제공자 선택·타사 모델 제거).
     var BRAIN_MODEL_OPTIONS = [
+      { id:'gemini-3.5-flash-lite', name:'Gemini 3.5 Flash-Lite', effort:'' },
       { id:'gemini-3.1-flash-lite', name:'Gemini 3.1 Flash-Lite', effort:'' },
       { id:'gemini-3-flash-preview', name:'Gemini 3 Flash', effort:'' },
       { id:'gemini-3.5-flash', name:'Gemini 3.5 Flash', effort:'' },
