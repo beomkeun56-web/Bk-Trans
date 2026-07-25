@@ -1726,7 +1726,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p37';
+    const APP_VERSION = 'v20.57p38';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4529,16 +4529,10 @@ label[for="maxTokens"], #maxTokens,
     // ★v20.57p25: 중국어 음성 = Fish Audio 원어민(두뇌서버 /tts 프록시 — 키는 서버에만).
     //   실패(크레딧 부족·네트워크)하면 그 청크부터 기존 구글TTS로 자동 폴백.
     var FISH_TTS_URL = 'https://158-247-232-44.sslip.io/tts';
-    // ★p32(범근님): 1·4·10·21 유지 + 21(밝은 또래) 계열로 22~25 추가. 전부 회화체.
+    // ★p38(범근님 확정): 중국어는 21번 + 유역비 원음판 2종만.
     var FISH_VOICES = [
-      ['1 부드러운 젊은 여성 (기본)', '7f92f8afb8ec43bf81429cc1c9199cb1'],
-      ['4 온화한 낭독 여성', 'faccba1a8ac54016bcfc02761285e67f'],
-      ['10 달콤한 진행자', 'e752df7d20cd4576af9a207520349a33'],
-      ['21 밝은 또래 회화', '5671e9d40d7a48e1b81e78ff58359903'],
-      ['22 대만 또래 여성', '97b816cc8f924ea5b5e1b3327927f346'],
-      ['23 상큼한 레몬', '78128edf84204e5dbb99535249360e7d'],
-      ['24 대만 감미로운', '3254fdd1cfa04d8c87b377ece63537e1'],
-      ['25 상냥한 친구 톤', 'ba877ee323214d8d837c9aa030c5f7c3']
+      ['21 밝은 또래 회화 (기본)', '5671e9d40d7a48e1b81e78ff58359903'],
+      ['유역비 (원음판)', '1fae34245c8641778d3aaf6bdb644a15']
     ];
     // 교체된 구 음성 저장값 정리 → 기본(1번)으로
     try{
@@ -4550,22 +4544,29 @@ label[for="maxTokens"], #maxTokens,
                  '5d07e8c1a1654268882ed75c81cbcd83','9cb8c56838094a7ab0fcd2ec355316b9',
                  'b561236e80b04f22843c6637682b5478','27d841c7fdc449d88a89fbf46b55a28d',
                  '3b55b3d84d2f453a98d8ca9bb24182d6','f729a143b9a34005bdae0b21697fa41a',
-                 '4c7cc6fc744b4999a05d40f265ee3237'];
+                 '4c7cc6fc744b4999a05d40f265ee3237',
+                 // p38에서 뺀 중국어 음성(1·4·10·22~25)
+                 '7f92f8afb8ec43bf81429cc1c9199cb1','faccba1a8ac54016bcfc02761285e67f',
+                 'e752df7d20cd4576af9a207520349a33','97b816cc8f924ea5b5e1b3327927f346',
+                 '78128edf84204e5dbb99535249360e7d','3254fdd1cfa04d8c87b377ece63537e1',
+                 'ba877ee323214d8d837c9aa030c5f7c3'];
       if(_rm.indexOf(localStorage.getItem('bk_fish_voice')) >= 0) localStorage.removeItem('bk_fish_voice');
     }catch(_){}
 
-    // ★p37(2026-07-25 범근님): 한국어도 Fish 음성으로 출력. 언어별로 음성을 따로 기억한다
+    // ★p37/p38(2026-07-25 범근님): 한국어도 Fish 음성으로 출력. 언어별로 음성을 따로 기억한다
     //   (중국어 음성으로 한국어를 읽히면 발음이 무너지므로 저장키 자체를 분리).
-    //   아이돌·유명인 클론은 제외하고 일반 화자 회화체로 구성.
     var FISH_VOICES_KO = [
       ['K1 카리나 (기본)', 'b081170ae14740bdad9f57d589689926'],
-      ['K2 아이유', '259d7fde62cd445fbde3ce2d8d4f2f3b'],
-      ['K3 지수', '13247dc70a3a49dd8b3dacf0a4841b34'],
-      ['K4 원영', '79c5eeacf8a94901970cc15cc91dd712'],
-      ['K5 20대 나긋나긋', '4e118bfbb83e401c84699c09b5f08257'],
-      ['K6 부드러운 저음', '3c7ee7e408104d76a777ebaadc201896'],
-      ['K7 차분한 여성 성우', 'e2c4ecb9981041a893fe085f881b5105']
+      ['K2 지수', '13247dc70a3a49dd8b3dacf0a4841b34'],
+      ['K3 원영', '79c5eeacf8a94901970cc15cc91dd712'],
+      ['K4 원영 (밝고 쾌활)', '9e0fd411f09945e5b1db86793d5ae298']
     ];
+    // p38에서 뺀 한국어 음성 저장값 정리 → 기본(카리나)으로
+    try{
+      var _rmKo = ['259d7fde62cd445fbde3ce2d8d4f2f3b','4e118bfbb83e401c84699c09b5f08257',
+                   '3c7ee7e408104d76a777ebaadc201896','e2c4ecb9981041a893fe085f881b5105'];
+      if(_rmKo.indexOf(localStorage.getItem('bk_fish_voice_ko')) >= 0) localStorage.removeItem('bk_fish_voice_ko');
+    }catch(_){}
     function fishVoices(lang){ return lang === 'ko' ? FISH_VOICES_KO : FISH_VOICES; }
     function fishVoiceKey(lang){ return lang === 'ko' ? 'bk_fish_voice_ko' : 'bk_fish_voice'; }
     function fishVoiceId(lang){
