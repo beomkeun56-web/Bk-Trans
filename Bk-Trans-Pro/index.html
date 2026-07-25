@@ -1726,7 +1726,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p38';
+    const APP_VERSION = 'v20.57p39';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4618,10 +4618,31 @@ label[for="maxTokens"], #maxTokens,
         playSotChunk(_fishLang === 'ko' ? 'ko-KR' : 'cmn-Hant-TW');
       });
     }
+    // ★p39(2026-07-25 범근님): "이름 : 내용" 형태에서 화자 이름을 빼고 내용만 읽는다.
+    //   예) "왕리리(王丽丽) : 今天设备有问题" → 중국어 본문만 발화.
+    //   오작동 방지: 머리말이 짧고(24자 이내) 문장부호가 없으며, 머리말과 본문의 주 언어가
+    //   서로 다를 때만 제거한다("注意：明天停机"처럼 같은 언어의 머리말은 그대로 읽음).
+    function ttsStripSpeaker(text){
+      return String(text || '').split('\n').map(function(line){
+        var m = line.match(/^\s*([^:：\n]{1,24})[:：]\s*(\S[\s\S]*)$/);
+        if(!m) return line;
+        var head = m[1], body = m[2];
+        if(/[.!?。！？…]/.test(head)) return line;              // 머리말이 문장이면 건드리지 않음
+        var hk = (head.match(/[가-힣]/g) || []).length;
+        var hz = (head.match(/[一-鿿]/g) || []).length;
+        var bk = (body.match(/[가-힣]/g) || []).length;
+        var bz = (body.match(/[一-鿿]/g) || []).length;
+        if(hk > 0 && bz > bk) return body;   // 한글 이름 + 중국어 본문
+        if(hz > 0 && hk === 0 && bk > bz) return body;   // 한자 이름 + 한국어 본문
+        return line;
+      }).join('\n');
+    }
+
     function speakText(text, btn){
       if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
       _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
       if(btn) btn.classList.add('speaking');
+      text = ttsStripSpeaker(text);   // ★p39: 화자 이름 제거 후 판별·발화
       var lang = detectDominantLang(text);
       // ★p37: 중국어·한국어 모두 Fish 원어민 음성으로. 실패 시 아래 구글 경로로 자동 폴백.
       if((lang === 'zh' || lang === 'ko') && !_fishDead){
