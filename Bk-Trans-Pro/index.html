@@ -1697,7 +1697,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p32';
+    const APP_VERSION = 'v20.57p33';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4644,6 +4644,99 @@ label[for="maxTokens"], #maxTokens,
         });
         cuRow.appendChild(cuIn); cuRow.appendChild(cuBt);
         box.appendChild(cuRow);
+
+        // ★p33: 음성 찾기 — 마켓 검색 → 🔊 즉석 시청 → 선택 (사이트 방문·결제 불필요)
+        var sBox = document.createElement('div');
+        sBox.style.cssText = 'margin-top:12px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.10)';
+        var sTop = document.createElement('div');
+        sTop.style.cssText = 'display:flex;gap:8px;align-items:center';
+        var sIn = document.createElement('input');
+        sIn.type = 'text';
+        sIn.placeholder = '음성 찾기: 키워드(예: 温柔 · 东北 · 客服) — 비우면 인기순';
+        sIn.style.cssText = 'flex:1;padding:8px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.12);font-family:inherit;font-size:calc(12px * var(--textScale))';
+        var sBt = document.createElement('button');
+        sBt.type = 'button'; sBt.textContent = '🔍 검색';
+        sBt.style.cssText = 'padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-family:inherit;white-space:nowrap;font-size:calc(12px * var(--textScale))';
+        var sRes = document.createElement('div');
+        sRes.style.cssText = 'margin-top:8px;max-height:340px;overflow-y:auto';
+        var sPage = 1, sQuery = '';
+        function renderVoices(items, more){
+          sRes.innerHTML = '';
+          if(!items.length){ sRes.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px">결과 없음 — 다른 키워드로 검색해보세요</div>'; return; }
+          items.forEach(function(v){
+            var card = document.createElement('div');
+            card.style.cssText = 'border:1px solid rgba(255,255,255,.10);border-radius:8px;padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,.03)';
+            var top = document.createElement('div');
+            top.style.cssText = 'display:flex;gap:8px;align-items:center';
+            var pb = document.createElement('button');
+            pb.type='button'; pb.textContent='🔊'; pb.className='fishTestBtn';
+            pb.style.cssText='padding:6px 10px;border-radius:7px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-size:13px';
+            pb.addEventListener('click', function(){ fishPreview(v.id, pb); });
+            var nm = document.createElement('div');
+            nm.style.cssText='flex:1;font-size:calc(12.5px * var(--textScale));font-weight:600';
+            nm.textContent = v.title + '  ';
+            var meta = document.createElement('span');
+            meta.style.cssText='font-weight:400;color:var(--muted);font-size:11px';
+            meta.textContent = '♥' + (v.like||0) + ' · ' + (v.task||0) + '회';
+            nm.appendChild(meta);
+            var pick = document.createElement('button');
+            pick.type='button'; pick.textContent='선택';
+            pick.style.cssText='padding:6px 12px;border-radius:7px;border:1px solid rgba(74,170,255,.4);background:rgba(45,107,255,.18);color:#8cf;cursor:pointer;font-family:inherit;font-size:calc(11.5px * var(--textScale))';
+            pick.addEventListener('click', function(){
+              try{ localStorage.setItem('bk_fish_voice', v.id); _fishDead=false; }catch(_){}
+              refreshMarks();
+              if(typeof showToast === 'function') showToast('음성 선택: ' + v.title);
+            });
+            top.appendChild(pb); top.appendChild(nm); top.appendChild(pick);
+            card.appendChild(top);
+            if(v.sample_text){
+              var st = document.createElement('div');
+              st.style.cssText='margin-top:5px;font-size:11px;color:var(--muted);line-height:1.5';
+              st.textContent = '원본 녹음: ' + v.sample_text;
+              card.appendChild(st);
+            }
+            if(v.tags && v.tags.length){
+              var tg = document.createElement('div');
+              tg.style.cssText='margin-top:4px;font-size:10.5px;color:#7a7a80';
+              tg.textContent = v.tags.join(' · ');
+              card.appendChild(tg);
+            }
+            sRes.appendChild(card);
+          });
+          if(more){
+            var mb = document.createElement('button');
+            mb.type='button'; mb.textContent='더 보기 (' + (sPage+1) + '페이지)';
+            mb.style.cssText='width:100%;padding:8px;border-radius:8px;border:1px dashed rgba(255,255,255,.18);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-size:12px';
+            mb.addEventListener('click', function(){ sPage++; doSearch(true); });
+            sRes.appendChild(mb);
+          }
+        }
+        function doSearch(append){
+          sBt.textContent = '검색 중…';
+          fetch(FISH_TTS_URL.replace('/tts','/voices'), {
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
+            body: JSON.stringify({q: sQuery, page: sPage, female: true})
+          }).then(function(r){ return r.json(); })
+          .then(function(d){
+            sBt.textContent = '🔍 검색';
+            if(!d.ok){ throw new Error(d.error || '검색 실패'); }
+            if(append){
+              var old = sRes.querySelectorAll('div');
+              renderVoices(d.items, (d.items||[]).length >= 5);
+            } else {
+              renderVoices(d.items, (d.items||[]).length >= 5);
+            }
+          }).catch(function(e){
+            sBt.textContent = '🔍 검색';
+            sRes.innerHTML = '<div style="color:#e88;font-size:12px;padding:8px">검색 실패: ' + e.message + '</div>';
+          });
+        }
+        sBt.addEventListener('click', function(){ sQuery = (sIn.value||'').trim(); sPage = 1; doSearch(false); });
+        sIn.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); sBt.click(); } });
+        sTop.appendChild(sIn); sTop.appendChild(sBt);
+        sBox.appendChild(sTop); sBox.appendChild(sRes);
+        box.appendChild(sBox);
         panel.appendChild(box);
       }catch(_){}
     })();
