@@ -1697,7 +1697,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p26';
+    const APP_VERSION = 'v20.57p27';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4442,9 +4442,14 @@ label[for="maxTokens"], #maxTokens,
     //   실패(크레딧 부족·네트워크)하면 그 청크부터 기존 구글TTS로 자동 폴백.
     var FISH_TTS_URL = 'https://158-247-232-44.sslip.io/tts';
     var FISH_VOICES = [
-      ['부드러운 젊은 여성 (기본)', '7f92f8afb8ec43bf81429cc1c9199cb1'],
-      ['또랑또랑 여대생', '5c353fdb312f4888836a9a5680099ef0'],
-      ['차분한 여성 회화', 'fbe02f8306fc4d3d915e9871722a39d5']
+      ['1 부드러운 젊은 여성 (기본)', '7f92f8afb8ec43bf81429cc1c9199cb1'],
+      ['2 또랑또랑 여대생', '5c353fdb312f4888836a9a5680099ef0'],
+      ['3 차분한 여성 회화', 'fbe02f8306fc4d3d915e9871722a39d5'],
+      ['4 온화한 낭독 여성', 'faccba1a8ac54016bcfc02761285e67f'],
+      ['5 여자 아나운서', '57eab548c7ed4ddc974c4c153cb015b2'],
+      ['6 성숙한 지적 여성', 'b7f6ea6bf21246de894f6b9b499add43'],
+      ['7 따뜻한 여학생', 'a1417155aa234890aab4a18686d12849'],
+      ['8 부드러운 자스민', '6ce7ea8ada884bf3889fa7c7fb206691']
     ];
     function fishVoiceId(){ try{ return localStorage.getItem('bk_fish_voice') || FISH_VOICES[0][1]; }catch(_){ return FISH_VOICES[0][1]; } }
     function fishSpeed(){ try{ return parseFloat(localStorage.getItem('bk_fish_speed') || '0.9'); }catch(_){ return 0.9; } }
@@ -4603,6 +4608,28 @@ label[for="maxTokens"], #maxTokens,
         sp.addEventListener('change', function(){ try{ localStorage.setItem('bk_fish_speed', sp.value); }catch(_){} });
         spRow.appendChild(spLb); spRow.appendChild(sp);
         box.appendChild(spRow);
+        // 커스텀 음성 ID — fish.audio 마켓의 아무 음성이나 URL의 ID를 붙여넣어 사용
+        var cuRow = document.createElement('div');
+        cuRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:10px';
+        var cuIn = document.createElement('input');
+        cuIn.type = 'text';
+        cuIn.placeholder = '직접 입력: fish.audio 음성 ID 붙여넣기 (32자리)';
+        cuIn.style.cssText = 'flex:1;padding:8px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.12);font-family:inherit;font-size:calc(12px * var(--textScale))';
+        var saved = fishVoiceId();
+        if(!FISH_VOICES.some(function(v){ return v[1] === saved; })) cuIn.value = saved;
+        var cuBt = document.createElement('button');
+        cuBt.type = 'button'; cuBt.textContent = '🔊 적용';
+        cuBt.style.cssText = 'padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-family:inherit;white-space:nowrap;font-size:calc(12px * var(--textScale))';
+        cuBt.addEventListener('click', function(){
+          var id = (cuIn.value || '').trim();
+          if(!/^[0-9a-f]{32}$/i.test(id)){ if(typeof showToast === 'function') showToast('ID 형식이 아닙니다(32자리 영숫자)'); return; }
+          try{ localStorage.setItem('bk_fish_voice', id); _fishDead = false; }catch(_){}
+          refreshMarks();
+          fishPreview(id, cuBt);
+          if(typeof showToast === 'function') showToast('커스텀 음성 적용됨');
+        });
+        cuRow.appendChild(cuIn); cuRow.appendChild(cuBt);
+        box.appendChild(cuRow);
         panel.appendChild(box);
       }catch(_){}
     })();
