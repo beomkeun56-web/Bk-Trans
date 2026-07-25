@@ -1719,7 +1719,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p34';
+    const APP_VERSION = 'v20.57p35';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -1733,19 +1733,63 @@ label[for="maxTokens"], #maxTokens,
         //   복귀 시 빈 화면이 되는 것을 줄인다(설치된 PWA는 보통 무프롬프트 승인).
         try{ navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(function(){}); }catch(_){}
       });
+      // ★p35: 새 버전 SW가 제어권을 잡으면 자동 새로고침 — 이게 없어서 배포 후 '완전종료 2회'
+      //   전까지 옛 코드가 남았다(흰 화면 수정이 폰에 늦게 도착한 원인). 입력 중 날림 방지:
+      //   화면이 숨겨져 있거나 켠 지 15초 이내일 때만 즉시 적용, 아니면 다음 실행 때 적용.
+      try{
+        var _bkHadCtrl = !!navigator.serviceWorker.controller;
+        var _bkCtrlTs = Date.now();
+        navigator.serviceWorker.addEventListener('controllerchange', function(){
+          if(!_bkHadCtrl){ _bkHadCtrl = true; return; }   // 최초 설치는 리로드 불필요
+          if(window.__bkCtrlRe) return;
+          if(document.visibilityState === 'hidden' || (Date.now() - _bkCtrlTs) < 15000){
+            window.__bkCtrlRe = true;
+            location.reload();
+          }
+        });
+      }catch(_){}
     }
 
-    // ★p34: 대기 복귀 건강검진 — 화면에 핵심 UI(#main)가 안 보이면(비정상 복귀) 1회 자동 재로드.
-    document.addEventListener('visibilitychange', function(){
+    // ★p34/p35: 대기 복귀 건강검진 3종 —
+    //   ①핵심 UI(#main) 소실 → 1회 재로드  ②컴포지터 고착(DOM 멀쩡·화면만 흰색) →
+    //   레이어 강제 무효화로 다시 그리게 킥  ③프레임 정지(1.5초 내 rAF 무응답) → 1회 재로드.
+    function _bkRepaintKick(){
+      try{
+        var b = document.body; if(!b) return;
+        b.style.transform = 'translateZ(0)';
+        requestAnimationFrame(function(){ b.style.transform = ''; });
+        window.scrollBy(0, 1); window.scrollBy(0, -1);
+      }catch(_){}
+    }
+    function _bkFrameCheck(){
+      try{
+        var alive = false;
+        requestAnimationFrame(function(){ alive = true; });
+        setTimeout(function(){
+          if(alive || document.visibilityState !== 'visible') return;
+          if(sessionStorage.getItem('bk_frame_retry')) return;   // 무한루프 방지(1회)
+          sessionStorage.setItem('bk_frame_retry','1');
+          location.reload();
+        }, 1500);
+        setTimeout(function(){
+          if(alive){ try{ sessionStorage.removeItem('bk_frame_retry'); }catch(_){} }
+        }, 2200);
+      }catch(_){}
+    }
+    function _bkResumeCheck(){
       try{
         if(document.visibilityState !== 'visible') return;
+        _bkRepaintKick();
+        _bkFrameCheck();
         var m = document.getElementById('main');
         if(m && m.offsetParent !== null){ sessionStorage.removeItem('bk_resume_retry'); return; }
         if(sessionStorage.getItem('bk_resume_retry')) return;
         sessionStorage.setItem('bk_resume_retry','1');
         location.reload();
       }catch(_){}
-    });
+    }
+    document.addEventListener('visibilitychange', _bkResumeCheck);
+    window.addEventListener('pageshow', _bkResumeCheck);
 
     // ===== 오프라인/온라인 상태 배너 + 복귀 자동복구 (v20.39t) =====
     // 잠금 후 깨어났을 때 "끊긴 건지 앱이 죽은 건지" 헷갈리지 않게 얇은 배너로 알리고,

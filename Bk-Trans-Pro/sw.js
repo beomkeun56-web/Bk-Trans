@@ -10,9 +10,9 @@
  *   catch가 안 걸려 캐시 폴백도 못 탔다(새로고침 무효·앱 재시작만 유효했던 이유).
  *   + 쿼리 붙은 URL로 열려도 캐시를 찾도록 ignoreSearch, 캐시 전멸 시 최후 대기화면.
  */
-const CACHE_VER = 'v20.57p34';
+const CACHE_VER = 'v20.57p35';
 const CACHE_NAME = 'bktrans-pro-shell-' + CACHE_VER;
-const NAV_TIMEOUT_MS = 3000;
+const NAV_TIMEOUT_MS = 2500;
 const SHELL = [
   './',
   './index.html',
@@ -33,21 +33,24 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.filter((k) => k.startsWith('bktrans-pro-shell-') && k !== CACHE_NAME)
-            .map((k) => caches.delete(k))
-      )
-    ).then(() => self.clients.claim())
-  );
+  e.waitUntil((async () => {
+    // ★p35: 내비게이션 프리로드 — 딥슬립 후 SW 프로세스가 깨어나는 동안에도 브라우저가
+    //   문서 요청을 병렬로 먼저 보내게 한다(SW 기동 지연이 첫 화면을 막는 것 방지).
+    try { if (self.registration.navigationPreload) await self.registration.navigationPreload.enable(); } catch (_) {}
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter((k) => k.startsWith('bktrans-pro-shell-') && k !== CACHE_NAME)
+          .map((k) => caches.delete(k))
+    );
+    await self.clients.claim();
+  })());
 });
 
-// fetch를 ms 안에 못 받으면 reject — 대기 복귀 직후 '무한 대기' 차단용
-function timeoutFetch(req, ms) {
+// 프라미스를 ms 안에 못 받으면 reject — 대기 복귀 직후 '무한 대기' 차단용
+function withTimeout(p, ms) {
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('nav-timeout')), ms);
-    fetch(req).then(
+    Promise.resolve(p).then(
       (res) => { clearTimeout(t); resolve(res); },
       (err) => { clearTimeout(t); reject(err); }
     );
@@ -74,8 +77,12 @@ self.addEventListener('fetch', (e) => {
   const isNav = req.mode === 'navigate' || req.destination === 'document';
   e.respondWith((async () => {
     try {
-      // 문서 요청은 3초 안에 안 오면 캐시로 전환(대기 복귀 무한 대기 방지). 그 외는 기존대로.
-      const res = await (isNav ? timeoutFetch(req, NAV_TIMEOUT_MS) : fetch(req));
+      // 문서 요청: 프리로드 응답이 있으면 그걸 먼저 쓰고(=SW 기동과 병렬), 없으면 fetch.
+      // 어느 쪽이든 시한 안에 안 오면 캐시로 전환(대기 복귀 무한 대기 방지). 그 외 자원은 기존대로.
+      const navGet = () => (e.preloadResponse
+        ? e.preloadResponse.then((r) => r || fetch(req))
+        : fetch(req));
+      const res = await (isNav ? withTimeout(navGet(), NAV_TIMEOUT_MS) : fetch(req));
       if (res && res.ok) {
         const copy = res.clone();
         caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => {});
