@@ -1697,7 +1697,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p31';
+    const APP_VERSION = 'v20.57p32';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4441,15 +4441,16 @@ label[for="maxTokens"], #maxTokens,
     // ★v20.57p25: 중국어 음성 = Fish Audio 원어민(두뇌서버 /tts 프록시 — 키는 서버에만).
     //   실패(크레딧 부족·네트워크)하면 그 청크부터 기존 구글TTS로 자동 폴백.
     var FISH_TTS_URL = 'https://158-247-232-44.sslip.io/tts';
-    // ★p31(범근님): 아나운서·낭독·강의체 제외, 자연스러운 일상 회화체로만 구성. 1·4·10 유지.
+    // ★p32(범근님): 1·4·10·21 유지 + 21(밝은 또래) 계열로 22~25 추가. 전부 회화체.
     var FISH_VOICES = [
       ['1 부드러운 젊은 여성 (기본)', '7f92f8afb8ec43bf81429cc1c9199cb1'],
       ['4 온화한 낭독 여성', 'faccba1a8ac54016bcfc02761285e67f'],
       ['10 달콤한 진행자', 'e752df7d20cd4576af9a207520349a33'],
-      ['18 따뜻한 친근 회화', '3b55b3d84d2f453a98d8ca9bb24182d6'],
-      ['19 부드러운 일상 톤', 'f729a143b9a34005bdae0b21697fa41a'],
-      ['20 편안한 중년 여성', '4c7cc6fc744b4999a05d40f265ee3237'],
-      ['21 밝은 또래 회화', '5671e9d40d7a48e1b81e78ff58359903']
+      ['21 밝은 또래 회화', '5671e9d40d7a48e1b81e78ff58359903'],
+      ['22 대만 또래 여성', '97b816cc8f924ea5b5e1b3327927f346'],
+      ['23 상큼한 레몬', '78128edf84204e5dbb99535249360e7d'],
+      ['24 대만 감미로운', '3254fdd1cfa04d8c87b377ece63537e1'],
+      ['25 상냥한 친구 톤', 'ba877ee323214d8d837c9aa030c5f7c3']
     ];
     // 교체된 구 음성 저장값 정리 → 기본(1번)으로
     try{
@@ -4459,7 +4460,9 @@ label[for="maxTokens"], #maxTokens,
                  '188fedbaa43e40508a8fefdaddac66c6','4a38cb6e8855427a905aeb787467cbc7',
                  '7b64d954530d490a8c40827e618e55c6','cb73f2bb9bf447f492f118bf362c10b4',
                  '5d07e8c1a1654268882ed75c81cbcd83','9cb8c56838094a7ab0fcd2ec355316b9',
-                 'b561236e80b04f22843c6637682b5478','27d841c7fdc449d88a89fbf46b55a28d'];
+                 'b561236e80b04f22843c6637682b5478','27d841c7fdc449d88a89fbf46b55a28d',
+                 '3b55b3d84d2f453a98d8ca9bb24182d6','f729a143b9a34005bdae0b21697fa41a',
+                 '4c7cc6fc744b4999a05d40f265ee3237'];
       if(_rm.indexOf(localStorage.getItem('bk_fish_voice')) >= 0) localStorage.removeItem('bk_fish_voice');
     }catch(_){}
     function fishVoiceId(){ try{ return localStorage.getItem('bk_fish_voice') || FISH_VOICES[0][1]; }catch(_){ return FISH_VOICES[0][1]; } }
