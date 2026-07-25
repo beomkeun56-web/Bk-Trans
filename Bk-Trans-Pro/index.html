@@ -1697,7 +1697,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p25';
+    const APP_VERSION = 'v20.57p26';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4447,6 +4447,24 @@ label[for="maxTokens"], #maxTokens,
       ['차분한 여성 회화', 'fbe02f8306fc4d3d915e9871722a39d5']
     ];
     function fishVoiceId(){ try{ return localStorage.getItem('bk_fish_voice') || FISH_VOICES[0][1]; }catch(_){ return FISH_VOICES[0][1]; } }
+    function fishSpeed(){ try{ return parseFloat(localStorage.getItem('bk_fish_speed') || '0.9'); }catch(_){ return 0.9; } }
+    var _fishPrev = null;
+    function fishPreview(voiceId, btn){
+      try{ if(_fishPrev){ _fishPrev.pause(); _fishPrev = null; } }catch(_){}
+      document.querySelectorAll('.fishTestBtn.speaking').forEach(function(b){ b.classList.remove('speaking'); b.style.background='rgba(255,255,255,.06)'; });
+      if(btn){ btn.classList.add('speaking'); btn.style.background='rgba(45,107,255,.35)'; }
+      var done = function(){ if(btn){ btn.classList.remove('speaking'); btn.style.background='rgba(255,255,255,.06)'; } };
+      fetch(FISH_TTS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
+        body: JSON.stringify({text:'你好，今天的生产情况怎么样？我们下午讨论质量改善方案。', voice: voiceId, speed: fishSpeed()})
+      }).then(function(r){ if(!r.ok) throw new Error('fish ' + r.status); return r.blob(); })
+      .then(function(b){
+        var a = new Audio(URL.createObjectURL(b)); _fishPrev = a;
+        a.onended = done; a.onerror = done;
+        a.play().catch(done);
+      }).catch(function(e){ done(); if(typeof showToast === 'function') showToast('음성 테스트 실패: ' + e.message); });
+    }
     var _fishDead = false;
     function playFishChunk(){
       if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
@@ -4454,7 +4472,7 @@ label[for="maxTokens"], #maxTokens,
       fetch(FISH_TTS_URL, {
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
-        body: JSON.stringify({text: chunk, voice: fishVoiceId()})
+        body: JSON.stringify({text: chunk, voice: fishVoiceId(), speed: fishSpeed()})
       }).then(function(r){
         if(!r.ok) throw new Error('fish ' + r.status);
         return r.blob();
@@ -4530,23 +4548,62 @@ label[for="maxTokens"], #maxTokens,
       btn.addEventListener('click', function(){ speakText(text, btn); });
       return btn;
     }
-    // ★v20.57p25: API 설정 패널에 중국어 음성 선택(Fish Audio) 추가
+    // ★v20.57p26: 음성별 🔊 테스트 버튼 + 선택 + 속도(기본 0.9 — "너무 빠르다" 피드백)
     (function(){
       try{
         var panel = document.getElementById('apiSettingsPanel');
-        if(!panel || document.getElementById('fishVoiceSel')) return;
-        var row = document.createElement('div');
-        row.style.cssText = 'margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)';
+        if(!panel || document.getElementById('fishVoiceBox')) return;
+        var box = document.createElement('div');
+        box.id = 'fishVoiceBox';
+        box.style.cssText = 'margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)';
         var lb = document.createElement('label');
-        lb.textContent = '중국어 음성 (Fish Audio 원어민 · 실패 시 구글 폴백)';
+        lb.textContent = '중국어 음성 (Fish Audio 원어민) — 🔊 눌러 들어보고 행을 눌러 선택';
         lb.style.cssText = 'font-size:calc(13px * var(--textScale));font-weight:600;display:block;margin-bottom:8px';
-        var sel = document.createElement('select');
-        sel.id = 'fishVoiceSel';
-        sel.style.cssText = 'width:100%;padding:9px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.12);font-family:inherit';
-        FISH_VOICES.forEach(function(v){ var o = document.createElement('option'); o.value = v[1]; o.textContent = v[0]; sel.appendChild(o); });
-        sel.value = fishVoiceId();
-        sel.addEventListener('change', function(){ try{ localStorage.setItem('bk_fish_voice', sel.value); _fishDead = false; }catch(_){} });
-        row.appendChild(lb); row.appendChild(sel); panel.appendChild(row);
+        box.appendChild(lb);
+        function refreshMarks(){
+          var cur = fishVoiceId();
+          box.querySelectorAll('.fishMark').forEach(function(m){
+            m.textContent = (m.dataset.vid === cur) ? '●' : '○';
+            m.style.color = (m.dataset.vid === cur) ? '#4af' : 'var(--muted)';
+          });
+        }
+        FISH_VOICES.forEach(function(v){
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 4px;border-radius:8px;cursor:pointer';
+          var tb = document.createElement('button');
+          tb.type = 'button'; tb.className = 'fishTestBtn'; tb.textContent = '🔊 테스트';
+          tb.style.cssText = 'padding:7px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-size:calc(12px * var(--textScale));font-family:inherit;white-space:nowrap';
+          tb.addEventListener('click', function(ev){ ev.stopPropagation(); fishPreview(v[1], tb); });
+          var mark = document.createElement('span');
+          mark.className = 'fishMark'; mark.dataset.vid = v[1];
+          mark.style.cssText = 'width:18px;text-align:center;font-weight:800';
+          var nm = document.createElement('span');
+          nm.textContent = v[0];
+          nm.style.cssText = 'font-size:calc(13px * var(--textScale))';
+          row.appendChild(tb); row.appendChild(mark); row.appendChild(nm);
+          row.addEventListener('click', function(){
+            try{ localStorage.setItem('bk_fish_voice', v[1]); _fishDead = false; }catch(_){}
+            refreshMarks();
+            if(typeof showToast === 'function') showToast('중국어 음성: ' + v[0]);
+          });
+          box.appendChild(row);
+        });
+        refreshMarks();
+        var spRow = document.createElement('div');
+        spRow.style.cssText = 'display:flex;align-items:center;gap:10px;margin-top:10px';
+        var spLb = document.createElement('span');
+        spLb.textContent = '말하기 속도';
+        spLb.style.cssText = 'font-size:calc(12px * var(--textScale));color:var(--muted);white-space:nowrap';
+        var sp = document.createElement('select');
+        sp.style.cssText = 'flex:1;padding:8px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.12);font-family:inherit';
+        [['느리게 (0.8)','0.8'],['보통 (0.9) — 기본','0.9'],['원래 속도 (1.0)','1.0']].forEach(function(o){
+          var e = document.createElement('option'); e.value = o[1]; e.textContent = o[0]; sp.appendChild(e);
+        });
+        sp.value = String(fishSpeed());
+        sp.addEventListener('change', function(){ try{ localStorage.setItem('bk_fish_speed', sp.value); }catch(_){} });
+        spRow.appendChild(spLb); spRow.appendChild(sp);
+        box.appendChild(spRow);
+        panel.appendChild(box);
       }catch(_){}
     })();
 
