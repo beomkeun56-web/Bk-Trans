@@ -1697,7 +1697,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p27';
+    const APP_VERSION = 'v20.57p28';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4441,16 +4441,25 @@ label[for="maxTokens"], #maxTokens,
     // ★v20.57p25: 중국어 음성 = Fish Audio 원어민(두뇌서버 /tts 프록시 — 키는 서버에만).
     //   실패(크레딧 부족·네트워크)하면 그 청크부터 기존 구글TTS로 자동 폴백.
     var FISH_TTS_URL = 'https://158-247-232-44.sslip.io/tts';
+    // ★p28: 1·4번 제외(범근님), 새 후보 9~13 추가. 기본=5 여자 아나운서.
     var FISH_VOICES = [
-      ['1 부드러운 젊은 여성 (기본)', '7f92f8afb8ec43bf81429cc1c9199cb1'],
+      ['5 여자 아나운서 (기본)', '57eab548c7ed4ddc974c4c153cb015b2'],
+      ['9 CCTV 방송 낭독', '188fedbaa43e40508a8fefdaddac66c6'],
+      ['10 달콤한 진행자', 'e752df7d20cd4576af9a207520349a33'],
+      ['11 또렷한 표준어', '4a38cb6e8855427a905aeb787467cbc7'],
+      ['12 안내방송 표준', '7b64d954530d490a8c40827e618e55c6'],
+      ['13 치유 릴랙스 성숙', 'cb73f2bb9bf447f492f118bf362c10b4'],
       ['2 또랑또랑 여대생', '5c353fdb312f4888836a9a5680099ef0'],
       ['3 차분한 여성 회화', 'fbe02f8306fc4d3d915e9871722a39d5'],
-      ['4 온화한 낭독 여성', 'faccba1a8ac54016bcfc02761285e67f'],
-      ['5 여자 아나운서', '57eab548c7ed4ddc974c4c153cb015b2'],
       ['6 성숙한 지적 여성', 'b7f6ea6bf21246de894f6b9b499add43'],
       ['7 따뜻한 여학생', 'a1417155aa234890aab4a18686d12849'],
       ['8 부드러운 자스민', '6ce7ea8ada884bf3889fa7c7fb206691']
     ];
+    // 제외된 구 음성(1·4) 저장값 정리 → 기본으로
+    try{
+      var _rm = ['7f92f8afb8ec43bf81429cc1c9199cb1','faccba1a8ac54016bcfc02761285e67f'];
+      if(_rm.indexOf(localStorage.getItem('bk_fish_voice')) >= 0) localStorage.removeItem('bk_fish_voice');
+    }catch(_){}
     function fishVoiceId(){ try{ return localStorage.getItem('bk_fish_voice') || FISH_VOICES[0][1]; }catch(_){ return FISH_VOICES[0][1]; } }
     function fishSpeed(){ try{ return parseFloat(localStorage.getItem('bk_fish_speed') || '0.9'); }catch(_){ return 0.9; } }
     var _fishPrev = null;
