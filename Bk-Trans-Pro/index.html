@@ -1726,7 +1726,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p39';
+    const APP_VERSION = 'v20.57p40';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4530,9 +4530,13 @@ label[for="maxTokens"], #maxTokens,
     //   실패(크레딧 부족·네트워크)하면 그 청크부터 기존 구글TTS로 자동 폴백.
     var FISH_TTS_URL = 'https://158-247-232-44.sslip.io/tts';
     // ★p38(범근님 확정): 중국어는 21번 + 유역비 원음판 2종만.
+    // 항목 = [표시이름, 음성ID, 볼륨(dB 가산, 생략=0)]
+    // ★p40: 유역비 원음판이 조용해서(-24dBFS 실측) +6dB 판을 별도 항목으로 추가.
+    //   6은 클리핑 0 확인값이라 왜곡 없이 가장 크게 들리는 지점.
     var FISH_VOICES = [
       ['21 밝은 또래 회화 (기본)', '5671e9d40d7a48e1b81e78ff58359903'],
-      ['유역비 (원음판)', '1fae34245c8641778d3aaf6bdb644a15']
+      ['유역비 (원음판)', '1fae34245c8641778d3aaf6bdb644a15'],
+      ['유역비 (원음판·소리 크게)', '1fae34245c8641778d3aaf6bdb644a15', 6]
     ];
     // 교체된 구 음성 저장값 정리 → 기본(1번)으로
     try{
@@ -4573,9 +4577,27 @@ label[for="maxTokens"], #maxTokens,
       var L = fishVoices(lang);
       try{ return localStorage.getItem(fishVoiceKey(lang)) || L[0][1]; }catch(_){ return L[0][1]; }
     }
+    // ★p40: 같은 음성ID를 볼륨만 달리해 여러 항목으로 둘 수 있어야 하므로,
+    //   선택 저장값은 'ID' 또는 'ID@볼륨' 형식을 모두 받는다(구버전 저장값 호환).
+    function fishVoiceKeyVal(lang){
+      try{ return localStorage.getItem(fishVoiceKey(lang)) || ''; }catch(_){ return ''; }
+    }
+    function fishVoiceEntry(lang){
+      var L = fishVoices(lang), v = fishVoiceKeyVal(lang);
+      if(v){
+        for(var i=0;i<L.length;i++){
+          var tag = L[i][1] + (L[i][2] ? '@' + L[i][2] : '');
+          if(v === tag || v === L[i][1]) return L[i];
+        }
+        if(/^[0-9a-f]{32}$/i.test(v)) return [v, v, 0];   // 커스텀 ID
+      }
+      return L[0];
+    }
+    function fishVoiceTag(e){ return e[1] + (e[2] ? '@' + e[2] : ''); }
+    function fishVolume(lang){ var e = fishVoiceEntry(lang); return e[2] || 0; }
     function fishSpeed(){ try{ return parseFloat(localStorage.getItem('bk_fish_speed') || '0.9'); }catch(_){ return 0.9; } }
     var _fishPrev = null;
-    function fishPreview(voiceId, btn){
+    function fishPreview(voiceId, btn, vol){
       try{ if(_fishPrev){ _fishPrev.pause(); _fishPrev = null; } }catch(_){}
       document.querySelectorAll('.fishTestBtn.speaking').forEach(function(b){ b.classList.remove('speaking'); b.style.background='rgba(255,255,255,.06)'; });
       if(btn){ btn.classList.add('speaking'); btn.style.background='rgba(45,107,255,.35)'; }
@@ -4583,7 +4605,8 @@ label[for="maxTokens"], #maxTokens,
       fetch(FISH_TTS_URL, {
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
-        body: JSON.stringify({text:'你好，今天的生产情况怎么样？我们下午讨论质量改善方案。', voice: voiceId, speed: fishSpeed()})
+        body: JSON.stringify({text:'你好，今天的生产情况怎么样？我们下午讨论质量改善方案。',
+                              voice: voiceId, speed: fishSpeed(), volume: vol || 0})
       }).then(function(r){ if(!r.ok) throw new Error('fish ' + r.status); return r.blob(); })
       .then(function(b){
         var a = new Audio(URL.createObjectURL(b)); _fishPrev = a;
@@ -4599,7 +4622,8 @@ label[for="maxTokens"], #maxTokens,
       fetch(FISH_TTS_URL, {
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
-        body: JSON.stringify({text: chunk, voice: fishVoiceId(_fishLang), speed: fishSpeed()})
+        body: JSON.stringify({text: chunk, voice: fishVoiceEntry(_fishLang)[1],
+                              speed: fishSpeed(), volume: fishVolume(_fishLang)})
       }).then(function(r){
         if(!r.ok) throw new Error('fish ' + r.status);
         return r.blob();
@@ -4736,7 +4760,7 @@ label[for="maxTokens"], #maxTokens,
         box.appendChild(listWrap);
 
         function refreshMarks(){
-          var cur = fishVoiceId(_vLang);
+          var cur = fishVoiceTag(fishVoiceEntry(_vLang));
           box.querySelectorAll('.fishMark').forEach(function(m){
             m.textContent = (m.dataset.vid === cur) ? '●' : '○';
             m.style.color = (m.dataset.vid === cur) ? '#4af' : 'var(--muted)';
@@ -4750,16 +4774,16 @@ label[for="maxTokens"], #maxTokens,
           var tb = document.createElement('button');
           tb.type = 'button'; tb.className = 'fishTestBtn'; tb.textContent = '🔊 테스트';
           tb.style.cssText = 'padding:7px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-size:calc(12px * var(--textScale));font-family:inherit;white-space:nowrap';
-          tb.addEventListener('click', function(ev){ ev.stopPropagation(); fishPreview(v[1], tb); });
+          tb.addEventListener('click', function(ev){ ev.stopPropagation(); fishPreview(v[1], tb, v[2]); });
           var mark = document.createElement('span');
-          mark.className = 'fishMark'; mark.dataset.vid = v[1];
+          mark.className = 'fishMark'; mark.dataset.vid = fishVoiceTag(v);
           mark.style.cssText = 'width:18px;text-align:center;font-weight:800';
           var nm = document.createElement('span');
           nm.textContent = v[0];
           nm.style.cssText = 'font-size:calc(13px * var(--textScale))';
           row.appendChild(tb); row.appendChild(mark); row.appendChild(nm);
           row.addEventListener('click', function(){
-            try{ localStorage.setItem(fishVoiceKey(_vLang), v[1]); _fishDead = false; }catch(_){}
+            try{ localStorage.setItem(fishVoiceKey(_vLang), fishVoiceTag(v)); _fishDead = false; }catch(_){}
             refreshMarks();
             if(typeof showToast === 'function') showToast((_vLang==='ko'?'한국어':'중국어') + ' 음성: ' + v[0]);
           });
