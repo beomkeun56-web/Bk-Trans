@@ -5,9 +5,14 @@
  *  - 앱 셸(HTML/manifest/아이콘)만 캐시. 번역 API 요청은 절대 가로채지 않음(항상 실시간).
  *  - 캐시명에 버전을 박아 배포마다 자동 교체(skipWaiting+clients.claim).
  * 이 파일은 index.html 배포 시 함께 갱신할 것. CACHE_VER를 APP_VERSION과 맞춘다.
+ * ★p34(2026-07-25 범근님 실사고 — 대기 복귀 흰 화면): 문서 요청에 3초 타임아웃.
+ *   복귀 직후 네트워크 스택이 덜 깨어나면 fetch가 실패도 성공도 없이 무한 대기했고,
+ *   catch가 안 걸려 캐시 폴백도 못 탔다(새로고침 무효·앱 재시작만 유효했던 이유).
+ *   + 쿼리 붙은 URL로 열려도 캐시를 찾도록 ignoreSearch, 캐시 전멸 시 최후 대기화면.
  */
-const CACHE_VER = 'v20.57p33';
+const CACHE_VER = 'v20.57p34';
 const CACHE_NAME = 'bktrans-pro-shell-' + CACHE_VER;
+const NAV_TIMEOUT_MS = 3000;
 const SHELL = [
   './',
   './index.html',
@@ -38,6 +43,26 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// fetch를 ms 안에 못 받으면 reject — 대기 복귀 직후 '무한 대기' 차단용
+function timeoutFetch(req, ms) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('nav-timeout')), ms);
+    fetch(req).then(
+      (res) => { clearTimeout(t); resolve(res); },
+      (err) => { clearTimeout(t); reject(err); }
+    );
+  });
+}
+
+// 캐시까지 전멸했을 때의 최후 화면 — 흰 화면 대신 자동 재시도 안내
+const OFFLINE_HTML = '<!doctype html><meta charset="utf-8">' +
+  '<meta name="viewport" content="width=device-width,initial-scale=1"><title>BK Trans</title>' +
+  '<body style="margin:0;font-family:sans-serif;display:flex;min-height:100vh;align-items:center;' +
+  'justify-content:center;background:#101014;color:#e8e8ee;text-align:center">' +
+  '<div><div style="font-size:44px">⏳</div><p style="line-height:1.7">네트워크 연결을 기다리는 중입니다…<br>' +
+  '곧 자동으로 다시 시도합니다.</p></div>' +
+  '<script>setTimeout(function(){location.reload()},2500)<\/script>';
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   // GET·같은 출처의 문서/정적 자원만 취급. 그 외(API POST 등)는 손대지 않음 → 실시간 번역 보장.
@@ -46,19 +71,25 @@ self.addEventListener('fetch', (e) => {
   try { url = new URL(req.url); } catch (_) { return; }
   if (url.origin !== self.location.origin) return; // 외부(API 등) 통과
 
-  // 네트워크 우선, 실패 시 캐시 폴백(=cold start 오프라인일 때 앱 셸 제공).
-  // 성공하면 최신본을 캐시에 갱신(다음 오프라인 대비).
-  e.respondWith(
-    fetch(req)
-      .then((res) => {
-        if (res && res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => {});
-        }
+  const isNav = req.mode === 'navigate' || req.destination === 'document';
+  e.respondWith((async () => {
+    try {
+      // 문서 요청은 3초 안에 안 오면 캐시로 전환(대기 복귀 무한 대기 방지). 그 외는 기존대로.
+      const res = await (isNav ? timeoutFetch(req, NAV_TIMEOUT_MS) : fetch(req));
+      if (res && res.ok) {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => {});
         return res;
-      })
-      .catch(() =>
-        caches.match(req).then((hit) => hit || caches.match('./index.html'))
-      )
-  );
+      }
+      const hit = await caches.match(req, { ignoreSearch: isNav });
+      return hit || res;
+    } catch (_) {
+      // ignoreSearch: 알림 등으로 쿼리 붙은 URL로 열려도 셸 캐시를 찾는다
+      const hit = (await caches.match(req, { ignoreSearch: isNav })) ||
+                  (await caches.match('./index.html'));
+      if (hit) return hit;
+      if (isNav) return new Response(OFFLINE_HTML, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+      return Response.error();
+    }
+  })());
 });

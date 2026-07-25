@@ -11,6 +11,28 @@
   <link rel="manifest" href="manifest.json" />
   <title>BK Trans</title>
 
+  <script>
+  // ★p34 부팅 워치독(대기 복귀 흰 화면 자가치유): 8초 내 앱 셸이 안 뜨면 1회만 자동 재로드.
+  //   렌더러가 도중에 죽어 문서가 반쯤 로드된 채 멈추는 케이스를 사람 손(앱 강제종료) 없이 회복.
+  (function(){
+    try{
+      window.__bkBootT = setTimeout(function(){
+        if(window.__bkBootOK) return;
+        if(sessionStorage.getItem('bk_boot_retry')) return;  // 무한 재로드 방지(1회만)
+        sessionStorage.setItem('bk_boot_retry','1');
+        location.reload();
+      }, 8000);
+      window.addEventListener('load', function(){
+        var m = document.getElementById('main');
+        if(m){
+          window.__bkBootOK = true;
+          try{ clearTimeout(window.__bkBootT); sessionStorage.removeItem('bk_boot_retry'); }catch(_){}
+        }
+      });
+    }catch(_){}
+  })();
+  </script>
+
   <link rel="icon" href="data:," />
 
   <!-- API 호스트 사전 연결: 첫 요청 지연(TLS 핸드셰이크) 단축 -->
@@ -1697,7 +1719,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p33';
+    const APP_VERSION = 'v20.57p34';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -1707,8 +1729,23 @@ label[for="maxTokens"], #maxTokens,
         navigator.serviceWorker.register('sw.js').catch(function(e){
           try{ console.warn('[SW] register failed', e); }catch(_){}
         });
+        // ★p34: 영구 저장 요청 — 안드로이드 저장공간 압박 때 앱셸 캐시가 지워져
+        //   복귀 시 빈 화면이 되는 것을 줄인다(설치된 PWA는 보통 무프롬프트 승인).
+        try{ navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(function(){}); }catch(_){}
       });
     }
+
+    // ★p34: 대기 복귀 건강검진 — 화면에 핵심 UI(#main)가 안 보이면(비정상 복귀) 1회 자동 재로드.
+    document.addEventListener('visibilitychange', function(){
+      try{
+        if(document.visibilityState !== 'visible') return;
+        var m = document.getElementById('main');
+        if(m && m.offsetParent !== null){ sessionStorage.removeItem('bk_resume_retry'); return; }
+        if(sessionStorage.getItem('bk_resume_retry')) return;
+        sessionStorage.setItem('bk_resume_retry','1');
+        location.reload();
+      }catch(_){}
+    });
 
     // ===== 오프라인/온라인 상태 배너 + 복귀 자동복구 (v20.39t) =====
     // 잠금 후 깨어났을 때 "끊긴 건지 앱이 죽은 건지" 헷갈리지 않게 얇은 배너로 알리고,
