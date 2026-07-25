@@ -46,7 +46,14 @@
   <link rel="dns-prefetch" href="https://api.z.ai" />
 
   <!-- 병음(pinyin) 표시용: 중국어 글자 위에 발음을 ruby로 렌더 -->
-  <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3/dist/index.js" defer></script>
+  <!-- ★p36(2026-07-25 흰화면 진범): 이 줄이 CDN(jsdelivr) + defer였다.
+       defer 스크립트는 DOMContentLoaded보다 먼저 실행되어야 하므로, 대기 복귀 직후
+       네트워크가 반쯤 깬 상태에서 이 요청이 무한 대기하면 DOMContentLoaded가 영영
+       발화하지 않는다 → 앱 초기화(5069행)가 통째로 멈춰 흰 화면. 새로고침해도 같은 경로라
+       무효, 앱 완전종료만 유효했던 이유. SW도 교차출처라 손댈 수 없었다.
+       수정: 자체 호스팅(같은 출처 → SW가 캐시)으로 바꾸고 async(부팅 비차단)로 로드.
+       병음은 부가기능이라 늦게 와도 아래 폴백이 다시 렌더한다. -->
+  <script src="assets/pinyin-pro.js" async></script>
 
   <style>
     :root{
@@ -1719,7 +1726,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p35';
+    const APP_VERSION = 'v20.57p36';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -7892,11 +7899,15 @@ label[for="maxTokens"], #maxTokens,
     // ★ v20.44t: 앱 시작 시 쌓인 '오류:' 말풍선을 자동 순차 재번역(오류 없으면 아무것도 안 함).
     //   렌더·초기화가 안정된 뒤 실행되게 살짝 지연.
     setTimeout(function(){ try{ _deferErrorRetranslate(800); }catch(_){} }, 800);
-    // pinyin-pro는 defer로 로드 → DOM 완료 후 도착하면 병음 포함해 다시 렌더
+    // ★p36: pinyin-pro는 async(부팅 비차단)로 로드 → 늦게 도착하면 그때 병음 포함해 다시 렌더.
+    //   DOMContentLoaded는 async 스크립트를 기다리지 않으므로 여기서 직접 도착을 감시한다
+    //   (최대 10초, 도착 못해도 앱은 정상 — 병음만 빠짐).
     if(typeof window.pinyinPro === 'undefined'){
-      document.addEventListener('DOMContentLoaded', function(){
-        if(window.pinyinPro) renderChat();
-      });
+      var _pyTries = 0;
+      var _pyWait = setInterval(function(){
+        if(window.pinyinPro){ clearInterval(_pyWait); try{ renderChat(); }catch(_){} }
+        else if(++_pyTries > 40){ clearInterval(_pyWait); }
+      }, 250);
     }
     setApiSettingsVisible(false);
     setColorSettingsVisible(false);

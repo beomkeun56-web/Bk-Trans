@@ -10,13 +10,14 @@
  *   catch가 안 걸려 캐시 폴백도 못 탔다(새로고침 무효·앱 재시작만 유효했던 이유).
  *   + 쿼리 붙은 URL로 열려도 캐시를 찾도록 ignoreSearch, 캐시 전멸 시 최후 대기화면.
  */
-const CACHE_VER = 'v20.57p35';
+const CACHE_VER = 'v20.57p36';
 const CACHE_NAME = 'bktrans-pro-shell-' + CACHE_VER;
 const NAV_TIMEOUT_MS = 2500;
 const SHELL = [
   './',
   './index.html',
   './manifest.json',
+  './assets/pinyin-pro.js',   // ★p36: CDN에서 자체 호스팅으로 이관(흰화면 진범) — 오프라인도 병음 유지
   './assets/icon-192.png',
   './assets/icon-512.png',
   './assets/icon-maskable-512.png'
