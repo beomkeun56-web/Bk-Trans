@@ -1726,7 +1726,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p36';
+    const APP_VERSION = 'v20.57p37';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4553,7 +4553,25 @@ label[for="maxTokens"], #maxTokens,
                  '4c7cc6fc744b4999a05d40f265ee3237'];
       if(_rm.indexOf(localStorage.getItem('bk_fish_voice')) >= 0) localStorage.removeItem('bk_fish_voice');
     }catch(_){}
-    function fishVoiceId(){ try{ return localStorage.getItem('bk_fish_voice') || FISH_VOICES[0][1]; }catch(_){ return FISH_VOICES[0][1]; } }
+
+    // ★p37(2026-07-25 범근님): 한국어도 Fish 음성으로 출력. 언어별로 음성을 따로 기억한다
+    //   (중국어 음성으로 한국어를 읽히면 발음이 무너지므로 저장키 자체를 분리).
+    //   아이돌·유명인 클론은 제외하고 일반 화자 회화체로 구성.
+    var FISH_VOICES_KO = [
+      ['K1 카리나 (기본)', 'b081170ae14740bdad9f57d589689926'],
+      ['K2 아이유', '259d7fde62cd445fbde3ce2d8d4f2f3b'],
+      ['K3 지수', '13247dc70a3a49dd8b3dacf0a4841b34'],
+      ['K4 원영', '79c5eeacf8a94901970cc15cc91dd712'],
+      ['K5 20대 나긋나긋', '4e118bfbb83e401c84699c09b5f08257'],
+      ['K6 부드러운 저음', '3c7ee7e408104d76a777ebaadc201896'],
+      ['K7 차분한 여성 성우', 'e2c4ecb9981041a893fe085f881b5105']
+    ];
+    function fishVoices(lang){ return lang === 'ko' ? FISH_VOICES_KO : FISH_VOICES; }
+    function fishVoiceKey(lang){ return lang === 'ko' ? 'bk_fish_voice_ko' : 'bk_fish_voice'; }
+    function fishVoiceId(lang){
+      var L = fishVoices(lang);
+      try{ return localStorage.getItem(fishVoiceKey(lang)) || L[0][1]; }catch(_){ return L[0][1]; }
+    }
     function fishSpeed(){ try{ return parseFloat(localStorage.getItem('bk_fish_speed') || '0.9'); }catch(_){ return 0.9; } }
     var _fishPrev = null;
     function fishPreview(voiceId, btn){
@@ -4573,13 +4591,14 @@ label[for="maxTokens"], #maxTokens,
       }).catch(function(e){ done(); if(typeof showToast === 'function') showToast('음성 테스트 실패: ' + e.message); });
     }
     var _fishDead = false;
+    var _fishLang = 'zh';   // ★p37: 현재 재생 중인 언어(음성 선택 분기용)
     function playFishChunk(){
       if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
       var chunk = _ttsChunks[_ttsChunkIdx++];
       fetch(FISH_TTS_URL, {
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
-        body: JSON.stringify({text: chunk, voice: fishVoiceId(), speed: fishSpeed()})
+        body: JSON.stringify({text: chunk, voice: fishVoiceId(_fishLang), speed: fishSpeed()})
       }).then(function(r){
         if(!r.ok) throw new Error('fish ' + r.status);
         return r.blob();
@@ -4594,7 +4613,8 @@ label[for="maxTokens"], #maxTokens,
         console.warn('FishTTS → 구글 폴백:', err);
         _fishDead = true;
         _ttsChunkIdx = Math.max(0, _ttsChunkIdx - 1);
-        playSotChunk('cmn-Hant-TW');
+        // ★p37: 폴백 음성도 언어에 맞게(한국어를 중국어 음성으로 읽던 버그 방지)
+        playSotChunk(_fishLang === 'ko' ? 'ko-KR' : 'cmn-Hant-TW');
       });
     }
     function speakText(text, btn){
@@ -4602,9 +4622,11 @@ label[for="maxTokens"], #maxTokens,
       _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
       if(btn) btn.classList.add('speaking');
       var lang = detectDominantLang(text);
-      if(lang === 'zh' && !_fishDead){
+      // ★p37: 중국어·한국어 모두 Fish 원어민 음성으로. 실패 시 아래 구글 경로로 자동 폴백.
+      if((lang === 'zh' || lang === 'ko') && !_fishDead){
         _ttsChunks = splitTts(text, 300);
         _ttsChunkIdx = 0;
+        _fishLang = lang;
         playFishChunk();
         return;
       }
@@ -4664,17 +4686,43 @@ label[for="maxTokens"], #maxTokens,
         box.id = 'fishVoiceBox';
         box.style.cssText = 'margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)';
         var lb = document.createElement('label');
-        lb.textContent = '중국어 음성 (Fish Audio 원어민) — 🔊 눌러 들어보고 행을 눌러 선택';
+        lb.textContent = 'Fish Audio 원어민 음성 — 🔊 눌러 들어보고 행을 눌러 선택';
         lb.style.cssText = 'font-size:calc(13px * var(--textScale));font-weight:600;display:block;margin-bottom:8px';
         box.appendChild(lb);
+
+        // ★p37: 중국어/한국어 탭 — 언어별로 음성을 따로 고른다
+        var _vLang = 'zh';
+        var tabRow = document.createElement('div');
+        tabRow.style.cssText = 'display:flex;gap:8px;margin-bottom:10px';
+        var tabZh = document.createElement('button'), tabKo = document.createElement('button');
+        [[tabZh,'중국어','zh'],[tabKo,'한국어','ko']].forEach(function(x){
+          x[0].type='button'; x[0].textContent=x[1]; x[0].dataset.lang=x[2];
+          x[0].style.cssText='flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer;font-family:inherit;font-size:calc(12.5px * var(--textScale))';
+          x[0].addEventListener('click', function(){ _vLang = x[2]; paintTabs(); renderPresets(); refreshMarks(); });
+        });
+        function paintTabs(){
+          [tabZh,tabKo].forEach(function(b){
+            var on = b.dataset.lang === _vLang;
+            b.style.background = on ? 'rgba(45,107,255,.28)' : 'rgba(255,255,255,.06)';
+            b.style.borderColor = on ? 'rgba(74,170,255,.5)' : 'rgba(255,255,255,.15)';
+            b.style.fontWeight = on ? '700' : '400';
+          });
+        }
+        tabRow.appendChild(tabZh); tabRow.appendChild(tabKo);
+        box.appendChild(tabRow);
+        var listWrap = document.createElement('div');
+        box.appendChild(listWrap);
+
         function refreshMarks(){
-          var cur = fishVoiceId();
+          var cur = fishVoiceId(_vLang);
           box.querySelectorAll('.fishMark').forEach(function(m){
             m.textContent = (m.dataset.vid === cur) ? '●' : '○';
             m.style.color = (m.dataset.vid === cur) ? '#4af' : 'var(--muted)';
           });
         }
-        FISH_VOICES.forEach(function(v){
+        function renderPresets(){
+          listWrap.innerHTML = '';
+          fishVoices(_vLang).forEach(function(v){
           var row = document.createElement('div');
           row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 4px;border-radius:8px;cursor:pointer';
           var tb = document.createElement('button');
@@ -4689,13 +4737,14 @@ label[for="maxTokens"], #maxTokens,
           nm.style.cssText = 'font-size:calc(13px * var(--textScale))';
           row.appendChild(tb); row.appendChild(mark); row.appendChild(nm);
           row.addEventListener('click', function(){
-            try{ localStorage.setItem('bk_fish_voice', v[1]); _fishDead = false; }catch(_){}
+            try{ localStorage.setItem(fishVoiceKey(_vLang), v[1]); _fishDead = false; }catch(_){}
             refreshMarks();
-            if(typeof showToast === 'function') showToast('중국어 음성: ' + v[0]);
+            if(typeof showToast === 'function') showToast((_vLang==='ko'?'한국어':'중국어') + ' 음성: ' + v[0]);
           });
-          box.appendChild(row);
-        });
-        refreshMarks();
+          listWrap.appendChild(row);
+          });
+        }
+        paintTabs(); renderPresets(); refreshMarks();
         var spRow = document.createElement('div');
         spRow.style.cssText = 'display:flex;align-items:center;gap:10px;margin-top:10px';
         var spLb = document.createElement('span');
@@ -4725,7 +4774,7 @@ label[for="maxTokens"], #maxTokens,
         cuBt.addEventListener('click', function(){
           var id = (cuIn.value || '').trim();
           if(!/^[0-9a-f]{32}$/i.test(id)){ if(typeof showToast === 'function') showToast('ID 형식이 아닙니다(32자리 영숫자)'); return; }
-          try{ localStorage.setItem('bk_fish_voice', id); _fishDead = false; }catch(_){}
+          try{ localStorage.setItem(fishVoiceKey(_vLang), id); _fishDead = false; }catch(_){}
           refreshMarks();
           fishPreview(id, cuBt);
           if(typeof showToast === 'function') showToast('커스텀 음성 적용됨');
@@ -4740,7 +4789,7 @@ label[for="maxTokens"], #maxTokens,
         sTop.style.cssText = 'display:flex;gap:8px;align-items:center';
         var sIn = document.createElement('input');
         sIn.type = 'text';
-        sIn.placeholder = '음성 찾기: 키워드(예: 温柔 · 东北 · 客服) — 비우면 인기순';
+        sIn.placeholder = '음성 찾기 — 위 탭의 언어로 검색됩니다 (비우면 인기순)';
         sIn.style.cssText = 'flex:1;padding:8px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.12);font-family:inherit;font-size:calc(12px * var(--textScale))';
         var sBt = document.createElement('button');
         sBt.type = 'button'; sBt.textContent = '🔍 검색';
@@ -4771,9 +4820,9 @@ label[for="maxTokens"], #maxTokens,
             pick.type='button'; pick.textContent='선택';
             pick.style.cssText='padding:6px 12px;border-radius:7px;border:1px solid rgba(74,170,255,.4);background:rgba(45,107,255,.18);color:#8cf;cursor:pointer;font-family:inherit;font-size:calc(11.5px * var(--textScale))';
             pick.addEventListener('click', function(){
-              try{ localStorage.setItem('bk_fish_voice', v.id); _fishDead=false; }catch(_){}
+              try{ localStorage.setItem(fishVoiceKey(_vLang), v.id); _fishDead=false; }catch(_){}
               refreshMarks();
-              if(typeof showToast === 'function') showToast('음성 선택: ' + v.title);
+              if(typeof showToast === 'function') showToast((_vLang==='ko'?'한국어':'중국어') + ' 음성 선택: ' + v.title);
             });
             top.appendChild(pb); top.appendChild(nm); top.appendChild(pick);
             card.appendChild(top);
@@ -4804,7 +4853,7 @@ label[for="maxTokens"], #maxTokens,
           fetch(FISH_TTS_URL.replace('/tts','/voices'), {
             method:'POST',
             headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
-            body: JSON.stringify({q: sQuery, page: sPage, female: true})
+            body: JSON.stringify({q: sQuery, page: sPage, female: true, lang: _vLang})
           }).then(function(r){ return r.json(); })
           .then(function(d){
             sBt.textContent = '🔍 검색';
