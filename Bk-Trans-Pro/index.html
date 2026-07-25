@@ -1697,7 +1697,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p24';
+    const APP_VERSION = 'v20.57p25';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4438,11 +4438,51 @@ label[for="maxTokens"], #maxTokens,
       if(_ttsBtn) _ttsBtn.classList.remove('speaking');
     }
 
+    // ★v20.57p25: 중국어 음성 = Fish Audio 원어민(두뇌서버 /tts 프록시 — 키는 서버에만).
+    //   실패(크레딧 부족·네트워크)하면 그 청크부터 기존 구글TTS로 자동 폴백.
+    var FISH_TTS_URL = 'https://158-247-232-44.sslip.io/tts';
+    var FISH_VOICES = [
+      ['부드러운 젊은 여성 (기본)', '7f92f8afb8ec43bf81429cc1c9199cb1'],
+      ['또랑또랑 여대생', '5c353fdb312f4888836a9a5680099ef0'],
+      ['차분한 여성 회화', 'fbe02f8306fc4d3d915e9871722a39d5']
+    ];
+    function fishVoiceId(){ try{ return localStorage.getItem('bk_fish_voice') || FISH_VOICES[0][1]; }catch(_){ return FISH_VOICES[0][1]; } }
+    var _fishDead = false;
+    function playFishChunk(){
+      if(_ttsCancelled || !_ttsBusy || _ttsChunkIdx >= _ttsChunks.length){ ttsFinish(); return; }
+      var chunk = _ttsChunks[_ttsChunkIdx++];
+      fetch(FISH_TTS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
+        body: JSON.stringify({text: chunk, voice: fishVoiceId()})
+      }).then(function(r){
+        if(!r.ok) throw new Error('fish ' + r.status);
+        return r.blob();
+      }).then(function(b){
+        if(_ttsCancelled || !_ttsBusy){ ttsFinish(); return; }
+        var a = new Audio(URL.createObjectURL(b));
+        _ttsAudio = a;
+        a.onended = function(){ playFishChunk(); };
+        a.onerror = function(){ playFishChunk(); };
+        a.play().catch(function(){ playFishChunk(); });
+      }).catch(function(err){
+        console.warn('FishTTS → 구글 폴백:', err);
+        _fishDead = true;
+        _ttsChunkIdx = Math.max(0, _ttsChunkIdx - 1);
+        playSotChunk('cmn-Hant-TW');
+      });
+    }
     function speakText(text, btn){
       if(_ttsBusy){ stopTts(); if(_ttsBtn === btn) return; }
       _ttsBusy = true; _ttsCancelled = false; _ttsBtn = btn;
       if(btn) btn.classList.add('speaking');
       var lang = detectDominantLang(text);
+      if(lang === 'zh' && !_fishDead){
+        _ttsChunks = splitTts(text, 300);
+        _ttsChunkIdx = 0;
+        playFishChunk();
+        return;
+      }
       var voice = lang === 'zh' ? 'cmn-Hant-TW' : lang === 'ko' ? 'ko-KR' : 'en-US';
       _ttsChunks = splitTts(text, 200);
       _ttsChunkIdx = 0;
@@ -4490,6 +4530,25 @@ label[for="maxTokens"], #maxTokens,
       btn.addEventListener('click', function(){ speakText(text, btn); });
       return btn;
     }
+    // ★v20.57p25: API 설정 패널에 중국어 음성 선택(Fish Audio) 추가
+    (function(){
+      try{
+        var panel = document.getElementById('apiSettingsPanel');
+        if(!panel || document.getElementById('fishVoiceSel')) return;
+        var row = document.createElement('div');
+        row.style.cssText = 'margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)';
+        var lb = document.createElement('label');
+        lb.textContent = '중국어 음성 (Fish Audio 원어민 · 실패 시 구글 폴백)';
+        lb.style.cssText = 'font-size:calc(13px * var(--textScale));font-weight:600;display:block;margin-bottom:8px';
+        var sel = document.createElement('select');
+        sel.id = 'fishVoiceSel';
+        sel.style.cssText = 'width:100%;padding:9px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.12);font-family:inherit';
+        FISH_VOICES.forEach(function(v){ var o = document.createElement('option'); o.value = v[1]; o.textContent = v[0]; sel.appendChild(o); });
+        sel.value = fishVoiceId();
+        sel.addEventListener('change', function(){ try{ localStorage.setItem('bk_fish_voice', sel.value); _fishDead = false; }catch(_){} });
+        row.appendChild(lb); row.appendChild(sel); panel.appendChild(row);
+      }catch(_){}
+    })();
 
     const focusOverlay = document.getElementById('focusOverlay');
     const focusText = document.getElementById('focusText');
