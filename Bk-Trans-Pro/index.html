@@ -1726,7 +1726,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p46';
+    const APP_VERSION = 'v20.57p47';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -3146,12 +3146,25 @@ label[for="maxTokens"], #maxTokens,
       MAX_INPUTS_PER_PAGE: 50,
       MAX_MESSAGES: 100,
       AUTO_TRANSLATE_MAX_LEN: 300,
+      // ★p47(2026-07-27 범근님): URL 자동번역은 사용자가 명시적으로 보낸 입력이라
+      //   길다고 버리면 안 된다. 클립보드 자동감지(300자)와 분리해 상한을 크게 둔다.
+      URL_TRANSLATE_MAX_LEN: 20000,
       REQUEST_TIMEOUT_MS: 8000,
       CLIPBOARD_DEBOUNCE_MS: 150,
       MIN_REQUEST_GAP_MS: 300,
       QUALITY_TEST_GAP_MS: 4000,
       URL_DEDUP_MS: 3000,
     };
+
+    /* ★p47(2026-07-27 범근님): 긴 글 URL 번역이 중간에 끊기던 문제.
+       단계별 max_tokens가 300/600/800 고정이라 원문이 길면 출력이 잘렸다.
+       원문 길이에 비례해 상한을 키운다(한글·한자 1자≈1토큰, 번역문 여유 2배).
+       callStage·callOneAgent 양쪽에서 쓰므로 전역에 둔다. */
+    function _dynMaxTok(src, floorTok){
+      var n = String(src || '').length;
+      var need = Math.ceil(n * 2) + 300;
+      return Math.min(Math.max(floorTok || 0, need), 16000);
+    }
 
     let chat = [];
     const MAX_INPUTS_PER_PAGE = CONFIG.MAX_INPUTS_PER_PAGE;
@@ -7037,7 +7050,7 @@ label[for="maxTokens"], #maxTokens,
         //   Stage 1 MT: 600 (번역만)
         //   Stage 2 Polisher: 800
         var origMaxTok2 = el.maxTokens ? el.maxTokens.value : '';
-        var stageMaxTok2 = (idx === 1) ? 600 : 800;
+        var stageMaxTok2 = _dynMaxTok(userContent, (idx === 1) ? 600 : 800);
         if(el.maxTokens) el.maxTokens.value = String(stageMaxTok2);
         try{
           var res = await callOpenRouterStream(userContent, function(partial){
@@ -7302,7 +7315,7 @@ label[for="maxTokens"], #maxTokens,
         //   Stage 2 Translator: 800 (긴 단락도 충분)
         //   Stage 3 Verifier: 600 (수정·맥락)
         var origMaxTok = el.maxTokens ? el.maxTokens.value : '';
-        var stageMaxTok = (idx === 1) ? 300 : (idx === 2 ? 800 : 600);
+        var stageMaxTok = _dynMaxTok(userContent, (idx === 1) ? 300 : (idx === 2 ? 800 : 600));
         if(el.maxTokens) el.maxTokens.value = String(stageMaxTok);
         try{
           var res = await callOpenRouterStream(userContent, function(partial){
@@ -8252,7 +8265,7 @@ label[for="maxTokens"], #maxTokens,
           // 필터: 언어/길이. URL은 사용자가 명시적으로 보낸 입력이므로 내용 중복으로 버리지 않는다.
           //   + 한글 우세(이미 한국어) 전달 메시지는 번역하지 않고 원문 그대로 표시.
           if(!trimmed || (!hasKorean(trimmed) && !hasChinese(trimmed))
-             || trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN
+             || trimmed.length >= CONFIG.URL_TRANSLATE_MAX_LEN
              || _urlShouldSkipKoDominant(trimmed)){
             _uwLog(_urlShouldSkipKoDominant(trimmed) ? 'skip-ko-dominant' : 'drop-filter', trimmed);
             var qd = _loadUrlQueue();
