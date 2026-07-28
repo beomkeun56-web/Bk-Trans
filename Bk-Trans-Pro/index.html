@@ -1731,7 +1731,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p54';
+    const APP_VERSION = 'v20.57p55';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8417,6 +8417,20 @@ label[for="maxTokens"], #maxTokens,
     document.addEventListener('visibilitychange', function(){
       if(!document.hidden) _onResume();
     });
+    // ★p55(2026-07-28 범근님): 팝업(멀티윈도우)에서 클립보드가 안 잡히던 문제.
+    //   팝업은 계속 '보이는 상태'라 visibilitychange 가 안 오고, 삼성 팝업뷰는
+    //   focus 이벤트도 누락된다. 그런데 안드로이드 10+ 는 포커스 없는 앱의
+    //   클립보드 읽기를 막으므로 '돌아온 순간'을 잡는 신호가 아예 없었다.
+    //   → 화면 터치를 세 번째 트리거로 사용(팝업 복귀엔 반드시 터치가 따른다).
+    //   2초 스로틀 + 기존 중복 가드(_lastClipboardText·_isKnownText)로 과호출·재번역 방지.
+    var _lastTouchClip = 0;
+    function _touchClipboardKick(){
+      var now = Date.now();
+      if(now - _lastTouchClip < 2000) return;
+      _lastTouchClip = now;
+      try{ scheduleClipboardCheck(); }catch(_){}
+    }
+    document.addEventListener('pointerdown', _touchClipboardKick, {passive: true});
     // URL 해시가 바뀌면(같은 페이지 유지 채로 #text= 갱신 시) 즉시 재확인
     window.addEventListener('hashchange', checkURLText);
     if(el.input){
