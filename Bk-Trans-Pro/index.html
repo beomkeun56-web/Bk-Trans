@@ -1214,7 +1214,7 @@ label[for="maxTokens"], #maxTokens,
           <div class="row" style="gap:12px; margin-bottom:12px;">
             <div style="flex:1 1 240px;">
               <label for="model" style="font-size:calc(12px * var(--textScale)); margin-bottom:6px;">모델</label>
-              <input id="model" type="text" value="gemini-3.1-flash-lite" list="modelList" />
+              <input id="model" type="text" value="sonnet-mac" list="modelList" />
               <datalist id="modelList"></datalist>
             </div>
             <div style="flex:1 1 120px;">
@@ -1726,7 +1726,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p48';
+    const APP_VERSION = 'v20.57p49';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2040,9 +2040,12 @@ label[for="maxTokens"], #maxTokens,
     //   두뇌서버 화이트리스트 밖이면 기본(lite)으로 정리 — '기본' 선택 시 옛 값이 되살아나던 사고 방지.
     try{
       if(!localStorage.getItem('bk_tr_pro_model_migrated_v2')){
-        var _ok = ['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-3-flash-preview','gemini-3.5-flash','gemini-3.1-pro-preview'];
+        var _ok = ['sonnet-mac','gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-3-flash-preview','gemini-3.5-flash','gemini-3.1-pro-preview'];
         // ★번역 본체 3.5-flash-lite 전환에 맞춰, 옛 기본값 3.1-flash-lite 저장분을 3.5-flash-lite로 1회 이관(2026-07-22)
         try{ if(localStorage.getItem('bk_tr_pro_brainModelMigrated35') !== '1'){ ['bk_tr_pro_model','bk_tr_pro_brainModel'].forEach(function(k){ if(localStorage.getItem(k) === 'gemini-3.1-flash-lite') localStorage.setItem(k, 'gemini-3.5-flash-lite'); }); localStorage.setItem('bk_tr_pro_brainModelMigrated35','1'); } }catch(_){}
+        // ★p49(2026-07-28 범근님): 소넷(맥 구독) 기본화 — 번역·교정 모두 소넷 우선, Gemini는 수동 선택 시만.
+        //   저장된 모델을 1회 sonnet-mac 으로 이관. 이후 사용자가 Gemini 를 다시 고르면 그대로 존중된다.
+        try{ if(localStorage.getItem('bk_tr_pro_sonnetPrimary_v1') !== '1'){ ['bk_tr_pro_model','bk_tr_pro_editRefineModel'].forEach(function(k){ localStorage.setItem(k, 'sonnet-mac'); }); localStorage.setItem('bk_tr_pro_sonnetPrimary_v1','1'); } }catch(_){}
         ['bk_tr_pro_model','bk_tr_pro_googleModel','bk_tr_pro_editRefineModel'].forEach(function(k){
           var v = (localStorage.getItem(k) || '').split('/').pop();
           if(v && _ok.indexOf(v) < 0) localStorage.setItem(k, 'gemini-3.1-flash-lite');
@@ -2340,15 +2343,15 @@ label[for="maxTokens"], #maxTokens,
     // ★Pro: 번역은 두뇌서버가 수행하고, 서버는 화이트리스트 3모델만 허용(그 외는 기본으로 처리).
     //   그래서 재번역 팝업엔 이 3개만 노출한다(제공자 선택·타사 모델 제거).
     var BRAIN_MODEL_OPTIONS = [
+      // ★p49(2026-07-28 범근님): 소넷(맥 구독)이 기본. 번역두뇌(용어집·참고예시)를
+      //   소넷용 팩으로 탑재한 맥 상주 데몬 경유(워커 3개, sticky 배분). 맥이 꺼져
+      //   있으면 서버가 Gemini 로 자동 폴백. Gemini 항목은 수동 비상 전환용으로 유지.
+      { id:'sonnet-mac', name:'Claude 소넷5 (맥 구독) — 기본', effort:'' },
       { id:'gemini-3.5-flash-lite', name:'Gemini 3.5 Flash-Lite', effort:'' },
       { id:'gemini-3.1-flash-lite', name:'Gemini 3.1 Flash-Lite', effort:'' },
       { id:'gemini-3-flash-preview', name:'Gemini 3 Flash', effort:'' },
       { id:'gemini-3.5-flash', name:'Gemini 3.5 Flash', effort:'' },
-      { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro', effort:'' },
-      // ★p48(2026-07-28 범근님): 맥 구독 소넷 경유. 서버가 SSH 역터널로 맥 상주
-      //   claude 데몬에 넘긴다(실측 평균 2.9초, 워커 3개 병렬). 맥이 꺼져 있으면
-      //   서버가 Gemini 로 자동 폴백하므로 선택해도 번역이 끊기지 않는다.
-      { id:'sonnet-mac', name:'Claude 소넷5 (맥 구독)', effort:'' }
+      { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro', effort:'' }
     ];
     function currentModelOptions(){
       return BRAIN_MODEL_OPTIONS;
