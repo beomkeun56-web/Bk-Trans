@@ -1028,6 +1028,10 @@ label[for="maxTokens"], #maxTokens,
         <div style="display:flex; gap:6px;">
           <select id="editRefineProv" style="display:none;"><option value="openrouter" selected>brain</option></select>
           <select id="editRefineModel" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px; font-size:13px; font-family:inherit;">
+            <!-- ★p53(2026-07-28): 에디트 재번역에도 맥 구독 클로드 3종 노출(고정 목록이라 여기 직접 추가) -->
+            <option value="sonnet-mac">Claude 소넷5 (맥 구독)</option>
+            <option value="haiku-mac">Claude 하이쿠4.5 (맥 구독)</option>
+            <option value="opus-mac">Claude 오푸스5 (맥 구독)</option>
             <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
             <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option>
             <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
@@ -1726,7 +1730,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p52';
+    const APP_VERSION = 'v20.57p53';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
