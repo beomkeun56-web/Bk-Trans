@@ -1726,7 +1726,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p49';
+    const APP_VERSION = 'v20.57p50';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -1995,9 +1995,15 @@ label[for="maxTokens"], #maxTokens,
 
     if(el.appVer) el.appVer.textContent = APP_VERSION;
 
+    // 배지 전용 표기 고정 — prettifyModelName 의 자동분해로는 원하는 이름이 안 나오는 모델.
+    //   'sonnet-mac' → 자동분해하면 'Sonnet Mac'(→축약 'SM')이 되는데,
+    //   범근님 지시(2026-07-28)로 'Sonnet 5'(→축약 'S5')로 표기한다.
+    const MODEL_BADGE_NAME = { 'sonnet-mac': 'Sonnet 5' };
+
     function prettifyModelName(modelId){
       const raw = String(modelId || '').trim();
       if(!raw) return 'Model';
+      if(MODEL_BADGE_NAME[raw]) return MODEL_BADGE_NAME[raw];
       // QWEN_MODEL_OPTIONS 포함 모든 등록 모델에서 name 찾기
       const found = MODEL_OPTIONS.concat(GOOGLE_MODEL_OPTIONS, ANTHROPIC_MODEL_OPTIONS, (typeof QWEN_MODEL_OPTIONS !== 'undefined' ? QWEN_MODEL_OPTIONS : [])).find(m => m.id === raw);
       if(found) return found.name;
