@@ -1172,6 +1172,30 @@ label[for="maxTokens"], #maxTokens,
           </select>
         </div>
 
+        <!-- ★p56(2026-07-29 범근님 "opus-mac으로 바꾸고 폴백 모델 UI도 넣어"):
+             echo(출력이 원문 그대로) 감지 시 1회 재시도할 모델. 기본 = Claude 오푸스5(맥 구독).
+             ★본 번역과 같은 모델을 고르면 같은 실패를 반복하므로 반드시 다른 모델로 둘 것.
+             종전 기본값은 gemini-3-flash-preview 였고 UI가 없어 바꿀 수 없었다. -->
+        <div style="margin-bottom:20px;">
+          <label for="fallbackModel" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            폴백 모델
+            <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">번역 실패(원문 그대로 출력) 시 1회 재시도</span>
+          </label>
+          <select id="fallbackModel" style="width:100%; background:rgba(0,0,0,.35); color:var(--text); border:none; outline:none; border-radius:14px; padding:12px; font-size:calc(14px * var(--textScale));">
+            <option value="opus-mac">Claude 오푸스5 (맥 구독)</option>
+            <option value="sonnet-mac">Claude 소넷5 (맥 구독)</option>
+            <option value="sonnet-think-mac">Claude 소넷5 씽킹ON (맥 구독)</option>
+            <option value="haiku-mac">Claude 하이쿠4.5 (맥 구독)</option>
+            <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
+            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
+            <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
+          </select>
+          <label style="display:flex; align-items:center; gap:6px; margin-top:8px; font-size:calc(12px * var(--textScale)); color:var(--muted);">
+            <input id="fallbackEnabled" type="checkbox" style="width:auto; margin:0;" />
+            폴백 사용 (끄면 실패해도 재시도하지 않음)
+          </label>
+        </div>
+
         <div id="openrouterKeyWrap" style="margin-bottom:20px;">
           <label for="apiKey" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px;">OpenRouter API Key</label>
           <input id="apiKey" type="password" placeholder="sk-or-v1-..." autocomplete="off" />
@@ -1731,7 +1755,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p55';
+    const APP_VERSION = 'v20.57p56';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -3308,6 +3332,24 @@ label[for="maxTokens"], #maxTokens,
       if(el.anthropicApiKey) el.anthropicApiKey.value = localStorage.getItem(LS.anthropicApiKey) || '';
       if(el.qwenApiKey) el.qwenApiKey.value = localStorage.getItem(LS.qwenApiKey) || '';
       if(el.zaiApiKey) el.zaiApiKey.value = localStorage.getItem(LS.zaiApiKey) || '';
+      // ★p56: 폴백 모델 UI — 저장값 없으면 기본 opus-mac(fallbackTranslate 기본값과 일치시킬 것)
+      try{
+        var _fbSel = document.getElementById('fallbackModel');
+        if(_fbSel){
+          var _fbSaved = (localStorage.getItem(LS.fallbackModel) || 'opus-mac').trim();
+          var _fbHit = false;
+          for(var _i = 0; _i < _fbSel.options.length; _i++){
+            if(_fbSel.options[_i].value === _fbSaved){ _fbSel.selectedIndex = _i; _fbHit = true; break; }
+          }
+          if(!_fbHit){   // 목록에 없는 구버전 값(예: google/gemini-3-flash-preview)은 그대로 보존해 보여준다
+            var _o = document.createElement('option');
+            _o.value = _fbSaved; _o.textContent = '(사용자) ' + _fbSaved; _o.selected = true;
+            _fbSel.appendChild(_o);
+          }
+        }
+        var _fbOn = document.getElementById('fallbackEnabled');
+        if(_fbOn) _fbOn.checked = (localStorage.getItem(LS.fallbackEnabled) || '1') !== '0';
+      }catch(_){}
       updateProviderUI();
 
       el.topP.value = localStorage.getItem(LS.topP) || el.topP.value;
@@ -3329,6 +3371,18 @@ label[for="maxTokens"], #maxTokens,
       if(el.anthropicApiKey) localStorage.setItem(LS.anthropicApiKey, el.anthropicApiKey.value.trim());
       if(el.qwenApiKey) localStorage.setItem(LS.qwenApiKey, el.qwenApiKey.value.trim());
       if(el.zaiApiKey) localStorage.setItem(LS.zaiApiKey, el.zaiApiKey.value.trim());
+      // ★p56: 폴백 모델·사용여부 저장
+      try{
+        var _fbSel = document.getElementById('fallbackModel');
+        if(_fbSel && _fbSel.value){
+          localStorage.setItem(LS.fallbackModel, _fbSel.value);
+          // ★이 목록의 모델(-mac·gemini-*)은 전부 두뇌서버 경유(prov=openrouter → DEFAULT_API_URL)다.
+          //   팝업 쪽에서 provider 를 google 등으로 바꿔뒀으면 -mac 이 안 먹으므로 여기서 되돌린다.
+          localStorage.setItem(LS.fallbackProvider, 'openrouter');
+        }
+        var _fbOn = document.getElementById('fallbackEnabled');
+        if(_fbOn) localStorage.setItem(LS.fallbackEnabled, _fbOn.checked ? '1' : '0');
+      }catch(_){}
       setSavedModel(el.model.value.trim());
       localStorage.setItem(tempLsKey(), el.temperature.value.trim());
       localStorage.setItem(LS.topP, el.topP.value.trim());
@@ -5088,7 +5142,12 @@ label[for="maxTokens"], #maxTokens,
     // 폴백 모델로 1회 재호출
     async function fallbackTranslate(userText, onChunk){
       var fbProv = (localStorage.getItem(LS.fallbackProvider) || 'openrouter').trim();
-      var fbMdl = (localStorage.getItem(LS.fallbackModel) || 'google/gemini-3-flash-preview').trim();
+      // ★p56(2026-07-29): 기본 폴백을 Gemini → Claude 오푸스5(맥 구독)로. 이유:
+      //   ①두뇌서버 경유는 동일(prov=openrouter → DEFAULT_API_URL=두뇌서버)이라 용어집·맥락 팩 유지
+      //   ②소넷 실패를 구조한 결과가 클로드 자산으로 남아 엔진 분리 학습 원칙에 맞음
+      //   ③오푸스는 본 모델(소넷)과 다른 모델이라 echo 실패 모드를 끊는다(같은 모델 재시도는 재발 위험)
+      //   ④폴백은 월 30건 수준이라 구독 한도 영향 미미
+      var fbMdl = (localStorage.getItem(LS.fallbackModel) || 'opus-mac').trim();
       var origProv = el.apiProvider ? el.apiProvider.value : '';
       var origMdl = el.model ? el.model.value : '';
       if(el.apiProvider) el.apiProvider.value = fbProv;
@@ -6339,12 +6398,14 @@ label[for="maxTokens"], #maxTokens,
               streamBubble.textContent = '[폴백] ' + partial;
               scrollThrottled();
             });
-            var _fbModel = (localStorage.getItem(LS.fallbackModel) || 'google/gemini-3-flash-preview');
+            // ★p56: 기본값을 fallbackTranslate 와 반드시 일치시킬 것 — 이 값이 서버에 '구조한 엔진'으로
+            //   기록되고 야간 엔진 귀속 학습이 이걸 쓴다. 어긋나면 잘못된 엔진에 학습이 붙는다.
+            var _fbModel = (localStorage.getItem(LS.fallbackModel) || 'opus-mac');
             if(_fbRaw && !detectEcho(userText, _fbRaw)){
               reportFallback(userText, translatedRaw, _fbRaw, _fbModel, 'echo→폴백성공');
               translatedRaw = _fbRaw;
               _fallbackUsed = true;
-              try{ console.log('[Fallback] ✓ ' + (localStorage.getItem(LS.fallbackProvider) || 'openrouter') + '/' + (localStorage.getItem(LS.fallbackModel) || 'google/gemini-3-flash-preview') + ' 성공'); } catch(_){}
+              try{ console.log('[Fallback] ✓ ' + (localStorage.getItem(LS.fallbackProvider) || 'openrouter') + '/' + (localStorage.getItem(LS.fallbackModel) || 'opus-mac') + ' 성공'); } catch(_){}
             } else {
               reportFallback(userText, translatedRaw, _fbRaw || '', _fbModel, 'echo→폴백도실패');
               try{ console.warn('[Fallback] ✗ 폴백도 echo — 원본 결과 유지. Edit로 직접 수정 권장.'); } catch(_){}
@@ -8702,7 +8763,7 @@ label[for="maxTokens"], #maxTokens,
       }
       if(fbProvSel){
         var _fbP = localStorage.getItem(LS.fallbackProvider) || 'openrouter';
-        var _fbM = localStorage.getItem(LS.fallbackModel) || 'google/gemini-3-flash-preview';
+        var _fbM = localStorage.getItem(LS.fallbackModel) || 'opus-mac';
         fbProvSel.value = _fbP;
         fbFillModels(_fbP, _fbM);
         fbProvSel.addEventListener('change', function(){
