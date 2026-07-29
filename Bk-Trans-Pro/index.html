@@ -1755,7 +1755,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p56';
+    const APP_VERSION = 'v20.57p57';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2065,7 +2065,8 @@ label[for="maxTokens"], #maxTokens,
       'gemini-3.1-flash-lite': 'Gemini 3.1 Flash-Lite',
       'gemini-3-flash-preview': 'Gemini 3 Flash',
       'gemini-3.5-flash': 'Gemini 3.5 Flash',
-      'gemini-3.1-pro-preview': 'Gemini 3.1 Pro'
+      'gemini-3.1-pro-preview': 'Gemini 3.1 Pro',
+      'qwen3.7-flash': 'Qwen3.7 Flash'
     };
     function prettifyBrainModel(id){
       var base = String(id || '').split('/').pop();
@@ -2075,7 +2076,7 @@ label[for="maxTokens"], #maxTokens,
     //   두뇌서버 화이트리스트 밖이면 기본(lite)으로 정리 — '기본' 선택 시 옛 값이 되살아나던 사고 방지.
     try{
       if(!localStorage.getItem('bk_tr_pro_model_migrated_v2')){
-        var _ok = ['sonnet-mac','sonnet-think-mac','haiku-mac','opus-mac','gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-3-flash-preview','gemini-3.5-flash','gemini-3.1-pro-preview'];
+        var _ok = ['sonnet-mac','sonnet-think-mac','haiku-mac','opus-mac','qwen3.7-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-3-flash-preview','gemini-3.5-flash','gemini-3.1-pro-preview'];
         // ★번역 본체 3.5-flash-lite 전환에 맞춰, 옛 기본값 3.1-flash-lite 저장분을 3.5-flash-lite로 1회 이관(2026-07-22)
         try{ if(localStorage.getItem('bk_tr_pro_brainModelMigrated35') !== '1'){ ['bk_tr_pro_model','bk_tr_pro_brainModel'].forEach(function(k){ if(localStorage.getItem(k) === 'gemini-3.1-flash-lite') localStorage.setItem(k, 'gemini-3.5-flash-lite'); }); localStorage.setItem('bk_tr_pro_brainModelMigrated35','1'); } }catch(_){}
         // ★p49(2026-07-28 범근님): 소넷(맥 구독) 기본화 — 번역·교정 모두 소넷 우선, Gemini는 수동 선택 시만.
@@ -2391,6 +2392,11 @@ label[for="maxTokens"], #maxTokens,
       // ★p52(2026-07-28): 오푸스5 추가 — 품질 최상·실측 2.4~3.6초(소넷보다 빠름).
       //   구독 한도 소진이 빨라 수동 선택 전용(기본 전환 금지), 워커 1개.
       { id:'opus-mac', name:'Claude 오푸스5 (맥 구독) — 품질 최상', effort:'' },
+      // ★p57(2026-07-29 범근님 요청): Qwen3.7 Flash 추가 — 알리바바 바이롄(베이징) 경유.
+      //   ★두뇌서버를 거친다(용어집·참고예시 적용됨. 실측 검사기·상부·공정·눌림 전부 정확).
+      //   ★씽킹 기본 ON 을 서버에서 강제로 껐다 — 안 끄면 추론 864토큰 낭비로 8.2초.
+      //     끈 뒤 실측: 콜드 7.1초 → 워밍업 후 2.8~4.0초(소넷 3.6~4.0초와 동급).
+      { id:'qwen3.7-flash', name:'Qwen3.7 Flash (바이롄)', effort:'' },
       { id:'gemini-3.5-flash-lite', name:'Gemini 3.5 Flash-Lite', effort:'' },
       { id:'gemini-3.1-flash-lite', name:'Gemini 3.1 Flash-Lite', effort:'' },
       { id:'gemini-3-flash-preview', name:'Gemini 3 Flash', effort:'' },
