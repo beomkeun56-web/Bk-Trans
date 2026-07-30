@@ -603,14 +603,14 @@
       border-radius: 10px;
       padding: 4px 8px;   /* ★p62: 10px→8px. 버튼 5개(TTS·복사·수정·원문·GM)라 좌우 여백이 누적된다 */
       cursor:pointer;
-      color: rgba(230,237,243,.6);
+      color: var(--metaText);   /* ★모델·시간 정보줄과 동일한 글자색 컨트롤(metaText)로 통합 */
       font-size: calc(11px * var(--textScale));
       font-family:inherit;
       font-weight:400;
       letter-spacing:.3px;
       transition: background .15s, color .15s;
     }
-    .copyPill:hover{background:rgba(255,255,255,.14); color:rgba(230,237,243,.9)}
+    .copyPill:hover{background:rgba(255,255,255,.14); color:var(--metaText); filter:brightness(1.35)}
     .copyPill:active{transform:scale(.95)}
     .ttsBtn{
       border:none;
@@ -618,7 +618,7 @@
       border-radius: 10px;
       padding: 4px 10px;
       cursor:pointer;
-      color: rgba(230,237,243,.6);
+      color: var(--metaText);   /* ★metaText로 통합 */
       font-size: calc(11px * var(--textScale));
       font-family:inherit;
       font-weight:600;
@@ -627,7 +627,7 @@
       gap:3px;
       transition: background .15s, color .15s;
     }
-    .ttsBtn:hover{background:rgba(255,255,255,.14); color:rgba(230,237,243,.9)}
+    .ttsBtn:hover{background:rgba(255,255,255,.14); color:var(--metaText); filter:brightness(1.35)}
     .ttsBtn:active{transform:scale(.95)}
     .ttsBtn.speaking{color:#4af; background:rgba(45,107,255,.2)}
 
@@ -1756,7 +1756,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p63';
+    const APP_VERSION = 'v20.57p64';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
