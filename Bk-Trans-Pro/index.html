@@ -955,6 +955,13 @@ label[for="maxTokens"], #maxTokens,
                 </svg>
                 <span>용어집</span>
               </button>
+              <button id="topTxExcludeBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M5.6 5.6l12.8 12.8"></path>
+                </svg>
+                <span>번역 제외</span>
+              </button>
               <button id="topTmBtn" class="menuDropdownItem" type="button" role="menuitem">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 2v20M2 12h20"></path>
@@ -1756,7 +1763,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p64';
+    const APP_VERSION = 'v20.57p65';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6258,8 +6265,20 @@ label[for="maxTokens"], #maxTokens,
         _autoCopyRunning = false;
       }
     }
+    var LS_TX_EXCLUDE = 'bk_tr_pro_tx_exclude';
+    function _getTxExcludeSet(){
+      try{
+        var raw = localStorage.getItem(LS_TX_EXCLUDE) || '';
+        return new Set(raw.split('\n').map(function(s){ return s.trim(); }).filter(Boolean));
+      }catch(_){ return new Set(); }
+    }
     function enqueueTx(text, source, onDone, jobOpts){
       if(!text) return;
+      // ★번역 제외(정확히 일치): 자동 입력(url·clip·wechat·alipay·feishu 등, 즉 typing 아님)이
+      //   등록 제외어와 같으면 번역·표시 안 함. 직접입력(typing)은 항상 번역.
+      if(source && source !== 'typing'){
+        try{ if(_getTxExcludeSet().has(String(text).trim())) return; }catch(_){}
+      }
       jobOpts = jobOpts || {};
       var job = {
         text: text,
@@ -9150,6 +9169,40 @@ label[for="maxTokens"], #maxTokens,
     if(topTmBtn) topTmBtn.addEventListener('click', function(){ if(typeof showTmManager === 'function') showTmManager(); });
     var topGlossarySysBtn = document.getElementById('topGlossarySysBtn');
     if(topGlossarySysBtn) topGlossarySysBtn.addEventListener('click', function(){ showGlossaryEditor('sys'); });
+
+    var topTxExcludeBtn = document.getElementById('topTxExcludeBtn');
+    if(topTxExcludeBtn) topTxExcludeBtn.addEventListener('click', function(){ showTxExcludeEditor(); });
+    function showTxExcludeEditor(){
+      var cur = '';
+      try{ cur = localStorage.getItem(LS_TX_EXCLUDE) || ''; }catch(_){}
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+      var popup = document.createElement('div');
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:90vw;max-width:520px;max-height:85vh;overflow-y:auto;';
+      popup.innerHTML =
+        '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">번역 제외 목록</div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">여기 등록한 중국어와 <b>정확히 일치</b>하는 자동 URL 입력은 번역·표시하지 않습니다. 직접 입력하면 정상 번역됩니다. 한 줄에 하나씩.</div>' +
+        '<textarea id="txExcludeTa" style="width:100%;min-height:220px;box-sizing:border-box;background:rgba(0,0,0,.35);color:var(--text);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;" placeholder="예)&#10;广告&#10;您有一条新消息"></textarea>' +
+        '<div style="display:flex;gap:8px;margin-top:14px;">' +
+          '<button id="txExcludeSaveBtn" type="button" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">저장</button>' +
+          '<button id="txExcludeCancelBtn" type="button" style="flex:1;padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.06);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;">닫기</button>' +
+        '</div>';
+      overlay.appendChild(popup);
+      document.body.appendChild(overlay);
+      var ta = popup.querySelector('#txExcludeTa'); if(ta) ta.value = cur;
+      function close(){ try{ document.body.removeChild(overlay); }catch(_){} }
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) close(); });
+      var saveBtn = popup.querySelector('#txExcludeSaveBtn');
+      if(saveBtn) saveBtn.addEventListener('click', function(){
+        var lines = String(ta ? ta.value : '').split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+        var uniq = Array.from(new Set(lines));
+        try{ localStorage.setItem(LS_TX_EXCLUDE, uniq.join('\n')); }catch(_){}
+        if(typeof toast === 'function') toast('번역 제외 ' + uniq.length + '개 저장됨');
+        close();
+      });
+      var cancelBtn = popup.querySelector('#txExcludeCancelBtn');
+      if(cancelBtn) cancelBtn.addEventListener('click', close);
+    }
 
     function showLearningEditor(){
       var overlay = document.createElement('div');
