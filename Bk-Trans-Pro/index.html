@@ -1755,7 +1755,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p59';
+    const APP_VERSION = 'v20.57p60';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6307,7 +6307,9 @@ label[for="maxTokens"], #maxTokens,
     //   그래서 소넷 결과가 어색할 때 한 번 눌러 제미나이 결과를 바로 받아 비교할 수 있게 한다.
     //   구현: send() 가 el.input·el.model 을 읽으므로 둘만 잠시 바꿔 기존 파이프라인을
     //   그대로 재사용한다(두뇌서버·로그·말풍선 렌더 전부 동일 경로). 끝나면 반드시 원복.
-    var REGEN_GEMINI_MODEL = 'gemini-3.5-flash';
+    // ★lite 를 쓴다(2026-07-30 범근님 지시): 야간학습이 소넷과 비교한 실제 운영 제미나이가
+    //   gemini-3.5-flash-lite 였다(7/28 250건). 같은 모델로 재번역해야 비교가 사과-사과가 된다.
+    var REGEN_GEMINI_MODEL = 'gemini-3.5-flash-lite';
     async function regenWithModel(srcText, modelId){
       srcText = String(srcText || '').trim();
       if(!srcText) return;
@@ -6332,7 +6334,7 @@ label[for="maxTokens"], #maxTokens,
       b.className = 'copyPill';
       b.type = 'button';
       b.textContent = 'G3.5F';
-      b.title = '제미나이 3.5 Flash로 다시 번역';
+      b.title = '제미나이 3.5 Flash-Lite로 다시 번역(야간학습 비교 대상과 동일 모델)';
       b.addEventListener('click', function(){ regenWithModel(srcText, REGEN_GEMINI_MODEL); });
       return b;
     }
