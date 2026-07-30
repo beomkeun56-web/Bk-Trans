@@ -1755,7 +1755,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p57';
+    const APP_VERSION = 'v20.57p58';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8220,8 +8220,27 @@ label[for="maxTokens"], #maxTokens,
     var _lastUrlText = '';
     function _readUrlText(){
       try{
+        // ★p58(2026-07-30) 장문 절단 수정 — 실사고:
+        //   원문 "线别：G11&G12\nmodel：LV15\n…" 가 "线别：G11" 한 줄로 잘려 들어왔다.
+        //   원인은 알림 필드가 아니라 URL 파싱이었다. 매크로 URL 이
+        //     #app={not_app_package}&text={lv=msg}
+        //   형태라 원문 속 & 가 파라미터 구분자로 먹혀 URLSearchParams 가 그 앞까지만 준다.
+        //   text= 가 마지막 파라미터이므로 **text= 뒤 전체를 원시로 잘라** 쓰면 & 가 몇 개든 살아난다.
+        //   (매크로에서 URL 인코딩을 해주면 더 정확하지만, 그 없이도 동작하게 만든다.)
+        var raw = String(location.hash || '').replace(/^#/, '');
+        if(!raw) raw = String(location.search || '').replace(/^\?/, '');
+        var i = raw.indexOf('text=');
+        if(i >= 0){
+          var v = raw.slice(i + 5);
+          // text= 가 마지막이 아닌 경우(순서가 바뀐 매크로)를 위해 알려진 뒤 파라미터에서 자른다
+          var cut = v.search(/&(?:app|from|src)=/);
+          if(cut >= 0) v = v.slice(0, cut);
+          try{ v = decodeURIComponent(v); }
+          catch(_){ try{ v = decodeURIComponent(v.replace(/%(?![0-9A-Fa-f]{2})/g, '%25')); }catch(__){} }
+          if(String(v).trim()) return String(v).trim();
+        }
+        // 폴백: 표준 파싱(text= 가 없거나 위에서 못 얻은 경우)
         var t = '';
-        // ?text= 우선, 없으면 #text=
         var sp = new URLSearchParams(location.search || '');
         if(sp.has('text')) t = sp.get('text') || '';
         if(!t && location.hash){
