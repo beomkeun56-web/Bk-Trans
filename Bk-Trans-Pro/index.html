@@ -1763,7 +1763,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p65';
+    const APP_VERSION = 'v20.57p66';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -9173,35 +9173,53 @@ label[for="maxTokens"], #maxTokens,
     var topTxExcludeBtn = document.getElementById('topTxExcludeBtn');
     if(topTxExcludeBtn) topTxExcludeBtn.addEventListener('click', function(){ showTxExcludeEditor(); });
     function showTxExcludeEditor(){
-      var cur = '';
-      try{ cur = localStorage.getItem(LS_TX_EXCLUDE) || ''; }catch(_){}
+      var terms = [];
+      try{ terms = (localStorage.getItem(LS_TX_EXCLUDE)||'').split('\n').map(function(s){return s.trim();}).filter(Boolean); }catch(_){}
       var overlay = document.createElement('div');
       overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
       var popup = document.createElement('div');
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:90vw;max-width:520px;max-height:85vh;overflow-y:auto;';
       popup.innerHTML =
         '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">번역 제외 목록</div>' +
-        '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">여기 등록한 중국어와 <b>정확히 일치</b>하는 자동 URL 입력은 번역·표시하지 않습니다. 직접 입력하면 정상 번역됩니다. 한 줄에 하나씩.</div>' +
-        '<textarea id="txExcludeTa" style="width:100%;min-height:220px;box-sizing:border-box;background:rgba(0,0,0,.35);color:var(--text);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;line-height:1.6;resize:vertical;" placeholder="예)&#10;广告&#10;您有一条新消息"></textarea>' +
-        '<div style="display:flex;gap:8px;margin-top:14px;">' +
-          '<button id="txExcludeSaveBtn" type="button" style="flex:1;padding:10px;border:none;border-radius:10px;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">저장</button>' +
-          '<button id="txExcludeCancelBtn" type="button" style="flex:1;padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.06);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;">닫기</button>' +
+        '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;">등록한 중국어와 <b>정확히 일치</b>하는 자동 입력은 번역·표시하지 않습니다. 직접 입력하면 정상 번역됩니다. <b>한 칸에 하나씩</b> 추가하세요(추가·삭제 즉시 저장).</div>' +
+        '<div style="display:flex;gap:8px;margin-bottom:12px;">' +
+          '<input id="txExAddInput" type="text" placeholder="제외할 중국어 입력 후 추가 / Enter" style="flex:1;min-width:0;box-sizing:border-box;background:rgba(0,0,0,.35);color:var(--text);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;" />' +
+          '<button id="txExAddBtn" type="button" style="flex:0 0 auto;padding:10px 16px;border:none;border-radius:10px;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">추가</button>' +
+        '</div>' +
+        '<div id="txExChips" style="display:flex;flex-wrap:wrap;gap:8px;min-height:40px;"></div>' +
+        '<div style="display:flex;margin-top:16px;">' +
+          '<button id="txExCloseBtn" type="button" style="flex:1;padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.06);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit;">닫기</button>' +
         '</div>';
       overlay.appendChild(popup);
       document.body.appendChild(overlay);
-      var ta = popup.querySelector('#txExcludeTa'); if(ta) ta.value = cur;
+      var chipsEl = popup.querySelector('#txExChips');
+      var input = popup.querySelector('#txExAddInput');
+      function persist(){ try{ localStorage.setItem(LS_TX_EXCLUDE, terms.join('\n')); }catch(_){} }
+      function render(){
+        chipsEl.innerHTML = '';
+        if(!terms.length){ chipsEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 2px;">등록된 제외어가 없습니다.</div>'; return; }
+        terms.forEach(function(t, i){
+          var chip = document.createElement('span');
+          chip.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 8px 6px 12px;font-size:14px;color:var(--text);';
+          var label = document.createElement('span'); label.textContent = t; chip.appendChild(label);
+          var x = document.createElement('button'); x.type='button'; x.textContent='✕';
+          x.style.cssText = 'border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;padding:0 2px;';
+          x.addEventListener('click', function(){ terms.splice(i,1); persist(); render(); });
+          chip.appendChild(x); chipsEl.appendChild(chip);
+        });
+      }
+      function add(){
+        var v = String(input.value||'').trim();
+        if(!v){ return; }
+        if(terms.indexOf(v) === -1){ terms.push(v); persist(); render(); if(typeof toast==='function') toast('제외 추가: '+v); }
+        input.value=''; input.focus();
+      }
+      popup.querySelector('#txExAddBtn').addEventListener('click', add);
+      input.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); add(); } });
       function close(){ try{ document.body.removeChild(overlay); }catch(_){} }
       overlay.addEventListener('click', function(e){ if(e.target === overlay) close(); });
-      var saveBtn = popup.querySelector('#txExcludeSaveBtn');
-      if(saveBtn) saveBtn.addEventListener('click', function(){
-        var lines = String(ta ? ta.value : '').split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
-        var uniq = Array.from(new Set(lines));
-        try{ localStorage.setItem(LS_TX_EXCLUDE, uniq.join('\n')); }catch(_){}
-        if(typeof toast === 'function') toast('번역 제외 ' + uniq.length + '개 저장됨');
-        close();
-      });
-      var cancelBtn = popup.querySelector('#txExcludeCancelBtn');
-      if(cancelBtn) cancelBtn.addEventListener('click', close);
+      popup.querySelector('#txExCloseBtn').addEventListener('click', close);
+      render(); try{ input.focus(); }catch(_){}
     }
 
     function showLearningEditor(){
