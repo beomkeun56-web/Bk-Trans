@@ -575,7 +575,10 @@
       display:flex; gap:6px; align-items:center;
     }
     .actionsRow button{
-      min-width: 48px;
+      /* ★p62(2026-07-30): 라벨을 2자로 줄였는데 min-width 48px 때문에 가로폭이 그대로였다.
+         36px 로 낮춰 글자 길이에 맞게 줄어들게 한다(2자 기준 자연폭 약 38px 이라 사실상 안 걸린다).
+         터치 타깃이 너무 작아지지 않게 36px 은 남긴다 — TTS 아이콘 버튼(13px)이 여기 걸린다. */
+      min-width: 36px;
       text-align:center;
       justify-content:center;
     }
@@ -598,7 +601,7 @@
       border:none;
       background: var(--copyBtnBg);
       border-radius: 10px;
-      padding: 4px 10px;
+      padding: 4px 8px;   /* ★p62: 10px→8px. 버튼 5개(TTS·복사·수정·원문·GM)라 좌우 여백이 누적된다 */
       cursor:pointer;
       color: rgba(230,237,243,.6);
       font-size: calc(11px * var(--textScale));
@@ -1755,7 +1758,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p61';
+    const APP_VERSION = 'v20.57p62';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
