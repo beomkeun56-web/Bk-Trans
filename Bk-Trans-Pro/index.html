@@ -1755,7 +1755,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p60';
+    const APP_VERSION = 'v20.57p61';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -5973,7 +5973,7 @@ label[for="maxTokens"], #maxTokens,
           // 작은 복사 버튼 (메인 Copy 버튼보다 한 단계 작게)
           var mtCopyBtn = document.createElement('button');
           mtCopyBtn.type = 'button';
-          mtCopyBtn.textContent = 'Copy';
+          mtCopyBtn.textContent = '복사';
           mtCopyBtn.style.cssText = 'margin-top:6px;font-size:10px;color:var(--metaText);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 10px;cursor:pointer;font-family:inherit;';
           mtCopyBtn.addEventListener('click', async function(ev){
             ev.stopPropagation();
@@ -6073,7 +6073,7 @@ label[for="maxTokens"], #maxTokens,
           const editBtn = document.createElement('button');
           editBtn.className = 'copyPill';
           editBtn.type = 'button';
-          editBtn.textContent = 'Edit';
+          editBtn.textContent = '수정';
           editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
           actions.appendChild(editBtn);
         } else if(_isErrorMessage(m)){
@@ -6096,7 +6096,7 @@ label[for="maxTokens"], #maxTokens,
           const copyBtn = document.createElement('button');
           copyBtn.className = 'copyPill';
           copyBtn.type = 'button';
-          copyBtn.textContent = 'Copy';
+          copyBtn.textContent = '복사';
           copyBtn.addEventListener('click', async () => {
             await copyToClipboard(m.text, false);
             // TM: Copy = silver 저장 (기본 OFF — TM 설정에서 켤 수 있음)
@@ -6111,7 +6111,7 @@ label[for="maxTokens"], #maxTokens,
           const editBtn = document.createElement('button');
           editBtn.className = 'copyPill';
           editBtn.type = 'button';
-          editBtn.textContent = 'Edit';
+          editBtn.textContent = '수정';
           editBtn.addEventListener('click', () => openEditGuide(srcForThisMsg, m.text, m));
           actions.appendChild(editBtn);
 
@@ -6333,7 +6333,7 @@ label[for="maxTokens"], #maxTokens,
       var b = document.createElement('button');
       b.className = 'copyPill';
       b.type = 'button';
-      b.textContent = 'G3.5F';
+      b.textContent = 'GM';
       b.title = '제미나이 3.5 Flash-Lite로 다시 번역(야간학습 비교 대상과 동일 모델)';
       b.addEventListener('click', function(){ regenWithModel(srcText, REGEN_GEMINI_MODEL); });
       return b;
@@ -6637,7 +6637,7 @@ label[for="maxTokens"], #maxTokens,
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copyPill';
         copyBtn.type = 'button';
-        copyBtn.textContent = 'Copy';
+        copyBtn.textContent = '복사';
         copyBtn.addEventListener('click', async () => {
           await copyToClipboard(translated, false);
           try{
@@ -6650,7 +6650,7 @@ label[for="maxTokens"], #maxTokens,
         const editBtn = document.createElement('button');
         editBtn.className = 'copyPill';
         editBtn.type = 'button';
-        editBtn.textContent = 'Edit';
+        editBtn.textContent = '수정';
         editBtn.addEventListener('click', () => {
           var lastAssistant = chat[chat.length-1];
           openEditGuide(userText, translated, lastAssistant && lastAssistant.role==='assistant' ? lastAssistant : null);
