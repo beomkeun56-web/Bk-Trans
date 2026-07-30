@@ -1755,7 +1755,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p58';
+    const APP_VERSION = 'v20.57p59';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6130,6 +6130,9 @@ label[for="maxTokens"], #maxTokens,
             });
             actions.appendChild(srcBtn);
           }
+          // ★p59: 원문 버튼 옆 'G3.5F' — 이 번역문의 원문을 제미나이로 재번역.
+          //   lastUserText 는 바깥 let 이라 클릭 시점엔 덮여 있으므로 srcForThisMsg 스냅샷을 쓴다.
+          if(srcForThisMsg) actions.appendChild(makeRegenGeminiBtn(srcForThisMsg));
           extraRow = appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline, m.source);
         }
 
@@ -6295,6 +6298,43 @@ label[for="maxTokens"], #maxTokens,
         _txCurrent = null;
         _txWorkerRunning = false;
       }
+    }
+
+    // ★p59(2026-07-30 범근님 "원문 옆에 G3.5F 버튼 만들어 바로 제미나이로 재번역"):
+    //   야간학습 비교에서 두 엔진의 약점이 갈렸다 —
+    //     소넷: 어투·화행·어순(존댓말/반말, 추궁·지시 어감)
+    //     제미나이: 정보 정확도(대상·수치·시제)  ※단 어투는 제미나이가 자연스러운 사례가 있었다
+    //   그래서 소넷 결과가 어색할 때 한 번 눌러 제미나이 결과를 바로 받아 비교할 수 있게 한다.
+    //   구현: send() 가 el.input·el.model 을 읽으므로 둘만 잠시 바꿔 기존 파이프라인을
+    //   그대로 재사용한다(두뇌서버·로그·말풍선 렌더 전부 동일 경로). 끝나면 반드시 원복.
+    var REGEN_GEMINI_MODEL = 'gemini-3.5-flash';
+    async function regenWithModel(srcText, modelId){
+      srcText = String(srcText || '').trim();
+      if(!srcText) return;
+      if(_isBusy){ try{ toast('번역이 진행 중입니다'); }catch(_){} return; }
+      var prevInput = el.input ? el.input.value : '';
+      var prevModel = el.model ? el.model.value : '';
+      try{
+        if(el.input) el.input.value = srcText;
+        if(el.model) el.model.value = modelId;
+        await send({ programmatic: true });
+      } catch(e){
+        try{ toast('재번역 실패: ' + (e && e.message ? e.message : e)); }catch(_){}
+      } finally {
+        // 사용자의 기본 모델 설정을 건드리지 않는다(localStorage 는 저장하지 않음).
+        if(el.model) el.model.value = prevModel;
+        if(el.input) el.input.value = prevInput;
+      }
+    }
+    // 말풍선 액션 행에 붙일 'G3.5F' 재번역 버튼 — 스트리밍/비스트리밍 렌더 양쪽에서 쓴다.
+    function makeRegenGeminiBtn(srcText){
+      var b = document.createElement('button');
+      b.className = 'copyPill';
+      b.type = 'button';
+      b.textContent = 'G3.5F';
+      b.title = '제미나이 3.5 Flash로 다시 번역';
+      b.addEventListener('click', function(){ regenWithModel(srcText, REGEN_GEMINI_MODEL); });
+      return b;
     }
 
     async function send(opts){
@@ -6632,6 +6672,8 @@ label[for="maxTokens"], #maxTokens,
           });
           actions.appendChild(streamSrcBtn);
         }
+        // ★p59: 원문 버튼 옆 'G3.5F' — 방금 번역한 원문(userText)을 제미나이로 재번역.
+        actions.appendChild(makeRegenGeminiBtn(userText));
         var _streamExtraRow = appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _displayPromptVer, _ms1, _ms2, _pipelineInfo, _src);
         streamRow.appendChild(actions);
         if(_streamExtraRow) streamRow.appendChild(_streamExtraRow);
