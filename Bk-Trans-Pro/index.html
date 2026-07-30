@@ -1032,8 +1032,7 @@ label[for="maxTokens"], #maxTokens,
           <select id="editRefineProv" style="display:none;"><option value="openrouter" selected>brain</option></select>
           <select id="editRefineModel" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px; font-size:13px; font-family:inherit;">
             <!-- ★p53(2026-07-28): 에디트 재번역에도 맥 구독 클로드 3종 노출(고정 목록이라 여기 직접 추가) -->
-            <option value="sonnet-mac">Claude 소넷5 (맥 구독)</option>
-            <option value="sonnet-think-mac">Claude 소넷5 씽킹ON (맥 구독)</option>
+            <option value="sonnet-mac">Claude 소넷5 씽킹 (맥 구독)</option>
             <option value="haiku-mac">Claude 하이쿠4.5 (맥 구독)</option>
             <option value="opus-mac">Claude 오푸스5 (맥 구독)</option>
             <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
@@ -1186,8 +1185,7 @@ label[for="maxTokens"], #maxTokens,
           </label>
           <select id="fallbackModel" style="width:100%; background:rgba(0,0,0,.35); color:var(--text); border:none; outline:none; border-radius:14px; padding:12px; font-size:calc(14px * var(--textScale));">
             <option value="opus-mac">Claude 오푸스5 (맥 구독)</option>
-            <option value="sonnet-mac">Claude 소넷5 (맥 구독)</option>
-            <option value="sonnet-think-mac">Claude 소넷5 씽킹ON (맥 구독)</option>
+            <option value="sonnet-mac">Claude 소넷5 씽킹 (맥 구독)</option>
             <option value="haiku-mac">Claude 하이쿠4.5 (맥 구독)</option>
             <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
             <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
@@ -1758,7 +1756,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p62';
+    const APP_VERSION = 'v20.57p63';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2079,6 +2077,16 @@ label[for="maxTokens"], #maxTokens,
     //   두뇌서버 화이트리스트 밖이면 기본(lite)으로 정리 — '기본' 선택 시 옛 값이 되살아나던 사고 방지.
     try{
       if(!localStorage.getItem('bk_tr_pro_model_migrated_v2')){
+        // ★2026-07-30 이관: 데몬 풀 통합으로 목록에서 씽킹ON 항목을 없앴다.
+        //   저장값이 sonnet-think-mac 인 기기는 select 에 해당 option 이 없어 표시가 깨지므로
+        //   sonnet-mac 으로 옮긴다. 두 이름 모두 같은 씽킹 풀로 가므로 동작은 동일하다.
+        //   _ok 화이트리스트에는 그대로 남긴다 — 지우면 저장값이 무효가 되어 Gemini 로 초기화된다.
+        try{ if(localStorage.getItem('bk_tr_pro_thinkMerged_v1') !== '1'){
+          ['bk_tr_pro_model','bk_tr_pro_editRefineModel','bk_tr_pro_fallbackModel'].forEach(function(k){
+            if(localStorage.getItem(k) === 'sonnet-think-mac') localStorage.setItem(k, 'sonnet-mac');
+          });
+          localStorage.setItem('bk_tr_pro_thinkMerged_v1','1');
+        } }catch(_){}
         var _ok = ['sonnet-mac','sonnet-think-mac','haiku-mac','opus-mac','qwen3.7-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-3-flash-preview','gemini-3.5-flash','gemini-3.1-pro-preview'];
         // ★번역 본체 3.5-flash-lite 전환에 맞춰, 옛 기본값 3.1-flash-lite 저장분을 3.5-flash-lite로 1회 이관(2026-07-22)
         try{ if(localStorage.getItem('bk_tr_pro_brainModelMigrated35') !== '1'){ ['bk_tr_pro_model','bk_tr_pro_brainModel'].forEach(function(k){ if(localStorage.getItem(k) === 'gemini-3.1-flash-lite') localStorage.setItem(k, 'gemini-3.5-flash-lite'); }); localStorage.setItem('bk_tr_pro_brainModelMigrated35','1'); } }catch(_){}
@@ -2385,10 +2393,11 @@ label[for="maxTokens"], #maxTokens,
       // ★p49(2026-07-28 범근님): 소넷(맥 구독)이 기본. 번역두뇌(용어집·참고예시)를
       //   소넷용 팩으로 탑재한 맥 상주 데몬 경유(워커 3개, sticky 배분). 맥이 꺼져
       //   있으면 서버가 Gemini 로 자동 폴백. Gemini 항목은 수동 비상 전환용으로 유지.
-      { id:'sonnet-mac', name:'Claude 소넷5 (맥 구독) — 기본', effort:'' },
+      // ★2026-07-30: 데몬에서 씽킹OFF 소넷 풀을 삭제하고 씽킹 풀 11워커로 통합했다.
+      //   이제 sonnet-mac 도 씽킹 풀로 라우팅되므로 목록은 이 한 줄만 남긴다.
+      { id:'sonnet-mac', name:'Claude 소넷5 씽킹 (맥 구독) — 기본', effort:'' },
       // ★p54(2026-07-28): 씽킹ON(effort medium) — 자연스러움 실험. temperature 는 소넷5에 없어
       //   씽킹이 유일한 레버. 느려질 수 있음(서버 대기 20초까지 허용).
-      { id:'sonnet-think-mac', name:'Claude 소넷5 씽킹ON (맥 구독) — 자연스러움 실험', effort:'' },
       // ★p51(2026-07-28): 하이쿠4.5 추가 — 같은 맥 데몬의 전용 풀(씽킹off) 경유, 1.5~2.7초 최속.
       //   맥이 꺼져 있으면 소넷과 동일하게 서버가 Gemini 로 자동 폴백.
       { id:'haiku-mac', name:'Claude 하이쿠4.5 (맥 구독) — 최속', effort:'' },
