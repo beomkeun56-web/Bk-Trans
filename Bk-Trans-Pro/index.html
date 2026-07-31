@@ -1763,7 +1763,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p66';
+    const APP_VERSION = 'v20.57p67';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6276,8 +6276,16 @@ label[for="maxTokens"], #maxTokens,
       if(!text) return;
       // ★번역 제외(정확히 일치): 자동 입력(url·clip·wechat·alipay·feishu 등, 즉 typing 아님)이
       //   등록 제외어와 같으면 번역·표시 안 함. 직접입력(typing)은 항상 번역.
+      // ★p67(2026-07-31 버그수정): 그냥 return하면 호출측 onDone이 안 불려 URL 대기열의
+      //   _urlEnqueued 플래그가 영구 고착 → 이후 알림이 전부 안 번역되는 사고. 반드시
+      //   '정상 완료(ok)'로 콜백해 큐에서 제거되게 한다.
       if(source && source !== 'typing'){
-        try{ if(_getTxExcludeSet().has(String(text).trim())) return; }catch(_){}
+        var _excluded = false;
+        try{ _excluded = _getTxExcludeSet().has(String(text).trim()); }catch(_){}
+        if(_excluded){
+          try{ if(onDone) onDone({ ok:true, skipped:'exclude' }); }catch(_){}
+          return;
+        }
       }
       jobOpts = jobOpts || {};
       var job = {
