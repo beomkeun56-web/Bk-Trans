@@ -36,6 +36,10 @@
   <link rel="icon" href="data:," />
 
   <!-- API 호스트 사전 연결: 첫 요청 지연(TLS 핸드셰이크) 단축 -->
+  <!-- ★p70(2026-08-01): 정작 실제로 쓰는 두뇌서버가 preconnect 에 빠져 있었다.
+       콜드 오픈 시 DNS 200ms + TCP/TLS 180ms 를 요청 시점에 물던 것을 앞당긴다. -->
+  <link rel="preconnect" href="https://158-247-232-44.sslip.io" crossorigin />
+  <link rel="dns-prefetch" href="https://158-247-232-44.sslip.io" />
   <link rel="preconnect" href="https://generativelanguage.googleapis.com" crossorigin />
   <link rel="preconnect" href="https://api.anthropic.com" crossorigin />
   <link rel="preconnect" href="https://openrouter.ai" crossorigin />
@@ -1756,7 +1760,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p69';
+    const APP_VERSION = 'v20.57p70';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -3218,7 +3222,10 @@ label[for="maxTokens"], #maxTokens,
       // ★p47(2026-07-27 범근님): URL 자동번역은 사용자가 명시적으로 보낸 입력이라
       //   길다고 버리면 안 된다. 클립보드 자동감지(300자)와 분리해 상한을 크게 둔다.
       URL_TRANSLATE_MAX_LEN: 20000,
-      REQUEST_TIMEOUT_MS: 8000,
+      // ★p70(2026-08-01): 8000 → 22000. 서버는 sonnet-think 에 20초를 주는데 앱이 8초에
+      //   끊고 있어 사다리가 뒤집혀 있었다 — 맥이 8.5초 걸리면 답 직전에 끊고 재발사해
+      //   체감 11초 + 토큰 2배가 되고, 서버의 Gemini 폴백은 사용자에게 도달할 수 없었다.
+      REQUEST_TIMEOUT_MS: 22000,
       CLIPBOARD_DEBOUNCE_MS: 150,
       MIN_REQUEST_GAP_MS: 300,
       QUALITY_TEST_GAP_MS: 4000,

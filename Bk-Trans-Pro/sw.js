@@ -10,7 +10,7 @@
  *   catch가 안 걸려 캐시 폴백도 못 탔다(새로고침 무효·앱 재시작만 유효했던 이유).
  *   + 쿼리 붙은 URL로 열려도 캐시를 찾도록 ignoreSearch, 캐시 전멸 시 최후 대기화면.
  */
-const CACHE_VER = 'v20.57p69';
+const CACHE_VER = 'v20.57p70';
 const CACHE_NAME = 'bktrans-pro-shell-' + CACHE_VER;
 const NAV_TIMEOUT_MS = 2500;
 const SHELL = [
@@ -77,6 +77,27 @@ self.addEventListener('fetch', (e) => {
 
   const isNav = req.mode === 'navigate' || req.destination === 'document';
   e.respondWith((async () => {
+    // ★p70(2026-08-01) 내비게이션 캐시우선 — 알림으로 앱을 새로 열 때 셸 다운로드에
+    //   1.19~1.52초가 들고 있었다(실측, 539KB). 캐시가 있으면 즉시 띄우고 새 버전은
+    //   백그라운드로 받아 다음 실행에 반영한다(기존 controllerchange 자동 새로고침이 흡수).
+    //   문서 요청에만 적용하고 그 외 자원은 기존 동작 그대로.
+    if (isNav) {
+      const cached = await caches.match(req, { ignoreSearch: true })
+                  || await caches.match('./index.html');
+      if (cached) {
+        e.waitUntil((async () => {                 // 백그라운드 갱신
+          try {
+            const fresh = await fetch(req);
+            if (fresh && fresh.ok) {
+              const c = await caches.open(CACHE_NAME);
+              await c.put(req, fresh.clone());
+              await c.put('./index.html', fresh.clone());
+            }
+          } catch (_) {}
+        })());
+        return cached;
+      }
+    }
     try {
       // 문서 요청: 프리로드 응답이 있으면 그걸 먼저 쓰고(=SW 기동과 병렬), 없으면 fetch.
       // 어느 쪽이든 시한 안에 안 오면 캐시로 전환(대기 복귀 무한 대기 방지). 그 외 자원은 기존대로.
