@@ -1760,7 +1760,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p70';
+    const APP_VERSION = 'v20.57p71';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6517,8 +6517,16 @@ label[for="maxTokens"], #maxTokens,
         const _ms1 = Date.now() - _t0;
         let _ms2 = 0;
         // 언어 누설 자동 감지 — 입력은 단일 언어인데 1차 결과에 두 언어가 섞인 경우
-        var _uHan = /[가-힯]/.test(userText), _uZh = /[一-鿿]/.test(userText);
-        var _tHan = /[가-힯]/.test(translated), _tZh = /[一-鿿]/.test(translated);
+        // ★p71(2026-08-01): 알림 메타 접두어는 누설 검사에서 제외한다.
+        //   위챗 알림의 '[4条]'(=메시지 4건)는 번역 대상이 아니라 앱이 붙인 개수 표시인데,
+        //   모델이 옳게 남긴 그 글자를 감지기가 '번역 실패'로 오판해 매번 재번역을 돌리고 있었다
+        //   (실측: 위챗 알림 1건당 번역 2회 = 3.5초 + 3.1초, 토큰도 2배).
+        //   표시는 그대로 두고 판정에서만 뺀다.
+        var _META_RE = /^\s*\[\s*\d+\s*(条|條|件|新消息)\s*\]\s*/;
+        var _uForLeak = String(userText || '').replace(_META_RE, '');
+        var _tForLeak = String(translated || '').replace(_META_RE, '');
+        var _uHan = /[가-힯]/.test(_uForLeak), _uZh = /[一-鿿]/.test(_uForLeak);
+        var _tHan = /[가-힯]/.test(_tForLeak), _tZh = /[一-鿿]/.test(_tForLeak);
         var _langLeak = (_uZh && !_uHan && _tHan && _tZh) || (_uHan && !_uZh && _tZh && _tHan);
         // 2차 OFF여도 언어 누설 발견 시 자동 보정 1회 호출 (정확도 보장)
         if(_langLeak || (_useSecondPass && _wordCount > 4)){
@@ -6528,10 +6536,10 @@ label[for="maxTokens"], #maxTokens,
           if(_langLeak){
             var _leakedChars = '';
             if(_uZh && !_uHan){
-              var mAll = translated.match(/[一-鿿]+/g) || [];
+              var mAll = _tForLeak.match(/[一-鿿]+/g) || [];   // ★p71: 메타 접두어 제외본에서 추출
               _leakedChars = Array.from(new Set(mAll)).join(', ');
             } else if(_uHan && !_uZh){
-              var mAll2 = translated.match(/[가-힯]+/g) || [];
+              var mAll2 = _tForLeak.match(/[가-힯]+/g) || [];
               _leakedChars = Array.from(new Set(mAll2)).join(', ');
             }
             var _targetLang = (_uZh && !_uHan) ? '한국어' : '중국어';
