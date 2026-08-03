@@ -135,7 +135,9 @@
       background:var(--bg);
       color:var(--text);
       font-family: var(--fontMain), "BKRepoFont", "Noto Sans KR", system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      -webkit-font-smoothing:antialiased;
+      /* ★p72: antialiased 는 어두운 배경에서 획을 얇게 만들어 흐려 보인다.
+         기기 기본 렌더링으로 두고 기하 정밀도를 켠다(선명도 개선). */
+      text-rendering: geometricPrecision;
       display:flex;
       flex-direction:column;
       overflow:hidden;
@@ -179,7 +181,7 @@
       padding: 3px 8px;
       border-radius: 6px;
       background: rgba(255,255,255,.06);
-      color: rgba(230,237,243,.7);
+      color: rgba(230,237,243,.82);
       cursor:pointer;
       user-select:none;
       flex-shrink:0;
@@ -292,7 +294,7 @@
       border:none;
       background: transparent;
       cursor:pointer;
-      color: rgba(230,237,243,.6);
+      color: rgba(230,237,243,.75);
       padding:0;
       flex: 0 0 36px;
       transition: background .15s, color .15s;
@@ -526,7 +528,7 @@
 
     .msg.user .bubble{
       background: var(--userBubbleBg);
-      color: rgba(255,255,255,.95);
+      color: #ffffff;
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       border-bottom-right-radius: 10px;
       max-width: 80%;
@@ -534,7 +536,7 @@
 
     .msg.assistant .bubble{
       background: var(--assistantBubbleBg);
-      color: rgba(230,237,243,.92);
+      color: #e6edf3;
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
       border-bottom-left-radius: 10px;
       max-width: 92%;
@@ -1760,7 +1762,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p71';
+    const APP_VERSION = 'v20.57p72';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
