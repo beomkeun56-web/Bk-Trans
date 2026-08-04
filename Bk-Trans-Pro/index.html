@@ -1762,7 +1762,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p72';
+    const APP_VERSION = 'v20.57p73';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -3359,11 +3359,23 @@ label[for="maxTokens"], #maxTokens,
       if(el.anthropicApiKey) el.anthropicApiKey.value = localStorage.getItem(LS.anthropicApiKey) || '';
       if(el.qwenApiKey) el.qwenApiKey.value = localStorage.getItem(LS.qwenApiKey) || '';
       if(el.zaiApiKey) el.zaiApiKey.value = localStorage.getItem(LS.zaiApiKey) || '';
-      // ★p56: 폴백 모델 UI — 저장값 없으면 기본 opus-mac(fallbackTranslate 기본값과 일치시킬 것)
+      // ★p73(2026-08-04): 폴백 기본을 sonnet-mac 으로(fallbackTranslate 기본값과 일치시킬 것).
+      //   주력 엔진이 오푸스로 바뀌어, 폴백까지 오푸스면 '같은 모델 재시도'가 되어 무의미하다.
+      // ★p73: 이미 opus-mac 이 저장된 기기는 1회만 소넷으로 옮긴다.
+      //   기본값만 바꾸면 저장값이 있는 기기(대부분)는 계속 오푸스 폴백을 쓴다.
+      //   플래그를 두어 이후 범근님이 다시 오푸스를 고르면 그 선택을 덮지 않는다.
+      try{
+        if(!localStorage.getItem('bk_tr_pro_fbMigr_p73')){
+          if((localStorage.getItem(LS.fallbackModel) || '') === 'opus-mac'){
+            localStorage.setItem(LS.fallbackModel, 'sonnet-mac');
+          }
+          localStorage.setItem('bk_tr_pro_fbMigr_p73', '1');
+        }
+      }catch(_){}
       try{
         var _fbSel = document.getElementById('fallbackModel');
         if(_fbSel){
-          var _fbSaved = (localStorage.getItem(LS.fallbackModel) || 'opus-mac').trim();
+          var _fbSaved = (localStorage.getItem(LS.fallbackModel) || 'sonnet-mac').trim();
           var _fbHit = false;
           for(var _i = 0; _i < _fbSel.options.length; _i++){
             if(_fbSel.options[_i].value === _fbSaved){ _fbSel.selectedIndex = _i; _fbHit = true; break; }
@@ -5203,12 +5215,13 @@ label[for="maxTokens"], #maxTokens,
     // 폴백 모델로 1회 재호출
     async function fallbackTranslate(userText, onChunk){
       var fbProv = (localStorage.getItem(LS.fallbackProvider) || 'openrouter').trim();
-      // ★p56(2026-07-29): 기본 폴백을 Gemini → Claude 오푸스5(맥 구독)로. 이유:
-      //   ①두뇌서버 경유는 동일(prov=openrouter → DEFAULT_API_URL=두뇌서버)이라 용어집·맥락 팩 유지
-      //   ②소넷 실패를 구조한 결과가 클로드 자산으로 남아 엔진 분리 학습 원칙에 맞음
-      //   ③오푸스는 본 모델(소넷)과 다른 모델이라 echo 실패 모드를 끊는다(같은 모델 재시도는 재발 위험)
-      //   ④폴백은 월 30건 수준이라 구독 한도 영향 미미
-      var fbMdl = (localStorage.getItem(LS.fallbackModel) || 'opus-mac').trim();
+      // ★p73(2026-08-04): 폴백을 오푸스5 → 소넷5(맥 구독)로 되돌린다. 이유:
+      //   주력 엔진이 오푸스로 바뀌었다(데몬 PRIMARY_POOL=opus, 오푸스 11워커 상시warm).
+      //   폴백까지 오푸스면 같은 모델 재시도라 echo 실패 모드를 못 끊는다 — p56 이 오푸스를
+      //   고른 근거(③ 본 모델과 다른 모델일 것)가 그대로 소넷을 가리키게 됐다.
+      //   나머지 근거는 유지: 두뇌서버 경유 동일(prov=openrouter → DEFAULT_API_URL)이라
+      //   용어집·맥락 팩이 살아 있고, 폴백은 월 30건 수준이라 구독 한도 영향은 미미하다.
+      var fbMdl = (localStorage.getItem(LS.fallbackModel) || 'sonnet-mac').trim();
       var origProv = el.apiProvider ? el.apiProvider.value : '';
       var origMdl = el.model ? el.model.value : '';
       if(el.apiProvider) el.apiProvider.value = fbProv;
@@ -6503,12 +6516,12 @@ label[for="maxTokens"], #maxTokens,
             });
             // ★p56: 기본값을 fallbackTranslate 와 반드시 일치시킬 것 — 이 값이 서버에 '구조한 엔진'으로
             //   기록되고 야간 엔진 귀속 학습이 이걸 쓴다. 어긋나면 잘못된 엔진에 학습이 붙는다.
-            var _fbModel = (localStorage.getItem(LS.fallbackModel) || 'opus-mac');
+            var _fbModel = (localStorage.getItem(LS.fallbackModel) || 'sonnet-mac');
             if(_fbRaw && !detectEcho(userText, _fbRaw)){
               reportFallback(userText, translatedRaw, _fbRaw, _fbModel, 'echo→폴백성공');
               translatedRaw = _fbRaw;
               _fallbackUsed = true;
-              try{ console.log('[Fallback] ✓ ' + (localStorage.getItem(LS.fallbackProvider) || 'openrouter') + '/' + (localStorage.getItem(LS.fallbackModel) || 'opus-mac') + ' 성공'); } catch(_){}
+              try{ console.log('[Fallback] ✓ ' + (localStorage.getItem(LS.fallbackProvider) || 'openrouter') + '/' + (localStorage.getItem(LS.fallbackModel) || 'sonnet-mac') + ' 성공'); } catch(_){}
             } else {
               reportFallback(userText, translatedRaw, _fbRaw || '', _fbModel, 'echo→폴백도실패');
               try{ console.warn('[Fallback] ✗ 폴백도 echo — 원본 결과 유지. Edit로 직접 수정 권장.'); } catch(_){}
@@ -8904,7 +8917,7 @@ label[for="maxTokens"], #maxTokens,
       }
       if(fbProvSel){
         var _fbP = localStorage.getItem(LS.fallbackProvider) || 'openrouter';
-        var _fbM = localStorage.getItem(LS.fallbackModel) || 'opus-mac';
+        var _fbM = localStorage.getItem(LS.fallbackModel) || 'sonnet-mac';
         fbProvSel.value = _fbP;
         fbFillModels(_fbP, _fbM);
         fbProvSel.addEventListener('change', function(){
