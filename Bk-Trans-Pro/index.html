@@ -514,6 +514,11 @@
     }
     .msg{display:flex; flex-direction:column; gap:8px; align-items:flex-start}
     .msg.user{align-items:flex-end}
+    /* ★2026-08-10 범근님 지시: 출력(assistant)은 좌측 끝, 원문(user)은 우측 끝에 붙인다.
+       .chat 의 좌우 padding 14px 를 각 방향으로만 상쇄해 말풍선이 화면 가장자리에 닿게 한다.
+       반대쪽 여백은 그대로 남으므로 두 말풍선의 구분은 유지된다. */
+    .msg.assistant{margin-left: -14px}
+    .msg.user{margin-right: -14px}
 
     .bubble{
       max-width: 92%;
@@ -1760,7 +1765,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p74';
+    const APP_VERSION = 'v20.57p75';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
