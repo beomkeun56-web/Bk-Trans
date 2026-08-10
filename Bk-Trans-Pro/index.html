@@ -822,6 +822,32 @@
     #tbClear:hover{ color:var(--danger); border-color:rgba(255,107,107,.28); }
     #tbReload:active{ transform:rotate(180deg); }
     #tbClear:active{ transform:scale(.92); }
+
+    /* ★2026-08-10 범근님 지시: 평상시 입력창을 숨기고 하단 중앙 버튼으로만 띄운다.
+       번역은 대부분 URL·Clip 자동 경로로 들어오므로 입력창이 늘 자리를 차지할 이유가 없다.
+       버튼 생김새는 휴지통(#tbClear) 규칙을 그대로 쓰되 크기만 키웠다(30px → 52px). */
+    .composer.collapsed{ pointer-events:none; }
+    .composer.collapsed .composerRow{
+      opacity:0; visibility:hidden; transform:translateY(16px);
+      pointer-events:none;
+    }
+    .composerRow{ transition: opacity .18s, transform .18s; }
+    #inputFab{
+      position:fixed; left:50%; transform:translateX(-50%);
+      bottom: calc(12px + env(safe-area-inset-bottom)); z-index:45;
+      width:52px; height:52px; border-radius:50%;
+      background:rgba(255,255,255,.08); color:rgba(255,255,255,.62);
+      border:1px solid rgba(255,255,255,.14);
+      box-shadow:0 6px 18px rgba(0,0,0,.38);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; padding:0; font-family:inherit;
+      transition:opacity .18s, background .2s, color .2s;
+    }
+    #inputFab svg{ width:24px; height:24px; fill:none; stroke:currentColor;
+                   stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    #inputFab:hover{ background:rgba(255,255,255,.14); color:#fff; }
+    #inputFab:active{ transform:translateX(-50%) scale(.92); }
+    #inputFab.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
   </style>
 <style id="pro-hide-menus">
 /* ★Pro: 서버(두뇌)가 대신 처리하는 메뉴를 화면에서 숨김. 기능 코드는 유지(값은 계속 동작). */
@@ -1756,6 +1782,13 @@ label[for="maxTokens"], #maxTokens,
     </div>
   </div>
 
+  <button id="inputFab" type="button" aria-label="입력창 열기" title="입력창 열기">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 20h9"></path>
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+    </svg>
+  </button>
+
   <div id="copyBar" class="copyBar hidden" role="button" aria-label="복사 바">
     <div class="copyBarText">번역 완료 · 탭하면 복사</div>
     <button id="copyBarBtn" class="copyBarBtn" type="button">복사</button>
@@ -1765,7 +1798,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p75';
+    const APP_VERSION = 'v20.57p76';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6144,7 +6177,12 @@ label[for="maxTokens"], #maxTokens,
           editBtn.className = 'copyPill';
           editBtn.type = 'button';
           editBtn.textContent = '수정';
-          editBtn.addEventListener('click', () => { el.input.value = m.text; autoResizeInput(); el.input.focus(); });
+          editBtn.addEventListener('click', () => {
+            el.input.value = m.text; autoResizeInput();
+            // 접힌 입력창에 값만 넣으면 글이 버튼 뒤로 숨는다. 반드시 펴고 포커스한다.
+            if(typeof window.bkExpandComposer === 'function') window.bkExpandComposer();
+            else el.input.focus();
+          });
           actions.appendChild(editBtn);
         } else if(_isErrorMessage(m)){
           const srcText = m.retrySrc || lastUserText;
@@ -8602,6 +8640,10 @@ label[for="maxTokens"], #maxTokens,
     function _autoFocusInput(){
       try{
         if(!el.input) return;
+        // ★2026-08-10: 입력창을 접어 두는 것이 기본이라, 접힌 상태에서는 자동 포커스를 하지 않는다
+        //   (숨은 요소에 포커스를 걸면 키보드만 올라오고 입력창은 안 보인다).
+        var _cmp = document.querySelector('.composer');
+        if(_cmp && _cmp.classList.contains('collapsed')) return;
         el.input.focus();
         // 커서를 텍스트 끝으로 (기존 입력값 있을 때)
         var v = el.input.value || '';
@@ -9686,6 +9728,45 @@ label[for="maxTokens"], #maxTokens,
       window.visualViewport.addEventListener('scroll', adjustForKeyboard);
     }
     window.addEventListener('resize', () => setTimeout(updateMainPaddingBottom, 100));
+
+    // ★2026-08-10 범근님 지시: 입력창 접기·펴기(하단 중앙 버튼).
+    //   평상시 접힘 → 버튼 탭이면 펴고 바로 포커스(모바일 키보드까지 한 번에).
+    //   내용이 비어 있고 포커스를 잃으면 다시 접는다. 내용이 남아 있으면 접지 않는다
+    //   (쓰던 글이 버튼 뒤로 사라지면 되찾을 길이 없다).
+    (function(){
+      const composerEl2 = document.querySelector('.composer');
+      const fab = document.getElementById('inputFab');
+      if(!composerEl2 || !fab || !el.input) return;
+
+      function collapse(){
+        if(el.input.value.trim()) return;      // 작성 중이면 접지 않는다
+        composerEl2.classList.add('collapsed');
+        fab.classList.remove('hidden');
+        if(typeof updateMainPaddingBottom === 'function') setTimeout(updateMainPaddingBottom, 10);
+      }
+      function expand(){
+        composerEl2.classList.remove('collapsed');
+        fab.classList.add('hidden');
+        // ★한 번의 탭으로 바로 타이핑되게 한다. 모바일은 숨은 요소에 포커스를 거부하므로
+        //   클래스 제거 결과를 강제로 반영시킨 뒤(reflow) 같은 제스처 안에서 포커스한다.
+        //   두 번 눌러야 키보드가 뜨던 것을 막는 지점이다.
+        void composerEl2.offsetHeight;
+        try{ el.input.focus({preventScroll:true}); }catch(_){ el.input.focus(); }
+        try{ const v = el.input.value || ''; el.input.setSelectionRange(v.length, v.length); }catch(_){}
+        setTimeout(() => { if(document.activeElement !== el.input) el.input.focus(); }, 60);
+        if(typeof autoResizeInput === 'function') autoResizeInput();
+        if(typeof updateMainPaddingBottom === 'function') setTimeout(updateMainPaddingBottom, 10);
+      }
+
+      collapse();                               // 시작 상태 = 접힘
+      fab.addEventListener('click', expand);
+      el.input.addEventListener('blur', () => setTimeout(collapse, 120));
+      el.input.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape'){ el.input.blur(); }
+      });
+      // 자동 채움(재번역·편집 등)으로 값이 들어오면 접힌 채로 숨지 않게 편다.
+      window.bkExpandComposer = expand;
+    })();
 
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
       toast('권장: HTTPS에서 사용하세요(키 보안)');
