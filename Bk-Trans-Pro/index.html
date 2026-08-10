@@ -838,14 +838,6 @@
       padding-bottom: env(safe-area-inset-bottom) !important;
     }
     body.composerCollapsed .chat{ padding-bottom: 6px; }
-    /* 빈 공간 탭으로 열리는 것을 알리는 최소 힌트(글자만, 자리 차지 없음) */
-    #tapHint{
-      position:fixed; left:0; right:0; bottom:calc(6px + env(safe-area-inset-bottom));
-      z-index:39; text-align:center; pointer-events:none;
-      font-size:11px; color:rgba(255,255,255,.28); letter-spacing:.3px;
-      transition:opacity .3s;
-    }
-    #tapHint.hidden{ opacity:0; }
   </style>
 <style id="pro-hide-menus">
 /* ★Pro: 서버(두뇌)가 대신 처리하는 메뉴를 화면에서 숨김. 기능 코드는 유지(값은 계속 동작). */
@@ -1786,13 +1778,11 @@ label[for="maxTokens"], #maxTokens,
     <button id="copyBarBtn" class="copyBarBtn" type="button">복사</button>
   </div>
 
-  <div id="tapHint">빈 곳을 누르면 입력창이 열립니다</div>
-
   <div id="toast" class="toast"></div>
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p77';
+    const APP_VERSION = 'v20.57p78';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -9733,25 +9723,22 @@ label[for="maxTokens"], #maxTokens,
     }
     window.addEventListener('resize', () => setTimeout(updateMainPaddingBottom, 100));
 
-    // ★2026-08-10 범근님 지시: 입력창 접기·펴기(하단 중앙 버튼).
-    //   평상시 접힘 → 버튼 탭이면 펴고 바로 포커스(모바일 키보드까지 한 번에).
+    // ★2026-08-10 범근님 지시: 입력창 접기·펴기(빈 곳 탭으로 열기, 버튼·안내문 없음).
+    //   평상시 접힘 → 빈 곳 탭이면 펴고 바로 포커스(모바일 키보드까지 한 번에).
     //   내용이 비어 있고 포커스를 잃으면 다시 접는다. 내용이 남아 있으면 접지 않는다
-    //   (쓰던 글이 버튼 뒤로 사라지면 되찾을 길이 없다).
+    //   (쓰던 글이 사라지면 되찾을 길이 없다).
     (function(){
       const composerEl2 = document.querySelector('.composer');
-      const hint = document.getElementById('tapHint');
       if(!composerEl2 || !el.input) return;
 
       function collapse(){
         if(el.input.value.trim()) return;      // 작성 중이면 접지 않는다
         composerEl2.classList.add('collapsed');
         document.body.classList.add('composerCollapsed');   // main 하단 예약 여백 해제
-        if(hint) hint.classList.remove('hidden');
       }
       function expand(){
         composerEl2.classList.remove('collapsed');
         document.body.classList.remove('composerCollapsed');
-        if(hint) hint.classList.add('hidden');
         // ★한 번의 탭으로 바로 타이핑되게 한다. 모바일은 숨은 요소에 포커스를 거부하므로
         //   클래스 제거 결과를 강제로 반영시킨 뒤(reflow) 같은 제스처 안에서 포커스한다.
         //   두 번 눌러야 키보드가 뜨던 것을 막는 지점이다.
