@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p82';
+    const APP_VERSION = 'v20.57p83';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8686,6 +8686,26 @@ label[for="maxTokens"], #maxTokens,
     //   서버 /popup_push 에 넣기만 하고, 떠 있는 앱이 여기서 2.5초마다 가져가 번역한다.
     //   앱을 여는 인텐트가 없으니 리로드가 없다 = 타이핑·키보드·커서가 산다.
     //   앱이 꺼져 있던 동안 쌓인 것도 다음 실행 때 여기서 이어받는다(워터마크 bk_popup_last).
+    // 서버가 이미 번역해 둔 대기열 항목을 말풍선 두 개(원문·번역)로 그린다.
+    // ★번역은 서버가 1회만 한다(2026-08-12 범근님 "두 번씩 번역은 낭비").
+    //   폰·PC 는 이 함수로 같은 결과를 각자 그릴 뿐, 번역 요청을 내지 않는다.
+    function _renderPopupResult(it){
+      try{
+        var src = _normAppId(it.app || '') || 'url';
+        var jobId = _newStableId('job');
+        chat.push({ role:'user', text: it.text, ts: Date.now(),
+                    messageId:_newStableId('usr'), jobId: jobId });
+        chat.push({ role:'assistant',
+                    text: (it.err ? ('오류: ' + it.err) : (it.tgt || '')),
+                    ts: Date.now(), model: it.model || 'server',
+                    ms: (it.secs ? Math.round(it.secs * 1000) : null),
+                    source: src, messageId:_newStableId('msg'), jobId: jobId,
+                    status: 'done' });
+        saveChatHistory();
+        renderChat();
+        try{ scrollToBottom('smooth'); }catch(_){}
+      }catch(_){}
+    }
     (function(){
       var _ppKey = 'bk_popup_last';
       var _ppBusy = false;
@@ -8711,16 +8731,28 @@ label[for="maxTokens"], #maxTokens,
           var j = await r.json();
           if(!j || !j.ok) return;
           var items = j.items || [];
-          // 첫 가동(워터마크 없음)에는 옛 항목을 번역하지 않고 워터마크만 잡는다
+          // 첫 가동(워터마크 없음)에는 옛 항목을 그리지 않고 워터마크만 잡는다
           //   (설치 전에 쌓인 대기열이 한꺼번에 쏟아지는 것 방지).
           var first = !localStorage.getItem(_ppKey);
-          for(var i = 0; i < items.length; i++){
-            var it = items[i];
-            if(!it || !it.text) continue;
-            if(!first){ _enqueueUrl(it.text, _normAppId(it.app || '')); }
+          if(first){
+            if(j.last){ try{ localStorage.setItem(_ppKey, String(j.last)); }catch(_){} }
+          } else {
+            // ★서버 번역 결과(tgt/err)가 붙은 항목만 순서대로 그린다. 아직 번역 중인
+            //   항목을 만나면 거기서 멈추고 다음 폴에서 이어간다(순서 보존 + 유실 없음).
+            //   이 기기는 번역 요청을 내지 않는다 — 서버가 1회 번역, 여기선 그리기만.
+            items.sort(function(a, b){ return (a.id || 0) - (b.id || 0); });
+            var lastRendered = after;
+            for(var i = 0; i < items.length; i++){
+              var it = items[i];
+              if(!it || !it.text) continue;
+              if(!(it.tgt || it.err)) break;
+              _renderPopupResult(it);
+              lastRendered = it.id;
+            }
+            if(lastRendered !== after){
+              try{ localStorage.setItem(_ppKey, String(lastRendered)); }catch(_){}
+            }
           }
-          if(!first && items.length){ try{ _drainUrlQueue(); }catch(_){} }
-          if(j.last){ try{ localStorage.setItem(_ppKey, String(j.last)); }catch(_){} }
         }catch(_){
         }finally{
           _ppBusy = false;
