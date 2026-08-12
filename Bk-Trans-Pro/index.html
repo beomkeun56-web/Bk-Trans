@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p85';
+    const APP_VERSION = 'v20.57p86';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8760,6 +8760,19 @@ label[for="maxTokens"], #maxTokens,
         try{
           var after = 0;
           try{ after = parseInt(localStorage.getItem(_ppKey) || '0', 10) || 0; }catch(_){}
+          // ★자가 치유(2026-08-12): '번역 중'인 말풍선이 남아 있으면 워터마크와 무관하게
+          //   그 항목부터 다시 가져와 교체한다. 두 인스턴스(설치 앱+크롬 탭)가 워터마크를
+          //   나눠 쓰다 한쪽이 앞서가면 다른 쪽 자리표시가 영영 안 바뀌던 실사고의 수리.
+          try{
+            var _minPend = 0;
+            for(var _pi = chat.length - 1; _pi >= 0 && _pi > chat.length - 240; _pi--){
+              var _pm = chat[_pi];
+              if(_pm && _pm.role === 'assistant' && _pm.status === 'pending' && _pm.popupId){
+                if(!_minPend || _pm.popupId < _minPend) _minPend = _pm.popupId;
+              }
+            }
+            if(_minPend && (_minPend - 1) < after) after = _minPend - 1;
+          }catch(_){}
           // 기기 표식: 폰(안드로이드·아이폰)=phone, 그 외(윈도우 PC 등)=pc.
           // 서버는 "폰 앱이 살아 있는가"만으로 열기 여부를 판정한다
           // (PC에 켜두면 폰 자동 열기가 눌리던 2026-08-12 부작용의 수리).
