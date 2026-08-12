@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p86';
+    const APP_VERSION = 'v20.57p87';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8779,7 +8779,13 @@ label[for="maxTokens"], #maxTokens,
           var _dev = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
           // ★롱폴(2026-08-12): rev 가 같으면 서버가 변화가 생길 때까지(최대 25초) 응답을
           //   붙잡는다. 도착 즉시 내려오므로 자리표시가 0.5초 안에 뜬다(폴 주기 대기 소멸).
+          // ★포커스 신호(2026-08-13): 삼성 팝업 최소화(버블)는 visible 인 채 포커스만
+          //   잃는다. 서버는 포커스 있는 접속만 '앱 떠 있음'으로 판정 → 버블 상태에서
+          //   새 메시지가 오면 창이 다시 펴진다(범근님 "알림 오면 바로 떠야").
+          var _foc = 0;
+          try{ _foc = document.hasFocus() ? 1 : 0; }catch(_){}
           var r = await fetch(_apiOrigin() + '/popup_pull?after=' + after + '&dev=' + _dev
+                              + '&focus=' + _foc
                               + '&wait=25&rev=' + encodeURIComponent(_ppRev), {
             headers: { 'Authorization': 'Bearer ' + key }
           });
