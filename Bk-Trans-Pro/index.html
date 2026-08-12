@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p90';
+    const APP_VERSION = 'v20.57p91';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8737,6 +8737,25 @@ label[for="maxTokens"], #maxTokens,
         navigator.sendBeacon(_apiOrigin() + '/popup_metric', JSON.stringify(obj));
       }catch(_){}
     }
+    // ★버블 접힘 식별 계측(2026-08-13): 펴짐/접힘 상태 변화를 실측값 그대로 서버에 기록.
+    //   접힘을 구분하는 신호(포커스·창크기)를 찾기 위한 것으로, 판정에는 아직 안 쓴다.
+    function _popupState(ev){
+      try{
+        _popupMetric({ stage: 'state', ev: ev,
+          vis: document.visibilityState,
+          foc: (document.hasFocus() ? 1 : 0),
+          iw: window.innerWidth, ih: window.innerHeight,
+          ow: window.outerWidth, oh: window.outerHeight,
+          sw: (screen && screen.width) || 0, sh: (screen && screen.height) || 0 });
+      }catch(_){}
+    }
+    try{
+      window.addEventListener('resize', function(){ _popupState('resize'); });
+      window.addEventListener('focus', function(){ _popupState('focus'); });
+      window.addEventListener('blur', function(){ _popupState('blur'); });
+      document.addEventListener('visibilitychange', function(){ _popupState('vis'); });
+      setTimeout(function(){ _popupState('load'); }, 2000);
+    }catch(_){}
     function _popupFinalize(it){
       try{
         var asst = _popupFindByPid(it.id, 'assistant');
