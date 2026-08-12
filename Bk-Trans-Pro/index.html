@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p84';
+    const APP_VERSION = 'v20.57p85';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8748,6 +8748,7 @@ label[for="maxTokens"], #maxTokens,
     (function(){
       var _ppKey = 'bk_popup_last';
       var _ppBusy = false;
+      var _ppRev = '';    // 롱폴 기준점: 서버 대기열의 변화 번호(응답마다 갱신)
       async function _popupPoll(){
         if(_ppBusy) return;
         if(document.visibilityState !== 'visible') return;
@@ -8763,12 +8764,16 @@ label[for="maxTokens"], #maxTokens,
           // 서버는 "폰 앱이 살아 있는가"만으로 열기 여부를 판정한다
           // (PC에 켜두면 폰 자동 열기가 눌리던 2026-08-12 부작용의 수리).
           var _dev = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
-          var r = await fetch(_apiOrigin() + '/popup_pull?after=' + after + '&dev=' + _dev, {
+          // ★롱폴(2026-08-12): rev 가 같으면 서버가 변화가 생길 때까지(최대 25초) 응답을
+          //   붙잡는다. 도착 즉시 내려오므로 자리표시가 0.5초 안에 뜬다(폴 주기 대기 소멸).
+          var r = await fetch(_apiOrigin() + '/popup_pull?after=' + after + '&dev=' + _dev
+                              + '&wait=25&rev=' + encodeURIComponent(_ppRev), {
             headers: { 'Authorization': 'Bearer ' + key }
           });
           if(!r.ok) return;
           var j = await r.json();
           if(!j || !j.ok) return;
+          if(j.rev != null){ _ppRev = String(j.rev); }
           var items = j.items || [];
           // 첫 가동(워터마크 없음)에는 옛 항목을 그리지 않고 워터마크만 잡는다
           //   (설치 전에 쌓인 대기열이 한꺼번에 쏟아지는 것 방지).
@@ -8798,12 +8803,15 @@ label[for="maxTokens"], #maxTokens,
               try{ localStorage.setItem(_ppKey, String(lastFinal)); }catch(_){}
             }
           }
+          _ppOk = true;
         }catch(_){
         }finally{
           _ppBusy = false;
+          if(_ppOk){ _ppOk = false; setTimeout(_popupPoll, 150); }   // 롱폴 연쇄
         }
       }
-      setInterval(_popupPoll, 1200);
+      var _ppOk = false;
+      setInterval(_popupPoll, 1200);   // 연쇄가 끊겼을 때의 안전망
       document.addEventListener('visibilitychange', function(){
         if(document.visibilityState === 'visible') setTimeout(_popupPoll, 300);
       });
