@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p83';
+    const APP_VERSION = 'v20.57p84';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8693,17 +8693,56 @@ label[for="maxTokens"], #maxTokens,
       try{
         var src = _normAppId(it.app || '') || 'url';
         var jobId = _newStableId('job');
-        chat.push({ role:'user', text: it.text, ts: Date.now(),
+        chat.push({ role:'user', text: it.text, ts: Date.now(), popupId: it.id,
                     messageId:_newStableId('usr'), jobId: jobId });
         chat.push({ role:'assistant',
                     text: (it.err ? ('오류: ' + it.err) : (it.tgt || '')),
                     ts: Date.now(), model: it.model || 'server',
                     ms: (it.secs ? Math.round(it.secs * 1000) : null),
-                    source: src, messageId:_newStableId('msg'), jobId: jobId,
+                    source: src, popupId: it.id,
+                    messageId:_newStableId('msg'), jobId: jobId,
                     status: 'done' });
         saveChatHistory();
         renderChat();
         try{ scrollToBottom('smooth'); }catch(_){}
+      }catch(_){}
+    }
+    // ★2026-08-12 범근님 지시 "알림 오는 대로 '번역 중' 말풍선을 띄우고 되면 교체":
+    //   도착 즉시 원문+자리표시를 그려서, 씹힌 알림이 있으면 그 자리에서 보이게 한다.
+    function _popupFindByPid(pid, role){
+      for(var i = chat.length - 1; i >= 0 && i > chat.length - 240; i--){
+        var m = chat[i];
+        if(m && m.popupId === pid && m.role === role) return m;
+      }
+      return null;
+    }
+    function _popupPlaceholder(it){
+      try{
+        if(_popupFindByPid(it.id, 'assistant')) return;   // 이미 그림(리로드 재수신 포함)
+        var src = _normAppId(it.app || '') || 'url';
+        var jobId = _newStableId('job');
+        chat.push({ role:'user', text: it.text, ts: Date.now(), popupId: it.id,
+                    messageId:_newStableId('usr'), jobId: jobId });
+        chat.push({ role:'assistant', text: '번역 중 ...', ts: Date.now(), popupId: it.id,
+                    model: '', source: src, messageId:_newStableId('msg'), jobId: jobId,
+                    status: 'pending' });
+        saveChatHistory();
+        renderChat();
+        try{ scrollToBottom('smooth'); }catch(_){}
+      }catch(_){}
+    }
+    function _popupFinalize(it){
+      try{
+        var asst = _popupFindByPid(it.id, 'assistant');
+        if(!asst){ _renderPopupResult(it); return; }      // 자리표시 없이 완료본이 먼저 온 경우
+        if(asst.status === 'done') return;                 // 재수신 중복 방지
+        asst.text = it.err ? ('오류: ' + it.err) : (it.tgt || '');
+        asst.model = it.model || 'server';
+        asst.ms = it.secs ? Math.round(it.secs * 1000) : null;
+        asst.source = _normAppId(it.app || '') || 'url';
+        asst.status = 'done';
+        saveChatHistory();
+        renderChat();
       }catch(_){}
     }
     (function(){
@@ -8737,20 +8776,26 @@ label[for="maxTokens"], #maxTokens,
           if(first){
             if(j.last){ try{ localStorage.setItem(_ppKey, String(j.last)); }catch(_){} }
           } else {
-            // ★서버 번역 결과(tgt/err)가 붙은 항목만 순서대로 그린다. 아직 번역 중인
-            //   항목을 만나면 거기서 멈추고 다음 폴에서 이어간다(순서 보존 + 유실 없음).
-            //   이 기기는 번역 요청을 내지 않는다 — 서버가 1회 번역, 여기선 그리기만.
+            // ★도착 즉시 원문+'번역 중' 자리표시를 그리고, 결과가 오는 대로 각자 교체한다
+            //   (순서 대기 없음 — 병렬 번역 3건이면 3건이 거의 동시에 바뀐다).
+            //   워터마크는 '완료된 앞머리'까지만 전진: 미완 항목은 다음 폴에서 재수신되며,
+            //   popupId 로 같은 말풍선을 찾아 교체하므로 중복 그림이 없다.
             items.sort(function(a, b){ return (a.id || 0) - (b.id || 0); });
-            var lastRendered = after;
+            var lastFinal = after;
+            var prefixOk = true;
             for(var i = 0; i < items.length; i++){
               var it = items[i];
               if(!it || !it.text) continue;
-              if(!(it.tgt || it.err)) break;
-              _renderPopupResult(it);
-              lastRendered = it.id;
+              if(it.tgt || it.err){
+                _popupFinalize(it);
+                if(prefixOk) lastFinal = it.id;
+              } else {
+                _popupPlaceholder(it);
+                prefixOk = false;
+              }
             }
-            if(lastRendered !== after){
-              try{ localStorage.setItem(_ppKey, String(lastRendered)); }catch(_){}
+            if(lastFinal !== after){
+              try{ localStorage.setItem(_ppKey, String(lastFinal)); }catch(_){}
             }
           }
         }catch(_){
@@ -8758,7 +8803,7 @@ label[for="maxTokens"], #maxTokens,
           _ppBusy = false;
         }
       }
-      setInterval(_popupPoll, 2500);
+      setInterval(_popupPoll, 1200);
       document.addEventListener('visibilitychange', function(){
         if(document.visibilityState === 'visible') setTimeout(_popupPoll, 300);
       });
