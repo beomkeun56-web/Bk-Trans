@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p87';
+    const APP_VERSION = 'v20.57p88';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8831,6 +8831,18 @@ label[for="maxTokens"], #maxTokens,
       }
       var _ppOk = false;
       setInterval(_popupPoll, 1200);   // 연쇄가 끊겼을 때의 안전망
+      // ★나감 신호(2026-08-13): 화면에서 사라지는 순간 서버에 알려 생존 여운을 끊는다.
+      //   그래야 닫자마자 온 메시지에도 앱이 즉시 자동 실행된다(탭 0회 목표).
+      function _popupBye(){
+        try{
+          var d = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
+          navigator.sendBeacon(_apiOrigin() + '/popup_bye?dev=' + d);
+        }catch(_){}
+      }
+      document.addEventListener('visibilitychange', function(){
+        if(document.visibilityState === 'hidden') _popupBye();
+      });
+      window.addEventListener('pagehide', _popupBye);
       document.addEventListener('visibilitychange', function(){
         if(document.visibilityState === 'visible') setTimeout(_popupPoll, 300);
       });
