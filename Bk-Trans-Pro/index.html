@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="theme-color" content="#050505" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p91';
+    const APP_VERSION = 'v20.57p92';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -9951,6 +9951,10 @@ label[for="maxTokens"], #maxTokens,
         }
       }
       scrollToBottom('instant');
+      // ★2026-08-13: 키보드 애니메이션이 끝난 뒤 한 번 더 — 뜨는 중에 계산하면
+      //   마지막 말풍선이 입력창 뒤에 가려진 채 멈추던 실사고(범근님 캡처).
+      clearTimeout(adjustForKeyboard._t);
+      adjustForKeyboard._t = setTimeout(() => scrollToBottom('instant'), 280);
     }
     if(el.input) el.input.addEventListener('focus', () => { adjustForKeyboard(); scrollToBottom('smooth'); });
     if(el.input) el.input.addEventListener('blur', () => {
