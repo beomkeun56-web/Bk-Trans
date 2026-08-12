@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p80';
+    const APP_VERSION = 'v20.57p81';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8403,6 +8403,17 @@ label[for="maxTokens"], #maxTokens,
         return String(t || '').trim();
       }catch(_){ return ''; }
     }
+    // 패키지명(예: com.ss.android.lark)→메신저 이름 정규화. URL 경로와 팝업 대기열 경로가
+    // ★같은 변환기를 쓴다(2026-08-12 — 대기열이 날 패키지명을 넘겨 색·라벨이 전부
+    //   기본값으로 나온 실사고의 수리. 판정 지점이 두 곳이면 두 곳이 갈린다).
+    function _normAppId(v){
+      v = String(v || '').trim().toLowerCase();
+      // 패키지명 부분일치 — 페이수는 판(중국/국제/기업)마다 패키지가 달라 정확일치로는 놓침(2026-07-22 실사고)
+      if(v.indexOf('lark') >= 0 || v.indexOf('feishu') >= 0) return 'feishu';
+      if(v.indexOf('tencent.mm') >= 0) return 'wechat';
+      if(v.indexOf('alipay') >= 0) return 'alipay';
+      return /^(alipay|wechat|feishu|line|kakao)$/.test(v) ? v : '';
+    }
     // ★MacroDroid가 URL에 붙인 앱 식별자(?app=alipay/wechat/feishu) 읽기 — 메신저별 말풍선 색·라벨용(2026-07-22)
     function _readUrlApp(){
       try{
@@ -8412,14 +8423,9 @@ label[for="maxTokens"], #maxTokens,
           var hp = new URLSearchParams(location.hash.replace(/^#/, ''));
           v = hp.has('app') ? hp.get('app') : '';
         }
-        v = String(v || '').trim().toLowerCase();
         // MacroDroid 알림 트리거의 {not_app_package}를 그대로 받는 경우 — 패키지명→메신저 매핑
         // (매크로 쪽 IF 분기 불필요, URL에 &app={not_app_package}만 붙이면 됨. 2026-07-22)
-        // 패키지명 부분일치 — 페이수는 판(중국/국제/기업)마다 패키지가 달라 정확일치로는 놓침(2026-07-22 실사고)
-        if(v.indexOf('lark') >= 0 || v.indexOf('feishu') >= 0) return 'feishu';
-        if(v.indexOf('tencent.mm') >= 0) return 'wechat';
-        if(v.indexOf('alipay') >= 0) return 'alipay';
-        return /^(alipay|wechat|feishu|line|kakao)$/.test(v) ? v : '';
+        return _normAppId(v);
       }catch(_){ return ''; }
     }
     // 주소에서 ?text=/#text= 를 제거해 기본 주소로 되돌림(새 탭 누적 완화 — 항상 같은 깨끗한 주소 유지)
@@ -8707,7 +8713,7 @@ label[for="maxTokens"], #maxTokens,
           for(var i = 0; i < items.length; i++){
             var it = items[i];
             if(!it || !it.text) continue;
-            if(!first){ _enqueueUrl(it.text, it.app || ''); }
+            if(!first){ _enqueueUrl(it.text, _normAppId(it.app || '')); }
           }
           if(!first && items.length){ try{ _drainUrlQueue(); }catch(_){} }
           if(j.last){ try{ localStorage.setItem(_ppKey, String(j.last)); }catch(_){} }
