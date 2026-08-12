@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p88';
+    const APP_VERSION = 'v20.57p89';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8821,6 +8821,25 @@ label[for="maxTokens"], #maxTokens,
             if(lastFinal !== after){
               try{ localStorage.setItem(_ppKey, String(lastFinal)); }catch(_){}
             }
+            // ★만료 정리(2026-08-13): 서버가 더는 갖고 있지 않은 옛 자리표시는
+            //   교체가 영영 안 오므로 만료로 닫는다(서버 응답의 가장 오래된 id 보다
+            //   앞인데 응답에 없는 것만 — 진행 중인 것은 건드리지 않는다).
+            try{
+              if(items.length){
+                var _oldest = items[0].id || 0;
+                var _dirty = false;
+                for(var _qi = chat.length - 1; _qi >= 0 && _qi > chat.length - 240; _qi--){
+                  var _qm = chat[_qi];
+                  if(_qm && _qm.role === 'assistant' && _qm.status === 'pending'
+                     && _qm.popupId && _qm.popupId < _oldest){
+                    _qm.text = '오류: 원문이 대기열에서 만료됐습니다';
+                    _qm.status = 'done';
+                    _dirty = true;
+                  }
+                }
+                if(_dirty){ saveChatHistory(); renderChat(); }
+              }
+            }catch(_){}
           }
           _ppOk = true;
         }catch(_){
