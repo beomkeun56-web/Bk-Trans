@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p81';
+    const APP_VERSION = 'v20.57p82';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8700,7 +8700,11 @@ label[for="maxTokens"], #maxTokens,
         try{
           var after = 0;
           try{ after = parseInt(localStorage.getItem(_ppKey) || '0', 10) || 0; }catch(_){}
-          var r = await fetch(_apiOrigin() + '/popup_pull?after=' + after, {
+          // 기기 표식: 폰(안드로이드·아이폰)=phone, 그 외(윈도우 PC 등)=pc.
+          // 서버는 "폰 앱이 살아 있는가"만으로 열기 여부를 판정한다
+          // (PC에 켜두면 폰 자동 열기가 눌리던 2026-08-12 부작용의 수리).
+          var _dev = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
+          var r = await fetch(_apiOrigin() + '/popup_pull?after=' + after + '&dev=' + _dev, {
             headers: { 'Authorization': 'Bearer ' + key }
           });
           if(!r.ok) return;
