@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p89';
+    const APP_VERSION = 'v20.57p90';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8731,18 +8731,34 @@ label[for="maxTokens"], #maxTokens,
         try{ scrollToBottom('smooth'); }catch(_){}
       }catch(_){}
     }
+    function _popupMetric(obj){
+      try{
+        obj.dev = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
+        navigator.sendBeacon(_apiOrigin() + '/popup_metric', JSON.stringify(obj));
+      }catch(_){}
+    }
     function _popupFinalize(it){
       try{
         var asst = _popupFindByPid(it.id, 'assistant');
         if(!asst){ _renderPopupResult(it); return; }      // 자리표시 없이 완료본이 먼저 온 경우
         if(asst.status === 'done') return;                 // 재수신 중복 방지
+        var _recvAt = Date.now();
         asst.text = it.err ? ('오류: ' + it.err) : (it.tgt || '');
         asst.model = it.model || 'server';
         asst.ms = it.secs ? Math.round(it.secs * 1000) : null;
         asst.source = _normAppId(it.app || '') || 'url';
         asst.status = 'done';
+        var _t0 = performance.now();
         saveChatHistory();
+        var _t1 = performance.now();
         renderChat();
+        var _t2 = performance.now();
+        // 계측: 서버 완료→수신 지연 / 저장 소요 / 그리기 소요 (원인 규명용, 값만 보고)
+        _popupMetric({ id: it.id, stage: 'finalize',
+                       recv_lag_ms: it.done_ts ? Math.round(_recvAt - it.done_ts * 1000) : null,
+                       save_ms: Math.round(_t1 - _t0),
+                       render_ms: Math.round(_t2 - _t1),
+                       chat_len: chat.length });
       }catch(_){}
     }
     (function(){
