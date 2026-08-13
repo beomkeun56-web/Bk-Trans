@@ -1830,7 +1830,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p99';
+    const APP_VERSION = 'v20.57p100';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -10056,7 +10056,9 @@ label[for="maxTokens"], #maxTokens,
         if(composerEl && composerEl.classList.contains('collapsed')){
           el.main.style.paddingBottom = '';
         } else {
-          el.main.style.paddingBottom = (Math.max(0, bottomOffset) + 82) + 'px';
+          // ★2026-08-13: 82px 고정 → 실제 입력창 묶음 높이(메신저 버튼 줄 추가로 가변)
+          var _cmH = (composerEl && composerEl.offsetHeight) ? composerEl.offsetHeight + 10 : 82;
+          el.main.style.paddingBottom = (Math.max(0, bottomOffset) + _cmH) + 'px';
         }
       }
       scrollToBottom('instant');
