@@ -692,13 +692,16 @@
     #jumpAppWrap{
       display: none; position: absolute; right: 10px; bottom: calc(100% + 6px);
       flex-direction: column; gap: 5px; z-index: 5;
+      pointer-events: auto;   /* .composer 가 pointer-events:none 이라 명시 필수(클릭 불능 실사고) */
     }
     .jumpApp{
       width: 64px; border-radius: 9px; border: 1px solid rgba(255,255,255,.2);
-      background: rgba(18,18,20,.82); font-weight: 700; font-size: 12px; cursor: pointer;
+      background: rgba(18,18,20,.82); font-weight: 700; font-size: 11.5px; cursor: pointer;
       font-family: inherit; padding: 0; min-height: 30px;
-      box-shadow: 0 4px 14px rgba(0,0,0,.35);
+      box-shadow: 0 4px 14px rgba(0,0,0,.35); pointer-events: auto;
     }
+    /* 입력창 접힘 상태에서는 메신저 버튼도 숨김(범근님: 입력창 있을 때만) */
+    .composer.collapsed #jumpAppWrap{ display: none !important; }
     .jumpApp[data-app="wechat"]{ color: #4ade80; }
     .jumpApp[data-app="feishu"]{ color: #c084fc; }
     .jumpApp[data-app="alipay"]{ color: #60a5fa; }
@@ -1808,9 +1811,9 @@ label[for="maxTokens"], #maxTokens,
   <div class="composer">
     <div class="composerFade"></div>
     <div id="jumpAppWrap">
-      <button class="jumpApp" type="button" data-app="wechat" title="위챗 열기">위챗</button>
-      <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">페이수</button>
-      <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">알리페이</button>
+      <button class="jumpApp" type="button" data-app="wechat" title="위챗 열기">WeChat</button>
+      <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">Feishu</button>
+      <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">Alipay</button>
     </div>
     <div class="composerRow">
       <div class="composerInner">
@@ -1834,7 +1837,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p101';
+    const APP_VERSION = 'v20.57p102';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
