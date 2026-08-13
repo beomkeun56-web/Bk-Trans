@@ -688,12 +688,16 @@
       flex-direction:column;
       pointer-events:auto;
     }
-    #jumpAppWrap{ display: none; gap: 6px; padding: 0 2px 7px; position: relative; z-index: 1; }
+    /* ★입력창 위 오른쪽 끝, 세로 스택 플로팅(화면 줄 차지 없음) — 2026-08-13 범근님 */
+    #jumpAppWrap{
+      display: none; position: absolute; right: 10px; bottom: calc(100% + 6px);
+      flex-direction: column; gap: 5px; z-index: 5;
+    }
     .jumpApp{
-      flex: 1 1 0; border-radius: 11px; border: 1px solid rgba(255,255,255,.18);
-      background: var(--inputBg); font-weight: 700; font-size: 14px; cursor: pointer;
-      font-family: inherit; padding: 0; min-height: 36px;
-      box-shadow: 0 4px 16px rgba(0,0,0,.3);
+      width: 64px; border-radius: 9px; border: 1px solid rgba(255,255,255,.2);
+      background: rgba(18,18,20,.82); font-weight: 700; font-size: 12px; cursor: pointer;
+      font-family: inherit; padding: 0; min-height: 30px;
+      box-shadow: 0 4px 14px rgba(0,0,0,.35);
     }
     .jumpApp[data-app="wechat"]{ color: #4ade80; }
     .jumpApp[data-app="feishu"]{ color: #c084fc; }
@@ -1830,7 +1834,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p100';
+    const APP_VERSION = 'v20.57p101';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
