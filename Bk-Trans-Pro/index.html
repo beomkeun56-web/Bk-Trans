@@ -1814,7 +1814,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p107';
+    const APP_VERSION = 'v20.57p108';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8918,7 +8918,13 @@ label[for="maxTokens"], #maxTokens,
       var _ppRev = '';    // 롱폴 기준점: 서버 대기열의 변화 번호(응답마다 갱신)
       async function _popupPoll(){
         if(_ppBusy) return;
-        if(document.visibilityState !== 'visible') return;
+        // ★2026-08-13 실측: 매크로 자동 실행 직후 삼성 팝업뷰가 'hidden+포커스' 모순 상태로
+        //   로드되는 경우가 있다(04:36 로그). visible 만 보면 화면에 떠 있는데도 폴링이
+        //   영영 안 돌아 '번역 중' 잔류 → 보임 '또는' 포커스면 돈다(닫힘·백그라운드는 둘 다 아님).
+        var _vis = (document.visibilityState === 'visible');
+        var _focd = false;
+        try{ _focd = document.hasFocus(); }catch(_){}
+        if(!_vis && !_focd) return;
         if(!navigator.onLine) return;
         var key = '';
         try{ key = localStorage.getItem('bk_tr_pro_apiKey') || ''; }catch(_){}
@@ -9032,6 +9038,8 @@ label[for="maxTokens"], #maxTokens,
       document.addEventListener('visibilitychange', function(){
         if(document.visibilityState === 'visible') setTimeout(_popupPoll, 300);
       });
+      // hidden+포커스 모순 상태에서 포커스 이벤트로도 폴링을 깨운다(위 실측의 짝)
+      window.addEventListener('focus', function(){ setTimeout(_popupPoll, 200); });
       setTimeout(_popupPoll, 1500);
     })();
     // ★2026-08-12 범근님 지시 "타이핑 중 URL 알림이 와도 새로고침 없이": 설치형(PWA)이
