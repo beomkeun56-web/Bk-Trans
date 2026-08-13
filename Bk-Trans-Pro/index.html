@@ -1814,7 +1814,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p109';
+    const APP_VERSION = 'v20.57p110';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8922,6 +8922,10 @@ label[for="maxTokens"], #maxTokens,
       var _ppKey = 'bk_popup_last';
       var _ppBusy = false;
       var _ppRev = '';    // 롱폴 기준점: 서버 대기열의 변화 번호(응답마다 갱신)
+      // ★부팅 대조(2026-08-13): 옛/새 인스턴스 교대 레이스로 '번역 중'이 워터마크 뒤에
+      //   갇히는 사고(09:39 실측, id 463). 새로 뜰 때 첫 pull 은 최근 항목 전체를 받아
+      //   pending 잔류를 서버 완성본으로 치유한다.
+      var _ppBoot = true;
       async function _popupPoll(){
         if(_ppBusy) return;
         // ★2026-08-13 실측: 매크로 자동 실행 직후 삼성 팝업뷰가 'hidden+포커스' 모순 상태로
@@ -8939,6 +8943,7 @@ label[for="maxTokens"], #maxTokens,
         try{
           var after = 0;
           try{ after = parseInt(localStorage.getItem(_ppKey) || '0', 10) || 0; }catch(_){}
+          var _wmRaw = after;   // 자가 치유로 낮추기 전의 원 워터마크(부팅 대조 판정용)
           // ★자가 치유(2026-08-12): '번역 중'인 말풍선이 남아 있으면 워터마크와 무관하게
           //   그 항목부터 다시 가져와 교체한다. 두 인스턴스(설치 앱+크롬 탭)가 워터마크를
           //   나눠 쓰다 한쪽이 앞서가면 다른 쪽 자리표시가 영영 안 바뀌던 실사고의 수리.
@@ -8964,7 +8969,7 @@ label[for="maxTokens"], #maxTokens,
           var _foc = 0;
           try{ _foc = document.hasFocus() ? 1 : 0; }catch(_){}
           var r = await fetch(_apiOrigin() + '/popup_pull?after=' + after + '&dev=' + _dev
-                              + '&focus=' + _foc
+                              + '&focus=' + _foc + (_ppBoot ? '&boot=1' : '')
                               + '&wait=25&rev=' + encodeURIComponent(_ppRev), {
             headers: { 'Authorization': 'Bearer ' + key }
           });
@@ -8978,6 +8983,28 @@ label[for="maxTokens"], #maxTokens,
           var first = !localStorage.getItem(_ppKey);
           if(first){
             if(j.last){ try{ localStorage.setItem(_ppKey, String(j.last)); }catch(_){} }
+          } else if(_ppBoot){
+            // ★부팅 대조: 최근 항목 전체와 화면을 대조해 '번역 중' 잔류를 완성본으로 치유.
+            //   워터마크 이하 + 화면에 없음 = 과거 전달분이므로 되살리지 않는다.
+            //   워터마크는 여기서 전진시키지 않는다(다음 일반 pull 이 정상 규칙으로 전진).
+            _ppBoot = false;
+            items.sort(function(a, b){ return (a.id || 0) - (b.id || 0); });
+            try{
+              _popupMetric({ stage: 'boot', wm: _wmRaw,
+                             ids: items.map(function(x){ return x.id; }),
+                             done: items.map(function(x){ return (x.tgt || x.err) ? 1 : 0; }) });
+            }catch(_){}
+            for(var bi = 0; bi < items.length; bi++){
+              var bit = items[bi];
+              if(!bit || !bit.text) continue;
+              var basst = _popupFindByPid(bit.id, 'assistant');
+              if(basst){
+                if(basst.status === 'pending' && (bit.tgt || bit.err)) _popupFinalize(bit);
+              } else if(bit.id > _wmRaw){
+                if(bit.tgt || bit.err) _popupFinalize(bit);
+                else _popupPlaceholder(bit);
+              }
+            }
           } else {
             // ★도착 즉시 원문+'번역 중' 자리표시를 그리고, 결과가 오는 대로 각자 교체한다
             //   (순서 대기 없음 — 병렬 번역 3건이면 3건이 거의 동시에 바뀐다).
