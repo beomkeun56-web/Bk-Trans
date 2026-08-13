@@ -688,24 +688,6 @@
       flex-direction:column;
       pointer-events:auto;
     }
-    /* ★입력창 위 오른쪽 끝, 세로 스택 플로팅(화면 줄 차지 없음) — 2026-08-13 범근님 */
-    #jumpAppWrap{
-      display: none; position: absolute; right: 10px; bottom: calc(100% + 6px);
-      flex-direction: column; gap: 5px; z-index: 5;
-      pointer-events: auto;   /* .composer 가 pointer-events:none 이라 명시 필수(클릭 불능 실사고) */
-    }
-    .jumpApp{
-      width: 64px; border-radius: 10px; border: 1px solid rgba(255,255,255,.09);
-      background: rgba(18,18,20,.18); font-weight: 700; font-size: 11.5px; cursor: pointer;
-      font-family: inherit; padding: 0; min-height: 42px;
-      box-shadow: none; pointer-events: auto;
-    }
-    /* ★2026-08-13 범근님 번복: 접혀도 항상 표시(사라지면 입력창을 다시 눌러야 해서 불편) */
-    .jumpApp.armed{ background: rgba(18,18,20,.65); border-color: currentColor; box-shadow: 0 0 8px currentColor; }
-    .jumpApp[data-app="wechat"]{ color: #4ade80; }
-    .jumpApp[data-app="feishu"]{ color: #c084fc; }
-    .jumpApp[data-app="alipay"]{ color: #60a5fa; }
-    .jumpApp:active{ transform: scale(.95); }
     #composerModelBtn{
       flex: 0 0 56px;
       min-height: var(--inputMinHeight);
@@ -1810,11 +1792,6 @@ label[for="maxTokens"], #maxTokens,
 
   <div class="composer">
     <div class="composerFade"></div>
-    <div id="jumpAppWrap">
-      <button class="jumpApp" type="button" data-app="wechat" title="위챗 열기">WeChat</button>
-      <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">Feishu</button>
-      <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">Alipay</button>
-    </div>
     <div class="composerRow">
       <div class="composerInner">
         <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
@@ -1837,7 +1814,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p105';
+    const APP_VERSION = 'v20.57p106';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6193,7 +6170,21 @@ label[for="maxTokens"], #maxTokens,
           bubble.style.background = srcBubbleColor(m.source);
         }
         bubble.style.cursor = 'pointer';
-        bubble.addEventListener('click', () => showFocusOverlay(dispText));
+        // ★2026-08-13 범근님: 메신저(위챗·페이수·알리페이) 번역 말풍선은
+        //   1클릭 = 그 메신저 답장 모드(번역 후 자동 이동) / 2클릭 = 전체화면(병음).
+        //   그 외 말풍선은 기존대로 1클릭 = 전체화면.
+        const _msgrSrc = (m.role === 'assistant' && !_isErrorMessage(m) &&
+                          (m.source === 'wechat' || m.source === 'feishu' || m.source === 'alipay'))
+                         ? m.source : '';
+        if(_msgrSrc){
+          let _bt = 0;
+          bubble.addEventListener('click', function(){
+            if(_bt){ clearTimeout(_bt); _bt = 0; showFocusOverlay(dispText); return; }
+            _bt = setTimeout(function(){ _bt = 0; _armReplyTo(_msgrSrc); }, 280);
+          });
+        } else {
+          bubble.addEventListener('click', () => showFocusOverlay(dispText));
+        }
         row.appendChild(bubble);
 
         const actions = document.createElement('div');
@@ -8766,49 +8757,23 @@ label[for="maxTokens"], #maxTokens,
         if(u) location.href = u;
       }catch(_){}
     }
-    var _jumpWrap = document.getElementById('jumpAppWrap');
-    if(_jumpWrap && /Android/i.test(navigator.userAgent)) _jumpWrap.style.display = 'flex';
-    // ★2026-08-13 범근님 확정 동작:
-    //   한 번 클릭 = 그 메신저를 '보낼 대상'으로 지정(버튼 점등) + 입력창 포커스.
-    //     이후 타이핑 번역이 끝나면 번역문을 복사해 두고 그 메신저로 자동 이동.
-    //   두 번 클릭 = 그 앱 바로 열기(기존 동작).
-    var _jumpTarget = null, _jumpClickApp = '', _jumpClickTimer = 0;
-    function _setJumpTarget(app){
-      _jumpTarget = app || null;
-      try{
-        var bs = _jumpWrap.querySelectorAll('.jumpApp');
-        for(var i = 0; i < bs.length; i++){
-          bs[i].classList.toggle('armed', bs[i].getAttribute('data-app') === _jumpTarget);
-        }
-      }catch(_){}
+    // ★2026-08-13 범근님 확정 동작(버튼 방식 폐기 → 말풍선 클릭 방식):
+    //   메신저 말풍선 1클릭 = 그 메신저 답장 모드(입력창 포커스). 타이핑 번역이 끝나면
+    //   번역문을 복사해 두고 그 메신저로 자동 이동. 2클릭 = 전체화면(병음).
+    var _jumpTarget = null;
+    function _armReplyTo(app){
+      if(_jumpTarget === app){ _jumpTarget = null; try{ toast('답장 모드 해제'); }catch(_){} return; }
+      _jumpTarget = app;
+      try{ toast(srcLabel(app) + ' 답장 모드 — 번역하면 자동 이동'); }catch(_){}
+      try{ el.input.focus(); }catch(_){}
     }
     function _maybeJumpAfterTranslate(opts, translated){
       if(!_jumpTarget) return;
       if(opts && opts.programmatic) return;          // 타이핑 번역만(팝업·URL·재번역 제외)
       var app = _jumpTarget;
-      _setJumpTarget(null);
+      _jumpTarget = null;
       try{ copyToClipboard(translated, true); }catch(_){}   // 붙여넣기만 하면 되게 복사해 둠
       setTimeout(function(){ _jumpLaunch(app); }, 350);      // 출력이 그려진 다음 이동
-    }
-    if(_jumpWrap){
-      _jumpWrap.addEventListener('click', function(ev){
-        var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
-        if(!b) return;
-        var app = b.getAttribute('data-app');
-        if(_jumpClickTimer && _jumpClickApp === app){          // 두 번째 클릭
-          clearTimeout(_jumpClickTimer); _jumpClickTimer = 0;
-          _setJumpTarget(null);
-          _jumpLaunch(app);
-          return;
-        }
-        if(_jumpClickTimer){ clearTimeout(_jumpClickTimer); _jumpClickTimer = 0; }
-        _jumpClickApp = app;
-        _jumpClickTimer = setTimeout(function(){
-          _jumpClickTimer = 0;
-          _setJumpTarget(_jumpTarget === app ? null : app);    // 같은 버튼 재클릭 = 해제
-          if(_jumpTarget){ try{ el.input.focus(); }catch(_){} }
-        }, 300);
-      });
     }
     // 설정 패널: 여는 방식 선택 저장 + 시험 실행
     (function(){
