@@ -688,11 +688,12 @@
       flex-direction:column;
       pointer-events:auto;
     }
-    #jumpAppWrap{ display: none; flex-direction: column; gap: 3px; align-self: stretch; justify-content: center; }
+    #jumpAppWrap{ display: none; gap: 6px; padding: 0 2px 7px; position: relative; z-index: 1; }
     .jumpApp{
-      flex: 1 1 0; width: 52px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18);
-      background: var(--inputBg); font-weight: 700; font-size: 13px; cursor: pointer;
-      font-family: inherit; padding: 2px 0; min-height: 26px;
+      flex: 1 1 0; border-radius: 11px; border: 1px solid rgba(255,255,255,.18);
+      background: var(--inputBg); font-weight: 700; font-size: 14px; cursor: pointer;
+      font-family: inherit; padding: 0; min-height: 36px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
     }
     .jumpApp[data-app="wechat"]{ color: #4ade80; }
     .jumpApp[data-app="feishu"]{ color: #c084fc; }
@@ -1802,6 +1803,11 @@ label[for="maxTokens"], #maxTokens,
 
   <div class="composer">
     <div class="composerFade"></div>
+    <div id="jumpAppWrap">
+      <button class="jumpApp" type="button" data-app="wechat" title="위챗 열기">위챗</button>
+      <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">페이수</button>
+      <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">알리페이</button>
+    </div>
     <div class="composerRow">
       <div class="composerInner">
         <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
@@ -1809,11 +1815,6 @@ label[for="maxTokens"], #maxTokens,
           <button id="inputCopyBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Copy</button>
           <button id="inputClearBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Delete</button>
         </div>
-      </div>
-      <div id="jumpAppWrap">
-        <button class="jumpApp" type="button" data-app="wechat" title="위챗 열기">위</button>
-        <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">페</button>
-        <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">알</button>
       </div>
       <button id="composerModelBtn" type="button" aria-label="제공자·모델 선택" title="제공자·모델 선택">M</button>
     </div>
@@ -1829,7 +1830,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p98';
+    const APP_VERSION = 'v20.57p99';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
