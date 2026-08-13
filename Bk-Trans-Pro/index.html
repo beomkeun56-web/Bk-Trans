@@ -690,9 +690,9 @@
     }
     #jumpAppWrap{ display: none; flex-direction: column; gap: 3px; align-self: stretch; justify-content: center; }
     .jumpApp{
-      flex: 1 1 0; width: 34px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18);
-      background: var(--inputBg); font-weight: 700; font-size: 12px; cursor: pointer;
-      font-family: inherit; padding: 2px 0; min-height: 24px;
+      flex: 1 1 0; width: 52px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18);
+      background: var(--inputBg); font-weight: 700; font-size: 13px; cursor: pointer;
+      font-family: inherit; padding: 2px 0; min-height: 26px;
     }
     .jumpApp[data-app="wechat"]{ color: #4ade80; }
     .jumpApp[data-app="feishu"]{ color: #c084fc; }
@@ -1355,6 +1355,36 @@ label[for="maxTokens"], #maxTokens,
         </div>
 
         <div style="margin-bottom:24px;">
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:block;">메신저 열기 버튼 (입력창 옆 위·페·알)</label>
+          <div class="hint" style="margin-bottom:10px;">여는 방식을 고르고 시험을 눌러 실제로 열리는 것을 선택하세요.</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="min-width:64px; font-size:13px; color:#4ade80; font-weight:700;">위챗</span>
+              <select id="msgrOpenWechat" style="flex:1; padding:6px; border-radius:8px; background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.15);">
+                <option value="weixin://">weixin:// (표준)</option>
+              </select>
+              <button id="msgrTestWechat" class="btn secondary" type="button">시험</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="min-width:64px; font-size:13px; color:#c084fc; font-weight:700;">페이수</span>
+              <select id="msgrOpenFeishu" style="flex:1; padding:6px; border-radius:8px; background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.15);">
+                <option value="lark://">lark:// (중국판 표준)</option>
+                <option value="feishu://">feishu:// (대체)</option>
+              </select>
+              <button id="msgrTestFeishu" class="btn secondary" type="button">시험</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="min-width:64px; font-size:13px; color:#60a5fa; font-weight:700;">알리페이</span>
+              <select id="msgrOpenAlipay" style="flex:1; padding:6px; border-radius:8px; background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.15);">
+                <option value="alipays://">alipays:// (표준)</option>
+                <option value="alipay://">alipay:// (대체)</option>
+              </select>
+              <button id="msgrTestAlipay" class="btn secondary" type="button">시험</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:24px;">
           <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">색상 설정</label>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
           <div class="colorItem">
@@ -1797,7 +1827,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p96';
+    const APP_VERSION = 'v20.57p97';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8708,42 +8738,64 @@ label[for="maxTokens"], #maxTokens,
     // ★2026-08-13 범근님: 입력창 옆 메신저 열기 버튼 3개(위·페·알, 고정 — 마지막 수신
     //   기준 단일 버튼은 계속 바뀌어 헷갈린다는 지적). 수신 항목의 app(매크로
     //   {not_app_package} 원본 패키지명)을 메신저별로 기억해, 실제 설치본을 인텐트로 연다.
-    var _MSGR_PKG = { wechat: 'com.tencent.mm', alipay: 'com.eg.android.AlipayGphone', feishu: 'com.ss.android.lark' };
-    var _jumpWrap = document.getElementById('jumpAppWrap');
-    if(_jumpWrap && /Android/i.test(navigator.userAgent)) _jumpWrap.style.display = 'flex';
-    function _popupRememberApp(rawApp){
+    // ★패키지 인텐트는 크롬이 BROWSABLE 만 허용해 플레이스토어로 새던 실사고(2026-08-13)
+    //   → 각 앱이 등록한 전용 스킴으로 연다. 스킴은 설정(외관 패널)에서 선택·시험 가능.
+    var _MSGR_OPEN_DEFAULT = { wechat: 'weixin://', feishu: 'lark://', alipay: 'alipays://' };
+    function _msgrOpenCfg(){
+      var m = {};
+      try{ m = JSON.parse(localStorage.getItem('bk_msgr_open') || '{}') || {}; }catch(_){}
+      var out = {};
+      for(var k in _MSGR_OPEN_DEFAULT) out[k] = m[k] || _MSGR_OPEN_DEFAULT[k];
+      return out;
+    }
+    function _jumpLaunch(app){
       try{
-        var norm = _normAppId(rawApp || '');
-        if(norm !== 'wechat' && norm !== 'alipay' && norm !== 'feishu') return;
-        var raw = String(rawApp || '');
-        if(raw.indexOf('.') <= 0) return;   // 실제 패키지명일 때만 기억(페이수 판 차이 대응)
-        var m = {};
-        try{ m = JSON.parse(localStorage.getItem('bk_msgr_pkgs') || '{}') || {}; }catch(_){}
-        if(m[norm] === raw.toLowerCase()) return;
-        m[norm] = raw.toLowerCase();
-        localStorage.setItem('bk_msgr_pkgs', JSON.stringify(m));
+        var u = _msgrOpenCfg()[app];
+        if(u) location.href = u;
       }catch(_){}
     }
+    var _jumpWrap = document.getElementById('jumpAppWrap');
+    if(_jumpWrap && /Android/i.test(navigator.userAgent)) _jumpWrap.style.display = 'flex';
     if(_jumpWrap){
       _jumpWrap.addEventListener('click', function(ev){
         var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
-        if(!b) return;
-        try{
-          var app = b.getAttribute('data-app');
-          var m = {};
-          try{ m = JSON.parse(localStorage.getItem('bk_msgr_pkgs') || '{}') || {}; }catch(_){}
-          var pkg = m[app] || _MSGR_PKG[app];
-          if(!pkg) return;
-          location.href = 'intent:#Intent;action=android.intent.action.MAIN;'
-            + 'category=android.intent.category.LAUNCHER;launchFlags=0x10000000;'
-            + 'package=' + pkg + ';end';
-        }catch(_){}
+        if(b) _jumpLaunch(b.getAttribute('data-app'));
       });
     }
+    // 설정 패널: 여는 방식 선택 저장 + 시험 실행
+    (function(){
+      var map = { wechat: 'msgrOpenWechat', feishu: 'msgrOpenFeishu', alipay: 'msgrOpenAlipay' };
+      var tmap = { wechat: 'msgrTestWechat', feishu: 'msgrTestFeishu', alipay: 'msgrTestAlipay' };
+      var cfg = _msgrOpenCfg();
+      for(var app in map){
+        (function(app){
+          var sel = document.getElementById(map[app]);
+          var tb = document.getElementById(tmap[app]);
+          if(sel){
+            sel.value = cfg[app];
+            if(sel.value !== cfg[app]) sel.selectedIndex = 0;   // 저장값이 목록에 없으면 기본
+            sel.addEventListener('change', function(){
+              var m = {};
+              try{ m = JSON.parse(localStorage.getItem('bk_msgr_open') || '{}') || {}; }catch(_){}
+              m[app] = sel.value;
+              try{ localStorage.setItem('bk_msgr_open', JSON.stringify(m)); }catch(_){}
+            });
+          }
+          if(tb) tb.addEventListener('click', function(){
+            if(sel){
+              var m = {};
+              try{ m = JSON.parse(localStorage.getItem('bk_msgr_open') || '{}') || {}; }catch(_){}
+              m[app] = sel.value;
+              try{ localStorage.setItem('bk_msgr_open', JSON.stringify(m)); }catch(_){}
+            }
+            _jumpLaunch(app);
+          });
+        })(app);
+      }
+    })();
     function _renderPopupResult(it){
       try{
         var src = _normAppId(it.app || '') || 'url';
-        _popupRememberApp(it.app);
         var jobId = _newStableId('job');
         chat.push({ role:'user', text: it.text, ts: Date.now(), popupId: it.id,
                     messageId:_newStableId('usr'), jobId: jobId });
@@ -8772,7 +8824,6 @@ label[for="maxTokens"], #maxTokens,
       try{
         if(_popupFindByPid(it.id, 'assistant')) return;   // 이미 그림(리로드 재수신 포함)
         var src = _normAppId(it.app || '') || 'url';
-        _popupRememberApp(it.app);
         var jobId = _newStableId('job');
         chat.push({ role:'user', text: it.text, ts: Date.now(), popupId: it.id,
                     messageId:_newStableId('usr'), jobId: jobId });
