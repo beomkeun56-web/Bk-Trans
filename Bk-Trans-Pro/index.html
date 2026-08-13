@@ -701,6 +701,7 @@
       box-shadow: none; pointer-events: auto;
     }
     /* ★2026-08-13 범근님 번복: 접혀도 항상 표시(사라지면 입력창을 다시 눌러야 해서 불편) */
+    .jumpApp.armed{ background: rgba(18,18,20,.65); border-color: currentColor; box-shadow: 0 0 8px currentColor; }
     .jumpApp[data-app="wechat"]{ color: #4ade80; }
     .jumpApp[data-app="feishu"]{ color: #c084fc; }
     .jumpApp[data-app="alipay"]{ color: #60a5fa; }
@@ -1836,7 +1837,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p104';
+    const APP_VERSION = 'v20.57p105';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6755,6 +6756,7 @@ label[for="maxTokens"], #maxTokens,
           if(streamRow.parentNode) streamRow.remove();
           if(el.autoCopy.checked && hasChinese(translated)) _enqueueAutoCopy(translated);
           else hideCopyBar();
+          try{ _maybeJumpAfterTranslate(opts, translated); }catch(_){}
           setConnState('ok');
           renderChat();
           return { ok:true, usr:userObj, asst:liveTarget, targetUpdated:true };
@@ -6856,6 +6858,7 @@ label[for="maxTokens"], #maxTokens,
         } else {
           hideCopyBar();
         }
+        try{ _maybeJumpAfterTranslate(opts, translated); }catch(_){}
 
         setConnState('ok');
         // 스트리밍 직후엔 병음(ruby)이 늦게 로드돼 말풍선 폭이 좁게 잡혀 줄바꿈됨(새로고침하면 정상).
@@ -8765,10 +8768,46 @@ label[for="maxTokens"], #maxTokens,
     }
     var _jumpWrap = document.getElementById('jumpAppWrap');
     if(_jumpWrap && /Android/i.test(navigator.userAgent)) _jumpWrap.style.display = 'flex';
+    // ★2026-08-13 범근님 확정 동작:
+    //   한 번 클릭 = 그 메신저를 '보낼 대상'으로 지정(버튼 점등) + 입력창 포커스.
+    //     이후 타이핑 번역이 끝나면 번역문을 복사해 두고 그 메신저로 자동 이동.
+    //   두 번 클릭 = 그 앱 바로 열기(기존 동작).
+    var _jumpTarget = null, _jumpClickApp = '', _jumpClickTimer = 0;
+    function _setJumpTarget(app){
+      _jumpTarget = app || null;
+      try{
+        var bs = _jumpWrap.querySelectorAll('.jumpApp');
+        for(var i = 0; i < bs.length; i++){
+          bs[i].classList.toggle('armed', bs[i].getAttribute('data-app') === _jumpTarget);
+        }
+      }catch(_){}
+    }
+    function _maybeJumpAfterTranslate(opts, translated){
+      if(!_jumpTarget) return;
+      if(opts && opts.programmatic) return;          // 타이핑 번역만(팝업·URL·재번역 제외)
+      var app = _jumpTarget;
+      _setJumpTarget(null);
+      try{ copyToClipboard(translated, true); }catch(_){}   // 붙여넣기만 하면 되게 복사해 둠
+      setTimeout(function(){ _jumpLaunch(app); }, 350);      // 출력이 그려진 다음 이동
+    }
     if(_jumpWrap){
       _jumpWrap.addEventListener('click', function(ev){
         var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
-        if(b) _jumpLaunch(b.getAttribute('data-app'));
+        if(!b) return;
+        var app = b.getAttribute('data-app');
+        if(_jumpClickTimer && _jumpClickApp === app){          // 두 번째 클릭
+          clearTimeout(_jumpClickTimer); _jumpClickTimer = 0;
+          _setJumpTarget(null);
+          _jumpLaunch(app);
+          return;
+        }
+        if(_jumpClickTimer){ clearTimeout(_jumpClickTimer); _jumpClickTimer = 0; }
+        _jumpClickApp = app;
+        _jumpClickTimer = setTimeout(function(){
+          _jumpClickTimer = 0;
+          _setJumpTarget(_jumpTarget === app ? null : app);    // 같은 버튼 재클릭 = 해제
+          if(_jumpTarget){ try{ el.input.focus(); }catch(_){} }
+        }, 300);
       });
     }
     // 설정 패널: 여는 방식 선택 저장 + 시험 실행
