@@ -1782,7 +1782,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p92';
+    const APP_VERSION = 'v20.57p93';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -5945,7 +5945,7 @@ label[for="maxTokens"], #maxTokens,
       }
       return out;
     }
-    function usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source){
+    function usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source, sender){
       var seg = [];
       if(modelName) seg.push(abbrevModelName(modelName));
       var el2 = effLabel(effort);
@@ -5958,6 +5958,8 @@ label[for="maxTokens"], #maxTokens,
       if(promptVer) seg.push(promptVer);
       // 출처 표시 (캐싱 CS% 대체): Clip / URL / Typing
       seg.push(srcLabel(source));
+      // ★2026-08-13: 보낸 사람·방 이름(알림 제목, 매크로 {not_title}) — 있을 때만
+      if(sender) seg.push(String(sender));
       return seg.join('  ·  ');
     }
     // 의도를 한국어 2글자로 압축 (English Agent 출력도 한글로 매핑)
@@ -5981,7 +5983,7 @@ label[for="maxTokens"], #maxTokens,
       if(krMap[t]) return krMap[t];
       return t.slice(0, 2);
     }
-    function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline, source){
+    function appendUsageLine(actionsEl, u, ms, modelName, effort, promptVer, ms1, ms2, pipeline, source, sender){
       if(!_showTokens || !actionsEl) return null;
       // 파이프라인 표시 (3-Stage / 2-Stage 공통):
       //   actions 행: [의도/2Mode] 수정(N%)   [MT원본] (2-Agent만)
@@ -6091,7 +6093,7 @@ label[for="maxTokens"], #maxTokens,
         return null;
       }
       // 일반 표시 (기존 그대로 — actions 한 줄에)
-      var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source);
+      var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source, sender);
       if(!txt) return null;
       var s = document.createElement('span');
       s.style.cssText = 'font-size:10px;color:var(--metaText);opacity:.7;margin-left:8px;white-space:nowrap;';
@@ -6221,7 +6223,7 @@ label[for="maxTokens"], #maxTokens,
           // ★p59: 원문 버튼 옆 'G3.5F' — 이 번역문의 원문을 제미나이로 재번역.
           //   lastUserText 는 바깥 let 이라 클릭 시점엔 덮여 있으므로 srcForThisMsg 스냅샷을 쓴다.
           if(srcForThisMsg) actions.appendChild(makeRegenGeminiBtn(srcForThisMsg));
-          extraRow = appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline, m.source);
+          extraRow = appendUsageLine(actions, m.usage, m.ms, m.model, m.effort, m.promptVer, m.ms1, m.ms2, m.pipeline, m.source, m.sender);
         }
 
         if(actions.children.length > 0){
@@ -8699,7 +8701,7 @@ label[for="maxTokens"], #maxTokens,
                     text: (it.err ? ('오류: ' + it.err) : (it.tgt || '')),
                     ts: Date.now(), model: it.model || 'server',
                     ms: (it.secs ? Math.round(it.secs * 1000) : null),
-                    source: src, popupId: it.id,
+                    source: src, sender: (it.title || ''), popupId: it.id,
                     messageId:_newStableId('msg'), jobId: jobId,
                     status: 'done' });
         saveChatHistory();
@@ -8724,7 +8726,8 @@ label[for="maxTokens"], #maxTokens,
         chat.push({ role:'user', text: it.text, ts: Date.now(), popupId: it.id,
                     messageId:_newStableId('usr'), jobId: jobId });
         chat.push({ role:'assistant', text: '번역 중 ...', ts: Date.now(), popupId: it.id,
-                    model: '', source: src, messageId:_newStableId('msg'), jobId: jobId,
+                    model: '', source: src, sender: (it.title || ''),
+                    messageId:_newStableId('msg'), jobId: jobId,
                     status: 'pending' });
         saveChatHistory();
         renderChat();
@@ -8766,6 +8769,7 @@ label[for="maxTokens"], #maxTokens,
         asst.model = it.model || 'server';
         asst.ms = it.secs ? Math.round(it.secs * 1000) : null;
         asst.source = _normAppId(it.app || '') || 'url';
+        if(it.title) asst.sender = it.title;
         asst.status = 'done';
         var _t0 = performance.now();
         saveChatHistory();
