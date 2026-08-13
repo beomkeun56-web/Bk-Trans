@@ -688,7 +688,17 @@
       flex-direction:column;
       pointer-events:auto;
     }
-    #composerModelBtn, #jumpAppBtn{
+    #jumpAppWrap{ display: none; flex-direction: column; gap: 3px; align-self: stretch; justify-content: center; }
+    .jumpApp{
+      flex: 1 1 0; width: 34px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18);
+      background: var(--inputBg); font-weight: 700; font-size: 12px; cursor: pointer;
+      font-family: inherit; padding: 2px 0; min-height: 24px;
+    }
+    .jumpApp[data-app="wechat"]{ color: #4ade80; }
+    .jumpApp[data-app="feishu"]{ color: #c084fc; }
+    .jumpApp[data-app="alipay"]{ color: #60a5fa; }
+    .jumpApp:active{ transform: scale(.95); }
+    #composerModelBtn{
       flex: 0 0 56px;
       min-height: var(--inputMinHeight);
       border: 1px solid rgba(255,255,255,.15);
@@ -705,9 +715,8 @@
       align-self: stretch;
       transition: filter .15s;
     }
-    #composerModelBtn:hover, #jumpAppBtn:hover{ filter: brightness(1.15); }
-    #composerModelBtn:active, #jumpAppBtn:active{ transform: scale(.97); }
-    #jumpAppBtn{ font-size: 12.5px; display: none; }   /* 첫 수신 전엔 숨김 */
+    #composerModelBtn:hover{ filter: brightness(1.15); }
+    #composerModelBtn:active{ transform: scale(.97); }
 
     #input{
       width:100%;
@@ -1769,7 +1778,11 @@ label[for="maxTokens"], #maxTokens,
           <button id="inputClearBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Delete</button>
         </div>
       </div>
-      <button id="jumpAppBtn" type="button" aria-label="메신저 앱 열기" title="마지막 수신 메신저 열기"></button>
+      <div id="jumpAppWrap">
+        <button class="jumpApp" type="button" data-app="wechat" title="위챗 열기">위</button>
+        <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">페</button>
+        <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">알</button>
+      </div>
       <button id="composerModelBtn" type="button" aria-label="제공자·모델 선택" title="제공자·모델 선택">M</button>
     </div>
   </div>
@@ -1784,7 +1797,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p95';
+    const APP_VERSION = 'v20.57p96';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8692,42 +8705,40 @@ label[for="maxTokens"], #maxTokens,
     // 서버가 이미 번역해 둔 대기열 항목을 말풍선 두 개(원문·번역)로 그린다.
     // ★번역은 서버가 1회만 한다(2026-08-12 범근님 "두 번씩 번역은 낭비").
     //   폰·PC 는 이 함수로 같은 결과를 각자 그릴 뿐, 번역 요청을 내지 않는다.
-    // ★2026-08-13 범근님: 입력창 옆 버튼 → 마지막 수신 메신저 앱 열기(답장 동선).
-    //   서버 항목의 app(매크로 {not_app_package} 원본 패키지명)을 기억해 인텐트로 실행.
-    var _jumpBtn = document.getElementById('jumpAppBtn');
+    // ★2026-08-13 범근님: 입력창 옆 메신저 열기 버튼 3개(위·페·알, 고정 — 마지막 수신
+    //   기준 단일 버튼은 계속 바뀌어 헷갈린다는 지적). 수신 항목의 app(매크로
+    //   {not_app_package} 원본 패키지명)을 메신저별로 기억해, 실제 설치본을 인텐트로 연다.
     var _MSGR_PKG = { wechat: 'com.tencent.mm', alipay: 'com.eg.android.AlipayGphone', feishu: 'com.ss.android.lark' };
-    function _updateJumpBtn(){
-      try{
-        if(!_jumpBtn) return;
-        if(!/Android/i.test(navigator.userAgent)){ _jumpBtn.style.display = 'none'; return; }
-        var d = JSON.parse(localStorage.getItem('bk_last_msgr') || 'null');
-        if(!d || !d.app){ _jumpBtn.style.display = 'none'; return; }
-        _jumpBtn.textContent = srcLabel(d.app);
-        _jumpBtn.style.display = 'block';
-      }catch(_){}
-    }
+    var _jumpWrap = document.getElementById('jumpAppWrap');
+    if(_jumpWrap && /Android/i.test(navigator.userAgent)) _jumpWrap.style.display = 'flex';
     function _popupRememberApp(rawApp){
       try{
         var norm = _normAppId(rawApp || '');
         if(norm !== 'wechat' && norm !== 'alipay' && norm !== 'feishu') return;
         var raw = String(rawApp || '');
-        // 매크로가 실제 패키지명을 보내면 그대로 실행 대상으로 기억(페이수 판별 오차 제거)
-        var pkg = raw.indexOf('.') > 0 ? raw.toLowerCase() : (_MSGR_PKG[norm] || '');
-        localStorage.setItem('bk_last_msgr', JSON.stringify({ app: norm, pkg: pkg }));
-        _updateJumpBtn();
+        if(raw.indexOf('.') <= 0) return;   // 실제 패키지명일 때만 기억(페이수 판 차이 대응)
+        var m = {};
+        try{ m = JSON.parse(localStorage.getItem('bk_msgr_pkgs') || '{}') || {}; }catch(_){}
+        if(m[norm] === raw.toLowerCase()) return;
+        m[norm] = raw.toLowerCase();
+        localStorage.setItem('bk_msgr_pkgs', JSON.stringify(m));
       }catch(_){}
     }
-    if(_jumpBtn){
-      _jumpBtn.addEventListener('click', function(){
+    if(_jumpWrap){
+      _jumpWrap.addEventListener('click', function(ev){
+        var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
+        if(!b) return;
         try{
-          var d = JSON.parse(localStorage.getItem('bk_last_msgr') || 'null');
-          if(!d || !d.pkg) return;
+          var app = b.getAttribute('data-app');
+          var m = {};
+          try{ m = JSON.parse(localStorage.getItem('bk_msgr_pkgs') || '{}') || {}; }catch(_){}
+          var pkg = m[app] || _MSGR_PKG[app];
+          if(!pkg) return;
           location.href = 'intent:#Intent;action=android.intent.action.MAIN;'
             + 'category=android.intent.category.LAUNCHER;launchFlags=0x10000000;'
-            + 'package=' + d.pkg + ';end';
+            + 'package=' + pkg + ';end';
         }catch(_){}
       });
-      _updateJumpBtn();
     }
     function _renderPopupResult(it){
       try{
