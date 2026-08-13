@@ -1814,7 +1814,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p106';
+    const APP_VERSION = 'v20.57p107';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6177,10 +6177,19 @@ label[for="maxTokens"], #maxTokens,
                           (m.source === 'wechat' || m.source === 'feishu' || m.source === 'alipay'))
                          ? m.source : '';
         if(_msgrSrc){
+          // 첫 클릭 즉시 답장 모드(키보드는 터치 직후에만 떠서 지연 불가),
+          // 320ms 안에 두 번째 클릭이 오면 답장 모드를 풀고 전체화면.
           let _bt = 0;
           bubble.addEventListener('click', function(){
-            if(_bt){ clearTimeout(_bt); _bt = 0; showFocusOverlay(dispText); return; }
-            _bt = setTimeout(function(){ _bt = 0; _armReplyTo(_msgrSrc); }, 280);
+            if(_bt){
+              clearTimeout(_bt); _bt = 0;
+              _jumpTarget = null;
+              try{ el.input.blur(); }catch(_){}
+              showFocusOverlay(dispText);
+              return;
+            }
+            _armReplyTo(_msgrSrc);
+            _bt = setTimeout(function(){ _bt = 0; }, 320);
           });
         } else {
           bubble.addEventListener('click', () => showFocusOverlay(dispText));
@@ -8765,7 +8774,11 @@ label[for="maxTokens"], #maxTokens,
       if(_jumpTarget === app){ _jumpTarget = null; try{ toast('답장 모드 해제'); }catch(_){} return; }
       _jumpTarget = app;
       try{ toast(srcLabel(app) + ' 답장 모드 — 번역하면 자동 이동'); }catch(_){}
-      try{ el.input.focus(); }catch(_){}
+      // 접힘 해제 + 같은 제스처 안에서 포커스(키보드는 사용자 터치 직후에만 뜬다)
+      try{
+        if(window._bkComposerExpand) window._bkComposerExpand();
+        else el.input.focus();
+      }catch(_){}
     }
     function _maybeJumpAfterTranslate(opts, translated){
       if(!_jumpTarget) return;
@@ -10105,6 +10118,7 @@ label[for="maxTokens"], #maxTokens,
         composerEl2.classList.add('collapsed');
         document.body.classList.add('composerCollapsed');   // main 하단 예약 여백 해제
       }
+      window._bkComposerExpand = expand;   // 답장 모드(_armReplyTo)가 접힘을 풀 때 씀
       function expand(){
         composerEl2.classList.remove('collapsed');
         document.body.classList.remove('composerCollapsed');
