@@ -1369,7 +1369,9 @@ label[for="maxTokens"], #maxTokens,
               <span style="min-width:64px; font-size:13px; color:#c084fc; font-weight:700;">페이수</span>
               <select id="msgrOpenFeishu" style="flex:1; padding:6px; border-radius:8px; background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.15);">
                 <option value="lark://">lark:// (중국판 표준)</option>
-                <option value="feishu://">feishu:// (대체)</option>
+                <option value="feishu://">feishu:// (대체1)</option>
+                <option value="https://applink.feishu.cn/client/op/open">앱링크 (대체2)</option>
+                <option value="intent://applink.feishu.cn/client/op/open#Intent;scheme=https;package=com.ss.android.lark;end">인텐트 (대체3)</option>
               </select>
               <button id="msgrTestFeishu" class="btn secondary" type="button">시험</button>
             </div>
@@ -1827,7 +1829,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p97';
+    const APP_VERSION = 'v20.57p98';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
