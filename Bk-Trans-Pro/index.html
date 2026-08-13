@@ -688,7 +688,7 @@
       flex-direction:column;
       pointer-events:auto;
     }
-    #composerModelBtn{
+    #composerModelBtn, #jumpAppBtn{
       flex: 0 0 56px;
       min-height: var(--inputMinHeight);
       border: 1px solid rgba(255,255,255,.15);
@@ -705,8 +705,9 @@
       align-self: stretch;
       transition: filter .15s;
     }
-    #composerModelBtn:hover{ filter: brightness(1.15); }
-    #composerModelBtn:active{ transform: scale(.97); }
+    #composerModelBtn:hover, #jumpAppBtn:hover{ filter: brightness(1.15); }
+    #composerModelBtn:active, #jumpAppBtn:active{ transform: scale(.97); }
+    #jumpAppBtn{ font-size: 12.5px; display: none; }   /* 첫 수신 전엔 숨김 */
 
     #input{
       width:100%;
@@ -1768,6 +1769,7 @@ label[for="maxTokens"], #maxTokens,
           <button id="inputClearBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Delete</button>
         </div>
       </div>
+      <button id="jumpAppBtn" type="button" aria-label="메신저 앱 열기" title="마지막 수신 메신저 열기"></button>
       <button id="composerModelBtn" type="button" aria-label="제공자·모델 선택" title="제공자·모델 선택">M</button>
     </div>
   </div>
@@ -1782,7 +1784,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p94';
+    const APP_VERSION = 'v20.57p95';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8690,9 +8692,47 @@ label[for="maxTokens"], #maxTokens,
     // 서버가 이미 번역해 둔 대기열 항목을 말풍선 두 개(원문·번역)로 그린다.
     // ★번역은 서버가 1회만 한다(2026-08-12 범근님 "두 번씩 번역은 낭비").
     //   폰·PC 는 이 함수로 같은 결과를 각자 그릴 뿐, 번역 요청을 내지 않는다.
+    // ★2026-08-13 범근님: 입력창 옆 버튼 → 마지막 수신 메신저 앱 열기(답장 동선).
+    //   서버 항목의 app(매크로 {not_app_package} 원본 패키지명)을 기억해 인텐트로 실행.
+    var _jumpBtn = document.getElementById('jumpAppBtn');
+    var _MSGR_PKG = { wechat: 'com.tencent.mm', alipay: 'com.eg.android.AlipayGphone', feishu: 'com.ss.android.lark' };
+    function _updateJumpBtn(){
+      try{
+        if(!_jumpBtn) return;
+        if(!/Android/i.test(navigator.userAgent)){ _jumpBtn.style.display = 'none'; return; }
+        var d = JSON.parse(localStorage.getItem('bk_last_msgr') || 'null');
+        if(!d || !d.app){ _jumpBtn.style.display = 'none'; return; }
+        _jumpBtn.textContent = srcLabel(d.app);
+        _jumpBtn.style.display = 'block';
+      }catch(_){}
+    }
+    function _popupRememberApp(rawApp){
+      try{
+        var norm = _normAppId(rawApp || '');
+        if(norm !== 'wechat' && norm !== 'alipay' && norm !== 'feishu') return;
+        var raw = String(rawApp || '');
+        // 매크로가 실제 패키지명을 보내면 그대로 실행 대상으로 기억(페이수 판별 오차 제거)
+        var pkg = raw.indexOf('.') > 0 ? raw.toLowerCase() : (_MSGR_PKG[norm] || '');
+        localStorage.setItem('bk_last_msgr', JSON.stringify({ app: norm, pkg: pkg }));
+        _updateJumpBtn();
+      }catch(_){}
+    }
+    if(_jumpBtn){
+      _jumpBtn.addEventListener('click', function(){
+        try{
+          var d = JSON.parse(localStorage.getItem('bk_last_msgr') || 'null');
+          if(!d || !d.pkg) return;
+          location.href = 'intent:#Intent;action=android.intent.action.MAIN;'
+            + 'category=android.intent.category.LAUNCHER;launchFlags=0x10000000;'
+            + 'package=' + d.pkg + ';end';
+        }catch(_){}
+      });
+      _updateJumpBtn();
+    }
     function _renderPopupResult(it){
       try{
         var src = _normAppId(it.app || '') || 'url';
+        _popupRememberApp(it.app);
         var jobId = _newStableId('job');
         chat.push({ role:'user', text: it.text, ts: Date.now(), popupId: it.id,
                     messageId:_newStableId('usr'), jobId: jobId });
@@ -8721,6 +8761,7 @@ label[for="maxTokens"], #maxTokens,
       try{
         if(_popupFindByPid(it.id, 'assistant')) return;   // 이미 그림(리로드 재수신 포함)
         var src = _normAppId(it.app || '') || 'url';
+        _popupRememberApp(it.app);
         var jobId = _newStableId('job');
         chat.push({ role:'user', text: it.text, ts: Date.now(), popupId: it.id,
                     messageId:_newStableId('usr'), jobId: jobId });
