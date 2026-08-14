@@ -1814,7 +1814,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p111';
+    const APP_VERSION = 'v20.57p112';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -3351,8 +3351,13 @@ label[for="maxTokens"], #maxTokens,
               changed = true;
             }
           } else if(m.status !== 'done'){
-            m.status = 'done';
-            changed = true;
+            // ★2026-08-14: 팝업 자리표시(번역 중, popupId 보유)는 완료 도장 금지 —
+            //   재실행 때마다 이게 pending 을 done 으로 둔갑시켜 '번역 중' 영구 잔류를
+            //   만들던 진범(치유·잔류보고가 전부 완료로 속아 지나침).
+            if(!(m.status === 'pending' && m.popupId)){
+              m.status = 'done';
+              changed = true;
+            }
           }
         }
       }
@@ -8878,7 +8883,8 @@ label[for="maxTokens"], #maxTokens,
         var st = [];
         for(var i = chat.length - 1; i >= 0 && i > chat.length - 240; i--){
           var m = chat[i];
-          if(m && m.role === 'assistant' && m.status === 'pending' && m.popupId){
+          if(m && m.role === 'assistant' && m.popupId
+             && (m.status === 'pending' || m.text === '번역 중 ...')){
             var age = Math.round((now - (m.ts || now)) / 1000);
             if(age > 45){
               var u = _popupFindByPid(m.popupId, 'user');
@@ -8915,10 +8921,11 @@ label[for="maxTokens"], #maxTokens,
           try{ _popupMetric({ stage: 'fin_new', id: it.id }); }catch(_){}
           _renderPopupResult(it); return;                  // 자리표시 없이 완료본이 먼저 온 경우
         }
-        if(asst.status === 'done'){
+        if(asst.status === 'done' && asst.text !== '번역 중 ...'){
           try{ _popupMetric({ stage: 'fin_skip_done', id: it.id }); }catch(_){}
           return;                                          // 재수신 중복 방지
         }
+        // status 가 done 인데 글자가 '번역 중 ...'이면 완료 도장에 속은 좀비 — 교체를 계속한다
         var _recvAt = Date.now();
         asst.text = it.err ? ('오류: ' + it.err) : (it.tgt || '');
         asst.model = it.model || 'server';
@@ -8972,7 +8979,8 @@ label[for="maxTokens"], #maxTokens,
             var _minPend = 0;
             for(var _pi = chat.length - 1; _pi >= 0 && _pi > chat.length - 240; _pi--){
               var _pm = chat[_pi];
-              if(_pm && _pm.role === 'assistant' && _pm.status === 'pending' && _pm.popupId){
+              if(_pm && _pm.role === 'assistant' && _pm.popupId
+                 && (_pm.status === 'pending' || _pm.text === '번역 중 ...')){
                 if(!_minPend || _pm.popupId < _minPend) _minPend = _pm.popupId;
               }
             }
@@ -9020,7 +9028,8 @@ label[for="maxTokens"], #maxTokens,
               if(!bit || !bit.text) continue;
               var basst = _popupFindByPid(bit.id, 'assistant');
               if(basst){
-                if(basst.status === 'pending' && (bit.tgt || bit.err)) _popupFinalize(bit);
+                if((basst.status === 'pending' || basst.text === '번역 중 ...')
+                   && (bit.tgt || bit.err)) _popupFinalize(bit);
               } else if(bit.id > _wmRaw){
                 if(bit.tgt || bit.err) _popupFinalize(bit);
                 else _popupPlaceholder(bit);
