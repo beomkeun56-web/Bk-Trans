@@ -1814,7 +1814,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p110';
+    const APP_VERSION = 'v20.57p111';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8868,6 +8868,27 @@ label[for="maxTokens"], #maxTokens,
         navigator.sendBeacon(_apiOrigin() + '/popup_metric', JSON.stringify(obj));
       }catch(_){}
     }
+    // ★잔류 자기보고(2026-08-13): 화면에 '번역 중'으로 45초 이상 남은 말풍선을
+    //   30초에 한 번 서버로 보고 — "데이터는 치유됐는데 화면은 번역 중" 판별용.
+    var _stuckLastReport = 0;
+    function _popupReportStuck(){
+      try{
+        var now = Date.now();
+        if(now - _stuckLastReport < 30000) return;
+        var st = [];
+        for(var i = chat.length - 1; i >= 0 && i > chat.length - 240; i--){
+          var m = chat[i];
+          if(m && m.role === 'assistant' && m.status === 'pending' && m.popupId){
+            var age = Math.round((now - (m.ts || now)) / 1000);
+            if(age > 45){
+              var u = _popupFindByPid(m.popupId, 'user');
+              st.push({ id: m.popupId, age_s: age, head: ((u && u.text) || '').slice(0, 12) });
+            }
+          }
+        }
+        if(st.length){ _stuckLastReport = now; _popupMetric({ stage: 'stuck', list: st }); }
+      }catch(_){}
+    }
     // ★버블 접힘 식별 계측(2026-08-13): 펴짐/접힘 상태 변화를 실측값 그대로 서버에 기록.
     //   접힘을 구분하는 신호(포커스·창크기)를 찾기 위한 것으로, 판정에는 아직 안 쓴다.
     function _popupState(ev){
@@ -9056,6 +9077,7 @@ label[for="maxTokens"], #maxTokens,
             }catch(_){}
           }
           _ppOk = true;
+          try{ _popupReportStuck(); }catch(_){}
         }catch(_){
         }finally{
           _ppBusy = false;
