@@ -1857,7 +1857,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p121';
+    const APP_VERSION = 'v20.57p122';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2289,6 +2289,8 @@ label[for="maxTokens"], #maxTokens,
       { id:'gemini-3-flash-preview', name:'Gemini 3 Flash', effort:'' },
       { id:'gemini-3.1-flash-lite', name:'Gemini 3.1 Flash Lite', effort:'' },
       { id:'gemini-3.5-flash', name:'Gemini 3.5 Flash', effort:'' },
+      // ★2026-08-15 범근님 시험용(8/13 출시) — 선택 시 서버가 구글 직행으로 번역한다.
+      { id:'gemini-3.7-flash', name:'Gemini 3.7 Flash', effort:'' },
       { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro', effort:'' }
     ];
 
@@ -2513,6 +2515,8 @@ label[for="maxTokens"], #maxTokens,
       { id:'gemini-3.1-flash-lite', name:'Gemini 3.1 Flash-Lite', effort:'' },
       { id:'gemini-3-flash-preview', name:'Gemini 3 Flash', effort:'' },
       { id:'gemini-3.5-flash', name:'Gemini 3.5 Flash', effort:'' },
+      // ★2026-08-15 범근님 시험용(8/13 출시, 지능지수 56 · 오푸스5 63). 품질·속도 비교용.
+      { id:'gemini-3.7-flash', name:'Gemini 3.7 Flash', effort:'' },
       { id:'gemini-3.1-pro-preview', name:'Gemini 3.1 Pro', effort:'' }
     ];
     function currentModelOptions(){
