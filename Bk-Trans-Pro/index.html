@@ -665,7 +665,10 @@
       opacity: 0;
       transition: opacity 0.2s;
     }
-    .composer:focus-within .composerFade{
+    /* ★2026-08-15: focus-within 이면 W·F·A 버튼을 눌러도 켜져, 앱에 다녀온 뒤에도
+       버튼이 포커스를 쥔 채 남아 마지막 말풍선 위에 선이 잔상처럼 남았다(범근님 신고).
+       입력창을 실제로 탭했을 때만 켠다. */
+    .composer.inputFocused .composerFade{
       opacity: 1;
     }
     .composerRow{
@@ -1847,7 +1850,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p116';
+    const APP_VERSION = 'v20.57p117';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8815,8 +8818,13 @@ label[for="maxTokens"], #maxTokens,
       if(/Android|iPhone|iPad/i.test(navigator.userAgent)) w.style.display = 'flex';
       w.addEventListener('click', function(ev){
         var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
-        if(b) _jumpLaunch(b.getAttribute('data-app'));
+        if(!b) return;
+        // 앱에 다녀와도 버튼이 포커스를 쥐고 있으면 입력창 장식이 잔상으로 남는다 → 즉시 뗀다
+        try{ b.blur(); }catch(_){}
+        _jumpLaunch(b.getAttribute('data-app'));
       });
+      // 터치가 버튼에 포커스를 주지 않게(안드로이드 크롬) — 눌린 흔적 자체를 안 남긴다
+      w.addEventListener('mousedown', function(ev){ ev.preventDefault(); });
     })();
     // ★치수 조절(2026-08-15 범근님 "내가 다 조정 가능하도록 메뉴에 추가"):
     //   설정 패널 슬라이더 → CSS 변수 → localStorage. 값은 기기별로 저장된다.
@@ -10277,11 +10285,15 @@ label[for="maxTokens"], #maxTokens,
       clearTimeout(adjustForKeyboard._t);
       adjustForKeyboard._t = setTimeout(() => scrollToBottom('instant'), 280);
     }
-    if(el.input) el.input.addEventListener('focus', () => { adjustForKeyboard(); scrollToBottom('smooth'); });
+    if(el.input) el.input.addEventListener('focus', () => {
+      if(composerEl) composerEl.classList.add('inputFocused');   // 입력창 탭에서만 위 그라데이션
+      adjustForKeyboard(); scrollToBottom('smooth');
+    });
     if(el.input) el.input.addEventListener('blur', () => {
       if(composerEl){
         composerEl.style.bottom = '0';
         composerEl.classList.remove('keyboard-visible');
+        composerEl.classList.remove('inputFocused');
       }
       if(el.main) el.main.style.paddingBottom = '';
       setTimeout(updateMainPaddingBottom, 10);
