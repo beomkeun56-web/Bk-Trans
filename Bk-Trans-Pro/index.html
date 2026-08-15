@@ -710,6 +710,12 @@
       display: grid; place-items: center;
     }
     .jumpApp:active{ transform: scale(.93); }
+    /* 지정된 대상은 선명하게(지금 어디로 보낼지 보이게), 나머지는 더 옅게 */
+    #jumpAppWrap.hasArmed{ opacity: 1; }
+    #jumpAppWrap.hasArmed .jumpApp{ opacity: calc(var(--jumpOpacity) * .8); }
+    #jumpAppWrap.hasArmed .jumpApp.armed{
+      opacity: 1; background: rgba(12,12,14,.72); box-shadow: 0 0 9px currentColor;
+    }
     .jumpApp[data-app="wechat"]{ color: #3ec46d; border-color: rgba(62,196,109,.55); }
     .jumpApp[data-app="feishu"]{ color: #a86ff0; border-color: rgba(168,111,240,.55); }
     .jumpApp[data-app="alipay"]{ color: #3d8ef5; border-color: rgba(61,142,245,.55); }
@@ -1850,7 +1856,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p118';
+    const APP_VERSION = 'v20.57p119';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8817,13 +8823,31 @@ label[for="maxTokens"], #maxTokens,
       if(!w) return;
       // ★2026-08-15: PC 에도 띄운다(범근님 문의). PC 앱이 스킴을 등록해 뒀으면 실행되고,
       //   아니면 아무 일도 안 일어난다 — 등록 여부는 기기마다 달라 눌러 보는 것이 판정이다.
+      //   단 PC 에는 알리페이 데스크톱 앱이 없으므로 A 는 감춘다(범근님 확인).
+      var _isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
       w.style.display = 'flex';
+      if(!_isPhone){
+        var _a = w.querySelector('.jumpApp[data-app="alipay"]');
+        if(_a) _a.style.display = 'none';
+      }
+      // 1클릭 = 답장 대상 지정(번역 끝나면 복사 후 그 앱으로 이동) / 2클릭 = 즉시 이동
+      var _jbTimer = 0, _jbApp = '';
       w.addEventListener('click', function(ev){
         var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
         if(!b) return;
         // 앱에 다녀와도 버튼이 포커스를 쥐고 있으면 입력창 장식이 잔상으로 남는다 → 즉시 뗀다
         try{ b.blur(); }catch(_){}
-        _jumpLaunch(b.getAttribute('data-app'));
+        var app = b.getAttribute('data-app');
+        if(_jbTimer && _jbApp === app){                 // 두 번째 클릭
+          clearTimeout(_jbTimer); _jbTimer = 0;
+          _jumpTarget = null; _syncJumpArmed();
+          _jumpLaunch(app);
+          return;
+        }
+        if(_jbTimer) clearTimeout(_jbTimer);
+        _jbApp = app;
+        _armReplyTo(app);                                // 즉시 지정(키보드는 터치 직후만 뜬다)
+        _jbTimer = setTimeout(function(){ _jbTimer = 0; }, 320);
       });
       // 터치가 버튼에 포커스를 주지 않게(안드로이드 크롬) — 눌린 흔적 자체를 안 남긴다
       w.addEventListener('mousedown', function(ev){ ev.preventDefault(); });
@@ -8892,9 +8916,25 @@ label[for="maxTokens"], #maxTokens,
     //   메신저 말풍선 1클릭 = 그 메신저 답장 모드(입력창 포커스). 타이핑 번역이 끝나면
     //   번역문을 복사해 두고 그 메신저로 자동 이동. 2클릭 = 전체화면(병음).
     var _jumpTarget = null;
+    // 지정된 대상 버튼을 점등(선명하게)해서 지금 어디로 보낼지 보이게 한다
+    function _syncJumpArmed(){
+      try{
+        var bs = document.querySelectorAll('#jumpAppWrap .jumpApp');
+        for(var i = 0; i < bs.length; i++){
+          bs[i].classList.toggle('armed', bs[i].getAttribute('data-app') === _jumpTarget);
+        }
+        var w = document.getElementById('jumpAppWrap');
+        if(w) w.classList.toggle('hasArmed', !!_jumpTarget);
+      }catch(_){}
+    }
     function _armReplyTo(app){
-      if(_jumpTarget === app){ _jumpTarget = null; try{ toast('답장 모드 해제'); }catch(_){} return; }
+      if(_jumpTarget === app){
+        _jumpTarget = null; _syncJumpArmed();
+        try{ toast('답장 모드 해제'); }catch(_){}
+        return;
+      }
       _jumpTarget = app;
+      _syncJumpArmed();
       try{ toast(srcLabel(app) + ' 답장 모드 — 번역하면 자동 이동'); }catch(_){}
       // 접힘 해제 + 같은 제스처 안에서 포커스(키보드는 사용자 터치 직후에만 뜬다)
       try{
@@ -8907,6 +8947,7 @@ label[for="maxTokens"], #maxTokens,
       if(opts && opts.programmatic) return;          // 타이핑 번역만(팝업·URL·재번역 제외)
       var app = _jumpTarget;
       _jumpTarget = null;
+      try{ _syncJumpArmed(); }catch(_){}
       try{ copyToClipboard(translated, true); }catch(_){}   // 붙여넣기만 하면 되게 복사해 둠
       setTimeout(function(){ _jumpLaunch(app); }, 350);      // 출력이 그려진 다음 이동
     }
