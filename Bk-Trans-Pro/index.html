@@ -689,13 +689,18 @@
       pointer-events:auto;
     }
     /* ★메신저 이동 버튼 — 입력창 우측 위 세로 스택(범근님 확정 시안: 테두리형) */
+    /* 치수는 설정(외관 패널)에서 조절 — 아래는 기본값 */
+    :root{
+      --jumpW: 52px; --jumpH: 40px; --jumpGap: 12px;
+      --jumpBottom: 88px; --jumpRight: 11px; --jumpOpacity: .33;
+    }
     #jumpAppWrap{
-      display: none; position: absolute; right: 11px; bottom: 88px;
-      flex-direction: column; gap: 12px; z-index: 5; opacity: .33;
+      display: none; position: absolute; right: var(--jumpRight); bottom: var(--jumpBottom);
+      flex-direction: column; gap: var(--jumpGap); z-index: 5; opacity: var(--jumpOpacity);
       pointer-events: auto;   /* .composer 가 pointer-events:none 이라 명시 필수 */
     }
     .jumpApp{
-      width: 52px; height: 40px; border-radius: 11px; border: 1px solid;
+      width: var(--jumpW); height: var(--jumpH); border-radius: 11px; border: 1px solid;
       background: rgba(12,12,14,.30); font-weight: 800; font-size: 16px; letter-spacing: .5px;
       font-family: inherit; padding: 0; cursor: pointer; pointer-events: auto;
       -webkit-tap-highlight-color: transparent; transition: transform .12s ease;
@@ -1362,8 +1367,12 @@ label[for="maxTokens"], #maxTokens,
         </div>
 
         <div style="margin-bottom:24px;">
-          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:block;">메신저 열기 버튼 (입력창 옆 위·페·알)</label>
-          <div class="hint" style="margin-bottom:10px;">여는 방식을 고르고 시험을 눌러 실제로 열리는 것을 선택하세요.</div>
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:block;">메신저 이동 버튼 (W · F · A) 치수</label>
+          <div class="hint" style="margin-bottom:10px;">움직이는 즉시 화면에 반영됩니다.</div>
+          <div id="jumpDimRows" style="display:flex; flex-direction:column; gap:9px; margin-bottom:20px;"></div>
+
+          <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:block;">메신저 여는 방식</label>
+          <div class="hint" style="margin-bottom:10px;">시험을 눌러 실제로 열리는 것을 선택하세요.</div>
           <div style="display:flex; flex-direction:column; gap:8px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="min-width:64px; font-size:13px; color:#4ade80; font-weight:700;">위챗</span>
@@ -1838,7 +1847,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p115';
+    const APP_VERSION = 'v20.57p116';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8808,6 +8817,66 @@ label[for="maxTokens"], #maxTokens,
         var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
         if(b) _jumpLaunch(b.getAttribute('data-app'));
       });
+    })();
+    // ★치수 조절(2026-08-15 범근님 "내가 다 조정 가능하도록 메뉴에 추가"):
+    //   설정 패널 슬라이더 → CSS 변수 → localStorage. 값은 기기별로 저장된다.
+    (function(){
+      var host = document.getElementById('jumpDimRows');
+      if(!host) return;
+      var DIMS = [
+        { k: 'jumpW',       nm: '가로',   min: 30, max: 90,  def: 52, unit: 'px' },
+        { k: 'jumpH',       nm: '세로',   min: 26, max: 70,  def: 40, unit: 'px' },
+        { k: 'jumpGap',     nm: '간격',   min: 0,  max: 30,  def: 12, unit: 'px' },
+        { k: 'jumpBottom',  nm: '높이',   min: 8,  max: 320, def: 88, unit: 'px' },
+        { k: 'jumpRight',   nm: '우측여백', min: 0, max: 60, def: 11, unit: 'px' },
+        { k: 'jumpOpacity', nm: '투명도', min: 10, max: 100, def: 33, unit: '%'  }
+      ];
+      var LSK = 'bk_jump_dims';
+      function readAll(){
+        try{ return JSON.parse(localStorage.getItem(LSK) || '{}') || {}; }catch(_){ return {}; }
+      }
+      function applyOne(d, v){
+        var css = (d.unit === '%') ? String(v / 100) : (v + 'px');
+        document.documentElement.style.setProperty('--' + d.k, css);
+      }
+      var saved = readAll();
+      DIMS.forEach(function(d){
+        var v = (typeof saved[d.k] === 'number') ? saved[d.k] : d.def;
+        applyOne(d, v);
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; gap:10px;';
+        var lb = document.createElement('span');
+        lb.textContent = d.nm;
+        lb.style.cssText = 'min-width:56px; font-size:12.5px; font-weight:700;';
+        var sl = document.createElement('input');
+        sl.type = 'range'; sl.min = d.min; sl.max = d.max; sl.value = v;
+        sl.style.cssText = 'flex:1; accent-color:var(--blue);';
+        var ov = document.createElement('span');
+        ov.textContent = v + d.unit;
+        ov.style.cssText = 'min-width:46px; text-align:right; font-size:12px; color:var(--muted);';
+        sl.addEventListener('input', function(){
+          var nv = parseInt(sl.value, 10);
+          ov.textContent = nv + d.unit;
+          applyOne(d, nv);
+          var cur = readAll(); cur[d.k] = nv;
+          try{ localStorage.setItem(LSK, JSON.stringify(cur)); }catch(_){}
+        });
+        row.appendChild(lb); row.appendChild(sl); row.appendChild(ov);
+        host.appendChild(row);
+      });
+      var rst = document.createElement('button');
+      rst.type = 'button'; rst.className = 'btn secondary'; rst.textContent = '치수 초기화';
+      rst.style.cssText = 'align-self:flex-start; margin-top:2px;';
+      rst.addEventListener('click', function(){
+        try{ localStorage.removeItem(LSK); }catch(_){}
+        DIMS.forEach(function(d){ applyOne(d, d.def); });
+        var rows = host.querySelectorAll('input[type=range]');
+        DIMS.forEach(function(d, i){
+          if(rows[i]){ rows[i].value = d.def; rows[i].nextSibling.textContent = d.def + d.unit; }
+        });
+        try{ toast('버튼 치수를 기본값으로 되돌렸습니다'); }catch(_){}
+      });
+      host.appendChild(rst);
     })();
     // ★2026-08-13 범근님 확정 동작(버튼 방식 폐기 → 말풍선 클릭 방식):
     //   메신저 말풍선 1클릭 = 그 메신저 답장 모드(입력창 포커스). 타이핑 번역이 끝나면
