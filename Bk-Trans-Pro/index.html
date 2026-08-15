@@ -1381,7 +1381,8 @@ label[for="maxTokens"], #maxTokens,
           <div id="jumpDimRows" style="display:flex; flex-direction:column; gap:9px; margin-bottom:20px;"></div>
 
           <label style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:8px; display:block;">메신저 여는 방식</label>
-          <div class="hint" style="margin-bottom:10px;">시험을 눌러 실제로 열리는 것을 선택하세요.</div>
+          <div class="hint" style="margin-bottom:10px;">시험을 눌러 실제로 열리는 것을 선택하세요. 아래 직접 입력 칸에 값을 넣으면 그것이 우선합니다(기기별 저장).</div>
+          <div id="msgrCustomRows" style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;"></div>
           <div style="display:flex; flex-direction:column; gap:8px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="min-width:64px; font-size:13px; color:#4ade80; font-weight:700;">위챗</span>
@@ -1856,7 +1857,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p119';
+    const APP_VERSION = 'v20.57p120';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6235,6 +6236,7 @@ label[for="maxTokens"], #maxTokens,
             if(_bt){
               clearTimeout(_bt); _bt = 0;
               _jumpTarget = null;
+              try{ _syncJumpArmed(); }catch(_){}
               try{ el.input.blur(); }catch(_){}
               showFocusOverlay(dispText);
               return;
@@ -8805,10 +8807,15 @@ label[for="maxTokens"], #maxTokens,
     //   → 각 앱이 등록한 전용 스킴으로 연다. 스킴은 설정(외관 패널)에서 선택·시험 가능.
     var _MSGR_OPEN_DEFAULT = { wechat: 'weixin://', feishu: 'lark://', alipay: 'alipays://' };
     function _msgrOpenCfg(){
-      var m = {};
+      var m = {}, c = {};
       try{ m = JSON.parse(localStorage.getItem('bk_msgr_open') || '{}') || {}; }catch(_){}
+      // ★직접 입력(2026-08-15 범근님 "PC는 앱을 선택할 수 있게"): 웹은 실행파일을 못 고르므로
+      //   윈도우에 등록한 사용자 주소(예: bkwechat://)를 여기에 적어 쓰게 한다. 있으면 최우선.
+      try{ c = JSON.parse(localStorage.getItem('bk_msgr_custom') || '{}') || {}; }catch(_){}
       var out = {};
-      for(var k in _MSGR_OPEN_DEFAULT) out[k] = m[k] || _MSGR_OPEN_DEFAULT[k];
+      for(var k in _MSGR_OPEN_DEFAULT){
+        out[k] = (c[k] && String(c[k]).trim()) || m[k] || _MSGR_OPEN_DEFAULT[k];
+      }
       return out;
     }
     function _jumpLaunch(app){
@@ -8830,27 +8837,57 @@ label[for="maxTokens"], #maxTokens,
         var _a = w.querySelector('.jumpApp[data-app="alipay"]');
         if(_a) _a.style.display = 'none';
       }
-      // 1클릭 = 답장 대상 지정(번역 끝나면 복사 후 그 앱으로 이동) / 2클릭 = 즉시 이동
-      var _jbTimer = 0, _jbApp = '';
+      // ★역할 분담(2026-08-15 범근님 확정, 폰·PC 동일):
+      //   버튼 클릭 = 그 앱 즉시 실행 / 출력 말풍선 클릭 = 답장 대상 지정(번역 후 자동 이동)
       w.addEventListener('click', function(ev){
         var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
         if(!b) return;
         // 앱에 다녀와도 버튼이 포커스를 쥐고 있으면 입력창 장식이 잔상으로 남는다 → 즉시 뗀다
         try{ b.blur(); }catch(_){}
-        var app = b.getAttribute('data-app');
-        if(_jbTimer && _jbApp === app){                 // 두 번째 클릭
-          clearTimeout(_jbTimer); _jbTimer = 0;
-          _jumpTarget = null; _syncJumpArmed();
-          _jumpLaunch(app);
-          return;
-        }
-        if(_jbTimer) clearTimeout(_jbTimer);
-        _jbApp = app;
-        _armReplyTo(app);                                // 즉시 지정(키보드는 터치 직후만 뜬다)
-        _jbTimer = setTimeout(function(){ _jbTimer = 0; }, 320);
+        _jumpLaunch(b.getAttribute('data-app'));
       });
       // 터치가 버튼에 포커스를 주지 않게(안드로이드 크롬) — 눌린 흔적 자체를 안 남긴다
       w.addEventListener('mousedown', function(ev){ ev.preventDefault(); });
+    })();
+    // 직접 입력 칸 3개(메신저별) — 값이 있으면 그 주소로 연다
+    (function(){
+      var host = document.getElementById('msgrCustomRows');
+      if(!host) return;
+      var APPS = [
+        { k: 'wechat', nm: '위챗',     ph: '예: bkwechat://' },
+        { k: 'feishu', nm: '페이수',   ph: '예: lark://' },
+        { k: 'alipay', nm: '알리페이', ph: '예: alipays://' }
+      ];
+      function readC(){
+        try{ return JSON.parse(localStorage.getItem('bk_msgr_custom') || '{}') || {}; }catch(_){ return {}; }
+      }
+      APPS.forEach(function(a){
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; gap:8px;';
+        var lb = document.createElement('span');
+        lb.textContent = a.nm;
+        lb.style.cssText = 'min-width:64px; font-size:12.5px; font-weight:700;';
+        var tx = document.createElement('input');
+        tx.type = 'text'; tx.placeholder = a.ph; tx.value = readC()[a.k] || '';
+        tx.style.cssText = 'flex:1; padding:6px 8px; border-radius:8px; font-size:12.5px;'
+          + 'background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.15);';
+        tx.addEventListener('change', function(){
+          var c = readC();
+          if(tx.value.trim()) c[a.k] = tx.value.trim(); else delete c[a.k];
+          try{ localStorage.setItem('bk_msgr_custom', JSON.stringify(c)); }catch(_){}
+          try{ toast(a.nm + ' 주소 저장'); }catch(_){}
+        });
+        var tb = document.createElement('button');
+        tb.type = 'button'; tb.className = 'btn secondary'; tb.textContent = '시험';
+        tb.addEventListener('click', function(){
+          var c = readC();
+          if(tx.value.trim()) c[a.k] = tx.value.trim(); else delete c[a.k];
+          try{ localStorage.setItem('bk_msgr_custom', JSON.stringify(c)); }catch(_){}
+          _jumpLaunch(a.k);
+        });
+        row.appendChild(lb); row.appendChild(tx); row.appendChild(tb);
+        host.appendChild(row);
+      });
     })();
     // ★치수 조절(2026-08-15 범근님 "내가 다 조정 가능하도록 메뉴에 추가"):
     //   설정 패널 슬라이더 → CSS 변수 → localStorage. 값은 기기별로 저장된다.

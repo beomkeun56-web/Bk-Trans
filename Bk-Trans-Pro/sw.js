@@ -10,7 +10,7 @@
  *   catch가 안 걸려 캐시 폴백도 못 탔다(새로고침 무효·앱 재시작만 유효했던 이유).
  *   + 쿼리 붙은 URL로 열려도 캐시를 찾도록 ignoreSearch, 캐시 전멸 시 최후 대기화면.
  */
-const CACHE_VER = 'v20.57p119';
+const CACHE_VER = 'v20.57p120';
 const CACHE_NAME = 'bktrans-pro-shell-' + CACHE_VER;
 const NAV_TIMEOUT_MS = 2500;
 const SHELL = [
