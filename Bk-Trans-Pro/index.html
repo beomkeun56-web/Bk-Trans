@@ -1850,7 +1850,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p117';
+    const APP_VERSION = 'v20.57p118';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8815,7 +8815,9 @@ label[for="maxTokens"], #maxTokens,
     (function(){
       var w = document.getElementById('jumpAppWrap');
       if(!w) return;
-      if(/Android|iPhone|iPad/i.test(navigator.userAgent)) w.style.display = 'flex';
+      // ★2026-08-15: PC 에도 띄운다(범근님 문의). PC 앱이 스킴을 등록해 뒀으면 실행되고,
+      //   아니면 아무 일도 안 일어난다 — 등록 여부는 기기마다 달라 눌러 보는 것이 판정이다.
+      w.style.display = 'flex';
       w.addEventListener('click', function(ev){
         var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
         if(!b) return;
