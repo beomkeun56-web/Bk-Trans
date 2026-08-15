@@ -1814,7 +1814,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p112';
+    const APP_VERSION = 'v20.57p113';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -5972,6 +5972,10 @@ label[for="maxTokens"], #maxTokens,
     //   Gemini 3 Flash→G3F / Sonnet 4.6→S4.6 / GLM 4.6→G4.6 / Qwen 3 Max→Q3M
     function abbrevModelName(name){
       if(!name) return name;
+      // ★2026-08-15: 서버(맥) 경로 모델명은 'opus-mac'·'sonnet-mac' 형태 — 아래 단어별
+      //   첫글자 축약에 넣으면 O·S 한 글자가 돼 소넷과 구분이 안 된다(오해 실사고).
+      var _mac = String(name).match(/^(opus|sonnet-think|sonnet)-mac$/);
+      if(_mac) return { 'opus': 'Opus', 'sonnet': 'Sonnet', 'sonnet-think': 'Sonnet-T' }[_mac[1]];
       var toks = String(name).trim().split(/\s+/).filter(Boolean);
       if(toks.length === 0) return name;
       var out = '';
