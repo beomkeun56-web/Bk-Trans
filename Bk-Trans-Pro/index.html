@@ -688,6 +688,23 @@
       flex-direction:column;
       pointer-events:auto;
     }
+    /* ★메신저 이동 버튼 — 입력창 우측 위 세로 스택(범근님 확정 시안: 테두리형) */
+    #jumpAppWrap{
+      display: none; position: absolute; right: 11px; bottom: 131px;
+      flex-direction: column; gap: 7px; z-index: 5; opacity: .33;
+      pointer-events: auto;   /* .composer 가 pointer-events:none 이라 명시 필수 */
+    }
+    .jumpApp{
+      width: 40px; height: 40px; border-radius: 11px; border: 1px solid;
+      background: rgba(12,12,14,.30); font-weight: 800; font-size: 16px; letter-spacing: .5px;
+      font-family: inherit; padding: 0; cursor: pointer; pointer-events: auto;
+      -webkit-tap-highlight-color: transparent; transition: transform .12s ease;
+      display: grid; place-items: center;
+    }
+    .jumpApp:active{ transform: scale(.93); }
+    .jumpApp[data-app="wechat"]{ color: #3ec46d; border-color: rgba(62,196,109,.55); }
+    .jumpApp[data-app="feishu"]{ color: #a86ff0; border-color: rgba(168,111,240,.55); }
+    .jumpApp[data-app="alipay"]{ color: #3d8ef5; border-color: rgba(61,142,245,.55); }
     #composerModelBtn{
       flex: 0 0 56px;
       min-height: var(--inputMinHeight);
@@ -1792,6 +1809,13 @@ label[for="maxTokens"], #maxTokens,
 
   <div class="composer">
     <div class="composerFade"></div>
+    <!-- ★메신저 이동 버튼(2026-08-15 범근님 시안 확정: 테두리안·투명도33%·40px·높이131px).
+         한 번 클릭 = 그 앱으로 바로 이동. 말풍선 답장 모드와는 별개다. -->
+    <div id="jumpAppWrap">
+      <button class="jumpApp" type="button" data-app="wechat" title="위챗 열기">W</button>
+      <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">F</button>
+      <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">A</button>
+    </div>
     <div class="composerRow">
       <div class="composerInner">
         <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
@@ -1814,7 +1838,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p113';
+    const APP_VERSION = 'v20.57p114';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8775,6 +8799,16 @@ label[for="maxTokens"], #maxTokens,
         if(u) location.href = u;
       }catch(_){}
     }
+    // 우측 W·F·A 버튼: 한 번 클릭 = 그 앱으로 즉시 이동(범근님 확정, 2026-08-15)
+    (function(){
+      var w = document.getElementById('jumpAppWrap');
+      if(!w) return;
+      if(/Android|iPhone|iPad/i.test(navigator.userAgent)) w.style.display = 'flex';
+      w.addEventListener('click', function(ev){
+        var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
+        if(b) _jumpLaunch(b.getAttribute('data-app'));
+      });
+    })();
     // ★2026-08-13 범근님 확정 동작(버튼 방식 폐기 → 말풍선 클릭 방식):
     //   메신저 말풍선 1클릭 = 그 메신저 답장 모드(입력창 포커스). 타이핑 번역이 끝나면
     //   번역문을 복사해 두고 그 메신저로 자동 이동. 2클릭 = 전체화면(병음).
