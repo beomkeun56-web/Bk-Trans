@@ -1857,7 +1857,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p122';
+    const APP_VERSION = 'v20.57p123';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8830,7 +8830,9 @@ label[for="maxTokens"], #maxTokens,
         if(u) location.href = u;
       }catch(_){}
     }
-    // 우측 W·F·A 버튼: 한 번 클릭 = 그 앱으로 즉시 이동(범근님 확정, 2026-08-15)
+    // 우측 W·F·A 버튼: 클릭 = 입력창 열고 대상 지정 → 번역 완료 시 복사+그 앱 자동 실행
+    // (2026-08-19 범근님 변경, 종전 '즉시 실행' 폐기. 말풍선 클릭과 동일 경로 _armReplyTo
+    //  재사용, 같은 버튼 재클릭 = 지정 해제)
     (function(){
       var w = document.getElementById('jumpAppWrap');
       if(!w) return;
@@ -8843,14 +8845,15 @@ label[for="maxTokens"], #maxTokens,
         var _a = w.querySelector('.jumpApp[data-app="alipay"]');
         if(_a) _a.style.display = 'none';
       }
-      // ★역할 분담(2026-08-15 범근님 확정, 폰·PC 동일):
-      //   버튼 클릭 = 그 앱 즉시 실행 / 출력 말풍선 클릭 = 답장 대상 지정(번역 후 자동 이동)
+      // ★역할 분담(2026-08-19 범근님 변경, 폰·PC 동일):
+      //   버튼 클릭 = 답장 대상 지정(입력창 열림, 번역 후 복사+자동 이동) — 말풍선 클릭과 동일
+      //   출력 말풍선 클릭 = 그 발신 메신저로 답장 대상 지정 / 연타 = 전체화면
       w.addEventListener('click', function(ev){
         var b = ev.target && ev.target.closest ? ev.target.closest('.jumpApp') : null;
         if(!b) return;
         // 앱에 다녀와도 버튼이 포커스를 쥐고 있으면 입력창 장식이 잔상으로 남는다 → 즉시 뗀다
         try{ b.blur(); }catch(_){}
-        _jumpLaunch(b.getAttribute('data-app'));
+        _armReplyTo(b.getAttribute('data-app'));
       });
       // 터치가 버튼에 포커스를 주지 않게(안드로이드 크롬) — 눌린 흔적 자체를 안 남긴다
       w.addEventListener('mousedown', function(ev){ ev.preventDefault(); });
