@@ -1839,7 +1839,6 @@ label[for="maxTokens"], #maxTokens,
          한 번 클릭 = 그 앱으로 바로 이동. 말풍선 답장 모드와는 별개다. -->
     <div id="jumpAppWrap">
       <!-- 2026-08-19 범근님 지시: 새로고침·휴지통·메뉴를 W 위로 이동(크기 동일, 아이콘 흰색) -->
-      <button class="jumpApp jumpFn" type="button" data-fn="topbar" title="상단바 표시/숨김">✦</button>
       <button class="jumpApp jumpFn" type="button" data-fn="clear" title="대화기록 삭제">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <polyline points="3 6 5 6 21 6"></polyline>
@@ -1848,6 +1847,7 @@ label[for="maxTokens"], #maxTokens,
           <line x1="14" y1="11" x2="14" y2="17"></line>
         </svg>
       </button>
+      <button class="jumpApp jumpFn" type="button" data-fn="topbar" title="상단바 표시/숨김">✦</button>
       <button class="jumpApp jumpFn" type="button" data-fn="reload" title="새로고침">↻</button>
       <button class="jumpApp" type="button" data-app="wechat" title="위챗 열기">W</button>
       <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">F</button>
@@ -1875,7 +1875,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p126';
+    const APP_VERSION = 'v20.57p127';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8990,6 +8990,57 @@ label[for="maxTokens"], #maxTokens,
         try{ toast('버튼 치수를 기본값으로 되돌렸습니다'); }catch(_){}
       });
       host.appendChild(rst);
+    })();
+    // 기능버튼(휴지통·상단바·새로고침) 순서 — 저장값 적용 + 설정에서 직접 변경(2026-08-19)
+    (function(){
+      var LSK = 'bk_jumpfn_order';
+      var NAMES = { clear: '휴지통', topbar: '상단바', reload: '새로고침' };
+      var wrap = document.getElementById('jumpAppWrap');
+      function read(){
+        try{
+          var o = JSON.parse(localStorage.getItem(LSK) || 'null');
+          if(Array.isArray(o) && o.length === 3 && o.every(function(f){ return NAMES[f]; })) return o;
+        }catch(_){}
+        return ['clear', 'topbar', 'reload'];   // 기본 순서(범근님 지정)
+      }
+      var order = read();
+      function apply(){
+        if(!wrap) return;
+        var firstApp = wrap.querySelector('.jumpApp:not(.jumpFn)');
+        order.forEach(function(fn){
+          var b = wrap.querySelector('.jumpApp[data-fn="' + fn + '"]');
+          if(b) wrap.insertBefore(b, firstApp);
+        });
+      }
+      apply();
+      var host = document.getElementById('jumpDimRows');
+      if(!host) return;
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex; align-items:center; gap:6px; flex-wrap:wrap;';
+      var lb = document.createElement('span');
+      lb.textContent = '기능버튼 순서';
+      lb.style.cssText = 'min-width:86px; font-size:12.5px; font-weight:700;';
+      row.appendChild(lb);
+      function render(){
+        Array.prototype.slice.call(row.querySelectorAll('.fnChip')).forEach(function(c){ c.remove(); });
+        order.forEach(function(fn, i){
+          var chip = document.createElement('button');
+          chip.type = 'button'; chip.className = 'fnChip btn secondary';
+          chip.textContent = (i + 1) + '.' + NAMES[fn];
+          chip.title = '클릭하면 한 칸 위로';
+          chip.style.cssText = 'padding:4px 9px; font-size:12px;';
+          chip.addEventListener('click', function(){
+            if(i === 0) return;
+            var t = order[i - 1]; order[i - 1] = fn; order[i] = t;
+            try{ localStorage.setItem(LSK, JSON.stringify(order)); }catch(_){}
+            apply(); render();
+            try{ toast('순서: ' + order.map(function(f){ return NAMES[f]; }).join(' → ')); }catch(_){}
+          });
+          row.appendChild(chip);
+        });
+      }
+      render();
+      host.appendChild(row);
     })();
     // ★2026-08-13 범근님 확정 동작(버튼 방식 폐기 → 말풍선 클릭 방식):
     //   메신저 말풍선 1클릭 = 그 메신저 답장 모드(입력창 포커스). 타이핑 번역이 끝나면
