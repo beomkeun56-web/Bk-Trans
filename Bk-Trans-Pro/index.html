@@ -1839,7 +1839,7 @@ label[for="maxTokens"], #maxTokens,
          한 번 클릭 = 그 앱으로 바로 이동. 말풍선 답장 모드와는 별개다. -->
     <div id="jumpAppWrap">
       <!-- 2026-08-19 범근님 지시: 새로고침·휴지통·메뉴를 W 위로 이동(크기 동일, 아이콘 흰색) -->
-      <button class="jumpApp jumpFn" type="button" data-fn="reload" title="새로고침">↻</button>
+      <button class="jumpApp jumpFn" type="button" data-fn="topbar" title="상단바 표시/숨김">✦</button>
       <button class="jumpApp jumpFn" type="button" data-fn="clear" title="대화기록 삭제">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <polyline points="3 6 5 6 21 6"></polyline>
@@ -1848,7 +1848,7 @@ label[for="maxTokens"], #maxTokens,
           <line x1="14" y1="11" x2="14" y2="17"></line>
         </svg>
       </button>
-      <button class="jumpApp jumpFn" type="button" data-fn="topbar" title="상단바 표시/숨김">✦</button>
+      <button class="jumpApp jumpFn" type="button" data-fn="reload" title="새로고침">↻</button>
       <button class="jumpApp" type="button" data-app="wechat" title="위챗 열기">W</button>
       <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">F</button>
       <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">A</button>
@@ -1875,7 +1875,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p125';
+    const APP_VERSION = 'v20.57p126';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
