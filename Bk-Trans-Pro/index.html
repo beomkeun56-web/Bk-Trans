@@ -105,6 +105,7 @@
       --asstAlipayBg: #15458c;   /* 알리페이 = 파랑 */
       --asstWechatBg: #0b6b3a;   /* 위챗 = 초록 */
       --asstFeishuBg: #5b3a8c;   /* 페이수 = 보라 */
+      --asstSenderBg: #8c2f45;   /* ★지정 발송인 = 와인 (설정에 적은 이름과 매칭 시 출처색보다 우선) */
       --metaText: #9fb0c0;       /* 말풍선 아래 정보줄(모델·초·출처) 글자색 */
       --sendBtnBg: #2d6bff;
       --headerBg: #0b0f14;
@@ -1522,6 +1523,23 @@ label[for="maxTokens"], #maxTokens,
             </div>
           </div>
           <div class="colorItem">
+            <div class="hint" style="margin-bottom:4px;">출력말풍선 · 지정 발송인</div>
+            <input id="hlSenderNames" type="text" placeholder="발송인 이름 (쉼표로 여러 명, 예: ms, 주강휘)" autocomplete="off"
+                   style="width:100%; box-sizing:border-box; margin-bottom:4px; padding:8px 10px; border:1px solid rgba(255,255,255,.15); border-radius:8px; background:rgba(255,255,255,.06); color:var(--text); font-family:inherit; font-size:calc(13px * var(--textScale));" />
+            <div class="hint" style="margin-bottom:6px; font-size:calc(11px * var(--textScale));">알림 제목(발신자·방이름)에 이 이름이 포함되면 그 번역 말풍선만 아래 색으로 표시. 비우면 꺼짐.</div>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+              <input id="colorAsstSenderBg" type="color" value="#8c2f45" style="width:50px; height:36px; flex-shrink:0;" />
+              <input id="colorAsstSenderBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorAsstSenderBg" />
+            </div>
+            <div class="colorSwatches" data-target="colorAsstSenderBg">
+              <button class="cSwatch" type="button" data-color="#8c2f45" style="background:#8c2f45"></button>
+              <button class="cSwatch" type="button" data-color="#9d174d" style="background:#9d174d"></button>
+              <button class="cSwatch" type="button" data-color="#b45309" style="background:#b45309"></button>
+              <button class="cSwatch" type="button" data-color="#0e7490" style="background:#0e7490"></button>
+              <button class="cSwatch" type="button" data-color="#4d7c0f" style="background:#4d7c0f"></button>
+            </div>
+          </div>
+          <div class="colorItem">
             <div class="hint" style="margin-bottom:4px;">출력말풍선 · URL 번역</div>
             <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
               <input id="colorAsstUrlBg" type="color" value="#14532d" style="width:50px; height:36px; flex-shrink:0;" />
@@ -1875,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p127';
+    const APP_VERSION = 'v20.57p128';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2003,6 +2021,8 @@ label[for="maxTokens"], #maxTokens,
       colorAsstWechatBg: 'bk_tr_pro_color_asst_wechat_bg',
       colorAsstAlipayBg: 'bk_tr_pro_color_asst_alipay_bg',
       colorAsstFeishuBg: 'bk_tr_pro_color_asst_feishu_bg',
+      colorAsstSenderBg: 'bk_tr_pro_color_asst_sender_bg',
+      hlSenderNames: 'bk_tr_pro_hl_sender_names',
       colorMetaText: 'bk_tr_pro_color_meta_text',
       colorSendBtnBg: 'bk_tr_pro_color_send_btn_bg',
       colorHeaderBg: 'bk_tr_pro_color_header_bg',
@@ -2136,6 +2156,8 @@ label[for="maxTokens"], #maxTokens,
       colorAsstWechatBg: document.getElementById('colorAsstWechatBg'),
       colorAsstAlipayBg: document.getElementById('colorAsstAlipayBg'),
       colorAsstFeishuBg: document.getElementById('colorAsstFeishuBg'),
+      colorAsstSenderBg: document.getElementById('colorAsstSenderBg'),
+      hlSenderNames: document.getElementById('hlSenderNames'),
       colorMetaText: document.getElementById('colorMetaText'),
       colorSendBtnBg: document.getElementById('colorSendBtnBg'),
       colorHeaderBg: document.getElementById('colorHeaderBg'),
@@ -3155,6 +3177,7 @@ label[for="maxTokens"], #maxTokens,
       asstWechatBg: '#0b6b3a',
       asstAlipayBg: '#15458c',
       asstFeishuBg: '#5b3a8c',
+      asstSenderBg: '#8c2f45',
       metaText: '#9fb0c0',
       sendBtnBg: '#2d6bff',
       headerBg: '#0b0f14',
@@ -3194,6 +3217,7 @@ label[for="maxTokens"], #maxTokens,
       loadColor(LS.colorAsstWechatBg, 'colorAsstWechatBg', '--asstWechatBg', COLOR_DEFAULTS.asstWechatBg);
       loadColor(LS.colorAsstAlipayBg, 'colorAsstAlipayBg', '--asstAlipayBg', COLOR_DEFAULTS.asstAlipayBg);
       loadColor(LS.colorAsstFeishuBg, 'colorAsstFeishuBg', '--asstFeishuBg', COLOR_DEFAULTS.asstFeishuBg);
+      loadColor(LS.colorAsstSenderBg, 'colorAsstSenderBg', '--asstSenderBg', COLOR_DEFAULTS.asstSenderBg);
       loadColor(LS.colorMetaText, 'colorMetaText', '--metaText', COLOR_DEFAULTS.metaText);
       loadColor(LS.colorSendBtnBg, 'colorSendBtnBg', '--sendBtnBg', COLOR_DEFAULTS.sendBtnBg);
       loadColor(LS.colorHeaderBg, 'colorHeaderBg', '--headerBg', COLOR_DEFAULTS.headerBg);
@@ -6241,9 +6265,10 @@ label[for="maxTokens"], #maxTokens,
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
         bubble.textContent = dispText;   // 대화이력은 병음 미표시(전체화면 클릭 시에만 병음)
-        // 번역문(assistant) 말풍선은 출처별 색 적용(오류 메시지는 제외)
+        // 번역문(assistant) 말풍선은 출처별 색 적용(오류 메시지는 제외).
+        // 지정 발송인 매칭 시엔 출처색보다 지정색이 우선한다.
         if(m.role === 'assistant' && !_isErrorMessage(m)){
-          bubble.style.background = srcBubbleColor(m.source);
+          bubble.style.background = _senderHl(m.sender) ? 'var(--asstSenderBg)' : srcBubbleColor(m.source);
         }
         bubble.style.cursor = 'pointer';
         // ★2026-08-13 범근님: 메신저(위챗·페이수·알리페이) 번역 말풍선은
@@ -6373,6 +6398,21 @@ label[for="maxTokens"], #maxTokens,
     // 번역 출처: 'url'(URL 파라미터) / 'clip'(클립보드 자동) / 'typing'(직접 입력). send() 시작 시 소비.
     var _pendingSource = 'typing';
     // 출처별 출력 말풍선 배경색 (source 없는 옛 기록은 typing색). usage줄 라벨도 여기 기준.
+    // ★지정 발송인 강조(2026-08-28 범근님): 설정에 적은 이름이 알림 제목(발신자·방이름)에
+    //   포함되면 출처색 대신 지정색을 쓴다. 쉼표로 여러 명, 대소문자 무시, 비우면 꺼짐.
+    function _senderHl(sender){
+      try{
+        var raw = (localStorage.getItem(LS.hlSenderNames) || '').trim();
+        if(!raw || !sender) return false;
+        var s = String(sender).toLowerCase();
+        var parts = raw.split(',');
+        for(var i = 0; i < parts.length; i++){
+          var n = parts[i].trim().toLowerCase();
+          if(n && s.indexOf(n) !== -1) return true;
+        }
+      }catch(_){}
+      return false;
+    }
     function srcBubbleColor(src){
       if(src === 'alipay') return 'var(--asstAlipayBg)';
       if(src === 'wechat') return 'var(--asstWechatBg)';
@@ -10357,7 +10397,18 @@ label[for="maxTokens"], #maxTokens,
     bindColorPicker(el.colorAsstWechatBg, LS.colorAsstWechatBg, '--asstWechatBg');
     bindColorPicker(el.colorAsstAlipayBg, LS.colorAsstAlipayBg, '--asstAlipayBg');
     bindColorPicker(el.colorAsstFeishuBg, LS.colorAsstFeishuBg, '--asstFeishuBg');
+    bindColorPicker(el.colorAsstSenderBg, LS.colorAsstSenderBg, '--asstSenderBg');
     bindColorPicker(el.colorMetaText, LS.colorMetaText, '--metaText');
+    // 지정 발송인 이름 입력: 타이핑마다 저장, 잠시 멈추면 재렌더해 기존 말풍선에도 즉시 반영
+    if(el.hlSenderNames){
+      try{ el.hlSenderNames.value = localStorage.getItem(LS.hlSenderNames) || ''; }catch(_){}
+      var _hlSenderT = 0;
+      el.hlSenderNames.addEventListener('input', function(){
+        try{ localStorage.setItem(LS.hlSenderNames, el.hlSenderNames.value); }catch(_){}
+        clearTimeout(_hlSenderT);
+        _hlSenderT = setTimeout(function(){ try{ renderChat(); }catch(_){} }, 400);
+      });
+    }
     bindColorPicker(el.colorSendBtnBg, LS.colorSendBtnBg, '--sendBtnBg');
     bindColorPicker(el.colorHeaderBg, LS.colorHeaderBg, '--headerBg');
     bindColorPicker(el.colorCopyBtnBg, LS.colorCopyBtnBg, '--copyBtnBg');
