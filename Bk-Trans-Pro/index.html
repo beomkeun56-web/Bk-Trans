@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p131';
+    const APP_VERSION = 'v20.57p132';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8789,22 +8789,49 @@ label[for="maxTokens"], #maxTokens,
       }
     }
     // ★2026-09-14 p129: URL 경로 번역 결과를 서버 대기열에 넣는다(폰에서만). 실패는 조용히 무시(폰 표시엔 영향 없음).
-    function _pushDoneToServer(text, tgt, app, model){
+    // ★2026-09-14 p132 전송 유실 수리: 17:49 실사고 — 앱이 번역을 그린 직후 죽거나 네트워크가 끊겨
+    //   done=1 전송(한 번뿐)이 유실됐고 PC는 그 전송으로만 알기에 못 받았다. 이제 완료본을 대기 큐에
+    //   먼저 저장하고(localStorage bk_done_pending, 최대 20건·6시간), keepalive 로 보내며, 서버가 ok 를
+    //   줄 때만 지운다. 다음 앱 실행(다음 알림) 때 남은 것을 재전송한다. 서버는 cid 로 중복 적재를 막는다.
+    var _DONE_PENDING_KEY = 'bk_done_pending';
+    function _donePendingLoad(){ try{ return JSON.parse(localStorage.getItem(_DONE_PENDING_KEY) || '[]') || []; }catch(_){ return []; } }
+    function _donePendingSave(a){ try{ localStorage.setItem(_DONE_PENDING_KEY, JSON.stringify(a.slice(-20))); }catch(_){} }
+    function _donePendingRemove(cid){ _donePendingSave(_donePendingLoad().filter(function(x){ return x.cid !== cid; })); }
+    function _flushPendingDone(){
+      try{
+        var a = _donePendingLoad(); var now = Date.now();
+        a.forEach(function(x){
+          if(now - (x.ts || 0) > 6 * 3600 * 1000){ _donePendingRemove(x.cid); return; }
+          _pushDoneToServer(x.text, x.tgt, x.app, x.model, x.cid);
+        });
+        if(a.length){ try{ _popupMetric({ stage: 'done_flush', n: a.length }); }catch(_){} }
+      }catch(_){}
+    }
+    function _pushDoneToServer(text, tgt, app, model, cid){
       if(!text || !tgt) return;
       if(!/Android|iPhone|iPad/i.test(navigator.userAgent)) return;
       var key = '';
       try{ key = localStorage.getItem('bk_tr_pro_apiKey') || ''; }catch(_){}
       if(!key) return;
+      if(!cid){
+        cid = _newStableId('done');
+        var pend = _donePendingLoad();
+        pend.push({ cid: cid, text: text, tgt: String(tgt).slice(0, 4000), app: app || '', model: model || '', ts: Date.now() });
+        _donePendingSave(pend);
+      }
       var u = _apiOrigin() + '/popup_push?done=1&app=' + encodeURIComponent(app || '');
-      fetch(u, { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + key },
-                 body: JSON.stringify({ text:text, tgt:String(tgt).slice(0, 4000), model:model || '' }) })
+      fetch(u, { method:'POST', keepalive:true,
+                 headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + key },
+                 body: JSON.stringify({ text:text, tgt:String(tgt).slice(0, 4000), model:model || '', cid: cid }) })
         .then(function(r){ return r.json(); })
         .then(function(j){
           try{ _uwLog('push-done ' + ((j && j.hint) || '?'), text); }catch(_){}
+          if(j && j.ok){ _donePendingRemove(cid); }
           try{ if(j && j.id) _popupAdoptAppItem({ id: j.id, text: text }); }catch(_){}
         })
-        .catch(function(){ try{ _uwLog('push-done-fail', text); }catch(_){} });
+        .catch(function(){ try{ _uwLog('push-done-fail(대기열 보존)', text); }catch(_){} });
     }
+    setTimeout(_flushPendingDone, 2500);   // 앱이 뜰 때 직전 실행에서 못 보낸 완료본 재전송
     async function checkURLText(){
       try{
         var trimmed = _readUrlText();
@@ -9207,7 +9234,7 @@ label[for="maxTokens"], #maxTokens,
         for(var i = chat.length - 1; i >= 0 && i > chat.length - 120; i--){
           var u = chat[i];
           if(!u || u.role !== 'user' || u.popupId) continue;
-          if(now - (u.ts || 0) > 180000) break;
+          if(now - (u.ts || 0) > 6 * 3600 * 1000) break;   // 재전송(최대 6시간 뒤)된 완료본도 입양
           if(String(u.text || '').trim().slice(0, 2000) !== want) continue;
           var a = null;
           for(var k = i + 1; k < chat.length && k <= i + 3; k++){
