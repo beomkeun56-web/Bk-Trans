@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p129';
+    const APP_VERSION = 'v20.57p130';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -9215,7 +9215,15 @@ label[for="maxTokens"], #maxTokens,
     function _popupMetric(obj){
       try{
         obj.dev = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
-        navigator.sendBeacon(_apiOrigin() + '/popup_metric', JSON.stringify(obj));
+        var _mb = JSON.stringify(obj);
+        var _msent = false;
+        // ★PC 계측 공백(2026-09-14): PC 의 sendBeacon 이 9/5 이후 서버에 한 건도 안 닿아
+        //   PC 수신 시각을 증명할 수 없었다. 비콘이 거부되면 keepalive fetch 로 대신 보낸다.
+        try{ _msent = navigator.sendBeacon(_apiOrigin() + '/popup_metric', _mb); }catch(_){}
+        if(!_msent){
+          try{ fetch(_apiOrigin() + '/popup_metric', { method: 'POST', body: _mb, keepalive: true })
+                 .catch(function(){}); }catch(_){}
+        }
       }catch(_){}
     }
     // ★잔류 자기보고(2026-08-13): 화면에 '번역 중'으로 45초 이상 남은 말풍선을
@@ -9307,7 +9315,12 @@ label[for="maxTokens"], #maxTokens,
         var _vis = (document.visibilityState === 'visible');
         var _focd = false;
         try{ _focd = document.hasFocus(); }catch(_){}
-        if(!_vis && !_focd) return;
+        // ★PC 상시 폴링(2026-09-14 실사고): PC 창이 다른 창에 가려지거나 최소화되면
+        //   visibilityState 가 hidden 이 돼 아래 게이트가 폴링을 멈추고, 창을 다시 볼 때까지
+        //   서버 대기열이 PC에 안 내려왔다(9/14 12:58→15:28 폴링 공백 2.5h, 창 복귀 순간
+        //   9건 일괄 수신). 숨김 게이트는 폰 팝업뷰 전용이므로 PC는 숨김이어도 롱폴을 잇는다.
+        var _isPcDev = !/Android|iPhone|iPad/i.test(navigator.userAgent);
+        if(!_vis && !_focd && !_isPcDev) return;
         if(!navigator.onLine) return;
         var key = '';
         try{ key = localStorage.getItem('bk_tr_pro_apiKey') || ''; }catch(_){}
