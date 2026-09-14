@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p128';
+    const APP_VERSION = 'v20.57p129';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -8770,6 +8770,9 @@ label[for="maxTokens"], #maxTokens,
             if(res && res.ok){
               _removeUrlQueueItem(item.id);
               _uwLog('translate-done', trimmed);
+              // ★2026-09-14 PC 동기화 보강(p129): 매크로의 서버 push 가 안 닿는 경우(9/13 19:19~ 폰만 뜨고 PC 미표시)
+              //   앱이 URL 경로로 번역한 결과를 서버 대기열에 대리 적재한다. 서버가 90초 내 같은 원문은 중복 제거.
+              try{ _pushDoneToServer(trimmed, (res.asst && res.asst.text) || '', item.app || '', (res.asst && res.asst.model) || ''); }catch(_){}
             } else {
               var targetId = res && res.asst && res.asst.messageId ? res.asst.messageId : '';
               _updateUrlQueueItem(item.id, {
@@ -8784,6 +8787,20 @@ label[for="maxTokens"], #maxTokens,
           }, { jobId:item.id });
         })(q[k]);
       }
+    }
+    // ★2026-09-14 p129: URL 경로 번역 결과를 서버 대기열에 넣는다(폰에서만). 실패는 조용히 무시(폰 표시엔 영향 없음).
+    function _pushDoneToServer(text, tgt, app, model){
+      if(!text || !tgt) return;
+      if(!/Android|iPhone|iPad/i.test(navigator.userAgent)) return;
+      var key = '';
+      try{ key = localStorage.getItem('bk_tr_pro_apiKey') || ''; }catch(_){}
+      if(!key) return;
+      var u = _apiOrigin() + '/popup_push?done=1&app=' + encodeURIComponent(app || '');
+      fetch(u, { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + key },
+                 body: JSON.stringify({ text:text, tgt:String(tgt).slice(0, 4000), model:model || '' }) })
+        .then(function(r){ return r.json(); })
+        .then(function(j){ try{ _uwLog('push-done ' + ((j && j.hint) || '?'), text); }catch(_){} })
+        .catch(function(){ try{ _uwLog('push-done-fail', text); }catch(_){} });
     }
     async function checkURLText(){
       try{
