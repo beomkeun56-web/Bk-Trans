@@ -1099,7 +1099,7 @@ label[for="maxTokens"], #maxTokens,
           <select id="editRefineModel" style="flex:1; background:rgba(0,0,0,.35); color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:8px; font-size:13px; font-family:inherit;">
             <!-- ★p53(2026-07-28): 에디트 재번역에도 맥 구독 클로드 3종 노출(고정 목록이라 여기 직접 추가) -->
             <option value="sonnet-mac">Claude 소넷5 씽킹 (맥 구독)</option>
-            <option value="opus-mac">Claude 오푸스5.5 (맥 구독)</option>
+            <option value="opus-mac">Claude 소넷5.5 (맥 구독)</option>
             <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
             <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option>
             <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
@@ -1240,7 +1240,7 @@ label[for="maxTokens"], #maxTokens,
         </div>
 
         <!-- ★p56(2026-07-29 범근님 "opus-mac으로 바꾸고 폴백 모델 UI도 넣어"):
-             echo(출력이 원문 그대로) 감지 시 1회 재시도할 모델. 기본 = Claude 오푸스5.5(맥 구독). (2026-09-23 오푸스5 → 5.5 전환)
+             echo(출력이 원문 그대로) 감지 시 1회 재시도할 모델. 기본 = Claude 소넷5.5(맥 구독). (2026-09-23 오푸스5 → 5.5, 2026-09-29 소넷5.5 전환)
              ★본 번역과 같은 모델을 고르면 같은 실패를 반복하므로 반드시 다른 모델로 둘 것.
              종전 기본값은 gemini-3-flash-preview 였고 UI가 없어 바꿀 수 없었다. -->
         <div style="margin-bottom:20px;">
@@ -1249,7 +1249,7 @@ label[for="maxTokens"], #maxTokens,
             <span style="font-weight:400; font-size:calc(11px * var(--textScale)); color:#888;">번역 실패(원문 그대로 출력) 시 1회 재시도</span>
           </label>
           <select id="fallbackModel" style="width:100%; background:rgba(0,0,0,.35); color:var(--text); border:none; outline:none; border-radius:14px; padding:12px; font-size:calc(14px * var(--textScale));">
-            <option value="opus-mac">Claude 오푸스5.5 (맥 구독)</option>
+            <option value="opus-mac">Claude 소넷5.5 (맥 구독)</option>
             <option value="sonnet-mac">Claude 소넷5 씽킹 (맥 구독)</option>
             <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
             <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p133';
+    const APP_VERSION = 'v20.57p134';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -2169,7 +2169,7 @@ label[for="maxTokens"], #maxTokens,
     // 배지 전용 표기 고정 — prettifyModelName 의 자동분해로는 원하는 이름이 안 나오는 모델.
     //   'sonnet-mac' → 자동분해하면 'Sonnet Mac'(→축약 'SM')이 되는데,
     //   범근님 지시(2026-07-28)로 'Sonnet 5'(→축약 'S5')로 표기한다.
-    const MODEL_BADGE_NAME = { 'sonnet-mac': 'Sonnet 5', 'opus-mac': 'Opus 5.5', 'sonnet-think-mac': 'Sonnet 5 Think' };   // ★2026-08-04 하이쿠 삭제
+    const MODEL_BADGE_NAME = { 'sonnet-mac': 'Sonnet 5', 'opus-mac': 'Sonnet 5.5', 'sonnet-think-mac': 'Sonnet 5 Think' };   // ★2026-08-04 하이쿠 삭제
 
     function prettifyModelName(modelId){
       const raw = String(modelId || '').trim();
@@ -2545,7 +2545,7 @@ label[for="maxTokens"], #maxTokens,
       //   맥이 꺼져 있으면 소넷과 동일하게 서버가 Gemini 로 자동 폴백.
       // ★p52(2026-07-28): 오푸스5 추가 — 품질 최상·실측 2.4~3.6초(소넷보다 빠름).
       //   구독 한도 소진이 빨라 수동 선택 전용(기본 전환 금지), 워커 1개.
-      { id:'opus-mac', name:'Claude 오푸스5.5 (맥 구독) — 품질 최상', effort:'' },
+      { id:'opus-mac', name:'Claude 소넷5.5 (맥 구독) — 품질 최상', effort:'' },
       // ★p57(2026-07-29 범근님 요청): Qwen3.7 Flash 추가 — 알리바바 바이롄(베이징) 경유.
       //   ★두뇌서버를 거친다(용어집·참고예시 적용됨. 실측 검사기·상부·공정·눌림 전부 정확).
       //   ★씽킹 기본 ON 을 서버에서 강제로 껐다 — 안 끄면 추론 864토큰 낭비로 8.2초.
