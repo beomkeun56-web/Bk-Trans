@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p138';
+    const APP_VERSION = 'v20.57p139';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6225,13 +6225,16 @@ label[for="maxTokens"], #maxTokens,
         }
         return null;
       }
-      // 일반 표시 (기존 그대로 — actions 한 줄에)
+      // 일반 표시 — ★p139(261011 범근님 '모델 속도 메신저 담당자 이걸 토글아래로 이동'):
+      //   단추 줄(TTS·복사·수정·원문·개인·업무) 안 오른쪽 끝 → 단추 줄 아래 별도 한 줄. 글자 크기·색·투명도는 그대로.
+      //   호출자 2곳(renderChat·스트림 완료)이 반환 행을 단추 줄 다음에 붙인다.
       var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source, sender);
       if(!txt) return null;
-      var s = document.createElement('span');
-      s.style.cssText = 'font-size:10px;color:var(--metaText);opacity:.7;margin-left:8px;white-space:nowrap;';
+      var s = document.createElement('div');
+      s.className = 'usageLine';
+      s.style.cssText = 'font-size:10px;color:var(--metaText);opacity:.7;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
       s.textContent = txt;
-      actionsEl.appendChild(s);
+      return s;
     }
 
     function renderChat(){
@@ -6483,8 +6486,9 @@ label[for="maxTokens"], #maxTokens,
         '#bkReplyOv .rs{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:90%;display:flex;flex-direction:column;background:#151c28;color:var(--text);border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.35);font-family:inherit}',
         '#bkReplyOv .rsTop{flex:none;padding:6px 12px 8px;border-bottom:1px solid rgba(255,255,255,.08)}',
         '#bkReplyOv .rsGrab{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.12);margin:2px auto 8px}',
-        '#bkReplyOv .rsHead{display:flex;align-items:center;gap:5px;margin-bottom:6px;min-height:36px}',
-        '#bkReplyOv .rsTtl{font-size:18px;line-height:36px;height:36px;font-weight:700;flex:1;white-space:nowrap}',
+        '#bkReplyOv .rsHead{display:flex;align-items:flex-start;gap:5px;margin-bottom:6px;min-height:36px}',
+        '#bkReplyOv .rsGrp{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:5px;row-gap:6px;flex:0 1 auto;min-width:0}',
+        '#bkReplyOv .rsTtl{font-size:18px;line-height:36px;height:36px;font-weight:700;flex:1 0 auto;white-space:nowrap}',
         '#bkReplyOv .rsTtl.p{color:#ff9fb8} #bkReplyOv .rsTtl.w{color:#8fc1ff}',
         '#bkReplyOv .rsSeg{display:flex;height:36px;border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;flex:none;box-sizing:border-box}',
         '#bkReplyOv .rsSeg button{border:0;background:transparent;color:var(--metaText);font:inherit;font-size:16px;line-height:1;height:100%;width:44px;padding:0;cursor:pointer}',
@@ -6492,7 +6496,7 @@ label[for="maxTokens"], #maxTokens,
         '#bkReplyOv .rsSeg button.on{background:#2d6bff;color:#fff;font-weight:700}',
         '#bkReplyOv .rsSeg.rel button.on{background:#c2456e}',
         '#bkReplyOv .rsSeg.lv button{width:40px}',
-        '@media (max-width:360px){#bkReplyOv .rsSeg.rel button{width:38px} #bkReplyOv .rsSeg.lv button{width:36px} #bkReplyOv .rsBtn{padding:0 6px} #bkReplyOv .rsHead{gap:4px}}',
+        '@media (max-width:360px){#bkReplyOv .rsSeg.rel button{width:36px} #bkReplyOv .rsSeg.lv button{width:34px} #bkReplyOv .rsSeg.kind button{width:40px} #bkReplyOv .rsBtn{padding:0 5px} #bkReplyOv .rsHead,#bkReplyOv .rsGrp{gap:3px} #bkReplyOv .rsTop{padding-left:10px;padding-right:10px}}',
         '#bkReplyOv .rsBtn{height:36px;line-height:1;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--text);font:inherit;font-size:16px;flex:none;cursor:pointer;box-sizing:border-box}',
         '#bkReplyOv .rsSrc{font-size:16px;color:var(--metaText);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
         '#bkReplyOv .rsSrc b{color:var(--text);font-weight:600}',
@@ -6542,21 +6546,20 @@ label[for="maxTokens"], #maxTokens,
         });
         return g;
       }
-      if(isWork){
-        var ttl = document.createElement('div'); ttl.className = 'rsTtl w'; ttl.textContent = '업무';
-        head.appendChild(ttl);
-      }else{
-        head.appendChild(makeSeg([['friend','친구'],['lover','여친']], rel, 'rel', function(v){ rel = v; load(false); }));
-        var gap = document.createElement('div'); gap.style.flex = '1'; gap.style.minWidth = '0';
-      }
+      // ★p139(범근님 '기존과동일하게 개인이 나오고 토글은 오른쪽'): 왼쪽 = 제목(개인|업무) 고정,
+      //   오른쪽 = 토글 묶음(개인: 친구·여친 | 보통·강, 업무: 지시·업체·문책) + 다시·닫기. 안 들어가면 묶음만 오른쪽 정렬로 줄바꿈.
+      var ttl = document.createElement('div'); ttl.className = 'rsTtl ' + (isWork ? 'w' : 'p'); ttl.textContent = isWork ? '업무' : '개인';
+      head.appendChild(ttl);
+      var grp = document.createElement('div'); grp.className = 'rsGrp';
+      if(!isWork) grp.appendChild(makeSeg([['friend','친구'],['lover','여친']], rel, 'rel', function(v){ rel = v; load(false); }));
       var seg = makeSeg(opts, sel, isWork ? 'kind' : 'lv', function(v){ sel = v; load(false); });
-      head.appendChild(seg);
-      if(!isWork) head.appendChild(gap);
+      grp.appendChild(seg);
       var again = document.createElement('button'); again.type = 'button'; again.className = 'rsBtn'; again.textContent = '다시';
       again.addEventListener('click', function(){ load(true); });
       var close = document.createElement('button'); close.type = 'button'; close.className = 'rsBtn'; close.textContent = '닫기';
       close.addEventListener('click', function(){ done(); });
-      head.appendChild(again); head.appendChild(close);
+      grp.appendChild(again); grp.appendChild(close);
+      head.appendChild(grp);
       top.appendChild(head);
       var srcLine = document.createElement('div'); srcLine.className = 'rsSrc';
       srcLine.innerHTML = '원문 <b></b>'; srcLine.querySelector('b').textContent = args.ko || args.zh;
