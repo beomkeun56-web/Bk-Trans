@@ -536,7 +536,7 @@
       background: var(--userBubbleBg);
       color: #ffffff;
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
-      border-bottom-right-radius: 10px;
+      /* ★p142(261011 범근님 '말풍선 사각을 동일하게 라운드지게'): 꼬리용 비대칭 모서리(오른쪽 아래 10px) 제거 → 네 모서리 18px */
       max-width: 80%;
     }
 
@@ -544,7 +544,7 @@
       background: var(--assistantBubbleBg);
       color: #e6edf3;
       box-shadow: 0 10px 22px rgba(0,0,0,.35);
-      border-bottom-left-radius: 10px;
+      /* ★p142: 꼬리용 비대칭 모서리(왼쪽 아래 10px) 제거 → 네 모서리 18px (파일 말풍선도 같은 .bubble) */
       max-width: 92%;
     }
 
@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p141';
+    const APP_VERSION = 'v20.57p142';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6078,9 +6078,9 @@ label[for="maxTokens"], #maxTokens,
       }
       return out;
     }
-    // ★p141(261011 범근님 '그룹방은 11개 글자넘으면 그뒤는 .. 으로짤라 처리'): 발송인 칸(보낸 사람/방 이름)은
-    //   코드 포인트 기준 11자까지만 두고 뒤를 '..'(점 두 개)로 자른다. 한글·한자·영문 모두 1자. 1:1 방도 같은 규칙.
-    var SENDER_MAX_CHARS = 11;
+    // ★p141(261011 범근님 '그룹방은 11개 글자넘으면 그뒤는 .. 으로짤라 처리') → ★p142 정정(범근님 '글자 10자 제한으로 하고'):
+    //   발송인 칸(보낸 사람/방 이름)은 코드 포인트 기준 10자까지만 두고 뒤를 '..'(점 두 개)로 자른다. 한글·한자·영문 모두 1자. 1:1 방도 같은 규칙.
+    var SENDER_MAX_CHARS = 10;
     function clipSender(sender){
       var cps = Array.from(String(sender == null ? '' : sender));
       if(cps.length <= SENDER_MAX_CHARS) return cps.join('');
@@ -6262,12 +6262,13 @@ label[for="maxTokens"], #maxTokens,
       if(!txt) return null;
       var s = document.createElement('div');
       s.className = 'usageLine';
-      s.style.cssText = 'font-size:10px;color:var(--metaText);opacity:.7;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
+      // ★p142(261011 범근님 '발송인 모델 줄 글씨를 한단계 키우라는것임'): 10px → 12px, 색·투명도 그대로
+      s.style.cssText = 'font-size:12px;color:var(--metaText);opacity:.7;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
       s.textContent = txt;
-      // ★p141: 글자 잉크 왼쪽 = 말풍선·단추 왼쪽(첫 글자 측면 여백만큼 당김)
-      var lsb = firstGlyphBearing(txt, 10);
+      // ★p141: 글자 잉크 왼쪽 = 말풍선·단추 왼쪽(첫 글자 측면 여백만큼 당김, 글자 크기에 맞춰 재계산)
+      var lsb = firstGlyphBearing(txt, 12);
       if(lsb > 0) s.style.marginLeft = (-lsb).toFixed(2) + 'px';
-      // ★p141: 발송인이 11자 넘어 잘렸으면 전체 글은 title 과 길게 누르기(0.5초) toast 로 남긴다
+      // ★p141·p142: 발송인이 10자 넘어 잘렸으면 전체 글은 title 과 길게 누르기(0.5초) toast 로 남긴다
       var fullTxt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source, sender, true);
       if(fullTxt && fullTxt !== txt){
         s.title = fullTxt;
