@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p140';
+    const APP_VERSION = 'v20.57p141';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6078,22 +6078,52 @@ label[for="maxTokens"], #maxTokens,
       }
       return out;
     }
-    function usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source, sender){
+    // ★p141(261011 범근님 '그룹방은 11개 글자넘으면 그뒤는 .. 으로짤라 처리'): 발송인 칸(보낸 사람/방 이름)은
+    //   코드 포인트 기준 11자까지만 두고 뒤를 '..'(점 두 개)로 자른다. 한글·한자·영문 모두 1자. 1:1 방도 같은 규칙.
+    var SENDER_MAX_CHARS = 11;
+    function clipSender(sender){
+      var cps = Array.from(String(sender == null ? '' : sender));
+      if(cps.length <= SENDER_MAX_CHARS) return cps.join('');
+      return cps.slice(0, SENDER_MAX_CHARS).join('') + '..';
+    }
+    // ★p141(261011 범근님 '발송인 메신저 시간 모델순으로 변경'): 발송인 · 메신저 · 초 · 모델(· 강도 · 프롬프트판).
+    //   발송인이 없으면 그 칸만 빼고 나머지 순서 유지. full=true 면 발송인을 자르지 않는다(title·길게 누르기용).
+    function usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source, sender, full){
       var seg = [];
-      if(modelName) seg.push(abbrevModelName(modelName));
-      var el2 = effLabel(effort);
-      if(el2) seg.push(el2);
+      // ★2026-08-13: 보낸 사람·방 이름(알림 제목, 매크로 {not_title}) — 있을 때만
+      if(sender) seg.push(full ? String(sender) : clipSender(sender));
+      // 출처 표시 (캐싱 CS% 대체): 위챗 / 페이수 / Clip / URL / Typing
+      seg.push(srcLabel(source));
       if(ms2 != null && ms2 > 0 && ms1 != null){
         seg.push((ms1/1000).toFixed(1) + '+' + (ms2/1000).toFixed(1) + '초');
       } else if(ms != null){
         seg.push((ms / 1000).toFixed(1) + '초');
       }
+      if(modelName) seg.push(abbrevModelName(modelName));
+      var el2 = effLabel(effort);
+      if(el2) seg.push(el2);
       if(promptVer) seg.push(promptVer);
-      // 출처 표시 (캐싱 CS% 대체): Clip / URL / Typing
-      seg.push(srcLabel(source));
-      // ★2026-08-13: 보낸 사람·방 이름(알림 제목, 매크로 {not_title}) — 있을 때만
-      if(sender) seg.push(String(sender));
       return seg.join('  ·  ');
+    }
+    // ★p141(261011 범근님 '모델 시간 메신저 발송인 왼쪽 시작이 아래 출력문과 토글과 안 맞는데'):
+    //   정보 줄의 DOM 왼쪽은 말풍선·단추와 같은 16px 인데도 글자 '잉크'는 글꼴의 왼쪽 측면 여백(side bearing)만큼
+    //   안쪽에서 시작한다(크롬 system-ui 10px 'O' 0.62px, 폴드 캡처 0.4~0.9px). 말풍선·단추는 상자라 여백 0 → 어긋나 보인다.
+    //   첫 글자를 캔버스로 같은 글꼴로 재서 그 여백만큼 왼쪽으로 당긴다(글꼴이 달라도 그 기기에서 잰 값이 쓰인다).
+    var _bearingCanvas = null;
+    function firstGlyphBearing(txt, fontSizePx){
+      try{
+        var ch = Array.from(String(txt || ''))[0];
+        if(!ch) return 0;
+        if(!_bearingCanvas) _bearingCanvas = document.createElement('canvas');
+        var cx = _bearingCanvas.getContext('2d');
+        if(!cx) return 0;
+        var fam = (getComputedStyle(document.body).fontFamily || 'system-ui');
+        cx.font = (fontSizePx || 10) + 'px ' + fam;
+        var m = cx.measureText(ch);
+        var lsb = (m && typeof m.actualBoundingBoxLeft === 'number') ? -m.actualBoundingBoxLeft : 0;
+        if(!(lsb > 0) || lsb > 3) return 0;   // 음수(잉크가 상자 밖) 또는 비정상 값은 보정하지 않음
+        return lsb;
+      } catch(_){ return 0; }
     }
     // 의도를 한국어 2글자로 압축 (English Agent 출력도 한글로 매핑)
     function shortIntent(s){
@@ -6234,6 +6264,20 @@ label[for="maxTokens"], #maxTokens,
       s.className = 'usageLine';
       s.style.cssText = 'font-size:10px;color:var(--metaText);opacity:.7;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
       s.textContent = txt;
+      // ★p141: 글자 잉크 왼쪽 = 말풍선·단추 왼쪽(첫 글자 측면 여백만큼 당김)
+      var lsb = firstGlyphBearing(txt, 10);
+      if(lsb > 0) s.style.marginLeft = (-lsb).toFixed(2) + 'px';
+      // ★p141: 발송인이 11자 넘어 잘렸으면 전체 글은 title 과 길게 누르기(0.5초) toast 로 남긴다
+      var fullTxt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source, sender, true);
+      if(fullTxt && fullTxt !== txt){
+        s.title = fullTxt;
+        var _lp = 0;
+        var _lpStart = function(){ clearTimeout(_lp); _lp = setTimeout(function(){ _lp = 0; try{ toast(fullTxt); }catch(_){} }, 500); };
+        var _lpEnd = function(){ if(_lp){ clearTimeout(_lp); _lp = 0; } };
+        s.addEventListener('touchstart', _lpStart, {passive:true});
+        s.addEventListener('touchend', _lpEnd); s.addEventListener('touchmove', _lpEnd, {passive:true}); s.addEventListener('touchcancel', _lpEnd);
+        s.addEventListener('mousedown', _lpStart); s.addEventListener('mouseup', _lpEnd); s.addEventListener('mouseleave', _lpEnd);
+      }
       return s;
     }
 
@@ -6407,7 +6451,7 @@ label[for="maxTokens"], #maxTokens,
         if(actions.children.length > 0){
           row.appendChild(actions);
         }
-        // ★p140(261011 범근님 '모델속도 출력문 토글 이렇게 하나가되게'): 정보 줄(모델·초·메신저·보낸 사람)은
+        // ★p140(261011 범근님 '모델속도 출력문 토글 이렇게 하나가되게'): 정보 줄(p141부터 발송인·메신저·초·모델 순)은
         //   말풍선 위에 붙인다 → 한 묶음이 '정보 줄 → 말풍선 → 단추 줄' 순. 파이프라인 표시 줄은 종전대로 아래.
         if(extraRow && extraRow.classList && extraRow.classList.contains('usageLine')){
           extraRow.style.marginTop = '0'; extraRow.style.marginBottom = '0';   // 묶음 안 간격 = .msg gap 8px
