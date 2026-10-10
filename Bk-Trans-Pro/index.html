@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p142';
+    const APP_VERSION = 'v20.57p143';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6078,9 +6078,9 @@ label[for="maxTokens"], #maxTokens,
       }
       return out;
     }
-    // ★p141(261011 범근님 '그룹방은 11개 글자넘으면 그뒤는 .. 으로짤라 처리') → ★p142 정정(범근님 '글자 10자 제한으로 하고'):
-    //   발송인 칸(보낸 사람/방 이름)은 코드 포인트 기준 10자까지만 두고 뒤를 '..'(점 두 개)로 자른다. 한글·한자·영문 모두 1자. 1:1 방도 같은 규칙.
-    var SENDER_MAX_CHARS = 10;
+    // ★p141(261011 범근님 '그룹방은 11개 글자넘으면 그뒤는 .. 으로짤라 처리') → p142 10자 → ★p143(범근님 '글자제한 20개로바꿔 다짤리네'):
+    //   발송인 칸(보낸 사람/방 이름)은 코드 포인트 기준 20자까지만 두고 뒤를 '..'(점 두 개)로 자른다. 한글·한자·영문 모두 1자. 1:1 방도 같은 규칙.
+    var SENDER_MAX_CHARS = 20;
     function clipSender(sender){
       var cps = Array.from(String(sender == null ? '' : sender));
       if(cps.length <= SENDER_MAX_CHARS) return cps.join('');
@@ -6263,12 +6263,13 @@ label[for="maxTokens"], #maxTokens,
       var s = document.createElement('div');
       s.className = 'usageLine';
       // ★p142(261011 범근님 '발송인 모델 줄 글씨를 한단계 키우라는것임'): 10px → 12px, 색·투명도 그대로
-      s.style.cssText = 'font-size:12px;color:var(--metaText);opacity:.7;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;';
+      // ★p143(범근님 지시: 넘치면 자르지 말고 두 줄로): nowrap+ellipsis 제거, 폭을 넘으면 줄이 꺾인다
+      s.style.cssText = 'font-size:12px;color:var(--metaText);opacity:.7;margin-top:3px;white-space:normal;word-break:break-word;line-height:1.3;max-width:100%;';
       s.textContent = txt;
       // ★p141: 글자 잉크 왼쪽 = 말풍선·단추 왼쪽(첫 글자 측면 여백만큼 당김, 글자 크기에 맞춰 재계산)
       var lsb = firstGlyphBearing(txt, 12);
       if(lsb > 0) s.style.marginLeft = (-lsb).toFixed(2) + 'px';
-      // ★p141·p142: 발송인이 10자 넘어 잘렸으면 전체 글은 title 과 길게 누르기(0.5초) toast 로 남긴다
+      // ★p141·p143: 발송인이 20자 넘어 잘렸으면 전체 글은 title 과 길게 누르기(0.5초) toast 로 남긴다
       var fullTxt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source, sender, true);
       if(fullTxt && fullTxt !== txt){
         s.title = fullTxt;
