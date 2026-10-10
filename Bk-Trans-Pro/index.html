@@ -508,7 +508,7 @@
       padding-bottom: var(--chatBottomPadding);
       display:flex;
       flex-direction:column;
-      gap: 16px;
+      gap: 18px;   /* ★p140(261011 범근님 '세로간격은 너무 좁지 않도록'): 묶음 사이 16→18px, 묶음 안은 .msg gap 8px */
       flex:1;
       overflow-y:auto;
       min-height:0;
@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p139';
+    const APP_VERSION = 'v20.57p140';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6226,8 +6226,8 @@ label[for="maxTokens"], #maxTokens,
         return null;
       }
       // 일반 표시 — ★p139(261011 범근님 '모델 속도 메신저 담당자 이걸 토글아래로 이동'):
-      //   단추 줄(TTS·복사·수정·원문·개인·업무) 안 오른쪽 끝 → 단추 줄 아래 별도 한 줄. 글자 크기·색·투명도는 그대로.
-      //   호출자 2곳(renderChat·스트림 완료)이 반환 행을 단추 줄 다음에 붙인다.
+      //   단추 줄 안 오른쪽 끝 → 별도 한 줄(div.usageLine). 글자 크기·색·투명도는 그대로.
+      //   ★p140: 호출자 2곳(renderChat·스트림 완료)이 이 줄을 말풍선 바로 위에 붙인다.
       var txt = usageLineText(u, ms, modelName, effort, promptVer, ms1, ms2, source, sender);
       if(!txt) return null;
       var s = document.createElement('div');
@@ -6407,7 +6407,12 @@ label[for="maxTokens"], #maxTokens,
         if(actions.children.length > 0){
           row.appendChild(actions);
         }
-        if(extraRow) row.appendChild(extraRow);
+        // ★p140(261011 범근님 '모델속도 출력문 토글 이렇게 하나가되게'): 정보 줄(모델·초·메신저·보낸 사람)은
+        //   말풍선 위에 붙인다 → 한 묶음이 '정보 줄 → 말풍선 → 단추 줄' 순. 파이프라인 표시 줄은 종전대로 아래.
+        if(extraRow && extraRow.classList && extraRow.classList.contains('usageLine')){
+          extraRow.style.marginTop = '0'; extraRow.style.marginBottom = '0';   // 묶음 안 간격 = .msg gap 8px
+          row.insertBefore(extraRow, bubble);
+        } else if(extraRow) row.appendChild(extraRow);
 
         el.chat.appendChild(row);
       }
@@ -7205,7 +7210,10 @@ label[for="maxTokens"], #maxTokens,
         // ★2026-08-13 범근님 지시: GM(제미나이 재번역) 버튼 삭제
         var _streamExtraRow = appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _displayPromptVer, _ms1, _ms2, _pipelineInfo, _src);
         streamRow.appendChild(actions);
-        if(_streamExtraRow) streamRow.appendChild(_streamExtraRow);
+        if(_streamExtraRow && _streamExtraRow.classList && _streamExtraRow.classList.contains('usageLine')){   // ★p140 말풍선 위
+          _streamExtraRow.style.marginTop = '0'; _streamExtraRow.style.marginBottom = '0';
+          streamRow.insertBefore(_streamExtraRow, streamBubble);
+        } else if(_streamExtraRow) streamRow.appendChild(_streamExtraRow);
 
         if(_fallbackUsed){
           var _fbBadge = document.createElement('span');
