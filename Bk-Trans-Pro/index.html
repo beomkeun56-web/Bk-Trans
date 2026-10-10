@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p137';
+    const APP_VERSION = 'v20.57p138';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6433,7 +6433,7 @@ label[for="maxTokens"], #maxTokens,
     }
     // ── 답변 시트(261011 범근님 '개인'·'업무', p137 개정) ──────────────────────
     //   서버 POST /reply_suggest {text, ko, mode, level(개인)|kind(업무), context, src} → {items:[{ko,zh}×3]}.
-    //   개인 = 약·보통·강(좋은·장난·나쁜 세기), 업무 = 지시·업체·문책(기본 지시).
+    //   개인 = 친구·여친 × 보통·강(좋은·장난·나쁜 세기, p138 '약' 삭제), 업무 = 지시·업체·문책(기본 지시).
     //   중국어 줄을 누르면 복사(copyToClipboard → updateLastClipboard 경유라 클립보드 자동번역이 다시 안 돈다)
     //   → 시트를 닫고 → 폰에서 출처가 위챗·페이수면 기존 _jumpLaunch 로 그 앱을 연다. 출처 불명·PC 는 복사만.
     //   작은 팝업 창(삼성 팝업 실측 317×404 등)에서도 한국어를 접지 않는다. 카드 영역만 스크롤.
@@ -6490,6 +6490,9 @@ label[for="maxTokens"], #maxTokens,
         '#bkReplyOv .rsSeg button{border:0;background:transparent;color:var(--metaText);font:inherit;font-size:16px;line-height:1;height:100%;width:44px;padding:0;cursor:pointer}',
         '#bkReplyOv .rsSeg button+button{border-left:1px solid rgba(255,255,255,.1)}',
         '#bkReplyOv .rsSeg button.on{background:#2d6bff;color:#fff;font-weight:700}',
+        '#bkReplyOv .rsSeg.rel button.on{background:#c2456e}',
+        '#bkReplyOv .rsSeg.lv button{width:40px}',
+        '@media (max-width:360px){#bkReplyOv .rsSeg.rel button{width:38px} #bkReplyOv .rsSeg.lv button{width:36px} #bkReplyOv .rsBtn{padding:0 6px} #bkReplyOv .rsHead{gap:4px}}',
         '#bkReplyOv .rsBtn{height:36px;line-height:1;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--text);font:inherit;font-size:16px;flex:none;cursor:pointer;box-sizing:border-box}',
         '#bkReplyOv .rsSrc{font-size:16px;color:var(--metaText);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
         '#bkReplyOv .rsSrc b{color:var(--text);font-weight:600}',
@@ -6511,7 +6514,7 @@ label[for="maxTokens"], #maxTokens,
       var old = document.getElementById('bkReplyOv');
       if(old) old.remove();
       var isWork = (mode === 'work');
-      var opts = isWork ? [['order','지시'],['vendor','업체'],['rebuke','문책']] : [['soft','약'],['normal','보통'],['strong','강']];
+      var opts = isWork ? [['order','지시'],['vendor','업체'],['rebuke','문책']] : [['normal','보통'],['strong','강']]   /* ★p138 범근님 '약을 빼' */;
       var sel = isWork ? 'order' : 'normal';
       var src = args.src || '';
       var isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -6522,22 +6525,33 @@ label[for="maxTokens"], #maxTokens,
       var top = document.createElement('div'); top.className = 'rsTop';
       top.innerHTML = '<div class="rsGrab"></div>';
       var head = document.createElement('div'); head.className = 'rsHead';
-      var ttl = document.createElement('div'); ttl.className = 'rsTtl ' + (isWork ? 'w' : 'p');
-      ttl.textContent = isWork ? '업무' : '개인';
-      head.appendChild(ttl);
-      var seg = document.createElement('div'); seg.className = 'rsSeg';
-      opts.forEach(function(pr){
-        var b = document.createElement('button'); b.type = 'button'; b.textContent = pr[1]; b.dataset.v = pr[0];
-        if(pr[0] === sel) b.className = 'on';
-        b.addEventListener('click', function(){
-          if(sel === pr[0]) return;
-          sel = pr[0];
-          Array.prototype.forEach.call(seg.children, function(x){ x.className = (x.dataset.v === sel) ? 'on' : ''; });
-          load(false);
+      // ★p138(범근님 '개인에 약 중 강 약왼쪽으로 친구 여친 추가'): 개인은 제목 대신 [친구|여친] 토글 → [약|보통|강].
+      //   친구 = 남녀 불문 친구 사이(기본), 여친 = 사귀는 사이. 업무는 '업무' 제목 → [지시|업체|문책].
+      var rel = 'friend';
+      function makeSeg(list, cur, cls, onPick){
+        var g = document.createElement('div'); g.className = 'rsSeg ' + cls;
+        list.forEach(function(pr){
+          var b = document.createElement('button'); b.type = 'button'; b.textContent = pr[1]; b.dataset.v = pr[0];
+          if(pr[0] === cur) b.className = 'on';
+          b.addEventListener('click', function(){
+            if(b.className === 'on') return;
+            Array.prototype.forEach.call(g.children, function(x){ x.className = (x === b) ? 'on' : ''; });
+            onPick(pr[0]);
+          });
+          g.appendChild(b);
         });
-        seg.appendChild(b);
-      });
+        return g;
+      }
+      if(isWork){
+        var ttl = document.createElement('div'); ttl.className = 'rsTtl w'; ttl.textContent = '업무';
+        head.appendChild(ttl);
+      }else{
+        head.appendChild(makeSeg([['friend','친구'],['lover','여친']], rel, 'rel', function(v){ rel = v; load(false); }));
+        var gap = document.createElement('div'); gap.style.flex = '1'; gap.style.minWidth = '0';
+      }
+      var seg = makeSeg(opts, sel, isWork ? 'kind' : 'lv', function(v){ sel = v; load(false); });
       head.appendChild(seg);
+      if(!isWork) head.appendChild(gap);
       var again = document.createElement('button'); again.type = 'button'; again.className = 'rsBtn'; again.textContent = '다시';
       again.addEventListener('click', function(){ load(true); });
       var close = document.createElement('button'); close.type = 'button'; close.className = 'rsBtn'; close.textContent = '닫기';
@@ -6626,7 +6640,7 @@ label[for="maxTokens"], #maxTokens,
         var to = setTimeout(function(){ try{ if(ctl) ctl.abort(); }catch(_){} }, 22000);
         skeleton();
         var body = { text: args.zh, ko: args.ko, mode: mode, context: args.ctx || [], src: src, retry: !!retry };
-        if(isWork) body.kind = sel; else body.level = sel;
+        if(isWork) body.kind = sel; else { body.level = sel; body.rel = rel; }
         fetch(_apiOrigin() + '/reply_suggest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getActiveApiKey() },
