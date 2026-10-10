@@ -1893,7 +1893,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p135';
+    const APP_VERSION = 'v20.57p136';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -6378,6 +6378,26 @@ label[for="maxTokens"], #maxTokens,
             });
             actions.appendChild(srcBtn);
           }
+          // ★p136(261011 범근님): 원문 옆 '개인'·'업무' 답변 단추. 원문이 중국어인 줄(중→한 번역)에만.
+          //   누르면 바닥 시트에 답안 3장(개인: 좋은·장난·나쁜 / 업무: 간단·정중 보고·되묻기).
+          //   번역 경로와 무관한 별도 끝점(/reply_suggest)만 부른다.
+          if(_replyIsZh(srcForThisMsg)){
+            _replyCss();   // 단추 색(개인 분홍·업무 파랑)이 시트를 열기 전에도 보이게
+            let _rpCtx = [];   // ★let/const: var 이면 루프 전체가 한 변수를 공유해 모든 단추가 마지막 줄을 가리킨다(시험에서 발견)
+            for(var _cj = _i - 2; _cj >= 0 && _rpCtx.length < 4; _cj--){
+              var _cm = chat[_cj];
+              if(_cm && _cm.role === 'user' && _cm.text) _rpCtx.unshift(String(_cm.text).replace(/^#\s*/, '').slice(0, 200));
+            }
+            const _rpArgs = { zh: String(srcForThisMsg || '').replace(/^#\s*/, ''), ko: m.text, src: m.source || '', ctx: _rpCtx };
+            ['personal', 'work'].forEach(function(_md){
+              var b = document.createElement('button');
+              b.className = 'copyPill replyPill ' + (_md === 'work' ? 'replyWork' : 'replyPers');
+              b.type = 'button';
+              b.textContent = _md === 'work' ? '업무' : '개인';
+              b.addEventListener('click', function(){ showReplySheet(_md, _rpArgs); });
+              actions.appendChild(b);
+            });
+          }
           // ★p59: 원문 버튼 옆 'G3.5F' — 이 번역문의 원문을 제미나이로 재번역.
           //   lastUserText 는 바깥 let 이라 클릭 시점엔 덮여 있으므로 srcForThisMsg 스냅샷을 쓴다.
           // ★2026-08-13 범근님 지시: GM(제미나이 재번역) 버튼 삭제
@@ -6414,6 +6434,215 @@ label[for="maxTokens"], #maxTokens,
       }catch(_){}
       return false;
     }
+    // ── 답변 시트(261011 범근님 '개인'·'업무') ─────────────────────────────
+    //   서버 POST /reply_suggest {text, ko, mode, level, context, src} → {items:[{ko,zh}×3]}.
+    //   중국어 줄을 누르면 복사(copyToClipboard → updateLastClipboard 경유라 클립보드 자동번역이 다시 안 돈다)
+    //   → 폰에서 출처가 위챗·페이수면 기존 _jumpLaunch 로 그 앱을 연다. 출처 불명·PC 는 복사만.
+    //   창 높이 560 미만(삼성 팝업 창 실측 317×404·424×443 등)이면 접은 꼴: 중국어 한 줄 + '뜻' 단추로 한국어 펼침.
+    function _replyIsZh(t){
+      t = String(t || '');
+      var han = (t.match(/[一-鿿]/g) || []).length;
+      var hangul = (t.match(/[가-힣]/g) || []).length;
+      return han > 0 && han > hangul;
+    }
+    var REPLY_FOLD_H = 560;
+    function _replyCss(){
+      if(document.getElementById('bkReplyCss')) return;
+      var st = document.createElement('style');
+      st.id = 'bkReplyCss';
+      st.textContent = [
+        '.replyPill.replyPers{color:#ff9fb8;background:rgba(255,120,160,.16);font-weight:600}',
+        '.replyPill.replyWork{color:#8fc1ff;background:rgba(45,107,255,.20);font-weight:600}',
+        '#bkReplyOv{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55)}',
+        '#bkReplyOv .rs{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:90%;display:flex;flex-direction:column;background:#151c28;color:var(--text);border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.35);font-family:inherit}',
+        '#bkReplyOv .rsTop{flex:none;padding:6px 12px 8px;border-bottom:1px solid rgba(255,255,255,.08)}',
+        '#bkReplyOv .rsGrab{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.12);margin:2px auto 8px}',
+        '#bkReplyOv .rsHead{display:flex;align-items:center;gap:5px;margin-bottom:6px}',
+        '#bkReplyOv .rsTtl{font-size:18px;font-weight:700;flex:1;white-space:nowrap}',
+        '#bkReplyOv .rsTtl.p{color:#ff9fb8} #bkReplyOv .rsTtl.w{color:#8fc1ff}',
+        '#bkReplyOv .rsSeg{display:flex;border:1px solid rgba(255,255,255,.1);border-radius:12px;overflow:hidden;flex:none}',
+        '#bkReplyOv .rsSeg button{border:0;background:transparent;color:var(--metaText);font:inherit;font-size:16px;height:44px;width:42px;padding:0;cursor:pointer}',
+        '#bkReplyOv .rsSeg button+button{border-left:1px solid rgba(255,255,255,.1)}',
+        '#bkReplyOv .rsSeg button.on{background:#2d6bff;color:#fff;font-weight:700}',
+        '#bkReplyOv .rsBtn{height:44px;padding:0 10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--text);font:inherit;font-size:16px;flex:none;cursor:pointer}',
+        '#bkReplyOv .rsSrc{font-size:16px;color:var(--metaText);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
+        '#bkReplyOv .rsSrc b{color:var(--text);font-weight:600}',
+        '#bkReplyOv .rsCards{flex:1 1 auto;overflow:auto;-webkit-overflow-scrolling:touch;padding:0 12px 10px;min-height:0;overscroll-behavior:contain}',
+        '#bkReplyOv .rsCard{background:#1b2332;border-radius:14px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:6px}',
+        '#bkReplyOv .rsKo{font-size:16px;line-height:1.45;color:#c9d4df}',
+        '#bkReplyOv .rsZh{font-size:19px;line-height:1.45;font-weight:700;color:#fff;min-height:44px;display:flex;align-items:center;cursor:pointer;border-radius:10px;-webkit-user-select:text;user-select:text}',
+        '#bkReplyOv .rsZh:active{background:rgba(255,255,255,.08)}',
+        '#bkReplyOv .rsStat{font-size:16px;color:#33d17a} #bkReplyOv .rsStat.warn{color:#f7c948} #bkReplyOv .rsStat.err{color:#ff6b6b}',
+        '#bkReplyOv .rsHint{font-size:15px;color:var(--metaText);text-align:center;margin:10px 0 2px}',
+        '#bkReplyOv .rsMsg{font-size:16px;color:var(--metaText);text-align:center;padding:18px 0}',
+        '#bkReplyOv .rsMsg.err{color:#ff6b6b}',
+        '#bkReplyOv .rsSkel{height:14px;border-radius:7px;background:rgba(255,255,255,.07);margin:6px 0}',
+        '#bkReplyOv .rsCard.fold{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 6px 6px 12px}',
+        '#bkReplyOv .rsCard.fold .rsKo{display:none;flex-basis:100%}',
+        '#bkReplyOv .rsCard.fold .rsZh{flex:1;min-width:0;display:block;line-height:44px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:18px}',
+        '#bkReplyOv .rsCard.fold .rsStat{flex-basis:100%}',
+        '#bkReplyOv .rsCard.fold.open .rsKo{display:block;order:-1}',
+        '#bkReplyOv .rsCard.fold.open .rsZh{white-space:normal;line-height:1.45;display:flex}',
+        '#bkReplyOv .rsMean{display:none;flex:none;height:44px;min-width:52px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--metaText);font:inherit;font-size:16px;cursor:pointer}',
+        '#bkReplyOv .rsCard.fold .rsMean{display:block}'
+      ].join('\n');
+      document.head.appendChild(st);
+    }
+    var _replyLastCall = null;   // 시험·계측용: 마지막 복사·열기 기록 {zh, copied, jump, at}
+    function showReplySheet(mode, args){
+      _replyCss();
+      var old = document.getElementById('bkReplyOv');
+      if(old) old.remove();
+      var level = 'normal';
+      var src = args.src || '';
+      var isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
+      var jumpApp = (isPhone && (src === 'wechat' || src === 'feishu')) ? src : '';
+      var appName = jumpApp === 'wechat' ? '위챗' : jumpApp === 'feishu' ? '페이수' : '';
+      var ov = document.createElement('div'); ov.id = 'bkReplyOv';
+      var sh = document.createElement('div'); sh.className = 'rs';
+      var top = document.createElement('div'); top.className = 'rsTop';
+      top.innerHTML = '<div class="rsGrab"></div>';
+      var head = document.createElement('div'); head.className = 'rsHead';
+      var ttl = document.createElement('div'); ttl.className = 'rsTtl ' + (mode === 'work' ? 'w' : 'p');
+      ttl.textContent = mode === 'work' ? '업무' : '개인';
+      head.appendChild(ttl);
+      var seg = document.createElement('div'); seg.className = 'rsSeg';
+      [['soft','약'],['normal','보통'],['strong','강']].forEach(function(pr){
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = pr[1]; b.dataset.lv = pr[0];
+        if(pr[0] === level) b.className = 'on';
+        b.addEventListener('click', function(){
+          if(level === pr[0]) return;
+          level = pr[0];
+          Array.prototype.forEach.call(seg.children, function(x){ x.className = (x.dataset.lv === level) ? 'on' : ''; });
+          load(false);
+        });
+        seg.appendChild(b);
+      });
+      head.appendChild(seg);
+      var again = document.createElement('button'); again.type = 'button'; again.className = 'rsBtn'; again.textContent = '다시';
+      again.addEventListener('click', function(){ load(true); });
+      var close = document.createElement('button'); close.type = 'button'; close.className = 'rsBtn'; close.textContent = '닫기';
+      close.addEventListener('click', function(){ done(); });
+      head.appendChild(again); head.appendChild(close);
+      top.appendChild(head);
+      var srcLine = document.createElement('div'); srcLine.className = 'rsSrc';
+      srcLine.innerHTML = '원문 <b></b>'; srcLine.querySelector('b').textContent = args.ko || args.zh;
+      top.appendChild(srcLine);
+      sh.appendChild(top);
+      var cards = document.createElement('div'); cards.className = 'rsCards';
+      sh.appendChild(cards);
+      ov.appendChild(sh);
+      ov.addEventListener('click', function(ev){ if(ev.target === ov) done(); });
+      document.body.appendChild(ov);
+      var seq = 0, ctl = null;
+      function folded(){ return window.innerHeight < REPLY_FOLD_H; }
+      function onResize(){
+        var f = folded();
+        Array.prototype.forEach.call(cards.querySelectorAll('.rsCard.item'), function(c){ c.classList.toggle('fold', f); });
+      }
+      window.addEventListener('resize', onResize);
+      function done(){
+        try{ if(ctl) ctl.abort(); }catch(_){}
+        window.removeEventListener('resize', onResize);
+        ov.remove();
+      }
+      function msg(text, cls, retry){
+        cards.innerHTML = '';
+        var d = document.createElement('div'); d.className = 'rsMsg' + (cls ? ' ' + cls : ''); d.textContent = text;
+        cards.appendChild(d);
+        if(retry){
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'rsBtn'; b.textContent = '다시 시도';
+          b.style.display = 'block'; b.style.margin = '0 auto';
+          b.addEventListener('click', function(){ load(true); });
+          cards.appendChild(b);
+        }
+      }
+      function skeleton(){
+        cards.innerHTML = '';
+        var d = document.createElement('div'); d.className = 'rsMsg'; d.textContent = '답안 만드는 중…';
+        cards.appendChild(d);
+        for(var k = 0; k < 3; k++){
+          var c = document.createElement('div'); c.className = 'rsCard';
+          c.innerHTML = '<div class="rsSkel"></div><div class="rsSkel" style="width:70%"></div>';
+          cards.appendChild(c);
+        }
+      }
+      function onPick(zh, card){
+        var stat = card.querySelector('.rsStat');
+        if(!stat){ stat = document.createElement('div'); stat.className = 'rsStat'; card.appendChild(stat); }
+        copyToClipboard(zh, true).then(function(ok){
+          _replyLastCall = { zh: zh, copied: !!ok, jump: (ok && jumpApp) ? jumpApp : '', at: Date.now() };
+          if(!ok){
+            stat.className = 'rsStat err'; stat.textContent = '복사 실패 · 중국어를 길게 눌러 복사하세요';
+            return;
+          }
+          if(!jumpApp){
+            stat.className = 'rsStat'; stat.textContent = '중국어 복사됨';
+            setTimeout(function(){ if(stat.textContent === '중국어 복사됨') stat.textContent = ''; }, 2000);
+            return;
+          }
+          stat.className = 'rsStat'; stat.textContent = '중국어 복사됨 · ' + appName + ' 여는 중';
+          var left = false;
+          function mark(){ left = true; }
+          document.addEventListener('visibilitychange', mark, { once: true });
+          window.addEventListener('blur', mark, { once: true });
+          try{ _jumpLaunch(jumpApp); }catch(_){}
+          setTimeout(function(){
+            document.removeEventListener('visibilitychange', mark);
+            window.removeEventListener('blur', mark);
+            if(!left && document.visibilityState === 'visible'){
+              stat.className = 'rsStat warn'; stat.textContent = '중국어 복사됨 · 앱이 안 열려 직접 여세요';
+            }
+          }, 1500);
+        });
+      }
+      function render(items){
+        cards.innerHTML = '';
+        var f = folded();
+        items.forEach(function(it){
+          var c = document.createElement('div'); c.className = 'rsCard item' + (f ? ' fold' : '');
+          var ko = document.createElement('div'); ko.className = 'rsKo'; ko.textContent = it.ko || '';
+          var zh = document.createElement('div'); zh.className = 'rsZh'; zh.textContent = it.zh || '';
+          zh.setAttribute('role', 'button');
+          zh.addEventListener('click', function(){ onPick(it.zh || '', c); });
+          var mean = document.createElement('button'); mean.type = 'button'; mean.className = 'rsMean'; mean.textContent = '뜻';
+          mean.addEventListener('click', function(){ c.classList.toggle('open'); mean.textContent = c.classList.contains('open') ? '접기' : '뜻'; });
+          c.appendChild(ko); c.appendChild(zh); c.appendChild(mean);
+          cards.appendChild(c);
+        });
+        var hint = document.createElement('div'); hint.className = 'rsHint';
+        hint.textContent = jumpApp ? ('중국어를 누르면 복사 후 ' + appName + '이(가) 열립니다') : '중국어를 누르면 복사됩니다';
+        cards.appendChild(hint);
+        cards.scrollTop = 0;
+      }
+      function load(retry){
+        var my = ++seq;
+        try{ if(ctl) ctl.abort(); }catch(_){}
+        ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        var to = setTimeout(function(){ try{ if(ctl) ctl.abort(); }catch(_){} }, 22000);
+        skeleton();
+        fetch(_apiOrigin() + '/reply_suggest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getActiveApiKey() },
+          body: JSON.stringify({ text: args.zh, ko: args.ko, mode: mode, level: level,
+                                 context: args.ctx || [], src: src, retry: !!retry }),
+          signal: ctl ? ctl.signal : undefined
+        }).then(function(r){ return r.json().catch(function(){ return { ok: false, error: 'HTTP ' + r.status }; }); })
+          .then(function(d){
+            clearTimeout(to);
+            if(my !== seq) return;
+            if(d && d.ok && d.items && d.items.length >= 3) render(d.items.slice(0, 3));
+            else msg('답안을 못 받았습니다' + (d && d.error ? '(' + String(d.error).slice(0, 40) + ')' : ''), 'err', true);
+          })
+          .catch(function(e){
+            clearTimeout(to);
+            if(my !== seq) return;
+            msg(e && e.name === 'AbortError' ? '답안을 못 받았습니다(20초 초과)' : '답안을 못 받았습니다(연결 실패)', 'err', true);
+          });
+      }
+      load(false);
+    }
+
     function srcBubbleColor(src){
       if(src === 'alipay') return 'var(--asstAlipayBg)';
       if(src === 'wechat') return 'var(--asstWechatBg)';
