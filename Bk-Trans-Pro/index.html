@@ -1874,10 +1874,13 @@ label[for="maxTokens"], #maxTokens,
     <div class="composerRow">
       <div class="composerInner">
         <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
-        <div id="inputBtnWrap" style="display:none; position:absolute; right:8px; top:50%; transform:translateY(-50%); flex-direction:column; gap:4px;">
-          <button id="inputCopyBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Copy</button>
-          <button id="inputClearBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Delete</button>
+        <!-- ★p144(261013 범근님): 글이 있으면 오른쪽 끝에 x 지우기 단추(44px 터치 영역), Copy 는 그 왼쪽. 글이 없으면 둘 다 숨김. -->
+        <div id="inputBtnWrap" style="display:none; position:absolute; right:4px; top:50%; transform:translateY(-50%); flex-direction:row; align-items:center; gap:2px;">
+          <button id="inputCopyBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 10px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Copy</button>
+          <button id="inputClearBtn" type="button" aria-label="입력창 지우기" title="지우기" style="width:44px; height:44px; padding:0; border:none; background:transparent; color:rgba(230,237,243,.75); cursor:pointer; display:grid; place-items:center; -webkit-tap-highlight-color:transparent;"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round;"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
         </div>
+        <!-- ★p144: 원문 자동 입력이 기존 글을 덮어썼을 때 2초 동안만 뜨는 되돌리기 -->
+        <button id="inputUndoBtn" type="button" style="display:none; position:absolute; left:8px; bottom:calc(100% + 6px); border:none; background:rgba(30,41,59,.95); color:#fbbf24; border-radius:12px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; box-shadow:0 2px 10px rgba(0,0,0,.4);">되돌리기</button>
       </div>
       <button id="composerModelBtn" type="button" aria-label="제공자·모델 선택" title="제공자·모델 선택">M</button>
     </div>
@@ -1893,7 +1896,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p143';
+    const APP_VERSION = 'v20.57p144';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -5692,6 +5695,62 @@ label[for="maxTokens"], #maxTokens,
     }
     focusOverlay.addEventListener('click', () => focusOverlay.classList.remove('active'));
 
+    // ★p144(261013 범근님): 출력 말풍선 1탭 = 원문 펼침 + 입력창에 원문 자동 입력(약 300ms 뒤 실행),
+    //   2탭(300ms 안 연속) = 전체화면. PC 는 click·dblclick 으로 같은 동작. 길게 누름은 건드리지 않는다.
+    //   입력창에 글이 있으면 덮어쓰되 2초 동안 '되돌리기' 단추를 입력창 위에 띄운다.
+    var _TAP_MS = 300;
+    var _undoTimer = 0, _undoPrev = '';
+    function _hideInputUndo(){
+      if(_undoTimer){ clearTimeout(_undoTimer); _undoTimer = 0; }
+      var b = document.getElementById('inputUndoBtn'); if(b) b.style.display = 'none';
+    }
+    function _showInputUndo(prev){
+      var b = document.getElementById('inputUndoBtn'); if(!b) return;
+      _undoPrev = prev; b.style.display = 'block';
+      if(_undoTimer) clearTimeout(_undoTimer);
+      _undoTimer = setTimeout(_hideInputUndo, 2000);
+    }
+    function _fillInputFromOriginal(text){
+      if(!el.input) return;
+      var prev = el.input.value || '';
+      if(prev !== text){
+        el.input.value = text;
+        if(prev.trim()) _showInputUndo(prev);
+      }
+      if(typeof window.bkExpandComposer === 'function') window.bkExpandComposer();   // 접힌 입력창이면 펴서 글이 보이게
+      autoResizeInput();
+    }
+    // o: { text: 전체화면에 띄울 글, arm: 메신저 출처('wechat'|'feishu'|'alipay'|''), srcRowId: 원문 줄 id, srcText: 원문 글 }
+    function _bindOutBubbleTap(bubble, o){
+      var tm = 0;
+      var hasSrc = !!(o.srcText && String(o.srcText).trim());
+      function full(){ showFocusOverlay(o.text); }
+      function single(){
+        tm = 0;
+        var row = o.srcRowId ? document.getElementById(o.srcRowId) : null;
+        var hidden = !!row && row.style.display === 'none';
+        var same = (el.input && (el.input.value || '') === o.srcText);
+        if(row && !hidden && same){ row.style.display = 'none'; return; }   // 이미 펼쳐져 있고 입력창도 같으면 접는다
+        if(row && hidden) row.style.display = '';
+        _fillInputFromOriginal(o.srcText);
+      }
+      bubble.addEventListener('click', function(){
+        if(tm){                                  // 300ms 안 두 번째 탭 = 전체화면
+          clearTimeout(tm); tm = 0;
+          if(o.arm){ _jumpTarget = null; try{ _syncJumpArmed(); }catch(_){} try{ el.input.blur(); }catch(_){} }
+          full(); return;
+        }
+        if(!hasSrc && !o.arm){ full(); return; }  // 원문이 없으면 종전처럼 1탭 전체화면
+        if(o.arm) _armReplyTo(o.arm);             // 메신저 출처: 키보드는 터치 직후에만 떠서 장전은 즉시
+        tm = setTimeout(function(){ tm = 0; if(hasSrc) single(); }, _TAP_MS);
+      });
+      // PC: 두 클릭 간격이 300ms 를 넘어도 더블클릭이면 전체화면
+      bubble.addEventListener('dblclick', function(){
+        if(tm){ clearTimeout(tm); tm = 0; }
+        if(!focusOverlay.classList.contains('active')) full();
+      });
+    }
+
     // ===== 안정 ID 기반 제자리 재번역 (v20.55t) =====
     // 재번역용 임시 대화쌍을 만들지 않고, send()가 targetMessageId의 말풍선을 직접 갱신한다.
     // 같은 오류에 자동·부팅·수동 Retry가 겹쳐도 요청은 하나만 실행한다.
@@ -6327,22 +6386,12 @@ label[for="maxTokens"], #maxTokens,
         const _msgrSrc = (m.role === 'assistant' && !_isErrorMessage(m) &&
                           (m.source === 'wechat' || m.source === 'feishu' || m.source === 'alipay'))
                          ? m.source : '';
-        if(_msgrSrc){
-          // 첫 클릭 즉시 답장 모드(키보드는 터치 직후에만 떠서 지연 불가),
-          // 320ms 안에 두 번째 클릭이 오면 답장 모드를 풀고 전체화면.
-          let _bt = 0;
-          bubble.addEventListener('click', function(){
-            if(_bt){
-              clearTimeout(_bt); _bt = 0;
-              _jumpTarget = null;
-              try{ _syncJumpArmed(); }catch(_){}
-              try{ el.input.blur(); }catch(_){}
-              showFocusOverlay(dispText);
-              return;
-            }
-            _armReplyTo(_msgrSrc);
-            _bt = setTimeout(function(){ _bt = 0; }, 320);
-          });
+        // ★p144(261013 범근님): 번역(출력) 말풍선 1탭 = 원문 펼침 + 입력창 자동 입력, 2탭 = 전체화면.
+        //   메신저 출처는 종전의 답장 모드 장전(1탭 즉시)을 유지하고, 2탭이면 장전을 풀고 전체화면.
+        //   오류 말풍선·내 글(user) 말풍선은 종전대로 1탭 전체화면.
+        if(m.role === 'assistant' && !_isErrorMessage(m)){
+          _bindOutBubbleTap(bubble, { text: dispText, arm: _msgrSrc, srcRowId: lastUserRowId,
+                                      srcText: String(lastUserText || '').replace(/^#\s*/, '') });
         } else {
           bubble.addEventListener('click', () => showFocusOverlay(dispText));
         }
@@ -6412,21 +6461,7 @@ label[for="maxTokens"], #maxTokens,
           editBtn.addEventListener('click', () => openEditGuide(srcForThisMsg, m.text, m));
           actions.appendChild(editBtn);
 
-          // ★ 원문 토글 버튼: 이 번역문 바로 위 원문(user row)을 펼침/접힘. 평소엔 원문 숨김 → 번역문이 화면에 더 많이 보임.
-          const srcRowId = lastUserRowId;
-          if(srcRowId){
-            const srcBtn = document.createElement('button');
-            srcBtn.className = 'copyPill';
-            srcBtn.type = 'button';
-            srcBtn.textContent = '원문';
-            srcBtn.addEventListener('click', () => {
-              var srcRow = document.getElementById(srcRowId);
-              if(!srcRow) return;
-              var nowHidden = (srcRow.style.display === 'none');
-              srcRow.style.display = nowHidden ? '' : 'none';
-            });
-            actions.appendChild(srcBtn);
-          }
+          // ★p144(261013 범근님): 단추 줄의 [원문] 단추 삭제. 기능은 출력 말풍선 1탭(_bindOutBubbleTap)이 대신한다.
           // ★p136(261011 범근님): 원문 옆 '개인'·'업무' 답변 단추. 원문이 중국어인 줄(중→한 번역)에만.
           //   누르면 바닥 시트에 답안 3장. 번역 경로와 무관한 별도 끝점(/reply_suggest)만 부른다.
           // ★p137: 맥락 = 같은 상대(보낸 사람)·같은 메신저의 직전 대화 3개(내가 보낸 것 포함), 없으면 없는 대로.
@@ -7191,7 +7226,7 @@ label[for="maxTokens"], #maxTokens,
           streamBubble.style.background = srcBubbleColor(_src);
           streamBubble.style.opacity = '1';
           streamBubble.style.cursor = 'pointer';
-          streamBubble.addEventListener('click', () => showFocusOverlay(translated));
+          _bindOutBubbleTap(streamBubble, { text: translated, arm: '', srcRowId: '', srcText: String(userText || '').replace(/^#\s*/, '') });   // ★p144 같은 1탭/2탭 규칙(원문 줄은 renderChat 이 다시 그린 뒤에 생긴다)
           if(el.autoCopy.checked && hasChinese(translated)){
             _enqueueAutoCopy(translated);
           } else {
@@ -7208,7 +7243,7 @@ label[for="maxTokens"], #maxTokens,
         streamBubble.style.background = srcBubbleColor(_src);   // 출처별 말풍선 색
         streamBubble.style.opacity = '1';
         streamBubble.style.cursor = 'pointer';
-        streamBubble.addEventListener('click', () => showFocusOverlay(translated));
+        _bindOutBubbleTap(streamBubble, { text: translated, arm: '', srcRowId: '', srcText: String(userText || '').replace(/^#\s*/, '') });   // ★p144 같은 1탭/2탭 규칙(원문 줄은 renderChat 이 다시 그린 뒤에 생긴다)
 
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
@@ -7236,23 +7271,7 @@ label[for="maxTokens"], #maxTokens,
         });
         actions.appendChild(editBtn);
 
-        // ★ 원문 토글 버튼(스트리밍 렌더). 직전 renderChat이 그린 마지막 user row(srcRow_<idx>)를 펼침/접힘.
-        var _lastUserIdx = -1;
-        for(var _ui = chat.length - 1; _ui >= 0; _ui--){ if(chat[_ui].role === 'user'){ _lastUserIdx = _ui; break; } }
-        if(_lastUserIdx >= 0){
-          var _streamSrcRowId = 'srcRow_' + _lastUserIdx;
-          var streamSrcBtn = document.createElement('button');
-          streamSrcBtn.className = 'copyPill';
-          streamSrcBtn.type = 'button';
-          streamSrcBtn.textContent = '원문';
-          streamSrcBtn.addEventListener('click', function(){
-            var srcRow = document.getElementById(_streamSrcRowId);
-            if(!srcRow) return;
-            var nowHidden = (srcRow.style.display === 'none');
-            srcRow.style.display = nowHidden ? '' : 'none';
-          });
-          actions.appendChild(streamSrcBtn);
-        }
+        // ★p144(261013 범근님): 스트리밍 렌더의 [원문] 단추도 삭제(출력 말풍선 1탭이 대신).
         // ★2026-08-13 범근님 지시: GM(제미나이 재번역) 버튼 삭제
         var _streamExtraRow = appendUsageLine(actions, _lastUsage, _ms, _displayModel, _lastEffort, _displayPromptVer, _ms1, _ms2, _pipelineInfo, _src);
         streamRow.appendChild(actions);
@@ -10513,6 +10532,9 @@ label[for="maxTokens"], #maxTokens,
 
     function autoResizeInput(){
       if(!el.input) return;
+      // ★p144: 코드로 값을 넣는 경로(수정 단추·원문 자동 입력·초안 복원·전송 뒤 비움)에서도 x·Copy 단추가 따라오게 한다.
+      //   updateInputCopyBtn 의 const(inputBtnWrap)가 아직 초기화 전이면 TDZ 예외라 삼킨다(시작 시 마지막 호출이 맞춘다).
+      try{ updateInputCopyBtn(); }catch(_){}
       // ★빈 입력창은 scrollHeight를 믿지 않고 인라인 높이 제거→CSS min-height로 복귀.
       //   (Android 잠금해제 직후 레이아웃 불안정 시 scrollHeight 오측정→입력창이 커진 채 남던 버그 v20.56t)
       if(!(el.input.value || '').trim()){
@@ -10549,13 +10571,19 @@ label[for="maxTokens"], #maxTokens,
       var hasText = !!el.input.value.trim();
       inputBtnWrap.style.display = hasText ? 'flex' : 'none';
       // 버튼 영역만큼 우측 padding 추가 → 텍스트가 버튼 뒤로 가려지지 않고 줄바꿈
-      el.input.style.paddingRight = hasText ? '96px' : '';
+      el.input.style.paddingRight = hasText ? '110px' : '';   // p144: Copy + x(44px) 가로 배치
+      if(!hasText) _hideInputUndo();
     }
+    var inputUndoBtn = document.getElementById('inputUndoBtn');
+    if(inputUndoBtn) inputUndoBtn.addEventListener('click', function(){
+      el.input.value = _undoPrev; _hideInputUndo(); autoResizeInput(); updateInputCopyBtn();
+      try{ el.input.focus(); }catch(_){}
+    });
     if(inputCopyBtn){
       inputCopyBtn.addEventListener('click', async () => { await copyToClipboard(el.input.value.trim(), false); });
     }
     if(inputClearBtn){
-      inputClearBtn.addEventListener('click', () => { el.input.value = ''; _clearDraft(); autoResizeInput(); updateInputCopyBtn(); el.input.focus(); });
+      inputClearBtn.addEventListener('click', () => { el.input.value = ''; _clearDraft(); _hideInputUndo(); autoResizeInput(); updateInputCopyBtn(); el.input.focus(); });   // p144: x 지우기 = 비우고 커서
     }
     updateInputCopyBtn();
 
