@@ -698,9 +698,19 @@
       --jumpW: 52px; --jumpH: 40px; --jumpGap: 12px;
       --jumpBottom: 88px; --jumpRight: 11px; --jumpOpacity: .33;
     }
+    /* ★p145(261013 범근님, 예시안 A): 입력창 위 [복사][삭제] 줄. 글이 있으면(.composer.hasAct) 보이고 W·F·A 스택을 46px 위로 올려 겹침을 피한다. */
+    #inputActRow{ position:absolute; right:0; bottom:calc(100% + 6px); display:none; gap:8px; z-index:6; pointer-events:auto; }
+    .composer.hasAct #inputActRow{ display:flex; }
+    #inputActRow button{ position:relative; display:inline-flex; align-items:center; justify-content:center; gap:6px; height:34px; padding:0 13px;
+      border:1px solid rgba(255,255,255,.16); border-radius:17px; background:rgba(30,41,59,.94); color:rgba(230,237,243,.88);
+      font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.35); -webkit-tap-highlight-color:transparent; }
+    #inputActRow button::after{ content:''; position:absolute; left:-4px; right:-4px; top:-6px; bottom:-6px; }   /* 터치 영역 세로 44px(알약 34 + 테두리 안쪽 기준 보정) */
+    #inputActRow button:active{ transform:scale(.96); }
+    #inputActRow svg{ fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .composer.hasAct #jumpAppWrap{ bottom: calc(var(--jumpBottom) + 46px); }
     #jumpAppWrap{
       display: none; position: absolute; right: var(--jumpRight); bottom: var(--jumpBottom);
-      flex-direction: column; gap: var(--jumpGap); z-index: 5; opacity: var(--jumpOpacity);
+      flex-direction: column; gap: var(--jumpGap); z-index: 5; opacity: var(--jumpOpacity); transition: bottom .15s ease;
       pointer-events: auto;   /* .composer 가 pointer-events:none 이라 명시 필수 */
     }
     .jumpApp{
@@ -1874,11 +1884,9 @@ label[for="maxTokens"], #maxTokens,
     <div class="composerRow">
       <div class="composerInner">
         <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
-        <!-- ★p144(261013 범근님): 글이 있으면 오른쪽 끝에 x 지우기 단추(44px 터치 영역), Copy 는 그 왼쪽. 글이 없으면 둘 다 숨김. -->
-        <div id="inputBtnWrap" style="display:none; position:absolute; right:4px; top:50%; transform:translateY(-50%); flex-direction:row; align-items:center; gap:2px;">
-          <button id="inputCopyBtn" type="button" style="border:none; background:rgba(255,255,255,.06); color:rgba(230,237,243,.7); border-radius:10px; padding:8px 10px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;">Copy</button>
-          <button id="inputClearBtn" type="button" aria-label="입력창 지우기" title="지우기" style="width:44px; height:44px; padding:0; border:none; background:transparent; color:rgba(230,237,243,.75); cursor:pointer; display:grid; place-items:center; -webkit-tap-highlight-color:transparent;"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" style="fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round;"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button>
-        </div>
+        <!-- ★p145(261013 범근님 "이걸로수정", 예시안 A): 입력창 바로 위 오른쪽 끝에 [복사][삭제] 알약 2개. 글이 1자 이상일 때만 보이고 비면 줄째 사라진다.
+             입력창 안의 x·Copy 단추는 없앴다. composerInner 기준 절대배치라 키보드로 입력창이 밀려도 바로 위에 붙어 따라간다. -->
+        <div id="inputActRow" role="group" aria-label="입력창 도구"><button id="inputCopyBtn" type="button" aria-label="입력창 글 복사"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>복사</span></button><button id="inputClearBtn" type="button" aria-label="입력창 지우기"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>삭제</span></button></div>
         <!-- ★p144: 원문 자동 입력이 기존 글을 덮어썼을 때 2초 동안만 뜨는 되돌리기 -->
         <button id="inputUndoBtn" type="button" style="display:none; position:absolute; left:8px; bottom:calc(100% + 6px); border:none; background:rgba(30,41,59,.95); color:#fbbf24; border-radius:12px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; box-shadow:0 2px 10px rgba(0,0,0,.4);">되돌리기</button>
       </div>
@@ -1896,7 +1904,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p144';
+    const APP_VERSION = 'v20.57p145';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -10533,7 +10541,7 @@ label[for="maxTokens"], #maxTokens,
     function autoResizeInput(){
       if(!el.input) return;
       // ★p144: 코드로 값을 넣는 경로(수정 단추·원문 자동 입력·초안 복원·전송 뒤 비움)에서도 x·Copy 단추가 따라오게 한다.
-      //   updateInputCopyBtn 의 const(inputBtnWrap)가 아직 초기화 전이면 TDZ 예외라 삼킨다(시작 시 마지막 호출이 맞춘다).
+      //   updateInputCopyBtn 의 const(inputActRow)가 아직 초기화 전이면 TDZ 예외라 삼킨다(시작 시 마지막 호출이 맞춘다).
       try{ updateInputCopyBtn(); }catch(_){}
       // ★빈 입력창은 scrollHeight를 믿지 않고 인라인 높이 제거→CSS min-height로 복귀.
       //   (Android 잠금해제 직후 레이아웃 불안정 시 scrollHeight 오측정→입력창이 커진 채 남던 버그 v20.56t)
@@ -10563,15 +10571,15 @@ label[for="maxTokens"], #maxTokens,
       el.input.addEventListener('input', () => { autoResizeInput(); updateInputCopyBtn(); });
     }
 
-    const inputBtnWrap = document.getElementById('inputBtnWrap');
+    const inputActRow = document.getElementById('inputActRow');
     const inputCopyBtn = document.getElementById('inputCopyBtn');
     const inputClearBtn = document.getElementById('inputClearBtn');
+    const _composerForAct = document.querySelector('.composer');
+    // 함수 이름은 호출처가 많아 유지. p145: 입력창 위 [복사][삭제] 줄과 W·F·A 스택 위치(.composer.hasAct)를 입력창 글 유무에 맞춘다.
     function updateInputCopyBtn(){
-      if(!inputBtnWrap || !el.input) return;
+      if(!inputActRow || !el.input) return;
       var hasText = !!el.input.value.trim();
-      inputBtnWrap.style.display = hasText ? 'flex' : 'none';
-      // 버튼 영역만큼 우측 padding 추가 → 텍스트가 버튼 뒤로 가려지지 않고 줄바꿈
-      el.input.style.paddingRight = hasText ? '110px' : '';   // p144: Copy + x(44px) 가로 배치
+      if(_composerForAct) _composerForAct.classList.toggle('hasAct', hasText);
       if(!hasText) _hideInputUndo();
     }
     var inputUndoBtn = document.getElementById('inputUndoBtn');
@@ -10580,10 +10588,16 @@ label[for="maxTokens"], #maxTokens,
       try{ el.input.focus(); }catch(_){}
     });
     if(inputCopyBtn){
-      inputCopyBtn.addEventListener('click', async () => { await copyToClipboard(el.input.value.trim(), false); });
+      var _copyLblTimer = 0;
+      inputCopyBtn.addEventListener('click', async () => {
+        var ok = false;
+        try{ ok = await copyToClipboard(el.input.value.trim(), false); }catch(_){}
+        var sp = inputCopyBtn.querySelector('span');
+        if(sp){ sp.textContent = ok ? '복사됨' : '실패'; clearTimeout(_copyLblTimer); _copyLblTimer = setTimeout(function(){ sp.textContent = '복사'; }, 1200); }
+      });
     }
     if(inputClearBtn){
-      inputClearBtn.addEventListener('click', () => { el.input.value = ''; _clearDraft(); _hideInputUndo(); autoResizeInput(); updateInputCopyBtn(); el.input.focus(); });   // p144: x 지우기 = 비우고 커서
+      inputClearBtn.addEventListener('click', () => { el.input.value = ''; _clearDraft(); _hideInputUndo(); autoResizeInput(); updateInputCopyBtn(); el.input.focus(); });   // p145: 삭제 = 비우고 커서
     }
     updateInputCopyBtn();
 
