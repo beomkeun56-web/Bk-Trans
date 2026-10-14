@@ -1385,6 +1385,13 @@ label[for="maxTokens"], #maxTokens,
       </div>
 
         <div style="margin-bottom:24px;">
+          <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text); cursor:pointer; padding:12px; background:rgba(255,255,255,.03); border-radius:12px;">
+            <input id="bkFullscreenToggle" type="checkbox" checked style="width:18px; height:18px; accent-color: var(--blue); cursor:pointer;" />
+            <span style="font-size:calc(13px * var(--textScale));">설치형 전체화면 (앱으로 열었을 때 첫 터치에 작업표시줄 숨김)</span>
+          </label>
+        </div>
+
+        <div style="margin-bottom:24px;">
           <label for="fontScale" style="font-size:calc(13px * var(--textScale)); font-weight:600; margin-bottom:12px; display:block;">글자 크기</label>
           <div class="row" style="align-items:center; gap:12px;">
             <input id="fontScale" type="range" min="0.85" max="1.35" step="0.05" value="1" style="flex:1 1 auto;" />
@@ -1904,7 +1911,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p145';
+    const APP_VERSION = 'v20.57p146';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4489,6 +4496,7 @@ label[for="maxTokens"], #maxTokens,
       try{
         _isTWAcache = document.referrer.startsWith('android-app://')
           || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+          || (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches)   // p146: manifest display=fullscreen 으로 열려도 설치형(앱)으로 판정
           || (navigator.standalone === true);
       }catch(e){ _isTWAcache = false; }
       return _isTWAcache;
@@ -11027,6 +11035,72 @@ label[for="maxTokens"], #maxTokens,
       });
       // 자동 채움(재번역·편집 등)으로 값이 들어오면 접힌 채로 숨지 않게 편다.
       window.bkExpandComposer = expand;
+    })();
+
+    // ===== p146 (261014 범근님): 설치형 PWA 전체화면 =====
+    // manifest display=fullscreen 이 데스크톱에서 standalone 으로 떨어져도 작업표시줄을 숨기도록, 설치형으로 열렸을 때
+    // 첫 터치/클릭에서 Fullscreen API 를 1회만 요청한다. 브라우저 탭(일반 웹)에서는 아무 동작도 하지 않는다.
+    // 순수 결정 함수(시험용): env = {installed, enabled, hasFsEl, tried, escaped, supported}
+    function bkFsShouldRequest(env){
+      return !!(env && env.installed && env.enabled && env.supported && !env.hasFsEl && !env.tried && !env.escaped);
+    }
+    // 컨트롤러: io = {installed(), enabled(), hasFsEl(), supported(), request(), getFlag(k), setFlag(k,v)}
+    function bkFsController(io){
+      return {
+        onTap: function(){
+          var env = {
+            installed: io.installed(), enabled: io.enabled(), hasFsEl: io.hasFsEl(), supported: io.supported(),
+            tried: io.getFlag('bk_fs_tried') === '1', escaped: io.getFlag('bk_fs_esc') === '1'
+          };
+          if(!bkFsShouldRequest(env)) return false;
+          io.setFlag('bk_fs_tried', '1');
+          try{ io.request(); }catch(_){}
+          return true;
+        },
+        onFsChange: function(){
+          // 우리가 요청한 뒤 전체화면이 풀렸다 = 사용자가 Esc 등으로 나감 -> 이 실행에서는 다시 시도하지 않음
+          if(io.getFlag('bk_fs_tried') === '1' && !io.hasFsEl()) io.setFlag('bk_fs_esc', '1');
+        }
+      };
+    }
+    (function(){
+      var KEY = 'bk_tr_pro_fullscreen';
+      var tg = document.getElementById('bkFullscreenToggle');
+      function enabled(){ try{ return (localStorage.getItem(KEY) || '1') !== '0'; }catch(_){ return true; } }
+      if(tg){
+        tg.checked = enabled();
+        tg.addEventListener('change', function(){ try{ localStorage.setItem(KEY, tg.checked ? '1' : '0'); }catch(_){} });
+      }
+      function installed(){
+        try{
+          var mm = function(q){ return !!(window.matchMedia && window.matchMedia(q).matches); };
+          return mm('(display-mode: standalone)') || mm('(display-mode: fullscreen)') || navigator.standalone === true;
+        }catch(_){ return false; }
+      }
+      var de = document.documentElement;
+      var ctl = bkFsController({
+        installed: installed,
+        enabled: enabled,
+        hasFsEl: function(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); },
+        supported: function(){ return !!(de.requestFullscreen || de.webkitRequestFullscreen); },
+        request: function(){
+          var r;
+          if(de.requestFullscreen) r = de.requestFullscreen({ navigationUI: 'hide' });
+          else r = de.webkitRequestFullscreen();
+          if(r && r.catch) r.catch(function(){});
+        },
+        getFlag: function(k){ try{ return sessionStorage.getItem(k); }catch(_){ return null; } },
+        setFlag: function(k, v){ try{ sessionStorage.setItem(k, v); }catch(_){} }
+      });
+      window.__bkFs = ctl;
+      if(!installed()) return;   // 브라우저 탭: 리스너도 달지 않음
+      var onTap = function(){
+        var done = false;
+        try{ done = ctl.onTap(); }catch(_){}
+        if(done){ document.removeEventListener('click', onTap, true); }
+      };
+      document.addEventListener('click', onTap, true);
+      document.addEventListener('fullscreenchange', function(){ try{ ctl.onFsChange(); }catch(_){} });
     })();
 
     if(location.protocol !== 'https:' && location.hostname !== 'localhost'){

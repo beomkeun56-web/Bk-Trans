@@ -5,8 +5,14 @@
   "id": "/Bk-Trans/Bk-Trans-Pro/",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
-  "launch_handler": { "client_mode": "focus-existing" },
+  "display": "fullscreen",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
   "orientation": "portrait",
   "background_color": "#050505",
   "theme_color": "#050505",
