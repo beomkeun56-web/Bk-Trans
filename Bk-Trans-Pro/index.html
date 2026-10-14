@@ -1911,7 +1911,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p148';
+    const APP_VERSION = 'v20.57p149';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -4153,6 +4153,14 @@ label[for="maxTokens"], #maxTokens,
     let _lastApiCallAt = 0;
     let _skipRequestGap = false; // 파이프라인 내부 호출에서는 gap 우회 (run4/run2AgentPipeline에서 set)
     let _effortOverride = undefined; // 재번역 시 일시적 effort 지정 ('' = 기본/thinking 최대, 'low' 등)
+    // p149(261015 범근님 '표시남기도록 수정'): 사용자가 직접 다시 번역시킨 요청(모델 선택 재번역·GM 버튼)에만 켜진다.
+    //   두뇌서버 요청 본문에 retx:1 을 실어 서버 translate 로그에 남기게 한다(야간 학습이 기본과 같은 모델을 다시 고른 재번역까지 구분).
+    //   번역 내용·엔진·캐시 키에는 영향 없음. 두뇌서버 주소(sslip.io)가 아니면 본문에 붙이지 않는다.
+    let _explicitRetx = false;
+    function _markRetxBody(body, url, on){
+      if(on && body && typeof body === 'object' && String(url || '').indexOf('sslip.io') >= 0) body.retx = 1;
+      return body;
+    }
     let _lastUsage = null; // 직전 응답의 토큰 사용량
     let _lastEffort = ''; // 직전 요청에 적용된 effort (low/medium/high), 없으면 ''
     let _showTokens = localStorage.getItem(LS.showTokens) === '1';
@@ -4611,6 +4619,7 @@ label[for="maxTokens"], #maxTokens,
 
       let res;
       try{
+        _markRetxBody(req.body, req.url, _explicitRetx);
         res = await fetch(req.url, {
           method: 'POST',
           headers: req.headers,
@@ -5914,7 +5923,9 @@ label[for="maxTokens"], #maxTokens,
       _use4Agent = false; // 일반 모델 1회성 — Agent Mode 우회
       updateModelTag();
       if(effortOverride !== undefined) _effortOverride = effortOverride;
+      _explicitRetx = true;
       send({ overrideText: userText }).finally(() => {
+        _explicitRetx = false;
         el.model.value = prev;
         setSavedModel(prev);
         _use4Agent = prev4;
@@ -5934,7 +5945,9 @@ label[for="maxTokens"], #maxTokens,
       _use4Agent = false; // 일반 모델 1회성 — Agent Mode 우회
       updateModelTag();
       if(effortOverride !== undefined) _effortOverride = effortOverride;
+      _explicitRetx = true;
       send({ overrideText: userText }).finally(() => {
+        _explicitRetx = false;
         if(providerId && el.apiProvider) el.apiProvider.value = prevProvider;
         if(prevModel && el.model) el.model.value = prevModel;
         _use4Agent = prev4;
@@ -6933,11 +6946,13 @@ label[for="maxTokens"], #maxTokens,
         // ★2026-08-12: 원문은 overrideText 로 넘긴다. 입력창을 바꿨다 되돌리는 옛 방식은
         //   재번역 중 사용자가 타이핑하면 글이 사라지는 창이 있었다.
         if(el.model) el.model.value = modelId;
+        _explicitRetx = true;
         await send({ programmatic: true, overrideText: srcText });
       } catch(e){
         try{ toast('재번역 실패: ' + (e && e.message ? e.message : e)); }catch(_){}
       } finally {
         // 사용자의 기본 모델 설정을 건드리지 않는다(localStorage 는 저장하지 않음).
+        _explicitRetx = false;
         if(el.model) el.model.value = prevModel;
       }
     }
