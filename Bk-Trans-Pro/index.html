@@ -1386,8 +1386,8 @@ label[for="maxTokens"], #maxTokens,
 
         <div style="margin-bottom:24px;">
           <label style="margin:0; display:flex; align-items:center; gap:10px; color:var(--text); cursor:pointer; padding:12px; background:rgba(255,255,255,.03); border-radius:12px;">
-            <input id="bkFullscreenToggle" type="checkbox" checked style="width:18px; height:18px; accent-color: var(--blue); cursor:pointer;" />
-            <span style="font-size:calc(13px * var(--textScale));">설치형 전체화면 (앱으로 열었을 때 첫 터치에 작업표시줄 숨김)</span>
+            <input id="bkFullscreenToggle" type="checkbox" style="width:18px; height:18px; accent-color: var(--blue); cursor:pointer;" />
+            <span style="font-size:calc(13px * var(--textScale));">PC 작업표시줄 강제 숨김 (켜면 앱을 열 때마다 브라우저 전체화면 안내가 뜸, 기본 끔)</span>
           </label>
         </div>
 
@@ -1911,7 +1911,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p147';
+    const APP_VERSION = 'v20.57p148';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -11069,9 +11069,12 @@ label[for="maxTokens"], #maxTokens,
       };
     }
     (function(){
-      var KEY = 'bk_tr_pro_fullscreen';
+      // p148 (261014 범근님 '전체화면 전환 팝업 계속 나옴, 안 뜨게'): requestFullscreen 은 부를 때마다 브라우저가
+      //   전체화면 안내를 띄우고, 세션 깃발이라 앱을 새로 열 때마다 다시 불렸다. 전체화면은 manifest display=fullscreen 에
+      //   맡기고, 강제 요청은 사용자가 직접 켠 경우만(새 키, 기본 끔). 옛 키 bk_tr_pro_fullscreen 은 더 읽지 않는다.
+      var KEY = 'bk_tr_pro_fs_optin';
       var tg = document.getElementById('bkFullscreenToggle');
-      function enabled(){ try{ return (localStorage.getItem(KEY) || '1') !== '0'; }catch(_){ return true; } }
+      function enabled(){ try{ return localStorage.getItem(KEY) === '1'; }catch(_){ return false; } }
       if(tg){
         tg.checked = enabled();
         tg.addEventListener('change', function(){ try{ localStorage.setItem(KEY, tg.checked ? '1' : '0'); }catch(_){} });
@@ -11079,7 +11082,8 @@ label[for="maxTokens"], #maxTokens,
       function installed(){
         try{
           var mm = function(q){ return !!(window.matchMedia && window.matchMedia(q).matches); };
-          return mm('(display-mode: standalone)') || mm('(display-mode: fullscreen)') || navigator.standalone === true;
+          // p148: display-mode fullscreen 이면 manifest 로 이미 전체화면이라 다시 요청하지 않는다(안내만 뜸)
+          return mm('(display-mode: standalone)') || navigator.standalone === true;
         }catch(_){ return false; }
       }
       var de = document.documentElement;
