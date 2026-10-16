@@ -1911,7 +1911,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p149';
+    const APP_VERSION = 'v20.57p150';
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -5745,15 +5745,28 @@ label[for="maxTokens"], #maxTokens,
       if(typeof window.bkExpandComposer === 'function') window.bkExpandComposer();   // 접힌 입력창이면 펴서 글이 보이게
       autoResizeInput();
     }
-    // o: { text: 전체화면에 띄울 글, arm: 메신저 출처('wechat'|'feishu'|'alipay'|''), srcRowId: 원문 줄 id, srcText: 원문 글 }
+    // ★p150(261016 범근님 '수집으로 온 메세지는 원래기능대로, 내가 입력한것만 입력창에 내용표시'):
+    //   사용자 직접 입력(source 'typing'·popupId 없음) 말풍선만 1탭에 입력창을 채운다.
+    //   수집 말풍선(팝업 대기열·URL·클립·메신저 알림)은 입력창을 건드리지 않고, 메신저면 답장 모드만 장전(p143 원래 동작),
+    //   원문 줄 펼침/접힘은 p144 대로 유지([원문] 단추가 없어 이것이 원문을 보는 유일한 길).
+    function _isTypedMsg(m){
+      if(!m || m.popupId) return false;
+      var s = m.source || 'typing';
+      return s === 'typing';
+    }
+    // o: { text: 전체화면에 띄울 글, arm: 메신저 출처('wechat'|'feishu'|'alipay'|''), srcRowId: 원문 줄 id, srcText: 원문 글,
+    //      fill: true=사용자 입력 말풍선(입력창 자동 입력) / false=수집 말풍선(입력창 안 건드림) }
     function _bindOutBubbleTap(bubble, o){
       var tm = 0;
+      var fill = (o.fill !== false);
       var hasSrc = !!(o.srcText && String(o.srcText).trim());
+      var canSingle = fill ? hasSrc : !!o.srcRowId;
       function full(){ showFocusOverlay(o.text); }
       function single(){
         tm = 0;
         var row = o.srcRowId ? document.getElementById(o.srcRowId) : null;
         var hidden = !!row && row.style.display === 'none';
+        if(!fill){ if(row) row.style.display = hidden ? '' : 'none'; return; }   // 수집 말풍선: 원문 줄만 펼침/접힘
         var same = (el.input && (el.input.value || '') === o.srcText);
         if(row && !hidden && same){ row.style.display = 'none'; return; }   // 이미 펼쳐져 있고 입력창도 같으면 접는다
         if(row && hidden) row.style.display = '';
@@ -5765,9 +5778,9 @@ label[for="maxTokens"], #maxTokens,
           if(o.arm){ _jumpTarget = null; try{ _syncJumpArmed(); }catch(_){} try{ el.input.blur(); }catch(_){} }
           full(); return;
         }
-        if(!hasSrc && !o.arm){ full(); return; }  // 원문이 없으면 종전처럼 1탭 전체화면
+        if(!canSingle && !o.arm){ full(); return; }  // 1탭에 할 일이 없으면 종전처럼 1탭 전체화면
         if(o.arm) _armReplyTo(o.arm);             // 메신저 출처: 키보드는 터치 직후에만 떠서 장전은 즉시
-        tm = setTimeout(function(){ tm = 0; if(hasSrc) single(); }, _TAP_MS);
+        tm = setTimeout(function(){ tm = 0; if(canSingle) single(); }, _TAP_MS);
       });
       // PC: 두 클릭 간격이 300ms 를 넘어도 더블클릭이면 전체화면
       bubble.addEventListener('dblclick', function(){
@@ -6420,7 +6433,8 @@ label[for="maxTokens"], #maxTokens,
         //   오류 말풍선·내 글(user) 말풍선은 종전대로 1탭 전체화면.
         if(m.role === 'assistant' && !_isErrorMessage(m)){
           _bindOutBubbleTap(bubble, { text: dispText, arm: _msgrSrc, srcRowId: lastUserRowId,
-                                      srcText: String(lastUserText || '').replace(/^#\s*/, '') });
+                                      srcText: String(lastUserText || '').replace(/^#\s*/, ''),
+                                      fill: _isTypedMsg(m) });   // ★p150 사용자 입력만 입력창 채움
         } else {
           bubble.addEventListener('click', () => showFocusOverlay(dispText));
         }
@@ -7257,7 +7271,7 @@ label[for="maxTokens"], #maxTokens,
           streamBubble.style.background = srcBubbleColor(_src);
           streamBubble.style.opacity = '1';
           streamBubble.style.cursor = 'pointer';
-          _bindOutBubbleTap(streamBubble, { text: translated, arm: '', srcRowId: '', srcText: String(userText || '').replace(/^#\s*/, '') });   // ★p144 같은 1탭/2탭 규칙(원문 줄은 renderChat 이 다시 그린 뒤에 생긴다)
+          _bindOutBubbleTap(streamBubble, { text: translated, arm: '', srcRowId: '', srcText: String(userText || '').replace(/^#\s*/, ''), fill: (_src === 'typing') });   // ★p144 같은 1탭/2탭 규칙(원문 줄은 renderChat 이 다시 그린 뒤에 생긴다)
           if(el.autoCopy.checked && hasChinese(translated)){
             _enqueueAutoCopy(translated);
           } else {
@@ -7274,7 +7288,7 @@ label[for="maxTokens"], #maxTokens,
         streamBubble.style.background = srcBubbleColor(_src);   // 출처별 말풍선 색
         streamBubble.style.opacity = '1';
         streamBubble.style.cursor = 'pointer';
-        _bindOutBubbleTap(streamBubble, { text: translated, arm: '', srcRowId: '', srcText: String(userText || '').replace(/^#\s*/, '') });   // ★p144 같은 1탭/2탭 규칙(원문 줄은 renderChat 이 다시 그린 뒤에 생긴다)
+        _bindOutBubbleTap(streamBubble, { text: translated, arm: '', srcRowId: '', srcText: String(userText || '').replace(/^#\s*/, ''), fill: (_src === 'typing') });   // ★p144 같은 1탭/2탭 규칙(원문 줄은 renderChat 이 다시 그린 뒤에 생긴다)
 
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
