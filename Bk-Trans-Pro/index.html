@@ -9,6 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="BK Trans" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <script>try{ if(localStorage.getItem('bk_iphone_duo')==='1') document.documentElement.classList.add('iduo'); }catch(_){}</script>
   <title>BK Trans</title>
 
   <script>
@@ -61,6 +63,9 @@
 
   <style>
     :root{
+      /* p151: 아이폰 듀오 등 옆쪽 상태 줄 좌우 안전 영역. 안드로이드·PC 는 0px. */
+      --safe-l: 0px;
+      --safe-r: 0px;
       --bg:#050505;
       --panel1:#0b0f14;
       --panel2:#0e1420;
@@ -123,6 +128,12 @@
       --chatTopFadeHeight: 24px;
     }
 
+    /* p151: 아이폰 듀오 모드(메뉴에서 켬)일 때만 좌우 안전 영역을 쓴다. 꺼짐=갤럭시·PC 와 동일(0px). */
+    :root.iduo{
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+    }
+
     @font-face{
       font-family:"BKRepoFont";
       src:url("./assets/fonts/NEXONLv2Gothic.woff2") format("woff2");
@@ -146,7 +157,7 @@
 
     header{
       position:sticky; top:0; z-index:70;
-      padding: 0 var(--headerHPadding) 0;
+      padding: 0 calc(var(--headerHPadding) + var(--safe-r)) 0 calc(var(--headerHPadding) + var(--safe-l));
       padding-top: calc(var(--headerSpacing) + env(safe-area-inset-top));
       background: var(--bg);
     }
@@ -342,8 +353,8 @@
       flex:1;
       overflow:hidden;
       padding-top: var(--headerSpacing);
-      padding-left: var(--chatSpacing);
-      padding-right: var(--chatSpacing);
+      padding-left: calc(var(--chatSpacing) + var(--safe-l));
+      padding-right: calc(var(--chatSpacing) + var(--safe-r));
       padding-bottom: 100px;
       display:flex;
       flex-direction:column;
@@ -405,7 +416,7 @@
       z-index:200;
       background: rgba(0,0,0,.75);
       align-items:center; justify-content:center;
-      padding: 20px;
+      padding: 20px calc(20px + var(--safe-r)) 20px calc(20px + var(--safe-l));
     }
     .settingsOverlay.show{
       display:flex;
@@ -573,7 +584,7 @@
       display:none; position:fixed; top:0; left:0; width:100%; height:100%;
       background:rgba(0,0,0,.95); z-index:9999;
       justify-content:center; align-items:center;
-      padding:24px; box-sizing:border-box; cursor:pointer;
+      padding:24px calc(24px + var(--safe-r)) 24px calc(24px + var(--safe-l)); box-sizing:border-box; cursor:pointer;
     }
     .focusOverlay.active{display:flex}
     .focusOverlay .focusText{
@@ -645,7 +656,7 @@
 
     .composer{
       position:fixed; left:0; right:0; bottom:0; z-index:40;
-      padding: 0 var(--composerPadding) calc(var(--keyboardSpacing) + env(safe-area-inset-bottom));
+      padding: 0 calc(var(--composerPadding) + var(--safe-r)) calc(var(--keyboardSpacing) + env(safe-area-inset-bottom)) calc(var(--composerPadding) + var(--safe-l));
       background: transparent;
       pointer-events:none;
       transition: background 0.3s, backdrop-filter 0.3s;
@@ -709,7 +720,7 @@
     #inputActRow svg{ fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     .composer.hasAct #jumpAppWrap{ bottom: calc(var(--jumpBottom) + 46px); }
     #jumpAppWrap{
-      display: none; position: absolute; right: var(--jumpRight); bottom: var(--jumpBottom);
+      display: none; position: absolute; right: calc(var(--jumpRight) + var(--safe-r)); bottom: var(--jumpBottom);
       flex-direction: column; gap: var(--jumpGap); z-index: 5; opacity: var(--jumpOpacity); transition: bottom .15s ease;
       pointer-events: auto;   /* .composer 가 pointer-events:none 이라 명시 필수 */
     }
@@ -737,6 +748,29 @@
     .jumpApp[data-app="wechat"]{ color: #3ec46d; border-color: rgba(62,196,109,.55); }
     .jumpApp[data-app="feishu"]{ color: #a86ff0; border-color: rgba(168,111,240,.55); }
     .jumpApp[data-app="alipay"]{ color: #3d8ef5; border-color: rgba(61,142,245,.55); }
+    /* p151: 아이폰 듀오 모드에서만 보이는 붙여넣기 번역 버튼 */
+    #iduoPasteBtn{ display:none; }
+    :root.iduo #iduoPasteBtn{
+      display:flex; align-items:center; justify-content:center;
+      position:absolute; left:calc(var(--composerPadding) + var(--safe-l)); bottom:var(--jumpBottom); z-index:6;
+      min-width:72px; min-height:48px; padding:0 14px;
+      border:1px solid rgba(255,255,255,.18); background:var(--sendBtnBg); color:#fff;
+      border-radius:16px; font-weight:700; font-size:13px; line-height:1.25; text-align:center;
+      cursor:pointer; font-family:inherit; box-shadow:0 4px 16px rgba(0,0,0,.35);
+      pointer-events:auto; transition:bottom .15s ease;
+    }
+    /* p151 검수 보완: 듀오 모드에서 좁은 폭(safe 가산)일 때 버전 배지(API 설정 입구)가 잘리지 않게 한다.
+       배지·제목은 줄이지 않고, 모델 이름표를 줄여(말줄임) 자리를 만든다. */
+    :root.iduo .topbar .title{ flex-shrink:0; overflow:visible; }
+    :root.iduo .topbar #appVer{ flex-shrink:0; }
+    :root.iduo .topbar #modelTag{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    @media (max-width: 520px){
+      /* 좁은 폭: 'BK Trans' 글자는 숨기고(글자 크기 0) 버전 배지만 남겨 모델 이름표 자리를 확보 */
+      :root.iduo .topbar .title{ font-size:0; gap:0; }
+      :root.iduo .topbar #appVer{ font-size: calc(9px * var(--textScale)); }
+    }
+    /* 입력창이 접힌 평상시에는 입력 줄 자리가 비므로 화면 아래쪽에 붙인다 */
+    :root.iduo .composer.collapsed #iduoPasteBtn{ bottom:calc(var(--keyboardSpacing) + env(safe-area-inset-bottom)); }
     #composerModelBtn{
       flex: 0 0 56px;
       min-height: var(--inputMinHeight);
@@ -777,7 +811,7 @@
 
     .toast{
       position:fixed;
-      left:50%;
+      left:calc(50% + (var(--safe-l) - var(--safe-r)) / 2);
       top:70px;
       transform:translateX(-50%);
       background: rgba(10,16,32,.92);
@@ -790,18 +824,18 @@
       opacity:0;
       pointer-events:none;
       transition: opacity .25s ease;
-      max-width: 90vw;
+      max-width: calc((100vw - var(--safe-l) - var(--safe-r)) * .9);
       z-index: 999;
     }
     .toast.show{opacity:1}
 
     .copyBar{
       position:fixed;
-      left:50%;
+      left:calc(50% + (var(--safe-l) - var(--safe-r)) / 2);
       transform:translateX(-50%);
       bottom: calc(74px + env(safe-area-inset-bottom));
       z-index: 60;
-      width: min(860px, 92vw);
+      width: min(860px, calc((100vw - var(--safe-l) - var(--safe-r)) * .92));
       display:flex;
       align-items:center;
       gap:10px;
@@ -824,8 +858,10 @@
     .hidden{display:none !important}
 
     @media (max-width: 520px){
-      header{padding: 0; padding-top: env(safe-area-inset-top);}
+      header{padding: 0 var(--safe-r) 0 var(--safe-l); padding-top: env(safe-area-inset-top);}
       .headerInner{border-radius:0; padding:0;}
+      /* p151: 상단바 배경이 옆 상태 줄 아래까지 이어지게(글·버튼은 header 안쪽 여백 안) */
+      :root.iduo .headerInner::before{content:""; position:absolute; z-index:-1; top:0; bottom:0; left:calc(0px - var(--safe-l)); right:calc(0px - var(--safe-r)); background:var(--headerBg); pointer-events:none}
       .topbar{gap:4px; padding: 0 10px;}
       .title{font-size: calc(12px * var(--textScale)); gap:4px}
       .ver{font-size: calc(9px * var(--textScale)); padding:2px 6px}
@@ -836,9 +872,10 @@
       .iconBtn svg{width:18px; height:18px}
       .statusBtn{width:32px; height:32px; flex:0 0 32px}
       .rightBtns{gap:0}
-      main{padding-top: var(--headerSpacing); padding-left: var(--chatSpacing); padding-right: var(--chatSpacing); padding-bottom: var(--inputSpacing);}
+      main{padding-top: var(--headerSpacing); padding-left: calc(var(--chatSpacing) + var(--safe-l)); padding-right: calc(var(--chatSpacing) + var(--safe-r)); padding-bottom: var(--inputSpacing);}
       .bubble{font-size: calc(16px * var(--chatScale))}
-      .composer{padding: 0 6px calc(6px + env(safe-area-inset-bottom)); padding-top:6px;}
+      .composer{padding: 0 calc(6px + var(--safe-r)) calc(6px + env(safe-area-inset-bottom)) calc(6px + var(--safe-l)); padding-top:6px;}
+      :root.iduo #iduoPasteBtn{left:calc(6px + var(--safe-l))}
       .composerInner{border-radius:16px}
       #input{padding: 20px 50px 20px 16px; min-height: var(--inputMinHeight)}
     }
@@ -846,7 +883,7 @@
     /* 상단바 토글 — 평소 숨김, ✦ 버튼으로 표시 */
     .topbar.tbHidden{ display:none !important; }
     #tbToggle{
-      position:fixed; top:6px; right:8px; z-index:9999;
+      position:fixed; top:6px; right:calc(8px + var(--safe-r)); z-index:9999;
       width:30px; height:30px; border-radius:50%;
       background:rgba(255,255,255,.06); color:rgba(255,255,255,.45);
       border:1px solid rgba(255,255,255,.10);
@@ -857,7 +894,7 @@
     #tbToggle:hover{ background:rgba(255,255,255,.12); color:#fff; }
     #tbToggle.tbOpen{ color:#fff; background:rgba(255,255,255,.14); }
     #tbReload, #tbClear{
-      position:fixed; top:42px; right:8px; z-index:9999;
+      position:fixed; top:42px; right:calc(8px + var(--safe-r)); z-index:9999;
       width:30px; height:30px; border-radius:50%;
       background:rgba(255,255,255,.06); color:rgba(255,255,255,.45);
       border:1px solid rgba(255,255,255,.10);
@@ -964,6 +1001,13 @@ label[for="maxTokens"], #maxTokens,
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
                 <span>색상 · 폰트</span>
+              </button>
+              <button id="iduoModeBtn" class="menuDropdownItem" type="button" role="menuitem">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="7" y="2" width="10" height="20" rx="2"></rect>
+                  <line x1="11" y1="18" x2="13" y2="18"></line>
+                </svg>
+                <span id="iduoModeLabel">아이폰 듀오 모드 · 꺼짐</span>
               </button>
               <button id="topSaveBtn" class="menuDropdownItem" type="button" role="menuitem">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1888,6 +1932,7 @@ label[for="maxTokens"], #maxTokens,
       <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">F</button>
       <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">A</button>
     </div>
+    <button id="iduoPasteBtn" type="button" aria-label="클립보드 붙여넣기 번역">붙여넣기<br>번역</button>
     <div class="composerRow">
       <div class="composerInner">
         <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
@@ -1911,7 +1956,13 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p150';
+    const APP_VERSION = 'v20.57p151';
+
+    // p151: 기기 표식 공용 함수. 아이폰 듀오 모드 켜짐이면 'iphone', 아니면 기존식 그대로('phone'/'pc').
+    function _bkDev(){
+      try{ if(document.documentElement.classList.contains('iduo')) return 'iphone'; }catch(_){}
+      return /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
+    }
 
     // ===== Service Worker 등록 (v20.39t) =====
     // cold start(잠금 중 프로세스 사망 후 재시작) 때 네트워크가 안 붙어 있어도
@@ -1997,7 +2048,7 @@ label[for="maxTokens"], #maxTokens,
             b.textContent = '오프라인 — 연결 대기 중';
             b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
               + 'background:#7a1f1f;color:#fff;font-size:12px;text-align:center;'
-              + 'padding:4px 8px;letter-spacing:.3px;';
+              + 'padding:4px calc(8px + var(--safe-r)) 4px calc(8px + var(--safe-l));letter-spacing:.3px;';
             document.body.appendChild(b);
           }
         } else if(b){ b.remove(); }
@@ -2632,9 +2683,9 @@ label[for="maxTokens"], #maxTokens,
 
     function showModelEditor(){
       var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px var(--safe-r) 20px var(--safe-l);';
       var popup = document.createElement('div');
-      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;width:90vw;max-width:400px;max-height:85vh;overflow-y:auto;';
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;width:calc((100vw - var(--safe-l) - var(--safe-r)) * .9);max-width:400px;max-height:85vh;overflow-y:auto;';
       popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">모델 관리 (' + (isGoogleProvider() ? 'Google' : isAnthropicProvider() ? 'Anthropic' : isQwenProvider() ? 'Alibaba' : 'OpenRouter') + ')</div>';
 
       var rows = [];
@@ -2811,7 +2862,7 @@ label[for="maxTokens"], #maxTokens,
       if(existing){ document.body.removeChild(existing); return; }
       var overlay = document.createElement('div');
       overlay.id = 'composerModelPickerOverlay';
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;padding:0 12px 12px;';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;padding:0 calc(12px + var(--safe-r)) 12px calc(12px + var(--safe-l));';
       var popup = document.createElement('div');
       popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:16px;width:100%;max-width:520px;max-height:80vh;overflow-y:auto;';
       popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:12px;">제공자·모델 선택</div>';
@@ -5972,9 +6023,9 @@ label[for="maxTokens"], #maxTokens,
     function showRetranslatePopup(userText){
       if(_isBusy) return;
       var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:0 var(--safe-r) 0 var(--safe-l);';
       var popup = document.createElement('div');
-      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;min-width:260px;max-width:90vw;';
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:20px;min-width:260px;max-width:calc((100vw - var(--safe-l) - var(--safe-r)) * .9);';
       popup.innerHTML = '<div style="color:var(--text);font-size:15px;font-weight:600;margin-bottom:14px;">모델 선택 후 재번역</div>';
 
       // v20.0t — Agent 모드 1회성 옵션 제거. 모델 선택만 표시.
@@ -6612,7 +6663,7 @@ label[for="maxTokens"], #maxTokens,
         '.replyPill.replyPers{color:#ff9fb8;background:rgba(255,120,160,.16);font-weight:600}',
         '.replyPill.replyWork{color:#8fc1ff;background:rgba(45,107,255,.20);font-weight:600}',
         '#bkReplyOv{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55)}',
-        '#bkReplyOv .rs{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:90%;display:flex;flex-direction:column;background:#151c28;color:var(--text);border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.35);font-family:inherit}',
+        '#bkReplyOv .rs{position:absolute;left:var(--safe-l);right:var(--safe-r);bottom:0;margin:0 auto;max-width:560px;max-height:90%;display:flex;flex-direction:column;background:#151c28;color:var(--text);border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.35);font-family:inherit}',
         '#bkReplyOv .rsTop{flex:none;padding:6px 12px 8px;border-bottom:1px solid rgba(255,255,255,.08)}',
         '#bkReplyOv .rsGrab{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.12);margin:2px auto 8px}',
         '#bkReplyOv .rsHead{display:flex;align-items:flex-start;gap:5px;margin-bottom:6px;min-height:36px}',
@@ -8896,6 +8947,8 @@ label[for="maxTokens"], #maxTokens,
     }
 
     function scheduleClipboardCheck(){
+      // p151: 아이폰 듀오 모드는 탭 없이 클립보드 읽기가 막혀 헛돌기만 하므로 자동 검사를 하지 않는다(붙여넣기 번역 버튼 사용).
+      if(document.documentElement.classList.contains('iduo')) return;
       if(_clipboardCheckTimer) clearTimeout(_clipboardCheckTimer);
       // 팝업/앱 복귀 시 포커스·클립보드 권한이 늦게 들어옴 → 짧게 여러 번 재시도
       var delays = [120, 400, 800, 1400];
@@ -9645,7 +9698,7 @@ label[for="maxTokens"], #maxTokens,
     }
     function _popupMetric(obj){
       try{
-        obj.dev = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
+        obj.dev = _bkDev();
         // ★PC 계측 공백 재수리(p147, 261014): 윈도우 PC 브라우저에서 sendBeacon 이 true 를 돌려주고도
         //   서버에 한 건도 안 닿았다(9/14 의 'false 면 fetch' 대체는 그래서 한 번도 안 탔다).
         //   같은 PC 의 popup_pull·번역 fetch 는 정상이므로 계측도 일반 fetch 로, 중립 경로 /popup_note 에 보낸다.
@@ -9783,7 +9836,7 @@ label[for="maxTokens"], #maxTokens,
           // 기기 표식: 폰(안드로이드·아이폰)=phone, 그 외(윈도우 PC 등)=pc.
           // 서버는 "폰 앱이 살아 있는가"만으로 열기 여부를 판정한다
           // (PC에 켜두면 폰 자동 열기가 눌리던 2026-08-12 부작용의 수리).
-          var _dev = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
+          var _dev = _bkDev();
           // ★롱폴(2026-08-12): rev 가 같으면 서버가 변화가 생길 때까지(최대 25초) 응답을
           //   붙잡는다. 도착 즉시 내려오므로 자리표시가 0.5초 안에 뜬다(폴 주기 대기 소멸).
           // ★포커스 신호(2026-08-13): 삼성 팝업 최소화(버블)는 visible 인 채 포커스만
@@ -9895,7 +9948,7 @@ label[for="maxTokens"], #maxTokens,
       //   그래야 닫자마자 온 메시지에도 앱이 즉시 자동 실행된다(탭 0회 목표).
       function _popupBye(){
         try{
-          var d = /Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'pc';
+          var d = _bkDev();
           navigator.sendBeacon(_apiOrigin() + '/popup_bye?dev=' + d);
         }catch(_){}
       }
@@ -9947,6 +10000,46 @@ label[for="maxTokens"], #maxTokens,
     if(_composerModelBtn) _composerModelBtn.addEventListener('click', openComposerModelPicker);
     if(typeof updateComposerModelBtn === 'function') updateComposerModelBtn();
     if(el.settingsToggleBtn) el.settingsToggleBtn.addEventListener('click', toggleColorSettings);
+
+    // ===== p151: 아이폰 듀오 모드 토글 + 붙여넣기 번역 버튼 =====
+    function _iduoSyncLabel(){
+      var on = document.documentElement.classList.contains('iduo');
+      var lb = document.getElementById('iduoModeLabel');
+      if(lb) lb.textContent = '아이폰 듀오 모드 · ' + (on ? '켜짐' : '꺼짐');
+    }
+    _iduoSyncLabel();
+    var _iduoModeBtn = document.getElementById('iduoModeBtn');
+    if(_iduoModeBtn) _iduoModeBtn.addEventListener('click', function(){
+      var on = !document.documentElement.classList.contains('iduo');
+      document.documentElement.classList.toggle('iduo', on);
+      try{ localStorage.setItem('bk_iphone_duo', on ? '1' : '0'); }catch(_){}
+      _iduoSyncLabel();
+      toast(on ? '아이폰 듀오 모드 켜짐' : '아이폰 듀오 모드 꺼짐');
+    });
+    var _iduoPasteBtn = document.getElementById('iduoPasteBtn');
+    if(_iduoPasteBtn) _iduoPasteBtn.addEventListener('click', function(){
+      // 사용자 탭 안에서 바로 readText 를 부른다(앞에 다른 await 없음). 중복 차단(_lastClipboardText 비교)은 하지 않는다.
+      function _fail(){
+        try{ if(typeof window._bkComposerExpand === 'function') window._bkComposerExpand(); else if(el.input) el.input.focus(); }catch(_){}
+        toast('입력칸을 길게 눌러 붙여넣기 하세요');
+      }
+      if(!navigator.clipboard || !navigator.clipboard.readText){ _fail(); return; }
+      var pr;
+      try{ pr = navigator.clipboard.readText(); }catch(_){ _fail(); return; }
+      pr.then(function(clipText){
+        var trimmed = String(clipText || '').trim();
+        if(!trimmed){ _fail(); return; }
+        if(!hasKorean(trimmed) && !hasChinese(trimmed)){ toast('한글·중국어 글이 없어 번역하지 않았습니다'); return; }
+        if(trimmed.length >= CONFIG.AUTO_TRANSLATE_MAX_LEN){
+          toast('긴 텍스트(' + trimmed.length + '자) 자동 번역 생략 - 직접 입력하세요');
+          updateLastClipboard(trimmed);
+          return;
+        }
+        updateLastClipboard(trimmed);
+        if(_isKnownText(trimmed)){ toast('이미 번역한 글입니다'); return; }
+        enqueueTx(trimmed, 'clip');
+      }).catch(_fail);
+    });
     if(el.appVer) el.appVer.addEventListener('click', toggleApiSettings);
 
     const apiSettingsCloseBtn = document.getElementById('apiSettingsCloseBtn');
@@ -10053,9 +10146,9 @@ label[for="maxTokens"], #maxTokens,
     // ====== TM (Translation Memory) 관리 UI ======
     function showTmManager(){
       var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px var(--safe-r) 20px var(--safe-l);';
       var popup = document.createElement('div');
-      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:90vw;max-width:560px;max-height:85vh;overflow-y:auto;';
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:calc((100vw - var(--safe-l) - var(--safe-r)) * .9);max-width:560px;max-height:85vh;overflow-y:auto;';
 
       var pairs = getTmPairs();
       var goldCount = pairs.filter(function(p){ return p.grade === 'gold'; }).length;
@@ -10367,9 +10460,9 @@ label[for="maxTokens"], #maxTokens,
       kind = (kind === 'sys') ? 'sys' : 'user';
       var title = kind === 'sys' ? '시스템 용어집' : '프롬프트 용어집';
       var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px var(--safe-r) 20px var(--safe-l);';
       var popup = document.createElement('div');
-      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:90vw;max-width:480px;max-height:85vh;overflow-y:auto;';
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:calc((100vw - var(--safe-l) - var(--safe-r)) * .9);max-width:480px;max-height:85vh;overflow-y:auto;';
       popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">' + title + '</div>' +
         '<div style="font-size:11px;color:#888;margin-bottom:12px;">입력 문장에 src가 등장하면 매 번역마다 자동 주입됩니다.</div>';
       var rows = [];
@@ -10423,9 +10516,9 @@ label[for="maxTokens"], #maxTokens,
       importBtn.style.cssText='flex:1;padding:8px;border:none;border-radius:8px;background:rgba(255,255,255,.06);color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;';
       importBtn.addEventListener('click', function(){
         var ov = document.createElement('div');
-        ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:20px;';
+        ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:20px calc(20px + var(--safe-r)) 20px calc(20px + var(--safe-l));';
         var pp = document.createElement('div');
-        pp.style.cssText='background:var(--panel2);border-radius:14px;padding:16px;width:90vw;max-width:520px;';
+        pp.style.cssText='background:var(--panel2);border-radius:14px;padding:16px;width:calc((100vw - var(--safe-l) - var(--safe-r)) * .9);max-width:520px;';
         pp.innerHTML = '<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">텍스트 가져오기</div>' +
           '<div style="font-size:11px;color:#888;margin-bottom:10px;">한 줄당 한 쌍. 형식: <code>中文 ↔ 한국어</code> 또는 <code>A → B</code>. 양방향 자동 추가. <code>[</code>·<code>★</code>·<code>#</code>로 시작하는 줄은 무시.</div>';
         var ta = document.createElement('textarea');
@@ -10506,9 +10599,9 @@ label[for="maxTokens"], #maxTokens,
 
     function showLearningEditor(){
       var overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px 0;';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:20px var(--safe-r) 20px var(--safe-l);';
       var popup = document.createElement('div');
-      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:90vw;max-width:520px;max-height:85vh;overflow-y:auto;';
+      popup.style.cssText = 'background:var(--panel2);border-radius:16px;padding:18px;width:calc((100vw - var(--safe-l) - var(--safe-r)) * .9);max-width:520px;max-height:85vh;overflow-y:auto;';
       popup.innerHTML = '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;">학습 프롬프트 (제공자별)</div>' +
         '<div style="font-size:11px;color:#888;margin-bottom:12px;">Edit 학습으로 누적된 교정 지침. 매 번역 시스템 프롬프트 뒤에 자동 추가됨. 직접 편집 가능.</div>';
       var ta = document.createElement('textarea');
