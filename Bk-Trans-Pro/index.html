@@ -924,6 +924,25 @@
       padding-bottom: env(safe-area-inset-bottom) !important;
     }
     body.composerCollapsed .chat{ padding-bottom: 6px; }
+
+    /* p152(261103 범근님 캡처 4장: 접힘 우측 공백, 펼침 세로 상하 공백, 키보드 간격): 아이폰 듀오 전용 여백 보정.
+       듀오 모드 꺼짐(갤럭시·PC)은 :root.iduo 가 없어 영향 없음.
+       1) 접힌 화면(폭 600px 이하): 옆 상태 줄 안전 영역(--safe-l/--safe-r)을 0 으로 두어 좌우 공백 없이 전체 폭을 쓴다.
+          시계·와이파이 표시가 채팅 위 오른쪽에 겹칠 수 있다(범근님 선택).
+       2) 펼친 세로 화면(폭 601px 이상, 세로): 상단바 위 여분 10px 와 채팅 위 10px 를 없애고(상태 줄 아래로는 그대로),
+          입력창 접힘일 때 홈 표시줄 예약 여백(env bottom 약 34px) 대신 16px, 입력창 펼침일 때는 env bottom 의 절반만 둔다.
+       3) 키보드가 올라온 동안(.keyboard-visible)은 홈 표시줄 여백을 빼고 키보드 간격 슬라이더 값만 둔다(접힘·펼침 공통). */
+    @media (max-width: 600px){
+      :root.iduo{ --safe-l: 0px; --safe-r: 0px; }
+    }
+    @media (orientation: portrait) and (min-width: 601px){
+      :root.iduo header{ padding-top: env(safe-area-inset-top, 0px); }
+      :root.iduo main{ padding-top: 2px; }
+      :root.iduo body.composerCollapsed main{ padding-bottom: 0 !important; }
+      :root.iduo body.composerCollapsed .chat{ padding-bottom: 16px; }
+      :root.iduo .composer{ padding-bottom: calc(var(--keyboardSpacing) + env(safe-area-inset-bottom, 0px) / 2); }
+    }
+    :root.iduo .composer.keyboard-visible{ padding-bottom: var(--keyboardSpacing); }
   </style>
 <style id="pro-hide-menus">
 /* ★Pro: 서버(두뇌)가 대신 처리하는 메뉴를 화면에서 숨김. 기능 코드는 유지(값은 계속 동작). */
@@ -1932,7 +1951,6 @@ label[for="maxTokens"], #maxTokens,
       <button class="jumpApp" type="button" data-app="feishu" title="페이수 열기">F</button>
       <button class="jumpApp" type="button" data-app="alipay" title="알리페이 열기">A</button>
     </div>
-    <button id="iduoPasteBtn" type="button" aria-label="클립보드 붙여넣기 번역">붙여넣기<br>번역</button>
     <div class="composerRow">
       <div class="composerInner">
         <textarea id="input" rows="1" placeholder="Enter text to translate..." autocomplete="off"></textarea>
@@ -1956,7 +1974,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p151';
+    const APP_VERSION = 'v20.57p152';   // p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
 
     // p151: 기기 표식 공용 함수. 아이폰 듀오 모드 켜짐이면 'iphone', 아니면 기존식 그대로('phone'/'pc').
     function _bkDev(){
