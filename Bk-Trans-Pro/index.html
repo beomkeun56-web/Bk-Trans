@@ -2006,7 +2006,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p155';   // p155: 모션 디자인 예시 2 적용(범근님 261118 '좋아 수정 배포'·'진행'): 검은 바탕, 상단바 1층(왼쪽 메뉴·가운데 연결 상태·오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음), 오른쪽 아래 단추 줄 뺌(W·F·A 답장 대상은 입력창 위 왼쪽, 대화 지우기는 메뉴), 말풍선 아래 단추 아이콘만·한 단계 작게, 메뉴·창·시트·복사·입력창 스프링 모션. 그리고 스트리밍 끝 낱말·물음표가 늦게 보이던 것 수정(낱말을 inline 으로 해 완성 글과 줄바꿈을 같게, 높이는 실제 배치로). p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
+    const APP_VERSION = 'v20.57p156';   // p156: 예시 2 와 다른 곳 모두 맞춤(범근님 261118 '예시안과 다른부분 다시 다 확인해서 수정진행'·'말풍선 아래 개인 업무도 삭제'·'상단바 … 좌측끝 영어로 번역 그리고 우측끝은 연결됨 버튼 새로고침버튼 매뉴버튼'): 상단바 왼쪽 'Translate'(Scramble Text)·오른쪽 [연결됨][새로고침][메뉴], 메뉴가 단추 자리에서 판으로 커짐, 알림이 오면 연결 상태가 넓어져 내용 표시, 입력창 판 안에 M·보내기, 입력창 위 W·F·A 뺌(답장 모드일 때만 '○○으로 답장' 알약), [복사][삭제] 예시 모양, 말풍선 아래 개인·업무 뺌, '다시 번역' 알약, 아래쪽 흰 토스트, 색상·글꼴·레이아웃 화면 묶음 카드(말풍선 색 줄 펼침 색판·스위치·값 말풍선 슬라이더), 창·모델 고르기·크게 보기 모션. p155: 모션 디자인 예시 2 적용(범근님 261118 '좋아 수정 배포'·'진행'): 검은 바탕, 상단바 1층(왼쪽 메뉴·가운데 연결 상태·오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음), 오른쪽 아래 단추 줄 뺌(W·F·A 답장 대상은 입력창 위 왼쪽, 대화 지우기는 메뉴), 말풍선 아래 단추 아이콘만·한 단계 작게, 메뉴·창·시트·복사·입력창 스프링 모션. 그리고 스트리밍 끝 낱말·물음표가 늦게 보이던 것 수정(낱말을 inline 으로 해 완성 글과 줄바꿈을 같게, 높이는 실제 배치로). p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
 
     // p151: 기기 표식 공용 함수. 아이폰 듀오 모드 켜짐이면 'iphone', 아니면 기존식 그대로('phone'/'pc').
     function _bkDev(){
@@ -3782,7 +3782,9 @@ label[for="maxTokens"], #maxTokens,
       else if(state === 'err'){ s.background = 'var(--danger)'; s.boxShadow = '0 0 8px rgba(255,107,107,.5)'; }
       else { s.background = 'var(--warn)'; s.boxShadow = '0 0 6px rgba(247,201,72,.3)'; }
       // ★p155: 상단바 가운데 연결 상태 글
-      try{ var _ct = document.getElementById('bkConnTxt'); if(_ct) _ct.textContent = state === 'ok' ? '서울 연결됨' : state === 'busy' ? '번역 중' : state === 'err' ? '연결 오류' : '연결 확인 중'; }catch(_){}
+      try{ var _ct = document.getElementById('bkConnTxt'); if(_ct) _ct.textContent = state === 'ok' ? '연결됨' : state === 'busy' ? '번역 중' : state === 'err' ? '연결 오류' : '연결 확인 중'; }catch(_){}
+      // ★p156: 왼쪽 끝 글자도 번역 중이면 'Translating', 끝나면 'Translate'(Scramble Text)
+      try{ if(window.bkBrandDecode) window.bkBrandDecode(state === 'busy' ? 'Translating' : 'Translate'); }catch(_){}
     }
 
     function normalizeNewlines(s){
@@ -11439,67 +11441,189 @@ label[for="maxTokens"], #maxTokens,
       toast('권장: HTTPS에서 사용하세요(키 보안)');
     }
   </script>
-  <!-- ===== p155 디자인·모션 층(261118 범근님 '모션 디자인 예시 2' 확정 → '좋아 수정 배포'·'진행') =====
-       상단바 1층(왼쪽 메뉴 · 가운데 연결 상태 · 오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음)
-       오른쪽 아래 단추 줄(지우기·✦·새로고침·W·F·A) 뺌 → W·F·A 답장 대상 고르기는 입력창 위 왼쪽, 대화 지우기는 메뉴
-       말풍선 아래 단추는 아이콘만(듣기·복사·수정·Retry), 한 단계 작게. 개인·업무도 작게
-       스프링 값(강도 감쇠)은 designbookmark.com/motion 원본: 메뉴 320 26 · 항목 240 22 · 창 260 26 · 알림 380 24 · 누름 420 18 · 입력창 420 34 · 상단바 260 24
-       기능 코드는 그대로 두고 겉모습과 움직임만 바꾼다(숨긴 단추도 요소는 남겨 기존 핸들러를 그대로 쓴다). -->
+  <!-- ===== p155·p156 디자인·모션 층(261118 범근님 '모션 디자인 예시 2' 확정 → '좋아 수정 배포'·'진행'·'예시안과 다른부분 다시 다 확인해서 수정진행') =====
+       예시 2 와 같게: 검은 바탕, 상단바 1층(왼쪽 메뉴 · 가운데 연결 상태 · 오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음),
+       메뉴는 단추가 판으로 커지며 항목이 차례로, 가운데 연결 상태는 알림이 오면 넓어져 내용을 보여 줌,
+       입력창 = 둥근 판 안에 글·M·보내기, 위 오른쪽 [복사][삭제], 답장 모드일 때만 위 왼쪽 '○○으로 답장' 알약,
+       말풍선 아래는 듣기·복사·수정 아이콘만(개인·업무 단추 뺌, p156), 오류는 '다시 번역' 알약,
+       토스트는 아래쪽 흰 알약, 설정(색상·글꼴·레이아웃)은 묶음 카드 · 말풍선 색 줄 펼침 색판 · 스위치 · 값 말풍선 슬라이더.
+       스프링(강도 감쇠)은 designbookmark.com/motion 원본: 메뉴 320 26 · 항목 240 22 · 창 260 26 · 알림 380 24 · 누름 420 18 · 입력창 420 34 · 상단바 260 24
+       기능 코드는 그대로 두고 겉모습과 움직임만 바꾼다(숨긴 단추도 요소는 남겨 기존 핸들러를 그대로 쓴다). 입력창 접힘(p77)은 유지. -->
   <style id="bkP155">
-    /* 상단바: 화면 위에 겹쳐 고정, 1층 */
+    :root{ --panel1:#111113; --panel2:#1b1b1e; --bkSurf:#111113; --bkSurf2:#1b1b1e; --bkSurf3:#2a2a2f; --bkLine:rgba(255,255,255,.10);
+      --bkAccent:#3b82f6; --bkAccentSoft:rgba(59,130,246,.18); --bkFaint:#85858f; --bkMuted:#a9a9b2; }
+
+    /* ---------- 상단바 1층 ---------- */
     header{ position:fixed !important; left:0; right:0; top:0; z-index:70; padding-bottom:10px !important;
       background:linear-gradient(var(--headerBg) 72%, rgba(0,0,0,0)) !important; will-change:transform; }
     header .headerInner{ background:transparent !important; box-shadow:none !important; }
-    header .topbar, header .topbar.tbHidden{ display:flex !important; height:56px !important; padding:0 12px !important; position:relative; }
+    header .topbar, header .topbar.tbHidden{ display:flex !important; position:relative; }
     header .topbar > #modelTag, header .topbar > .title, header .topbar > div[style*="flex:1"],
     #newPromptToggle, #topTestBtn, #topClearBtn{ display:none !important; }
-    header .rightBtns{ flex:1; display:flex !important; align-items:center; justify-content:space-between; position:relative; }
-    header .menuDropdownWrap{ order:0; }
+    header .rightBtns{ flex:1; display:flex !important; align-items:center; justify-content:flex-end; gap:8px; position:relative; }
+    /* 왼쪽 끝 'Translate'(designbookmark Scramble Text: 글자가 무작위 글리프로 깜빡이다 왼쪽부터 자리 잡음) */
+    #bkBrand{ position:absolute; left:calc(var(--topbarHPadding, 14px) + 2px); top:50%; translate:0 -50%; white-space:pre; cursor:pointer; user-select:none; -webkit-user-select:none;
+      font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:19px; font-weight:500; letter-spacing:-.01em; line-height:1.3; color:var(--text); }
+    #bkBrand .c{ color:#5c5c66; }
+    #bkBrand .c.ok{ color:var(--text); }
+    #bkBrand .caret{ display:inline-block; width:.56em; height:1.08em; margin-left:.1em; vertical-align:-.18em; background:var(--text); border-radius:2px; }
     header #topMenuBtn, #bkReloadTop{ width:40px; height:40px; border-radius:999px; display:grid; place-items:center;
-      background:var(--panel2); box-shadow:0 0 0 1px rgba(255,255,255,.10); color:var(--text); padding:0; border:0; cursor:pointer; }
+      background:var(--bkSurf2); box-shadow:0 0 0 1px var(--bkLine); color:var(--text); padding:0; border:0; cursor:pointer; position:relative; z-index:52; }
+    header #topMenuBtn{ z-index:61; }
+    header .rightBtns:has(#topMenuBtn[aria-expanded="true"]) #connBtn, header .rightBtns:has(#topMenuBtn[aria-expanded="true"]) #bkReloadTop{ opacity:0; pointer-events:none; }
     header #topMenuBtn svg, #bkReloadTop svg{ width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-    #bkReloadTop{ order:2; margin-left:auto; }
-    header #connBtn{ position:absolute; left:50%; top:50%; translate:-50% -50%; height:34px; padding:0 14px; border-radius:999px;
-      background:var(--panel2); box-shadow:0 0 0 1px rgba(255,255,255,.10); display:inline-flex; align-items:center; gap:8px; width:auto; }
+    /* 메뉴 단추 ≡ → × (십자 380 24) */
+    header #topMenuBtn svg line{ transform-origin:12px 12px; transition:transform var(--sp-pop-d, .3s) var(--sp-pop-e, ease), opacity .15s; }
+    header #topMenuBtn[aria-expanded="true"]{ background:transparent; box-shadow:none; }
+    header #topMenuBtn[aria-expanded="true"] svg line:nth-child(1){ transform:translateY(6px) rotate(45deg); }
+    header #topMenuBtn[aria-expanded="true"] svg line:nth-child(2){ opacity:0; }
+    header #topMenuBtn[aria-expanded="true"] svg line:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+    header #connBtn{ order:1; height:34px; padding:0 13px; border-radius:999px; flex:none;
+      background:var(--bkSurf2); box-shadow:0 0 0 1px var(--bkLine); display:inline-flex; align-items:center; gap:7px; width:auto; z-index:51; }
+    #bkReloadTop{ order:2; }
+    header .menuDropdownWrap{ order:3; }
     #bkConnTxt{ font-size:12.5px; color:#cfcfd6; white-space:nowrap; font-weight:500; }
-    header .menuDropdown{ left:0; right:auto; transform-origin:top left; }
+    /* 메뉴(Dynamic Menu): 단추 자리에서 판이 커짐 */
+    header .menuDropdown{ top:-8px !important; right:-8px !important; left:auto !important; margin:0 !important; min-width:288px !important;
+      padding:56px 8px 8px !important; border-radius:22px !important; background:var(--bkSurf2) !important; border:0 !important;
+      box-shadow:0 0 0 1px var(--bkLine), 0 18px 44px rgba(0,0,0,.75) !important; transform-origin:calc(100% - 28px) 28px; z-index:60 !important; }
+    header .menuDropdown .bkMenuTitle{ position:absolute; left:18px; top:17px; font-weight:650; font-size:15px; color:var(--text); white-space:nowrap; }
+    header .menuDropdown .bkMenuTitle small{ color:var(--bkFaint); font-weight:500; font-size:12px; margin-left:6px; }
+    header .menuDropdownItem{ height:46px; padding:0 12px !important; border-radius:12px !important; font-size:15px !important; gap:12px !important; }
+    header .menuDropdownItem svg{ width:19px !important; height:19px !important; flex-basis:19px !important; color:var(--bkMuted) !important; }
+    header .menuDropdownItem:hover{ background:var(--bkSurf3) !important; }
+    #bkScrim{ position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:65; opacity:0; pointer-events:none; transition:opacity .2s ease; }
+    #bkScrim.on{ opacity:1; pointer-events:auto; }
+    /* 가운데 알림 섬(Morph Island): 알림이 오면 넓어졌다 돌아옴 */
+    #bkIsland{ position:absolute; top:50%; translate:0 -50%; border-radius:18px; background:#16161a; box-shadow:0 0 0 1px var(--bkLine);
+      overflow:hidden; z-index:53; pointer-events:none; display:flex; flex-direction:column; justify-content:center; padding:0 18px; gap:3px; opacity:0; }
+    #bkIsland b{ font-size:12px; color:#9a9aa5; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #bkIsland span{ font-size:14px; line-height:1.35; color:#fff; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     main{ padding-top:0 !important; }
-    .chat{ padding-top:calc(var(--bkHeadH, 66px) + 4px) !important; }
+    .chat{ padding-top:calc(var(--bkHeadH, 74px) + 4px) !important; }
     .chatTopFade{ display:none !important; }
-    :root{ --panel1:#111113; --panel2:#1b1b1e; }
 
-    /* 오른쪽 아래 단추 줄은 숨김(요소는 남김: 답장 모드 상태를 이 줄이 기억한다) */
+    /* ---------- 오른쪽 아래 단추 줄 숨김(요소는 남김: 답장 모드 상태를 이 줄이 기억한다) ---------- */
     #jumpAppWrap{ display:none !important; }
-    /* 답장 대상 고르기(W·F·A): 입력창 위 왼쪽, 입력창이 열렸을 때만 */
-    #bkAppPick{ position:absolute; left:0; bottom:calc(100% + 6px); display:flex; gap:6px; z-index:6; pointer-events:auto; }
-    #bkAppPick button{ height:30px; min-width:34px; padding:0 10px; border-radius:999px; border:0; font:800 12.5px/30px inherit; font-family:inherit;
-      background:rgba(20,20,24,.92); cursor:pointer; -webkit-tap-highlight-color:transparent; opacity:.75; }
-    #bkAppPick button[data-app="wechat"]{ color:#3ec46d; box-shadow:inset 0 0 0 1px rgba(62,196,109,.55); }
-    #bkAppPick button[data-app="feishu"]{ color:#b58cf5; box-shadow:inset 0 0 0 1px rgba(168,111,240,.55); }
-    #bkAppPick button[data-app="alipay"]{ color:#5aa2ff; box-shadow:inset 0 0 0 1px rgba(61,142,245,.55); }
-    #bkAppPick button.on{ opacity:1; box-shadow:inset 0 0 0 1.5px currentColor, 0 0 10px currentColor; }
-    #bkAppPick button span{ font-weight:600; margin-left:4px; }
 
-    /* 말풍선 아래 단추: 아이콘만, 한 단계 작게 */
+    /* ---------- 입력창(Prompt Box): 둥근 판 안에 글 · M · 보내기 ---------- */
+    .composerInner{ flex-direction:row !important; align-items:flex-end; gap:6px; padding:8px 8px 8px 14px; border:0 !important; border-radius:22px !important;
+      background:var(--bkSurf) !important; box-shadow:0 0 0 1px var(--bkLine), 0 14px 36px rgba(0,0,0,.7) !important; }
+    #input{ flex:1; min-width:0; min-height:calc(var(--inputMinHeight) - 16px) !important; padding:9px 0 !important; border-radius:0 !important; }
+    #input::placeholder{ color:var(--bkFaint); }
+    .composerInner #composerModelBtn{ flex:none !important; width:40px; height:40px; min-height:0 !important; align-self:flex-end !important; border:0 !important;
+      border-radius:999px !important; background:var(--bkSurf2) !important; color:var(--bkMuted) !important; box-shadow:none !important; padding:0 !important; font-size:14px !important; }
+    #bkSend{ position:relative; flex:none; width:40px; height:40px; border-radius:999px; border:0; background:var(--sendBtnBg, #3b82f6); color:#fff;
+      display:grid; place-items:center; cursor:pointer; overflow:hidden; padding:0; }
+    #bkSend svg{ width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+    #bkSend .spin{ position:absolute; inset:9px; border-radius:50%; border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff; opacity:0; }
+    #bkSend.busy .spin{ opacity:1; animation:bkRot .8s linear infinite; }
+    #bkSend.busy svg{ opacity:0; }
+    #bkSend.done{ background:var(--ok); }
+    @keyframes bkRot{ to{ transform:rotate(360deg); } }
+    /* 위 오른쪽 [복사][삭제](예시와 같은 알약) */
+    #inputActRow button{ height:34px !important; padding:0 13px !important; border:0 !important; border-radius:999px !important; background:var(--bkSurf2) !important;
+      box-shadow:0 0 0 1px var(--bkLine), 0 6px 16px rgba(0,0,0,.5) !important; color:var(--text) !important; font-size:13px !important; font-weight:650 !important; }
+    #inputActRow svg{ width:16px; height:16px; }
+    /* 답장 모드 알약(위 왼쪽, 답장 모드일 때만) */
+    #bkArm{ position:absolute; left:0; bottom:calc(100% + 8px); height:30px; padding:0 6px 0 12px; border-radius:999px; background:var(--bkSurf2);
+      box-shadow:inset 0 0 0 1px currentColor, 0 6px 16px rgba(0,0,0,.5); font-size:12.5px; font-weight:650; display:none; align-items:center; gap:6px; z-index:6; }
+    #bkArm.on{ display:inline-flex; }
+    #bkArm button{ width:22px; height:22px; border-radius:999px; display:grid; place-items:center; color:var(--bkMuted); background:none; border:0; padding:0; cursor:pointer; }
+    #bkArm button svg{ width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; }
+    #bkArm[data-app="wechat"]{ color:#3ec46d; } #bkArm[data-app="feishu"]{ color:#b58cf5; } #bkArm[data-app="alipay"]{ color:#5aa2ff; }
+
+    /* ---------- 말풍선 아래: 아이콘만, 개인·업무 뺌 ---------- */
     .actionsRow{ gap:5px !important; }
-    .actionsRow .ttsBtn, .actionsRow .copyPill.bkIco{ width:26px; height:26px; min-width:0 !important; padding:0 !important; border-radius:999px;
-      display:inline-grid !important; place-items:center; position:relative; }
-    .actionsRow .ttsBtn svg, .actionsRow .copyPill.bkIco svg{ width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .actionsRow .replyPill{ display:none !important; }
+    .actionsRow .ttsBtn, .actionsRow .copyPill.bkIco{ width:28px; height:28px; min-width:0 !important; padding:0 !important; border-radius:999px !important;
+      display:inline-grid !important; place-items:center; position:relative; box-shadow:0 0 0 1px var(--bkLine); }
+    .actionsRow .ttsBtn svg, .actionsRow .copyPill.bkIco svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     .actionsRow .copyPill.bkIco .bkOk{ position:absolute; color:var(--ok); opacity:0; }
-    .actionsRow .replyPill{ padding:2px 8px !important; font-size:calc(10.5px * var(--textScale)) !important; border-radius:999px !important; min-width:0 !important; line-height:20px; }
-    .actionsRow .retryPill{ padding:3px 10px; font-size:calc(11px * var(--textScale)); border-radius:999px; }
+    .actionsRow .retryPill{ height:26px; padding:0 12px !important; border-radius:999px !important; background:rgba(248,113,113,.16) !important; color:#f87171 !important;
+      font-size:12px !important; font-weight:600; display:inline-flex !important; align-items:center; gap:6px; }
+    .actionsRow .retryPill svg{ width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
 
-    /* 누름 튐(누를 때 빨리 줄고 뗄 때 스프링으로 돌아옴) */
-    .copyPill, .ttsBtn, .retryPill, .copyBarBtn, #inputActRow button, #composerModelBtn, #bkAppPick button, header #topMenuBtn, #bkReloadTop, header #connBtn{
+    /* ---------- 토스트: 아래쪽 흰 알약 ---------- */
+    .toast{ top:auto !important; bottom:calc(176px + env(safe-area-inset-bottom)) !important; background:#fff !important; max-width:calc(100vw - 32px) !important; color:#000 !important; border-radius:999px !important;
+      padding:9px 16px !important; font-size:13.5px !important; font-weight:550; box-shadow:0 8px 24px rgba(0,0,0,.5) !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* ---------- 창(설정·수정 등): 검은 판, 둥근 모서리 ---------- */
+    .settingsOverlay{ background:rgba(0,0,0,.6) !important; }
+    .settings{ background:#141417 !important; border-radius:22px !important; box-shadow:0 0 0 1px var(--bkLine), 0 20px 60px rgba(0,0,0,.75) !important; }
+    .settings input[type="text"], .settings input[type="number"], .settings input[type="password"], .settings select, .settings textarea{
+      background:var(--bkSurf2) !important; border:0 !important; border-radius:12px !important; color:var(--text) !important; box-shadow:none !important; }
+    .settings select, .settings input[type="text"].bkPill{ border-radius:999px !important; padding:8px 14px !important; }
+    .btn{ border-radius:999px !important; box-shadow:none !important; background:var(--bkSurf2); }
+    .btn:not(.secondary):not(.danger){ background:var(--bkAccent) !important; color:#fff !important; }
+    .btn.secondary{ background:var(--bkSurf2) !important; }
+    .settings .iconBtn{ border-radius:999px; background:var(--bkSurf2); }
+    /* 스위치(Toggle Switch): 위치 320 18 */
+    .settings input[type="checkbox"]:not([style*="display:none"]):not([style*="display: none"]){ -webkit-appearance:none; appearance:none; width:52px !important; height:32px !important;
+      flex:none; border-radius:999px; background:var(--bkSurf3); position:relative; cursor:pointer; margin:0; transition:background .2s ease; transform:none !important; }
+    .settings input[type="checkbox"]::before{ content:''; position:absolute; left:3px; top:3px; width:26px; height:26px; border-radius:999px; background:#fff;
+      box-shadow:0 2px 6px rgba(0,0,0,.45); transition:transform var(--sp-sw-d, .3s) var(--sp-sw-e, ease); }
+    .settings input[type="checkbox"]:checked{ background:var(--bkAccent); }
+    .settings input[type="checkbox"]:checked::before{ transform:translateX(20px); }
+    /* 슬라이더(Range Slider): 값 말풍선 300 26 */
+    .settings input[type="range"]{ -webkit-appearance:none; appearance:none; height:32px; background:transparent; cursor:pointer; --p:50%; }
+    .settings input[type="range"]::-webkit-slider-runnable-track{ height:4px; border-radius:999px; background:linear-gradient(90deg, var(--bkAccent) var(--p), var(--bkSurf3) var(--p)); }
+    .settings input[type="range"]::-moz-range-track{ height:4px; border-radius:999px; background:var(--bkSurf3); }
+    .settings input[type="range"]::-moz-range-progress{ height:4px; border-radius:999px; background:var(--bkAccent); }
+    .settings input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; width:22px; height:22px; margin-top:-9px; border-radius:999px; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.45); }
+    .settings input[type="range"]::-moz-range-thumb{ width:22px; height:22px; border:0; border-radius:999px; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.45); }
+    .bkRangeWrap{ position:relative; }
+    .bkTip{ position:absolute; bottom:30px; left:0; padding:3px 8px; border-radius:999px; background:#fff; color:#000; font-size:12px; font-weight:600; white-space:nowrap;
+      translate:-50% 0; opacity:0; pointer-events:none; transform-origin:50% 100%; }
+    /* 설정 묶음 카드(색상·글꼴·레이아웃) */
+    .bkGroup{ display:flex; flex-direction:column; gap:2px; margin-bottom:18px; }
+    .bkGroup > h3{ font-size:13px; color:var(--bkFaint); font-weight:600; padding:0 4px 8px; margin:0; display:flex; justify-content:space-between; align-items:center; }
+    .bkCard{ background:var(--bkSurf); border-radius:18px; box-shadow:0 0 0 1px var(--bkLine); padding:4px 16px; }
+    .bkCard > * + *{ border-top:1px solid var(--bkLine); }
+    .bkItem{ display:flex; align-items:center; gap:12px; min-height:56px; padding:8px 0; width:100%; text-align:left; background:none; border:0; color:var(--text);
+      font:inherit; cursor:default; }
+    button.bkItem{ cursor:pointer; }
+    .bkItem .bkLbl{ flex:1; display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .bkItem .bkLbl b{ font-size:15px; font-weight:550; }
+    .bkItem .bkLbl span{ font-size:12.5px; color:var(--bkFaint); }
+    .bkVal{ font-size:13px; color:var(--bkMuted); font-weight:600; min-width:0 !important; text-align:right !important; }
+    .bkReset{ font-size:12.5px; color:var(--bkAccent); background:none; border:0; padding:4px 2px; cursor:pointer; font:inherit; font-weight:600; }
+    .bkSliderRow{ padding:10px 0 12px; }
+    .bkSliderRow .bkTop{ display:flex; align-items:center; gap:10px; margin-bottom:2px; }
+    .bkSliderRow .bkTop b{ flex:1; font-size:15px; font-weight:550; }
+    .bkSliderRow input[type="range"]{ width:100%; }
+    .bkPrev{ flex:none; padding:5px 11px; border-radius:12px; font-size:13px; color:#fff; }
+    .bkChev{ width:16px; height:16px; color:var(--bkFaint); fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+    .bkTray{ height:0; overflow:hidden; }
+    .bkTray .bkTrayIn{ padding:2px 0 14px; display:flex; flex-direction:column; gap:12px; }
+    .bkTray .colorSwatches{ display:grid !important; grid-template-columns:repeat(6, 1fr); gap:10px !important; justify-items:center; margin:0 !important; }
+    .bkTray .cSwatch{ width:34px !important; height:34px !important; border-radius:999px !important; border:0 !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.18); }
+    .bkTray .cSwatch.bkSel{ box-shadow:0 0 0 2px #141417, 0 0 0 4px #fff !important; }
+    .bkTray .bkCustom{ display:flex; align-items:center; gap:10px; }
+    .bkTray .bkCustom input[type="color"]{ width:34px !important; height:34px !important; border-radius:999px !important; padding:0 !important; border:0 !important; overflow:hidden; flex:none; }
+    .bkTray .bkCustom input[type="color"]::-webkit-color-swatch-wrapper{ padding:0; }
+    .bkTray .bkCustom input[type="color"]::-webkit-color-swatch{ border:0; border-radius:999px; }
+    .bkTray .bkCustom input[type="text"]{ flex:1; border-radius:999px !important; padding:8px 14px !important; }
+    .bkTray .bkCustom span{ font-size:12.5px; color:var(--bkFaint); }
+    .bkTray .bkExtra{ display:flex; flex-direction:column; gap:6px; }
+
+    /* ---------- 답장 안 시트(기능은 남김: 숨긴 개인·업무 단추 대신 다른 경로가 생기면 이 모양으로) ---------- */
+    #bkReplyOv .rs{ background:#141417 !important; border-radius:22px 22px 0 0 !important; box-shadow:0 -1px 0 var(--bkLine), 0 -16px 40px rgba(0,0,0,.6) !important; }
+    #bkReplyOv .rsCard{ background:var(--bkSurf2) !important; }
+    #bkReplyOv .rsSeg{ border:0 !important; border-radius:999px !important; background:var(--bkSurf2); padding:3px; }
+    #bkReplyOv .rsSeg button{ border:0 !important; border-radius:999px; }
+    #bkReplyOv .rsSeg button.on{ background:var(--bkAccentSoft) !important; box-shadow:inset 0 0 0 1px rgba(59,130,246,.4); color:var(--text) !important; }
+    #bkReplyOv .rsBtn{ border:0 !important; border-radius:999px !important; background:var(--bkSurf2) !important; }
+
+    /* ---------- 누름 튐 ---------- */
+    .copyPill, .ttsBtn, .retryPill, .copyBarBtn, #inputActRow button, #composerModelBtn, #bkSend, header #topMenuBtn, #bkReloadTop, .btn, #bkArm button{
       transition: background .15s, color .15s, opacity .2s, transform var(--sp-press-d, .3s) var(--sp-press-e, ease); }
-    .copyPill:active, .ttsBtn:active, .retryPill:active, .copyBarBtn:active, #composerModelBtn:active, #bkAppPick button:active,
-    header #topMenuBtn:active, #bkReloadTop:active{ transform:scale(.88); transition:transform .07s ease-out; }
+    .copyPill:active, .ttsBtn:active, .retryPill:active, .copyBarBtn:active, #composerModelBtn:active, #bkSend:active, #bkReloadTop:active, .btn:active{ transform:scale(.9); transition:transform .07s ease-out; }
     #inputActRow button:active{ transform:scale(.92); transition:transform .07s ease-out; }
     .menuDropdownItem{ transition: background .12s, transform var(--sp-press-d, .3s) var(--sp-press-e, ease); }
     .menuDropdownItem:active{ transform:scale(.97); transition:transform .07s ease-out; }
     .composerRow{ transition: opacity .2s ease, transform var(--sp-composer-d, .3s) var(--sp-composer-e, ease) !important; }
-    .modelDropdown{ transform-origin: top left; }
-    @media (prefers-reduced-motion: reduce){ .composerRow, .copyPill, .menuDropdownItem{ transition-duration:.01s !important; } }
+    @media (prefers-reduced-motion: reduce){ .composerRow, .copyPill, .menuDropdownItem, .settings input[type="checkbox"]::before{ transition-duration:.01s !important; } }
   </style>
   <script id="bkP155Script">
   (function(){
@@ -11512,8 +11636,12 @@ label[for="maxTokens"], #maxTokens,
       ok: '<svg class="bkOk" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
       edit: SVG('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
       retry: SVG('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>'),
-      reload: SVG('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>')
+      x: SVG('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'),
+      up: SVG('<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>'),
+      check: SVG('<polyline points="20 6 9 17 4 12"/>'),
+      chev: '<svg class="bkChev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>'
     };
+    function $(id){ return document.getElementById(id); }
 
     // ---- 스프링 → CSS linear() 곡선(원본 엔진과 같은 식) ----
     function curve(k, c){
@@ -11530,7 +11658,7 @@ label[for="maxTokens"], #maxTokens,
     try{ LIN = CSS.supports('transition-timing-function', 'linear(0, 1)'); }catch(_){}
     function preset(k, c){ var s = curve(k, c); return LIN ? s : { easing: 'cubic-bezier(.2,.9,.25,1.08)', dur: Math.min(s.dur, 520) }; }
     var P = { menu: preset(320, 26), item: preset(240, 22), sheet: preset(260, 26), pop: preset(380, 24), press: preset(420, 18),
-              composer: preset(420, 34), row: preset(300, 22), bar: preset(260, 24) };
+              composer: preset(420, 34), row: preset(300, 22), bar: preset(260, 24), sw: preset(320, 18), tip: preset(300, 26), tray: preset(260, 24) };
     var rs = document.documentElement.style;
     Object.keys(P).forEach(function(n){ rs.setProperty('--sp-' + n + '-e', P[n].easing); rs.setProperty('--sp-' + n + '-d', P[n].dur + 'ms'); });
     function appear(el, from, p, opt){
@@ -11556,14 +11684,13 @@ label[for="maxTokens"], #maxTokens,
         if(has) onAdd && onAdd(el); else onRemove && onRemove(el);
       }).observe(el, { attributes: true, attributeFilter: ['class'] });
     }
-    function $(id){ return document.getElementById(id); }
 
     // ===== 1. 상단바 1층 =====
     var header = document.querySelector('header');
     var rb = document.querySelector('header .rightBtns');
     if(rb && !$('bkReloadTop')){
       var rl = document.createElement('button'); rl.id = 'bkReloadTop'; rl.type = 'button'; rl.setAttribute('aria-label', '새로고침'); rl.title = '새로고침';
-      rl.innerHTML = IC.reload;
+      rl.innerHTML = IC.retry;
       rl.addEventListener('click', function(e){
         e.stopPropagation();
         var s = rl.querySelector('svg');
@@ -11574,12 +11701,50 @@ label[for="maxTokens"], #maxTokens,
     }
     var conn = $('connBtn');
     if(conn && !$('bkConnTxt')){ var ct = document.createElement('span'); ct.id = 'bkConnTxt'; ct.textContent = '연결 확인 중'; conn.appendChild(ct); }
+    // 왼쪽 끝 'Translate': Scramble Text(원본 값 그대로: 깜빡임 0.055초, 자리 잡는 시각 0.18 + 글자당 0.035 + 무작위 0.28초)
+    var bar0 = document.querySelector('header .topbar');
+    if(bar0 && !$('bkBrand')){
+      var brand = document.createElement('div'); brand.id = 'bkBrand'; brand.setAttribute('role', 'heading'); brand.setAttribute('aria-label', 'Translate');
+      var caret = document.createElement('span'); caret.className = 'caret'; caret.setAttribute('aria-hidden', 'true'); brand.appendChild(caret);
+      bar0.appendChild(brand);
+      var GLY = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#%&*+=/<>';
+      var cells = [], t0 = performance.now(), running = false, raf = 0;
+      var clock = function(){ return (performance.now() - t0) / 1000; };
+      var tick = function(){
+        var now = clock(), left = 0;
+        cells.forEach(function(c){
+          if(c.done) return;
+          if(now >= c.at){ c.done = true; if(c.to === ''){ c.el.remove(); } else { c.el.textContent = c.to; c.el.classList.add('ok'); } }
+          else { left++; if(c.to === ' '){ c.el.textContent = ' '; c.el.classList.add('ok'); } else if(now >= c.tk){ c.el.textContent = GLY[(Math.random() * GLY.length) | 0]; c.tk = now + .055; } }
+        });
+        caret.style.opacity = (running || (now * 1.8) % 2 < 1) ? 1 : 0;
+        if(!left && running){ cells = cells.filter(function(c){ return c.to !== ''; }); running = false; }
+        raf = requestAnimationFrame(tick);
+      };
+      window.bkBrandDecode = function(text){
+        if(brand.getAttribute('aria-label') === text && cells.length) return;   // 같은 글이면 다시 시작하지 않는다(연결 상태가 자주 불려도)
+        var now = clock(), n = Math.max(text.length, cells.length);
+        while(cells.length < n){ var e = document.createElement('span'); e.className = 'c'; e.setAttribute('aria-hidden', 'true'); brand.insertBefore(e, caret); cells.push({ el: e }); }
+        cells.forEach(function(c, i){ c.to = text[i] == null ? '' : text[i]; c.at = now + .18 + i * .035 + (reduce ? 0 : Math.random() * .28); c.tk = 0; c.done = false; c.el.classList.remove('ok'); });
+        if(reduce) cells.forEach(function(c){ c.at = now; });
+        running = true; brand.setAttribute('aria-label', text);
+        // 화면 갱신이 느리거나 멈춰도 정해진 시간 뒤엔 글자를 확정(앱 p154 와 같은 이유)
+        clearTimeout(window.bkBrandDecode._t);
+        window.bkBrandDecode._t = setTimeout(function(){
+          cells.forEach(function(c){ if(c.done) return; c.done = true; if(c.to === ''){ c.el.remove(); } else { c.el.textContent = c.to; c.el.classList.add('ok'); } });
+          cells = cells.filter(function(c){ return c.to !== ''; }); running = false;
+        }, Math.round((.18 + n * .035 + .3) * 1000) + 120);
+      };
+      brand.addEventListener('click', function(){ if(!running){ var cur = brand.getAttribute('aria-label') || 'Translate'; brand.setAttribute('aria-label', ''); window.bkBrandDecode(cur); } });
+      window.bkBrandDecode('Translate');
+      raf = requestAnimationFrame(tick);
+    }
     function setHeadH(){ if(header) document.documentElement.style.setProperty('--bkHeadH', header.offsetHeight + 'px'); }
     setHeadH(); window.addEventListener('resize', function(){ setTimeout(setHeadH, 60); });
     setTimeout(setHeadH, 400);
+    new MutationObserver(setHeadH).observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
 
-    // 손가락·휠로 직접 스크롤할 때만: 아래로 내리면 숨고 위로 올리면 나타남(새 말풍선이 와서 자동으로 내려갈 때는 그대로)
-    var chatEl = $('chat'), menuDd = $('topMenuDropdown');
+    var chatEl = $('chat'), menuDd = $('topMenuDropdown'), menuBtn = $('topMenuBtn');
     var barShown = true, userAt = 0, lastY = 0, barAnim = null;
     function setBar(show){
       if(show === barShown || !header) return;
@@ -11607,45 +11772,105 @@ label[for="maxTokens"], #maxTokens,
         else if(d > 6 && bottom > 4) setBar(false);
       }, { passive: true });
     }
-
-    // 메뉴에 '대화기록 삭제'(오른쪽 단추 줄의 휴지통 대신)
-    if(menuDd && !$('bkMenuClear')){
-      var it = document.createElement('button'); it.id = 'bkMenuClear'; it.type = 'button'; it.className = 'menuDropdownItem danger'; it.setAttribute('role', 'menuitem');
-      it.innerHTML = SVG('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>') + '<span>대화기록 삭제</span>';
-      it.addEventListener('click', function(){ var c = $('tbClear'); if(c) c.click(); });
-      menuDd.appendChild(it);
+    // 메뉴: 제목·대화기록 삭제·뒤 어둡게
+    if(menuDd){
+      if(!menuDd.querySelector('.bkMenuTitle')){
+        var tt = document.createElement('div'); tt.className = 'bkMenuTitle';
+        var ver = ''; try{ ver = APP_VERSION; }catch(_){}
+        tt.innerHTML = 'BK Trans<small>' + ver + '</small>'; menuDd.insertBefore(tt, menuDd.firstChild);
+      }
+      if(!$('bkMenuClear')){
+        var it = document.createElement('button'); it.id = 'bkMenuClear'; it.type = 'button'; it.className = 'menuDropdownItem danger'; it.setAttribute('role', 'menuitem');
+        it.innerHTML = SVG('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>') + '<span>대화기록 삭제</span>';
+        it.addEventListener('click', function(){ var c = $('tbClear'); if(c) c.click(); });
+        menuDd.appendChild(it);
+      }
     }
+    var scrim = document.createElement('div'); scrim.id = 'bkScrim'; document.body.appendChild(scrim);
+    scrim.addEventListener('click', function(){ if(menuBtn && menuDd && menuDd.classList.contains('show')) menuBtn.click(); });
 
-    // ===== 2. 답장 대상 고르기(W·F·A): 입력창 위 왼쪽 =====
+    // 가운데 알림 섬: 알림 자리표시가 생기면(=알림 도착) 넓어져 보낸 사람·원문을 2.6초 보여 준다
+    function island(title, text){
+      if(!conn || reduce) return;
+      var old = $('bkIsland'); if(old) old.remove();
+      var bar = document.querySelector('header .topbar'); if(!bar) return;
+      setBar(true);
+      var r0 = conn.getBoundingClientRect(), rb0 = bar.getBoundingClientRect();
+      var w1 = Math.min(330, window.innerWidth - 32), h1 = 64;
+      var is = document.createElement('div'); is.id = 'bkIsland';
+      var b = document.createElement('b'); b.textContent = title || '알림';
+      var s = document.createElement('span'); s.textContent = text || '';
+      is.appendChild(b); is.appendChild(s); is.style.right = Math.max(0, rb0.right - r0.right) + 'px'; bar.appendChild(is);
+      is.style.opacity = '1';
+      var a = is.animate([{ width: r0.width + 'px', height: r0.height + 'px', borderRadius: '17px' }, { width: w1 + 'px', height: h1 + 'px', borderRadius: '24px' }],
+        { duration: P.pop.dur, easing: P.pop.easing, fill: 'forwards' });
+      [b, s].forEach(function(x){ x.animate([{ opacity: 0, filter: 'blur(4px)' }, { opacity: 1, filter: 'blur(0)' }], { duration: 220, delay: 80, fill: 'backwards' }); });
+      setTimeout(function(){
+        if(!is.isConnected) return;
+        [b, s].forEach(function(x){ x.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }); });
+        var r1 = conn.getBoundingClientRect();
+        var a2 = is.animate([{ width: w1 + 'px', height: h1 + 'px', borderRadius: '24px', opacity: 1 }, { width: r1.width + 'px', height: r1.height + 'px', borderRadius: '17px', opacity: 0 }],
+          { duration: P.bar.dur, easing: P.bar.easing, fill: 'forwards' });
+        a2.onfinish = function(){ is.remove(); };
+      }, 2600);
+    }
+    try{
+      if(typeof window._popupPlaceholder === 'function' && !window._popupPlaceholder._bk){
+        var _orig = window._popupPlaceholder;
+        window._popupPlaceholder = function(it){
+          var had = false; try{ had = !!(it && _popupFindByPid(it.id, 'assistant')); }catch(_){}
+          var r = _orig.apply(this, arguments);
+          try{ if(!had && it && it.text) island((it.title || '') + (it.app ? ' · ' + (srcLabel(_normAppId(it.app)) || '') : ''), it.text); }catch(_){}
+          return r;
+        };
+        window._popupPlaceholder._bk = true;
+      }
+    }catch(_){}
+
+    // ===== 2. 입력창: 판 안에 M·보내기, [복사][삭제], 답장 모드 알약 =====
     var inner = document.querySelector('.composerInner');
-    if(inner && !$('bkAppPick')){
-      var isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
-      var pick = document.createElement('div'); pick.id = 'bkAppPick'; pick.setAttribute('role', 'group'); pick.setAttribute('aria-label', '답장 대상');
-      [['wechat', 'W', '위챗'], ['feishu', 'F', '페이수'], ['alipay', 'A', '알리페이']].forEach(function(a){
-        if(a[0] === 'alipay' && !isPhone) return;   // PC 에는 알리페이 앱이 없다(앱 기존 규칙)
-        var b = document.createElement('button'); b.type = 'button'; b.dataset.app = a[0]; b.title = a[2] + ' 답장 대상';
-        b.setAttribute('aria-label', a[2] + '으로 답장'); b.innerHTML = a[1];
-        b.addEventListener('mousedown', function(ev){ ev.preventDefault(); });   // 입력창 포커스를 뺏지 않게
-        b.addEventListener('click', function(ev){ ev.stopPropagation(); try{ _armReplyTo(a[0]); }catch(_){} });
-        pick.appendChild(b);
+    var mBtn = $('composerModelBtn');
+    if(inner && mBtn && mBtn.parentNode !== inner) inner.appendChild(mBtn);
+    if(inner && !$('bkSend')){
+      var sd = document.createElement('button'); sd.id = 'bkSend'; sd.type = 'button'; sd.setAttribute('aria-label', '번역');
+      sd.innerHTML = IC.up + '<span class="spin"></span>';
+      sd.addEventListener('mousedown', function(ev){ ev.preventDefault(); });
+      sd.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        if(!el.input || !String(el.input.value).trim()){ try{ el.input.focus(); }catch(_){} return; }
+        if(sd.classList.contains('busy')) return;
+        sd.classList.add('busy'); sd.setAttribute('aria-label', '번역 중');
+        var fin = function(ok){
+          sd.classList.remove('busy');
+          if(ok){ sd.classList.add('done'); sd.innerHTML = IC.check + '<span class="spin"></span>'; appear(sd, 'scale(.8)', P.press, { fade: false }); }
+          setTimeout(function(){ sd.classList.remove('done'); sd.innerHTML = IC.up + '<span class="spin"></span>'; sd.setAttribute('aria-label', '번역'); }, ok ? 1200 : 0);
+        };
+        var pr; try{ pr = send(); }catch(e){ fin(false); return; }
+        Promise.resolve(pr).then(function(r){ fin(!(r && r.ok === false)); }, function(){ fin(false); });
       });
-      inner.appendChild(pick);
-      var sync = function(){
-        var tgt = null; try{ tgt = _jumpTarget; }catch(_){}
-        Array.prototype.forEach.call(pick.children, function(b){
-          var on = b.dataset.app === tgt, was = b.classList.contains('on');
-          b.classList.toggle('on', on);
-          b.innerHTML = b.textContent.slice(0, 1) + (on ? '<span>' + ({ wechat: '위챗', feishu: '페이수', alipay: '알리페이' })[b.dataset.app] + '으로 답장</span>' : '');
-          if(on && !was) appear(b, 'scale(1.18)', P.pop, { fade: false });
-        });
+      inner.appendChild(sd);
+    }
+    var clr = $('inputClearBtn');
+    if(clr){ var sv = clr.querySelector('svg'); if(sv){ var nx = document.createElement('span'); nx.innerHTML = IC.x; sv.replaceWith(nx.firstChild); } }
+    if(inner && !$('bkArm')){
+      var arm = document.createElement('div'); arm.id = 'bkArm';
+      arm.innerHTML = '<span id="bkArmTx"></span><button type="button" aria-label="답장 모드 끄기">' + IC.x + '</button>';
+      inner.appendChild(arm);
+      arm.querySelector('button').addEventListener('mousedown', function(ev){ ev.preventDefault(); });
+      arm.querySelector('button').addEventListener('click', function(ev){ ev.stopPropagation(); var t = null; try{ t = _jumpTarget; }catch(_){} if(t){ try{ _armReplyTo(t); }catch(_){} } });
+      var NM = { wechat: '위챗으로', feishu: '페이수로', alipay: '알리페이로' };
+      var syncArm = function(){
+        var t = null; try{ t = _jumpTarget; }catch(_){}
+        var was = arm.classList.contains('on');
+        arm.classList.toggle('on', !!t);
+        if(t){ arm.dataset.app = t; $('bkArmTx').textContent = (NM[t] || t) + ' 답장'; if(!was) appear(arm, 'translateY(8px) scale(.85)', P.pop, { fadeMs: 140 }); }
       };
       var jw = $('jumpAppWrap');
-      if(jw) new MutationObserver(sync).observe(jw, { attributes: true, subtree: true, attributeFilter: ['class'] });
-      sync();
+      if(jw) new MutationObserver(syncArm).observe(jw, { attributes: true, subtree: true, attributeFilter: ['class'] });
+      syncArm();
     }
-    // 입력창 위 되돌리기 단추가 뜨면 W·F·A 를 잠깐 가린다(같은 자리)
     var undo = $('inputUndoBtn');
-    if(undo && $('bkAppPick')) new MutationObserver(function(){ $('bkAppPick').style.visibility = (undo.style.display && undo.style.display !== 'none') ? 'hidden' : ''; })
+    if(undo && $('bkArm')) new MutationObserver(function(){ $('bkArm').style.visibility = (undo.style.display && undo.style.display !== 'none') ? 'hidden' : ''; })
       .observe(undo, { attributes: true, attributeFilter: ['style'] });
 
     // ===== 3. 말풍선 아래 단추: 아이콘만 =====
@@ -11660,6 +11885,10 @@ label[for="maxTokens"], #maxTokens,
           if(!ic) return;
           b.classList.add('bkIco'); b.innerHTML = ic; b.setAttribute('aria-label', lb); b.title = lb;
         });
+        Array.prototype.forEach.call(r.querySelectorAll('.retryPill:not(.bkRt)'), function(b){
+          b.classList.add('bkRt');
+          if(String(b.textContent).trim() === 'Retry') b.innerHTML = IC.retry + '<span>다시 번역</span>';
+        });
         var tts = r.querySelector('.ttsBtn'); if(tts && !tts.getAttribute('aria-label')){ tts.setAttribute('aria-label', '읽어 주기'); tts.title = '읽어 주기'; }
       });
     }
@@ -11669,7 +11898,6 @@ label[for="maxTokens"], #maxTokens,
         muts.forEach(function(mu){ Array.prototype.forEach.call(mu.addedNodes, function(n){ if(n.nodeType === 1) iconize(n); }); });
       }).observe(chatEl, { childList: true, subtree: true });
     }
-    // 복사: 아이콘이 돌며 작아지고 체크가 튀어나옴, 1.4초 뒤 되돌아감
     document.addEventListener('click', function(e){
       var b = e.target && e.target.closest ? e.target.closest('.copyPill.bkCopy') : null;
       if(!b || b._bkBusy) return;
@@ -11690,49 +11918,260 @@ label[for="maxTokens"], #maxTokens,
       }, 1400);
     }, true);
 
-    // ===== 4. 모션 =====
-    // 메뉴·모델 목록: 펼쳐지고 항목이 차례로
+    // ===== 4. 설정 화면(색상·글꼴, 레이아웃): 묶음 카드로 =====
+    function group(title, extra){
+      var g = document.createElement('div'); g.className = 'bkGroup';
+      var h = document.createElement('h3'); h.textContent = title; if(extra) h.appendChild(extra);
+      var c = document.createElement('div'); c.className = 'bkCard';
+      g.appendChild(h); g.appendChild(c); return { g: g, c: c };
+    }
+    var openTray = null;
+    function trayRow(card, label, cssVar, previewText, nodes){
+      var wrap = document.createElement('div');
+      var head = document.createElement('button'); head.type = 'button'; head.className = 'bkItem'; head.setAttribute('aria-expanded', 'false');
+      head.innerHTML = '<div class="bkLbl"><b></b></div><span class="bkPrev"></span>' + IC.chev;
+      head.querySelector('b').textContent = label;
+      var pv = head.querySelector('.bkPrev'); pv.textContent = previewText; pv.style.background = 'var(' + cssVar + ')';
+      if(cssVar === '--metaText'){ pv.style.background = 'var(--bkSurf2)'; pv.style.color = 'var(--metaText)'; }
+      var tray = document.createElement('div'); tray.className = 'bkTray';
+      var tin = document.createElement('div'); tin.className = 'bkTrayIn'; tray.appendChild(tin);
+      nodes.forEach(function(n){ if(n) tin.appendChild(n); });
+      wrap.appendChild(head); wrap.appendChild(tray); card.appendChild(wrap);
+      var chev = head.querySelector('.bkChev');
+      var api = { set: function(o){
+        head.setAttribute('aria-expanded', o);
+        var h0 = tray.offsetHeight, h1 = o ? tin.offsetHeight : 0;
+        tray.style.height = h1 + 'px';
+        if(!reduce && tray.animate){
+          tray.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: P.tray.dur, easing: P.tray.easing });
+          chev.animate([{ transform: 'rotate(' + (o ? 0 : 180) + 'deg)' }, { transform: 'rotate(' + (o ? 180 : 0) + 'deg)' }], { duration: P.tray.dur, easing: P.tray.easing, fill: 'forwards' });
+        } else chev.style.transform = o ? 'rotate(180deg)' : '';
+        if(o) setTimeout(function(){ if(head.getAttribute('aria-expanded') === 'true') tray.style.height = 'auto'; }, P.tray.dur + 20);
+      } };
+      head.addEventListener('click', function(){ var o = openTray !== api; if(openTray) openTray.set(false); openTray = o ? api : null; api.set(o); });
+      return api;
+    }
+    function markSel(sw){
+      if(!sw) return;
+      var inp = $(sw.getAttribute('data-target'));
+      var v = inp ? String(inp.value || '').toLowerCase() : '';
+      Array.prototype.forEach.call(sw.querySelectorAll('.cSwatch'), function(b){ b.classList.toggle('bkSel', String(b.getAttribute('data-color')).toLowerCase() === v); });
+    }
+    function colorParts(id, extras){
+      var inp = $(id); if(!inp) return null;
+      var item = inp.closest('.colorItem');
+      var sw = item ? item.querySelector('.colorSwatches') : null;
+      var txt = $(id + 'Text');
+      var cu = document.createElement('div'); cu.className = 'bkCustom';
+      inp.removeAttribute('style'); cu.appendChild(inp);
+      if(txt){ txt.removeAttribute('style'); cu.appendChild(txt); }
+      var lab = document.createElement('span'); lab.textContent = '직접 고르기'; cu.appendChild(lab);
+      var nodes = [];
+      if(extras && extras.length){ var ex = document.createElement('div'); ex.className = 'bkExtra'; extras.forEach(function(n){ if(n){ n.removeAttribute && n.style && (n.style.margin = '0'); ex.appendChild(n); } }); nodes.push(ex); }
+      if(sw) nodes.push(sw);
+      nodes.push(cu);
+      if(sw){
+        markSel(sw);
+        sw.addEventListener('click', function(e){ var b = e.target.closest('.cSwatch'); if(!b) return; setTimeout(function(){ markSel(sw); }, 0);
+          if(!reduce && b.animate) b.animate([{ transform: 'scale(.7)' }, { transform: 'none' }], { duration: P.press.dur, easing: P.press.easing }); });
+        inp.addEventListener('input', function(){ markSel(sw); });
+      }
+      return { item: item, nodes: nodes };
+    }
+    function restyleColorPanel(){
+      var panel = $('colorSettingsPanel'); if(!panel || panel._bk) return; panel._bk = true;
+      var h2 = panel.querySelector('h2'); if(h2) h2.textContent = '색상 · 글꼴';
+      var headRow = h2 ? h2.parentNode : null;
+      var host = document.createElement('div');
+      if(headRow) headRow.parentNode.insertBefore(host, headRow.nextSibling); else panel.insertBefore(host, panel.firstChild);
+      var leftovers = [];
+      // 말풍선 색
+      var resetBtn = document.createElement('button'); resetBtn.type = 'button'; resetBtn.className = 'bkReset'; resetBtn.textContent = '기본값으로';
+      var g1 = group('말풍선 색', resetBtn);
+      var BUB = [['colorAsstWechatBg', '위챗', '--asstWechatBg', '번역문'], ['colorAsstFeishuBg', '페이수', '--asstFeishuBg', '번역문'],
+                 ['colorAsstAlipayBg', '알리페이', '--asstAlipayBg', '번역문'], ['colorAsstUrlBg', 'URL', '--asstUrlBg', '번역문'],
+                 ['colorAsstClipBg', '붙여넣기', '--asstClipBg', '번역문'], ['colorAsstTypingBg', '직접 입력', '--asstTypingBg', '번역문'],
+                 ['colorUserBubbleBg', '원문', '--userBubbleBg', '원문 글'], ['colorAsstSenderBg', '지정 발송인', '--asstSenderBg', '번역문']];
+      BUB.forEach(function(x){
+        var extras = null;
+        if(x[0] === 'colorAsstSenderBg'){
+          var nm = $('hlSenderNames'); var hint = nm && nm.nextElementSibling && nm.nextElementSibling.classList.contains('hint') ? nm.nextElementSibling : null;
+          if(nm){ nm.classList.add('bkPill'); nm.removeAttribute('style'); nm.style.width = '100%'; }
+          extras = [nm, hint];
+        }
+        var pp = colorParts(x[0], extras); if(!pp) return;
+        trayRow(g1.c, x[1], x[2], x[3], pp.nodes); leftovers.push(pp.item);
+      });
+      resetBtn.addEventListener('click', function(){
+        var D = { colorAsstWechatBg: '#0b6b3a', colorAsstFeishuBg: '#5b3a8c', colorAsstAlipayBg: '#15458c', colorAsstUrlBg: '#14532d', colorAsstClipBg: '#5c3a1e',
+                  colorAsstTypingBg: '#1c1c20', colorUserBubbleBg: '#2a2a2f', colorAsstSenderBg: '#8c2f45' };
+        Object.keys(D).forEach(function(id){ var i = $(id); if(!i) return; i.value = D[id]; i.dispatchEvent(new Event('input', { bubbles: true })); i.dispatchEvent(new Event('change', { bubbles: true }));
+          var t = $(id + 'Text'); if(t) t.value = D[id]; var sw = document.querySelector('.colorSwatches[data-target="' + id + '"]'); markSel(sw); });
+        try{ toast('말풍선 색을 기본값으로 돌렸습니다'); }catch(_){}
+      });
+      host.appendChild(g1.g);
+      // 화면 색
+      var g2 = group('화면 색');
+      [['colorBg', '전체 바탕', '--bg', '바탕'], ['colorChatBg', '채팅 바탕', '--chatBg', '바탕'], ['colorHeaderBg', '상단바', '--headerBg', '상단바'],
+       ['colorInputBg', '입력창', '--inputBg', '입력창'], ['colorMetaText', '정보줄 글자', '--metaText', '모델 · 초'], ['colorSendBtnBg', '보내기 단추', '--sendBtnBg', '보내기'],
+       ['colorCopyBtnBg', '말풍선 아래 단추', '--copyBtnBg', '단추']].forEach(function(x){
+        var pp = colorParts(x[0]); if(!pp) return; trayRow(g2.c, x[1], x[2], x[3], pp.nodes); leftovers.push(pp.item);
+      });
+      host.appendChild(g2.g);
+      // 글자(크기 슬라이더 + 커스텀 폰트)
+      var g3 = group('글자');
+      var fs = $('fontScale'); if(fs){ var blk = fs.closest('div[style*="margin-bottom:24px"]'); sliderRow(g3.c, '글자 크기', fs, $('fontScaleVal'), $('fontScaleResetBtn')); if(blk) leftovers.push(blk); }
+      var ff = $('fontFile');
+      if(ff){
+        var fb = ff.closest('div[style*="margin-bottom:24px"]');
+        var row = document.createElement('div'); row.className = 'bkItem'; row.style.flexWrap = 'wrap';
+        row.innerHTML = '<div class="bkLbl"><b>내 글꼴 파일</b><span></span></div>';
+        var st = $('fontStatus'); if(st) row.querySelector('.bkLbl span').appendChild(st);
+        var cf = $('clearFontBtn'); ff.style.cssText = 'flex:1 1 100%;font-size:12.5px;color:var(--bkMuted)';
+        if(cf){ cf.classList.add('bkSmall'); row.appendChild(cf); }
+        row.appendChild(ff);
+        g3.c.appendChild(row); if(fb) leftovers.push(fb);
+      }
+      host.appendChild(g3.g);
+      // 메신저 여는 방식(W·F·A 치수는 단추 줄을 뺐으므로 숨김)
+      var jd = $('jumpDimRows');
+      if(jd){
+        var mb = jd.closest('div[style*="margin-bottom:24px"]');
+        if(mb){
+          var g4 = group('메신저 여는 방식');
+          var kids = Array.prototype.slice.call(mb.childNodes);
+          var lbls = mb.querySelectorAll(':scope > label'), hints = mb.querySelectorAll(':scope > .hint');
+          var inn2 = document.createElement('div'); inn2.style.padding = '12px 0';
+          if(hints[1]) inn2.appendChild(hints[1]);
+          var cr = $('msgrCustomRows'); if(cr) inn2.appendChild(cr);
+          var rest = mb.querySelector(':scope > div[style*="flex-direction:column; gap:8px;"]:not(#msgrCustomRows)'); if(rest) inn2.appendChild(rest);
+          g4.c.appendChild(inn2); host.appendChild(g4.g);
+          mb.style.display = 'none';
+        }
+      }
+      // 기타: PC 작업표시줄 숨김 스위치
+      var fsT = $('bkFullscreenToggle');
+      if(fsT){
+        var fl = fsT.closest('label'); var fbk = fl ? fl.parentNode : null;
+        var g5 = group('기타');
+        var row5 = document.createElement('label'); row5.className = 'bkItem'; row5.style.cursor = 'pointer';
+        row5.innerHTML = '<div class="bkLbl"><b>PC 작업표시줄 숨김</b><span>켜면 앱을 열 때마다 전체 화면 안내(기본 끔)</span></div>';
+        fsT.removeAttribute('style'); row5.appendChild(fsT); g5.c.appendChild(row5); host.appendChild(g5.g);
+        if(fbk) leftovers.push(fbk);
+      }
+      // 옛 상자 정리: 옮긴 뒤 빈 상자만 숨긴다(입력 요소는 이미 옮김)
+      leftovers.forEach(function(n){ if(n) n.style.display = 'none'; });
+      var gridHost = panel.querySelector('div[style*="grid-template-columns:1fr 1fr 1fr"]'); if(gridHost && gridHost.parentNode) gridHost.parentNode.style.display = 'none';
+    }
+    function sliderRow(card, label, range, valEl, resetBtn){
+      var row = document.createElement('div'); row.className = 'bkSliderRow';
+      var top = document.createElement('div'); top.className = 'bkTop';
+      var b = document.createElement('b'); b.textContent = label; top.appendChild(b);
+      if(valEl){ valEl.removeAttribute('style'); valEl.classList.add('bkVal'); top.appendChild(valEl); }
+      if(resetBtn){ resetBtn.className = 'bkReset'; resetBtn.removeAttribute('style'); top.appendChild(resetBtn); }
+      var rw = document.createElement('div'); rw.className = 'bkRangeWrap';
+      range.removeAttribute('style'); range.style.width = '100%'; rw.appendChild(range);
+      var tip = document.createElement('span'); tip.className = 'bkTip'; rw.appendChild(tip);
+      row.appendChild(top); row.appendChild(rw); card.appendChild(row);
+      var pct = function(){ var mn = +range.min || 0, mx = +range.max || 100, v = +range.value; return Math.max(0, Math.min(1, (v - mn) / ((mx - mn) || 1))); };
+      var upd = function(){ var p = pct(); range.style.setProperty('--p', (p * 100).toFixed(1) + '%'); tip.style.left = 'calc(11px + (100% - 22px) * ' + p.toFixed(4) + ')'; tip.textContent = valEl ? valEl.textContent : range.value; };
+      upd(); range.addEventListener('input', function(){ setTimeout(upd, 0); });
+      if(resetBtn) resetBtn.addEventListener('click', function(){ setTimeout(upd, 0); });
+      var showTip = function(on){ if(reduce || !tip.animate){ tip.style.opacity = on ? 1 : 0; return; }
+        tip.animate([{ opacity: on ? 0 : 1, transform: on ? 'translateY(6px) scale(.85)' : 'none' }, { opacity: on ? 1 : 0, transform: on ? 'none' : 'translateY(6px) scale(.85)' }],
+          { duration: on ? P.tip.dur : 160, easing: on ? P.tip.easing : 'ease-in', fill: 'forwards' }); };
+      range.addEventListener('pointerdown', function(){ upd(); showTip(true); });
+      ['pointerup', 'pointercancel', 'blur'].forEach(function(ev){ range.addEventListener(ev, function(){ showTip(false); }); });
+      return row;
+    }
+    function restyleLayoutPanel(){
+      var panel = $('layoutSettingsPanel'); if(!panel || panel._bk) return; panel._bk = true;
+      var h2 = panel.querySelector('h2'); if(h2) h2.textContent = '레이아웃';
+      var headRow = h2 ? h2.parentNode : null;
+      var host = document.createElement('div');
+      if(headRow) headRow.parentNode.insertBefore(host, headRow.nextSibling); else panel.insertBefore(host, panel.firstChild);
+      var groups = {}, order = ['글자', '상단바', '채팅창', '입력창', '기타'];
+      order.forEach(function(k){ groups[k] = group(k); });
+      Array.prototype.forEach.call(panel.querySelectorAll('input[type="range"]'), function(r){
+        var blk = r.closest('div[style*="margin-bottom"]'); if(!blk || blk.closest('.bkGroup')) return;
+        var lb = blk.querySelector('label'); var name = lb ? lb.textContent.trim() : r.id;
+        var key = /글자/.test(name) ? '글자' : /상단바/.test(name) ? '상단바' : /입력창|키보드/.test(name) ? '입력창' : /채팅/.test(name) ? '채팅창' : '기타';
+        var val = r.id ? $(r.id.replace(/Slider$/, '') + 'Val') : null;
+        var rst = r.id ? $(r.id.replace(/Slider$/, '') + 'ResetBtn') : null;
+        sliderRow(groups[key].c, name, r, val, rst);
+        blk.style.display = 'none';
+      });
+      Array.prototype.forEach.call(panel.querySelectorAll('input[type="checkbox"]'), function(cb){
+        if(cb.closest('.bkGroup') || /display:\s*none/.test(cb.getAttribute('style') || '')) return;
+        var lb = cb.closest('label'); if(!lb) return;
+        var row = document.createElement('label'); row.className = 'bkItem'; row.style.cursor = 'pointer';
+        var t = lb.textContent.trim(); row.innerHTML = '<div class="bkLbl"><b></b></div>'; row.querySelector('b').textContent = t;
+        cb.removeAttribute('style'); row.appendChild(cb); groups['기타'].c.appendChild(row); lb.style.display = 'none';
+      });
+      order.forEach(function(k){ if(groups[k].c.children.length) host.appendChild(groups[k].g); });
+    }
+    try{ restyleColorPanel(); }catch(e){ try{ console.warn('p156 color panel', e); }catch(_){} }
+    try{ restyleLayoutPanel(); }catch(e){ try{ console.warn('p156 layout panel', e); }catch(_){} }
+    // 다른 창의 슬라이더도 값 채움 표시
+    Array.prototype.forEach.call(document.querySelectorAll('.settings input[type="range"]'), function(r){
+      if(r.closest('.bkSliderRow')) return;
+      var upd = function(){ var mn = +r.min || 0, mx = +r.max || 100; r.style.setProperty('--p', (((+r.value - mn) / ((mx - mn) || 1)) * 100).toFixed(1) + '%'); };
+      upd(); r.addEventListener('input', upd);
+    });
+
+    // ===== 5. 모션 =====
     ['topMenuDropdown', 'modelDropdown'].forEach(function(id){
       var m = $(id);
-      onClass(m, 'show', function(el){
-        if(el._lv){ el._lv.cancel(); el._lv = null; }
-        if(id === 'topMenuDropdown') setBar(true);
-        appear(el, 'translateY(-8px) scale(.92)', P.menu, { fadeMs: 140 });
-        var items = Array.prototype.filter.call(el.children, function(c){ return c.offsetParent !== null; });
-        items.slice(0, 16).forEach(function(it2, i){ appear(it2, 'translateY(6px)', P.item, { delay: 30 + i * 22, fadeMs: 160 }); });
-      }, function(el){ el._lv = leave(el, 'translateY(-4px) scale(.96)', 'block', 140); });
-    });
-    // 설정·수정·모델 등 모든 창: 배경은 흐려지고 창은 아래에서 올라와 자리 잡음
-    Array.prototype.forEach.call(document.querySelectorAll('.settingsOverlay'), function(ov){
-      onClass(ov, 'show', function(el){
-        if(el._lv){ el._lv.cancel(); el._lv = null; }
-        if(!reduce && el.animate) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
-        appear(el.querySelector('.settings') || el.firstElementChild, 'translateY(28px) scale(.97)', P.sheet, { fade: false });
-      }, function(el){
-        var panel = el.querySelector('.settings') || el.firstElementChild;
-        if(panel && panel.animate && !reduce) panel.animate([{ transform: 'none' }, { transform: 'translateY(14px) scale(.98)' }], { duration: 150, easing: 'ease-in' });
-        el._lv = leave(el, 'none', 'flex', 160);
+      onClass(m, 'show', function(el2){
+        if(el2._lv){ el2._lv.cancel(); el2._lv = null; }
+        if(id === 'topMenuDropdown'){ setBar(true); scrim.classList.add('on'); }
+        if(!reduce && el2.animate){
+          el2.animate([{ clipPath: 'inset(0 0 calc(100% - 56px) calc(100% - 56px) round 20px)' }, { clipPath: 'inset(0 0 0 0 round 22px)' }], { duration: P.menu.dur, easing: P.menu.easing });
+          el2.animate([{ opacity: .6 }, { opacity: 1 }], { duration: 120, easing: 'ease-out' });
+        }
+        var items = Array.prototype.filter.call(el2.children, function(c){ return c.offsetParent !== null; });
+        items.slice(0, 18).forEach(function(it2, i){ appear(it2, 'translateY(14px)', P.item, { delay: 60 + i * 40, fadeMs: 180 }); });
+      }, function(el2){
+        if(id === 'topMenuDropdown') scrim.classList.remove('on');
+        if(reduce || !el2.animate) return;
+        el2.style.display = 'block';
+        var a = el2.animate([{ clipPath: 'inset(0 0 0 0 round 22px)', opacity: 1 }, { clipPath: 'inset(0 0 calc(100% - 56px) calc(100% - 56px) round 20px)', opacity: .4 }], { duration: 200, easing: 'ease-in' });
+        a.onfinish = a.oncancel = function(){ el2.style.display = ''; };
+        el2._lv = a;
       });
     });
-    // 알림 문구·복사 바
-    onClass($('toast'), 'show', function(el){
-      if(reduce || !el.animate) return;
-      el.animate([{ transform: 'translateX(-50%) translateY(-14px) scale(.9)' }, { transform: 'translateX(-50%)' }], { duration: P.pop.dur, easing: P.pop.easing });
+    Array.prototype.forEach.call(document.querySelectorAll('.settingsOverlay'), function(ov){
+      onClass(ov, 'show', function(el2){
+        if(el2._lv){ el2._lv.cancel(); el2._lv = null; }
+        if(!reduce && el2.animate) el2.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
+        var panel = el2.querySelector('.settings') || el2.firstElementChild;
+        appear(panel, 'translateY(28px) scale(.97)', P.sheet, { fade: false });
+        var gs = panel ? panel.querySelectorAll('.bkGroup') : [];
+        Array.prototype.forEach.call(gs, function(g, i){ if(i < 6) appear(g, 'translateY(14px)', P.item, { delay: 60 + i * 50, fadeMs: 180 }); });
+      }, function(el2){
+        var panel = el2.querySelector('.settings') || el2.firstElementChild;
+        if(panel && panel.animate && !reduce) panel.animate([{ transform: 'none' }, { transform: 'translateY(14px) scale(.98)' }], { duration: 150, easing: 'ease-in' });
+        el2._lv = leave(el2, 'none', 'flex', 160);
+      });
     });
-    onClass($('copyBar'), 'hidden', null, function(el){
-      if(reduce || !el.animate) return;
-      el.animate([{ transform: 'translateX(-50%) translateY(24px) scale(.96)', opacity: 0 }, { transform: 'translateX(-50%)', opacity: 1 }], { duration: P.pop.dur, easing: P.pop.easing });
+    onClass($('toast'), 'show', function(el2){
+      if(reduce || !el2.animate) return;
+      el2.animate([{ transform: 'translateX(-50%) translateY(12px) scale(.92)' }, { transform: 'translateX(-50%)' }], { duration: P.pop.dur, easing: P.pop.easing });
     });
-    // 입력창: 펼칠 때 스프링(CSS), [복사][삭제]·W·F·A 차례로 튀어나옴
+    onClass($('copyBar'), 'hidden', null, function(el2){
+      if(reduce || !el2.animate) return;
+      el2.animate([{ transform: 'translateX(-50%) translateY(24px) scale(.96)', opacity: 0 }, { transform: 'translateX(-50%)', opacity: 1 }], { duration: P.pop.dur, easing: P.pop.easing });
+    });
+    onClass($('focusOverlay'), 'active', function(el2){
+      if(reduce || !el2.animate) return;
+      el2.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
+      var ft = $('focusText'); if(ft) ft.animate([{ transform: 'scale(.9)' }, { transform: 'none' }], { duration: P.pop.dur, easing: P.pop.easing });
+    });
     var composer = document.querySelector('.composer');
     onClass(composer, 'hasAct', function(){
       Array.prototype.forEach.call(document.querySelectorAll('#inputActRow button'), function(b, i){ appear(b, 'translateY(8px) scale(.8)', P.pop, { delay: i * 45, fadeMs: 140 }); });
     });
-    onClass(composer, 'collapsed', null, function(){
-      appear(document.querySelector('.composerInner'), 'scaleX(.94)', P.composer, { fade: false });
-      Array.prototype.forEach.call(document.querySelectorAll('#bkAppPick button'), function(b, i){ appear(b, 'translateY(8px) scale(.8)', P.pop, { delay: 40 + i * 40, fadeMs: 140 }); });
-    });
-    // 새 대화 줄: 원문 줄은 떠오르고, 번역문은 앱 스트리밍 효과 뒤 단추 줄이 차례로(처음 열 때 그려지는 기록은 움직이지 않음)
+    onClass(composer, 'collapsed', null, function(){ appear(document.querySelector('.composerInner'), 'translateY(10px) scale(.97)', P.composer, { fade: false }); });
     var seen = new Set(), booting = true;
     function markSeen(){ if(chatEl) Array.prototype.forEach.call(chatEl.querySelectorAll('.msg[data-message-id]'), function(r){ seen.add(r.dataset.messageId); }); }
     if(chatEl){
@@ -11754,25 +12193,25 @@ label[for="maxTokens"], #maxTokens,
         });
       }).observe(chatEl, { childList: true });
     }
-    // 개인·업무 답장 시트: 아래에서 밀려 올라오고 답안 카드가 차례로
+    // 바닥 시트들(답장 안·모델 고르기): 아래에서 밀려 올라옴
     new MutationObserver(function(muts){
       muts.forEach(function(mu){
         Array.prototype.forEach.call(mu.addedNodes, function(n){
-          if(n.id !== 'bkReplyOv') return;
-          if(!reduce && n.animate) n.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
-          appear(n.querySelector('.rs'), 'translateY(100%)', P.sheet, { fade: false });
-          var cards = n.querySelector('.rsCards');
-          if(cards) new MutationObserver(function(ms){
-            var i = 0;
-            ms.forEach(function(m2){ Array.prototype.forEach.call(m2.addedNodes, function(c){
-              if(c.classList && c.classList.contains('rsCard')) appear(c, 'translateY(12px) scale(.97)', P.item, { delay: (i++) * 60, fadeMs: 180 });
-            }); });
-          }).observe(cards, { childList: true });
+          if(n.id === 'bkReplyOv'){
+            if(!reduce && n.animate) n.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
+            appear(n.querySelector('.rs'), 'translateY(100%)', P.sheet, { fade: false });
+          } else if(n.id === 'composerModelPickerOverlay'){
+            n.style.background = 'rgba(0,0,0,.6)';
+            var pop = n.firstElementChild;
+            if(pop){ pop.style.background = '#141417'; pop.style.borderRadius = '22px'; pop.style.boxShadow = '0 0 0 1px rgba(255,255,255,.10), 0 -16px 40px rgba(0,0,0,.6)'; }
+            if(!reduce && n.animate) n.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
+            appear(pop, 'translateY(40px) scale(.97)', P.sheet, { fade: false });
+          }
         });
       });
     }).observe(document.body, { childList: true });
 
-    try{ document.addEventListener('touchstart', function(){}, { passive: true }); }catch(_){}   // 아이폰에서 :active 누름 효과
+    try{ document.addEventListener('touchstart', function(){}, { passive: true }); }catch(_){}
   })();
   </script>
 
