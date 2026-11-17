@@ -1,9 +1,30 @@
 <!doctype html>
 <html lang="ko">
 <head>
+  <script>
+  /* ★p155(261118 범근님 '검은 배경으로 하고 그에 맞는 색구성'): 한 번만 검은 바탕으로 옮긴다.
+     바탕·채팅·상단바는 검정으로, 입력창·원문·직접 입력 말풍선·단추 면은 옛 기본값 그대로일 때만 새 기본값으로.
+     출처별 말풍선 색(위챗·페이수 등)과 직접 고른 색은 건드리지 않는다. 색은 설정 '색상 · 폰트'에서 언제든 바꾼다. */
+  (function(){
+    try{
+      if(localStorage.getItem('bk_p155_black') === '1') return;
+      var P = 'bk_tr_pro_color_';
+      localStorage.setItem(P + 'bg', '#000000');
+      localStorage.setItem(P + 'chat_bg', '#000000');
+      localStorage.setItem(P + 'header_bg', '#000000');
+      var soft = { input_bg: ['#2e3440', '#1b1b1e'], user_bubble_bg: ['#2e3440', '#2a2a2f'], asst_typing_bg: ['#1e2430', '#1c1c20'], copy_btn_bg: ['#1a1f2a', '#1b1b1e'] };
+      Object.keys(soft).forEach(function(k){
+        var cur = (localStorage.getItem(P + k) || '').toLowerCase();
+        if(!cur || cur === soft[k][0]) localStorage.setItem(P + k, soft[k][1]);
+      });
+      localStorage.setItem('bk_p155_black', '1');
+    }catch(_){}
+  })();
+  </script>
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
-  <meta name="theme-color" content="#050505" />
+  <meta name="theme-color" content="#000000" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -558,7 +579,8 @@
       -webkit-background-clip:text;background-clip:text;color:transparent;animation:srShine 1.4s linear infinite}
     @keyframes srShine{to{background-position:-200% 0}}
     .bubble.srAnim .srText{position:absolute;left:14px;top:12px;margin:0;white-space:pre-wrap;word-break:break-word}
-    .bubble.srAnim .srText .wd{display:inline-block;opacity:0;will-change:transform,opacity,filter}
+    /* p155: 낱말은 inline(줄바꿈이 완성된 글과 똑같다). inline-block 이면 중국어가 다르게 줄바꿈돼 끝 낱말·물음표가 가려졌다가 늦게 보였다 */
+    .bubble.srAnim .srText .wd{display:inline;position:relative;opacity:0;will-change:opacity,filter}
 
     .msg.assistant .bubble{
       background: var(--assistantBubbleBg);
@@ -1534,6 +1556,7 @@ label[for="maxTokens"], #maxTokens,
               <input id="colorChatBgText" type="text" placeholder="#000000" class="colorTextInput" data-target="colorChatBg" />
             </div>
             <div class="colorSwatches" data-target="colorChatBg">
+              <button class="cSwatch" type="button" data-color="#000000" style="background:#000000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)" title="검정(p155 기본)"></button>
               <button class="cSwatch" type="button" data-color="#050505" style="background:#050505"></button>
               <button class="cSwatch" type="button" data-color="#0b0f14" style="background:#0b0f14"></button>
               <button class="cSwatch" type="button" data-color="#0e1420" style="background:#0e1420"></button>
@@ -1983,7 +2006,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p154';   // p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
+    const APP_VERSION = 'v20.57p155';   // p155: 모션 디자인 예시 2 적용(범근님 261118 '좋아 수정 배포'·'진행'): 검은 바탕, 상단바 1층(왼쪽 메뉴·가운데 연결 상태·오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음), 오른쪽 아래 단추 줄 뺌(W·F·A 답장 대상은 입력창 위 왼쪽, 대화 지우기는 메뉴), 말풍선 아래 단추 아이콘만·한 단계 작게, 메뉴·창·시트·복사·입력창 스프링 모션. 그리고 스트리밍 끝 낱말·물음표가 늦게 보이던 것 수정(낱말을 inline 으로 해 완성 글과 줄바꿈을 같게, 높이는 실제 배치로). p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
 
     // p151: 기기 표식 공용 함수. 아이폰 듀오 모드 켜짐이면 'iphone', 아니면 기존식 그대로('phone'/'pc').
     function _bkDev(){
@@ -3263,21 +3286,21 @@ label[for="maxTokens"], #maxTokens,
     }
 
     const COLOR_DEFAULTS = {
-      bg: '#050505',
-      chatBg: '#0e1420',
-      inputBg: '#2e3440',
-      userBubbleBg: '#2e3440',
+      bg: '#000000',        // ★p155 검은 바탕(종전 #050505)
+      chatBg: '#000000',    // 종전 #0e1420
+      inputBg: '#1b1b1e',   // 종전 #2e3440
+      userBubbleBg: '#2a2a2f',
       asstUrlBg: '#14532d',
       asstClipBg: '#5c3a1e',
-      asstTypingBg: '#1e2430',
+      asstTypingBg: '#1c1c20',
       asstWechatBg: '#0b6b3a',
       asstAlipayBg: '#15458c',
       asstFeishuBg: '#5b3a8c',
       asstSenderBg: '#8c2f45',
       metaText: '#9fb0c0',
       sendBtnBg: '#2d6bff',
-      headerBg: '#0b0f14',
-      copyBtnBg: '#1a1f2a'
+      headerBg: '#000000',
+      copyBtnBg: '#1b1b1e'
     };
 
     function hexToRgba(hex, alpha){
@@ -3758,6 +3781,8 @@ label[for="maxTokens"], #maxTokens,
       else if(state === 'busy'){ s.background = 'var(--warn)'; s.boxShadow = '0 0 8px rgba(247,201,72,.4)'; }
       else if(state === 'err'){ s.background = 'var(--danger)'; s.boxShadow = '0 0 8px rgba(255,107,107,.5)'; }
       else { s.background = 'var(--warn)'; s.boxShadow = '0 0 6px rgba(247,201,72,.3)'; }
+      // ★p155: 상단바 가운데 연결 상태 글
+      try{ var _ct = document.getElementById('bkConnTxt'); if(_ct) _ct.textContent = state === 'ok' ? '서울 연결됨' : state === 'busy' ? '번역 중' : state === 'err' ? '연결 오류' : '연결 확인 중'; }catch(_){}
     }
 
     function normalizeNewlines(s){
@@ -4684,10 +4709,10 @@ label[for="maxTokens"], #maxTokens,
         probe.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;';
         probe.textContent = text;
         row.appendChild(probe);
-        var fw = probe.offsetWidth, fh = probe.offsetHeight;
+        var pr = probe.getBoundingClientRect(), fw = pr.width, fh = pr.height;   // ★p155: 소수점까지(반올림으로 좁아져 끝 낱말이 다음 줄로 밀리던 것)
         row.removeChild(probe);
         var tx = document.createElement('p'); tx.className = 'srText';
-        tx.style.width = Math.max(10, fw - PAD_X * 2) + 'px';
+        tx.style.width = Math.max(10, fw - PAD_X * 2 + 0.5).toFixed(2) + 'px';
         var words = [];
         glue(pieces(text)).forEach(function(p){
           if(/^\s+$/.test(p)){ tx.appendChild(document.createTextNode(p)); return; }
@@ -4695,6 +4720,8 @@ label[for="maxTokens"], #maxTokens,
           tx.appendChild(w); words.push({ el:w, s:S(0, 340, 26), on:false });
         });
         b.appendChild(tx);
+        // ★p155: 최종 높이는 실제 낱말 배치로(잰 값보다 한 줄 더 필요하면 그만큼 늘린다. 가려진 채 기다리지 않게)
+        fh = Math.max(fh, tx.offsetHeight + PAD_Y * 2);
         var W = S(b.offsetWidth, 260, 26), H = S(b.offsetHeight, 260, 26), T = S(1, 300, 30);
         W.t = fw; T.t = 0;
         var t0 = performance.now(), t = 0, last = t0, finished = false;
@@ -4710,7 +4737,9 @@ label[for="maxTokens"], #maxTokens,
             var w = words[i];
             if(!w.on && t >= i * 0.07){
               w.on = true; w.s.t = 1;
-              H.t = Math.min(fh, tx.offsetTop + w.el.offsetTop + w.el.offsetHeight + PAD_Y);
+              var rs = w.el.getClientRects(), lr = rs.length ? rs[rs.length - 1] : null;   // 두 줄에 걸친 낱말은 마지막 줄 기준
+              H.t = Math.min(fh, tx.offsetTop + (lr ? lr.bottom - tx.getBoundingClientRect().top : w.el.offsetTop + w.el.offsetHeight) + PAD_Y);
+              if(i === words.length - 1) H.t = fh;   // 마지막 낱말이 나오면 최종 높이까지
             }
           }
           for(var k = 0; k < 4; k++){
@@ -4724,7 +4753,7 @@ label[for="maxTokens"], #maxTokens,
             if(!w.on) return;
             var v = clamp(w.s.x, 0, 1.2);
             w.el.style.opacity = clamp(v, 0, 1).toFixed(3);
-            w.el.style.transform = 'translateY(' + ((1 - w.s.x) * 6).toFixed(2) + 'px)';
+            w.el.style.top = ((1 - w.s.x) * 6).toFixed(2) + 'px';   // inline 이라 transform 대신 상대 위치
             w.el.style.filter = v < .98 ? 'blur(' + ((1 - clamp(v, 0, 1)) * 4).toFixed(2) + 'px)' : 'none';
           });
           if(t >= endAt){ finish(); return; }
@@ -11410,5 +11439,342 @@ label[for="maxTokens"], #maxTokens,
       toast('권장: HTTPS에서 사용하세요(키 보안)');
     }
   </script>
+  <!-- ===== p155 디자인·모션 층(261118 범근님 '모션 디자인 예시 2' 확정 → '좋아 수정 배포'·'진행') =====
+       상단바 1층(왼쪽 메뉴 · 가운데 연결 상태 · 오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음)
+       오른쪽 아래 단추 줄(지우기·✦·새로고침·W·F·A) 뺌 → W·F·A 답장 대상 고르기는 입력창 위 왼쪽, 대화 지우기는 메뉴
+       말풍선 아래 단추는 아이콘만(듣기·복사·수정·Retry), 한 단계 작게. 개인·업무도 작게
+       스프링 값(강도 감쇠)은 designbookmark.com/motion 원본: 메뉴 320 26 · 항목 240 22 · 창 260 26 · 알림 380 24 · 누름 420 18 · 입력창 420 34 · 상단바 260 24
+       기능 코드는 그대로 두고 겉모습과 움직임만 바꾼다(숨긴 단추도 요소는 남겨 기존 핸들러를 그대로 쓴다). -->
+  <style id="bkP155">
+    /* 상단바: 화면 위에 겹쳐 고정, 1층 */
+    header{ position:fixed !important; left:0; right:0; top:0; z-index:70; padding-bottom:10px !important;
+      background:linear-gradient(var(--headerBg) 72%, rgba(0,0,0,0)) !important; will-change:transform; }
+    header .headerInner{ background:transparent !important; box-shadow:none !important; }
+    header .topbar, header .topbar.tbHidden{ display:flex !important; height:56px !important; padding:0 12px !important; position:relative; }
+    header .topbar > #modelTag, header .topbar > .title, header .topbar > div[style*="flex:1"],
+    #newPromptToggle, #topTestBtn, #topClearBtn{ display:none !important; }
+    header .rightBtns{ flex:1; display:flex !important; align-items:center; justify-content:space-between; position:relative; }
+    header .menuDropdownWrap{ order:0; }
+    header #topMenuBtn, #bkReloadTop{ width:40px; height:40px; border-radius:999px; display:grid; place-items:center;
+      background:var(--panel2); box-shadow:0 0 0 1px rgba(255,255,255,.10); color:var(--text); padding:0; border:0; cursor:pointer; }
+    header #topMenuBtn svg, #bkReloadTop svg{ width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    #bkReloadTop{ order:2; margin-left:auto; }
+    header #connBtn{ position:absolute; left:50%; top:50%; translate:-50% -50%; height:34px; padding:0 14px; border-radius:999px;
+      background:var(--panel2); box-shadow:0 0 0 1px rgba(255,255,255,.10); display:inline-flex; align-items:center; gap:8px; width:auto; }
+    #bkConnTxt{ font-size:12.5px; color:#cfcfd6; white-space:nowrap; font-weight:500; }
+    header .menuDropdown{ left:0; right:auto; transform-origin:top left; }
+    main{ padding-top:0 !important; }
+    .chat{ padding-top:calc(var(--bkHeadH, 66px) + 4px) !important; }
+    .chatTopFade{ display:none !important; }
+    :root{ --panel1:#111113; --panel2:#1b1b1e; }
+
+    /* 오른쪽 아래 단추 줄은 숨김(요소는 남김: 답장 모드 상태를 이 줄이 기억한다) */
+    #jumpAppWrap{ display:none !important; }
+    /* 답장 대상 고르기(W·F·A): 입력창 위 왼쪽, 입력창이 열렸을 때만 */
+    #bkAppPick{ position:absolute; left:0; bottom:calc(100% + 6px); display:flex; gap:6px; z-index:6; pointer-events:auto; }
+    #bkAppPick button{ height:30px; min-width:34px; padding:0 10px; border-radius:999px; border:0; font:800 12.5px/30px inherit; font-family:inherit;
+      background:rgba(20,20,24,.92); cursor:pointer; -webkit-tap-highlight-color:transparent; opacity:.75; }
+    #bkAppPick button[data-app="wechat"]{ color:#3ec46d; box-shadow:inset 0 0 0 1px rgba(62,196,109,.55); }
+    #bkAppPick button[data-app="feishu"]{ color:#b58cf5; box-shadow:inset 0 0 0 1px rgba(168,111,240,.55); }
+    #bkAppPick button[data-app="alipay"]{ color:#5aa2ff; box-shadow:inset 0 0 0 1px rgba(61,142,245,.55); }
+    #bkAppPick button.on{ opacity:1; box-shadow:inset 0 0 0 1.5px currentColor, 0 0 10px currentColor; }
+    #bkAppPick button span{ font-weight:600; margin-left:4px; }
+
+    /* 말풍선 아래 단추: 아이콘만, 한 단계 작게 */
+    .actionsRow{ gap:5px !important; }
+    .actionsRow .ttsBtn, .actionsRow .copyPill.bkIco{ width:26px; height:26px; min-width:0 !important; padding:0 !important; border-radius:999px;
+      display:inline-grid !important; place-items:center; position:relative; }
+    .actionsRow .ttsBtn svg, .actionsRow .copyPill.bkIco svg{ width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .actionsRow .copyPill.bkIco .bkOk{ position:absolute; color:var(--ok); opacity:0; }
+    .actionsRow .replyPill{ padding:2px 8px !important; font-size:calc(10.5px * var(--textScale)) !important; border-radius:999px !important; min-width:0 !important; line-height:20px; }
+    .actionsRow .retryPill{ padding:3px 10px; font-size:calc(11px * var(--textScale)); border-radius:999px; }
+
+    /* 누름 튐(누를 때 빨리 줄고 뗄 때 스프링으로 돌아옴) */
+    .copyPill, .ttsBtn, .retryPill, .copyBarBtn, #inputActRow button, #composerModelBtn, #bkAppPick button, header #topMenuBtn, #bkReloadTop, header #connBtn{
+      transition: background .15s, color .15s, opacity .2s, transform var(--sp-press-d, .3s) var(--sp-press-e, ease); }
+    .copyPill:active, .ttsBtn:active, .retryPill:active, .copyBarBtn:active, #composerModelBtn:active, #bkAppPick button:active,
+    header #topMenuBtn:active, #bkReloadTop:active{ transform:scale(.88); transition:transform .07s ease-out; }
+    #inputActRow button:active{ transform:scale(.92); transition:transform .07s ease-out; }
+    .menuDropdownItem{ transition: background .12s, transform var(--sp-press-d, .3s) var(--sp-press-e, ease); }
+    .menuDropdownItem:active{ transform:scale(.97); transition:transform .07s ease-out; }
+    .composerRow{ transition: opacity .2s ease, transform var(--sp-composer-d, .3s) var(--sp-composer-e, ease) !important; }
+    .modelDropdown{ transform-origin: top left; }
+    @media (prefers-reduced-motion: reduce){ .composerRow, .copyPill, .menuDropdownItem{ transition-duration:.01s !important; } }
+  </style>
+  <script id="bkP155Script">
+  (function(){
+    'use strict';
+    var reduce = false;
+    try{ reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(_){}
+    var SVG = function(inner){ return '<svg viewBox="0 0 24 24" aria-hidden="true">' + inner + '</svg>'; };
+    var IC = {
+      copy: SVG('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+      ok: '<svg class="bkOk" viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>',
+      edit: SVG('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
+      retry: SVG('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>'),
+      reload: SVG('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>')
+    };
+
+    // ---- 스프링 → CSS linear() 곡선(원본 엔진과 같은 식) ----
+    function curve(k, c){
+      var x = 0, v = 0, dt = 1 / 240, t = 0, pts = [0];
+      while(t < 2.5){
+        for(var i = 0; i < 4; i++){ var a = -k * (x - 1) - c * v; v += a * dt; x += v * dt; t += dt; }
+        pts.push(+x.toFixed(4));
+        if(Math.abs(x - 1) < 0.002 && Math.abs(v) < 0.02) break;
+      }
+      pts[pts.length - 1] = 1;
+      return { easing: 'linear(' + pts.join(', ') + ')', dur: Math.round(t * 1000) };
+    }
+    var LIN = false;
+    try{ LIN = CSS.supports('transition-timing-function', 'linear(0, 1)'); }catch(_){}
+    function preset(k, c){ var s = curve(k, c); return LIN ? s : { easing: 'cubic-bezier(.2,.9,.25,1.08)', dur: Math.min(s.dur, 520) }; }
+    var P = { menu: preset(320, 26), item: preset(240, 22), sheet: preset(260, 26), pop: preset(380, 24), press: preset(420, 18),
+              composer: preset(420, 34), row: preset(300, 22), bar: preset(260, 24) };
+    var rs = document.documentElement.style;
+    Object.keys(P).forEach(function(n){ rs.setProperty('--sp-' + n + '-e', P[n].easing); rs.setProperty('--sp-' + n + '-d', P[n].dur + 'ms'); });
+    function appear(el, from, p, opt){
+      if(reduce || !el || !el.animate) return;
+      opt = opt || {};
+      el.animate([{ transform: from }, { transform: opt.to || 'none' }], { duration: p.dur, easing: p.easing, delay: opt.delay || 0, fill: 'backwards' });
+      if(opt.fade !== false) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: opt.fadeMs || 180, easing: 'ease-out', delay: opt.delay || 0, fill: 'backwards' });
+    }
+    function leave(el, to, disp, ms){
+      if(reduce || !el || !el.animate) return null;
+      el.style.display = disp;
+      var a = el.animate([{ transform: 'none', opacity: 1 }, { transform: to, opacity: 0 }], { duration: ms || 150, easing: 'ease-in' });
+      a.onfinish = a.oncancel = function(){ el.style.display = ''; };
+      return a;
+    }
+    function onClass(el, cls, onAdd, onRemove){
+      if(!el) return;
+      var had = el.classList.contains(cls);
+      new MutationObserver(function(){
+        var has = el.classList.contains(cls);
+        if(has === had) return;
+        had = has;
+        if(has) onAdd && onAdd(el); else onRemove && onRemove(el);
+      }).observe(el, { attributes: true, attributeFilter: ['class'] });
+    }
+    function $(id){ return document.getElementById(id); }
+
+    // ===== 1. 상단바 1층 =====
+    var header = document.querySelector('header');
+    var rb = document.querySelector('header .rightBtns');
+    if(rb && !$('bkReloadTop')){
+      var rl = document.createElement('button'); rl.id = 'bkReloadTop'; rl.type = 'button'; rl.setAttribute('aria-label', '새로고침'); rl.title = '새로고침';
+      rl.innerHTML = IC.reload;
+      rl.addEventListener('click', function(e){
+        e.stopPropagation();
+        var s = rl.querySelector('svg');
+        if(s && s.animate && !reduce) s.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 420, easing: 'ease-in-out' });
+        setTimeout(function(){ var r = $('tbReload'); if(r) r.click(); else location.reload(); }, 220);
+      });
+      rb.appendChild(rl);
+    }
+    var conn = $('connBtn');
+    if(conn && !$('bkConnTxt')){ var ct = document.createElement('span'); ct.id = 'bkConnTxt'; ct.textContent = '연결 확인 중'; conn.appendChild(ct); }
+    function setHeadH(){ if(header) document.documentElement.style.setProperty('--bkHeadH', header.offsetHeight + 'px'); }
+    setHeadH(); window.addEventListener('resize', function(){ setTimeout(setHeadH, 60); });
+    setTimeout(setHeadH, 400);
+
+    // 손가락·휠로 직접 스크롤할 때만: 아래로 내리면 숨고 위로 올리면 나타남(새 말풍선이 와서 자동으로 내려갈 때는 그대로)
+    var chatEl = $('chat'), menuDd = $('topMenuDropdown');
+    var barShown = true, userAt = 0, lastY = 0, barAnim = null;
+    function setBar(show){
+      if(show === barShown || !header) return;
+      barShown = show;
+      var h = header.offsetHeight + 6;
+      var from = getComputedStyle(header).transform;
+      if(barAnim) barAnim.cancel();
+      header.style.transform = show ? '' : 'translateY(-' + h + 'px)';
+      header.style.pointerEvents = show ? '' : 'none';
+      if(!reduce && header.animate){
+        barAnim = header.animate([{ transform: from === 'none' ? 'translateY(0)' : from }, { transform: show ? 'translateY(0)' : 'translateY(-' + h + 'px)' }],
+          { duration: P.bar.dur, easing: P.bar.easing });
+      }
+    }
+    window.bkShowTopbar = function(){ setBar(true); };
+    if(chatEl){
+      var mark = function(){ userAt = performance.now(); };
+      ['touchstart', 'touchmove', 'wheel', 'pointerdown'].forEach(function(ev){ chatEl.addEventListener(ev, mark, { passive: true }); });
+      chatEl.addEventListener('scroll', function(){
+        var y = chatEl.scrollTop, d = y - lastY; lastY = y;
+        if(performance.now() - userAt > 700) return;
+        if(menuDd && menuDd.classList.contains('show')) return;
+        var bottom = chatEl.scrollHeight - chatEl.clientHeight - y;
+        if(y < 40 || d < -6) setBar(true);
+        else if(d > 6 && bottom > 4) setBar(false);
+      }, { passive: true });
+    }
+
+    // 메뉴에 '대화기록 삭제'(오른쪽 단추 줄의 휴지통 대신)
+    if(menuDd && !$('bkMenuClear')){
+      var it = document.createElement('button'); it.id = 'bkMenuClear'; it.type = 'button'; it.className = 'menuDropdownItem danger'; it.setAttribute('role', 'menuitem');
+      it.innerHTML = SVG('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>') + '<span>대화기록 삭제</span>';
+      it.addEventListener('click', function(){ var c = $('tbClear'); if(c) c.click(); });
+      menuDd.appendChild(it);
+    }
+
+    // ===== 2. 답장 대상 고르기(W·F·A): 입력창 위 왼쪽 =====
+    var inner = document.querySelector('.composerInner');
+    if(inner && !$('bkAppPick')){
+      var isPhone = /Android|iPhone|iPad/i.test(navigator.userAgent);
+      var pick = document.createElement('div'); pick.id = 'bkAppPick'; pick.setAttribute('role', 'group'); pick.setAttribute('aria-label', '답장 대상');
+      [['wechat', 'W', '위챗'], ['feishu', 'F', '페이수'], ['alipay', 'A', '알리페이']].forEach(function(a){
+        if(a[0] === 'alipay' && !isPhone) return;   // PC 에는 알리페이 앱이 없다(앱 기존 규칙)
+        var b = document.createElement('button'); b.type = 'button'; b.dataset.app = a[0]; b.title = a[2] + ' 답장 대상';
+        b.setAttribute('aria-label', a[2] + '으로 답장'); b.innerHTML = a[1];
+        b.addEventListener('mousedown', function(ev){ ev.preventDefault(); });   // 입력창 포커스를 뺏지 않게
+        b.addEventListener('click', function(ev){ ev.stopPropagation(); try{ _armReplyTo(a[0]); }catch(_){} });
+        pick.appendChild(b);
+      });
+      inner.appendChild(pick);
+      var sync = function(){
+        var tgt = null; try{ tgt = _jumpTarget; }catch(_){}
+        Array.prototype.forEach.call(pick.children, function(b){
+          var on = b.dataset.app === tgt, was = b.classList.contains('on');
+          b.classList.toggle('on', on);
+          b.innerHTML = b.textContent.slice(0, 1) + (on ? '<span>' + ({ wechat: '위챗', feishu: '페이수', alipay: '알리페이' })[b.dataset.app] + '으로 답장</span>' : '');
+          if(on && !was) appear(b, 'scale(1.18)', P.pop, { fade: false });
+        });
+      };
+      var jw = $('jumpAppWrap');
+      if(jw) new MutationObserver(sync).observe(jw, { attributes: true, subtree: true, attributeFilter: ['class'] });
+      sync();
+    }
+    // 입력창 위 되돌리기 단추가 뜨면 W·F·A 를 잠깐 가린다(같은 자리)
+    var undo = $('inputUndoBtn');
+    if(undo && $('bkAppPick')) new MutationObserver(function(){ $('bkAppPick').style.visibility = (undo.style.display && undo.style.display !== 'none') ? 'hidden' : ''; })
+      .observe(undo, { attributes: true, attributeFilter: ['style'] });
+
+    // ===== 3. 말풍선 아래 단추: 아이콘만 =====
+    function iconize(scope){
+      var rows = scope.classList && scope.classList.contains('actionsRow') ? [scope] : scope.querySelectorAll ? scope.querySelectorAll('.actionsRow') : [];
+      Array.prototype.forEach.call(rows, function(r){
+        Array.prototype.forEach.call(r.querySelectorAll('.copyPill:not(.replyPill):not(.bkIco)'), function(b){
+          var t = String(b.textContent).trim(), ic = null, lb = '';
+          if(t === '복사'){ ic = IC.copy + IC.ok; lb = '복사'; b.classList.add('bkCopy'); }
+          else if(t === '수정'){ ic = IC.edit; lb = '수정'; }
+          else if(t === 'Retry'){ ic = IC.retry; lb = '다시 번역'; }
+          if(!ic) return;
+          b.classList.add('bkIco'); b.innerHTML = ic; b.setAttribute('aria-label', lb); b.title = lb;
+        });
+        var tts = r.querySelector('.ttsBtn'); if(tts && !tts.getAttribute('aria-label')){ tts.setAttribute('aria-label', '읽어 주기'); tts.title = '읽어 주기'; }
+      });
+    }
+    if(chatEl){
+      iconize(chatEl);
+      new MutationObserver(function(muts){
+        muts.forEach(function(mu){ Array.prototype.forEach.call(mu.addedNodes, function(n){ if(n.nodeType === 1) iconize(n); }); });
+      }).observe(chatEl, { childList: true, subtree: true });
+    }
+    // 복사: 아이콘이 돌며 작아지고 체크가 튀어나옴, 1.4초 뒤 되돌아감
+    document.addEventListener('click', function(e){
+      var b = e.target && e.target.closest ? e.target.closest('.copyPill.bkCopy') : null;
+      if(!b || b._bkBusy) return;
+      var cp = b.querySelector('svg:not(.bkOk)'), ok = b.querySelector('.bkOk');
+      if(!cp || !ok) return;
+      b._bkBusy = true;
+      if(!reduce && cp.animate){
+        cp.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(.5) rotate(-40deg)', opacity: 0 }], { duration: 160, easing: 'ease-in', fill: 'forwards' });
+        ok.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: P.press.dur, easing: P.press.easing, fill: 'forwards', delay: 60 });
+      } else { cp.style.opacity = 0; ok.style.opacity = 1; }
+      setTimeout(function(){
+        b._bkBusy = false;
+        if(!b.isConnected) return;
+        cp.getAnimations && cp.getAnimations().forEach(function(a){ a.cancel(); });
+        ok.getAnimations && ok.getAnimations().forEach(function(a){ a.cancel(); });
+        cp.style.opacity = ''; ok.style.opacity = '';
+        appear(cp, 'scale(.6)', P.pop, { fadeMs: 140 });
+      }, 1400);
+    }, true);
+
+    // ===== 4. 모션 =====
+    // 메뉴·모델 목록: 펼쳐지고 항목이 차례로
+    ['topMenuDropdown', 'modelDropdown'].forEach(function(id){
+      var m = $(id);
+      onClass(m, 'show', function(el){
+        if(el._lv){ el._lv.cancel(); el._lv = null; }
+        if(id === 'topMenuDropdown') setBar(true);
+        appear(el, 'translateY(-8px) scale(.92)', P.menu, { fadeMs: 140 });
+        var items = Array.prototype.filter.call(el.children, function(c){ return c.offsetParent !== null; });
+        items.slice(0, 16).forEach(function(it2, i){ appear(it2, 'translateY(6px)', P.item, { delay: 30 + i * 22, fadeMs: 160 }); });
+      }, function(el){ el._lv = leave(el, 'translateY(-4px) scale(.96)', 'block', 140); });
+    });
+    // 설정·수정·모델 등 모든 창: 배경은 흐려지고 창은 아래에서 올라와 자리 잡음
+    Array.prototype.forEach.call(document.querySelectorAll('.settingsOverlay'), function(ov){
+      onClass(ov, 'show', function(el){
+        if(el._lv){ el._lv.cancel(); el._lv = null; }
+        if(!reduce && el.animate) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
+        appear(el.querySelector('.settings') || el.firstElementChild, 'translateY(28px) scale(.97)', P.sheet, { fade: false });
+      }, function(el){
+        var panel = el.querySelector('.settings') || el.firstElementChild;
+        if(panel && panel.animate && !reduce) panel.animate([{ transform: 'none' }, { transform: 'translateY(14px) scale(.98)' }], { duration: 150, easing: 'ease-in' });
+        el._lv = leave(el, 'none', 'flex', 160);
+      });
+    });
+    // 알림 문구·복사 바
+    onClass($('toast'), 'show', function(el){
+      if(reduce || !el.animate) return;
+      el.animate([{ transform: 'translateX(-50%) translateY(-14px) scale(.9)' }, { transform: 'translateX(-50%)' }], { duration: P.pop.dur, easing: P.pop.easing });
+    });
+    onClass($('copyBar'), 'hidden', null, function(el){
+      if(reduce || !el.animate) return;
+      el.animate([{ transform: 'translateX(-50%) translateY(24px) scale(.96)', opacity: 0 }, { transform: 'translateX(-50%)', opacity: 1 }], { duration: P.pop.dur, easing: P.pop.easing });
+    });
+    // 입력창: 펼칠 때 스프링(CSS), [복사][삭제]·W·F·A 차례로 튀어나옴
+    var composer = document.querySelector('.composer');
+    onClass(composer, 'hasAct', function(){
+      Array.prototype.forEach.call(document.querySelectorAll('#inputActRow button'), function(b, i){ appear(b, 'translateY(8px) scale(.8)', P.pop, { delay: i * 45, fadeMs: 140 }); });
+    });
+    onClass(composer, 'collapsed', null, function(){
+      appear(document.querySelector('.composerInner'), 'scaleX(.94)', P.composer, { fade: false });
+      Array.prototype.forEach.call(document.querySelectorAll('#bkAppPick button'), function(b, i){ appear(b, 'translateY(8px) scale(.8)', P.pop, { delay: 40 + i * 40, fadeMs: 140 }); });
+    });
+    // 새 대화 줄: 원문 줄은 떠오르고, 번역문은 앱 스트리밍 효과 뒤 단추 줄이 차례로(처음 열 때 그려지는 기록은 움직이지 않음)
+    var seen = new Set(), booting = true;
+    function markSeen(){ if(chatEl) Array.prototype.forEach.call(chatEl.querySelectorAll('.msg[data-message-id]'), function(r){ seen.add(r.dataset.messageId); }); }
+    if(chatEl){
+      markSeen();
+      setTimeout(function(){ markSeen(); booting = false; }, 1500);
+      new MutationObserver(function(muts){
+        if(booting){ markSeen(); return; }
+        muts.forEach(function(mu){
+          Array.prototype.forEach.call(mu.addedNodes, function(r){
+            if(!r.classList || !r.classList.contains('msg')) return;
+            var mid = r.dataset.messageId;
+            if(mid && seen.has(mid)) return;
+            if(mid) seen.add(mid);
+            var bub = r.querySelector('.bubble');
+            if(bub && bub.classList.contains('srAnim')) return;
+            if(r.classList.contains('user')) appear(r, 'translateY(14px) scale(.97)', P.row, { fadeMs: 200 });
+            else Array.prototype.forEach.call(r.querySelectorAll('.actionsRow > *'), function(a, i){ appear(a, 'translateY(6px) scale(.9)', P.item, { delay: 60 + i * 35, fadeMs: 160 }); });
+          });
+        });
+      }).observe(chatEl, { childList: true });
+    }
+    // 개인·업무 답장 시트: 아래에서 밀려 올라오고 답안 카드가 차례로
+    new MutationObserver(function(muts){
+      muts.forEach(function(mu){
+        Array.prototype.forEach.call(mu.addedNodes, function(n){
+          if(n.id !== 'bkReplyOv') return;
+          if(!reduce && n.animate) n.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
+          appear(n.querySelector('.rs'), 'translateY(100%)', P.sheet, { fade: false });
+          var cards = n.querySelector('.rsCards');
+          if(cards) new MutationObserver(function(ms){
+            var i = 0;
+            ms.forEach(function(m2){ Array.prototype.forEach.call(m2.addedNodes, function(c){
+              if(c.classList && c.classList.contains('rsCard')) appear(c, 'translateY(12px) scale(.97)', P.item, { delay: (i++) * 60, fadeMs: 180 });
+            }); });
+          }).observe(cards, { childList: true });
+        });
+      });
+    }).observe(document.body, { childList: true });
+
+    try{ document.addEventListener('touchstart', function(){}, { passive: true }); }catch(_){}   // 아이폰에서 :active 누름 효과
+  })();
+  </script>
+
 </body>
 </html>
