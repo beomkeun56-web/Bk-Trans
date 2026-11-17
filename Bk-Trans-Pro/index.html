@@ -2006,7 +2006,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p157';   // p157: 말풍선 아래 개인·업무 단추 다시(예시 모양 작은 알약), 메뉴를 설정 화면과 같은 묶음 카드(화면 · 대화·설정 · 삭제)로, 상단바 왼쪽 글자 옆 깜빡이는 막대 뺌(범근님 261118 '개인 업무 버튼다시만들고 매뉴디자인도 이번디자인처럼'). p156: 예시 2 와 다른 곳 모두 맞춤(범근님 261118 '예시안과 다른부분 다시 다 확인해서 수정진행'·'말풍선 아래 개인 업무도 삭제'·'상단바 … 좌측끝 영어로 번역 그리고 우측끝은 연결됨 버튼 새로고침버튼 매뉴버튼'): 상단바 왼쪽 'Translate'(Scramble Text)·오른쪽 [연결됨][새로고침][메뉴], 메뉴가 단추 자리에서 판으로 커짐, 알림이 오면 연결 상태가 넓어져 내용 표시, 입력창 판 안에 M·보내기, 입력창 위 W·F·A 뺌(답장 모드일 때만 '○○으로 답장' 알약), [복사][삭제] 예시 모양, 말풍선 아래 개인·업무 뺌, '다시 번역' 알약, 아래쪽 흰 토스트, 색상·글꼴·레이아웃 화면 묶음 카드(말풍선 색 줄 펼침 색판·스위치·값 말풍선 슬라이더), 창·모델 고르기·크게 보기 모션. p155: 모션 디자인 예시 2 적용(범근님 261118 '좋아 수정 배포'·'진행'): 검은 바탕, 상단바 1층(왼쪽 메뉴·가운데 연결 상태·오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음), 오른쪽 아래 단추 줄 뺌(W·F·A 답장 대상은 입력창 위 왼쪽, 대화 지우기는 메뉴), 말풍선 아래 단추 아이콘만·한 단계 작게, 메뉴·창·시트·복사·입력창 스프링 모션. 그리고 스트리밍 끝 낱말·물음표가 늦게 보이던 것 수정(낱말을 inline 으로 해 완성 글과 줄바꿈을 같게, 높이는 실제 배치로). p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
+    const APP_VERSION = 'v20.57p158';   // p158: 개인·업무 답장 안 창을 예시 2 모양으로(제목 태그·꽉 찬 분할 단추·받은 글 상자·카드 차례 등장·아래 [다시][닫기]·끌어 닫기), 상단바 연결됨 옆 휴지통(대화기록 삭제) 추가(범근님 261118 '개인 업무 누르면 나오는 창디자인도 수정하라니까 그리고 연결됨 옆에 휴지통 대화기록 삭제버튼추가'). p157: 말풍선 아래 개인·업무 단추 다시(예시 모양 작은 알약), 메뉴를 설정 화면과 같은 묶음 카드(화면 · 대화·설정 · 삭제)로, 상단바 왼쪽 글자 옆 깜빡이는 막대 뺌(범근님 261118 '개인 업무 버튼다시만들고 매뉴디자인도 이번디자인처럼'). p156: 예시 2 와 다른 곳 모두 맞춤(범근님 261118 '예시안과 다른부분 다시 다 확인해서 수정진행'·'말풍선 아래 개인 업무도 삭제'·'상단바 … 좌측끝 영어로 번역 그리고 우측끝은 연결됨 버튼 새로고침버튼 매뉴버튼'): 상단바 왼쪽 'Translate'(Scramble Text)·오른쪽 [연결됨][새로고침][메뉴], 메뉴가 단추 자리에서 판으로 커짐, 알림이 오면 연결 상태가 넓어져 내용 표시, 입력창 판 안에 M·보내기, 입력창 위 W·F·A 뺌(답장 모드일 때만 '○○으로 답장' 알약), [복사][삭제] 예시 모양, 말풍선 아래 개인·업무 뺌, '다시 번역' 알약, 아래쪽 흰 토스트, 색상·글꼴·레이아웃 화면 묶음 카드(말풍선 색 줄 펼침 색판·스위치·값 말풍선 슬라이더), 창·모델 고르기·크게 보기 모션. p155: 모션 디자인 예시 2 적용(범근님 261118 '좋아 수정 배포'·'진행'): 검은 바탕, 상단바 1층(왼쪽 메뉴·가운데 연결 상태·오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음), 오른쪽 아래 단추 줄 뺌(W·F·A 답장 대상은 입력창 위 왼쪽, 대화 지우기는 메뉴), 말풍선 아래 단추 아이콘만·한 단계 작게, 메뉴·창·시트·복사·입력창 스프링 모션. 그리고 스트리밍 끝 낱말·물음표가 늦게 보이던 것 수정(낱말을 inline 으로 해 완성 글과 줄바꿈을 같게, 높이는 실제 배치로). p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
 
     // p151: 기기 표식 공용 함수. 아이폰 듀오 모드 켜짐이면 'iphone', 아니면 기존식 그대로('phone'/'pc').
     function _bkDev(){
@@ -11468,10 +11468,16 @@ label[for="maxTokens"], #maxTokens,
     #bkBrand .c.ok{ color:var(--text); }
     #bkBrand .caret{ display:none !important;   /* p157 범근님 '글자옆 깜빡이는거 삭제' */ }
     #bkBrand .caretOld{ display:inline-block; width:.56em; height:1.08em; margin-left:.1em; vertical-align:-.18em; background:var(--text); border-radius:2px; }
-    header #topMenuBtn, #bkReloadTop{ width:40px; height:40px; border-radius:999px; display:grid; place-items:center;
-      background:var(--bkSurf2); box-shadow:0 0 0 1px var(--bkLine); color:var(--text); padding:0; border:0; cursor:pointer; position:relative; z-index:52; }
+    header #topMenuBtn, #bkReloadTop, #bkClearTop{ width:40px; height:40px; border-radius:999px; display:grid; place-items:center;
+      background:var(--bkSurf2); box-shadow:0 0 0 1px var(--bkLine); color:var(--text); padding:0; border:0; cursor:pointer; position:relative; z-index:52; flex:none; }
     header #topMenuBtn{ z-index:61; }
-    header .rightBtns:has(#topMenuBtn[aria-expanded="true"]) #connBtn, header .rightBtns:has(#topMenuBtn[aria-expanded="true"]) #bkReloadTop{ opacity:0; pointer-events:none; }
+    header .rightBtns:has(#topMenuBtn[aria-expanded="true"]) #connBtn, header .rightBtns:has(#topMenuBtn[aria-expanded="true"]) #bkReloadTop,
+    header .rightBtns:has(#topMenuBtn[aria-expanded="true"]) #bkClearTop{ opacity:0; pointer-events:none; }
+    /* p158 범근님 '연결됨 옆에 휴지통 대화기록 삭제버튼추가': [연결됨][휴지통][새로고침][메뉴] */
+    #bkClearTop{ order:2; }
+    #bkClearTop svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    #bkClearTop:active{ transform:scale(.9); transition:transform .07s ease-out; }
+    @media (max-width:380px){ header .rightBtns{ gap:6px !important; } header #connBtn{ padding:0 11px !important; } }
     header #topMenuBtn svg, #bkReloadTop svg{ width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     /* 메뉴 단추 ≡ → × (십자 380 24) */
     header #topMenuBtn svg line{ transform-origin:12px 12px; transition:transform var(--sp-pop-d, .3s) var(--sp-pop-e, ease), opacity .15s; }
@@ -11481,8 +11487,8 @@ label[for="maxTokens"], #maxTokens,
     header #topMenuBtn[aria-expanded="true"] svg line:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
     header #connBtn{ order:1; height:34px; padding:0 13px; border-radius:999px; flex:none;
       background:var(--bkSurf2); box-shadow:0 0 0 1px var(--bkLine); display:inline-flex; align-items:center; gap:7px; width:auto; z-index:51; }
-    #bkReloadTop{ order:2; }
-    header .menuDropdownWrap{ order:3; }
+    #bkReloadTop{ order:3; }
+    header .menuDropdownWrap{ order:4; }
     #bkConnTxt{ font-size:12.5px; color:#cfcfd6; white-space:nowrap; font-weight:500; }
     /* 메뉴(Dynamic Menu): 단추 자리에서 판이 커짐 */
     header .menuDropdown{ top:-8px !important; right:-8px !important; left:auto !important; margin:0 !important; min-width:288px !important;
@@ -11621,12 +11627,52 @@ label[for="maxTokens"], #maxTokens,
     .bkTray .bkExtra{ display:flex; flex-direction:column; gap:6px; }
 
     /* ---------- 답장 안 시트(기능은 남김: 숨긴 개인·업무 단추 대신 다른 경로가 생기면 이 모양으로) ---------- */
-    #bkReplyOv .rs{ background:#141417 !important; border-radius:22px 22px 0 0 !important; box-shadow:0 -1px 0 var(--bkLine), 0 -16px 40px rgba(0,0,0,.6) !important; }
-    #bkReplyOv .rsCard{ background:var(--bkSurf2) !important; }
-    #bkReplyOv .rsSeg{ border:0 !important; border-radius:999px !important; background:var(--bkSurf2); padding:3px; }
-    #bkReplyOv .rsSeg button{ border:0 !important; border-radius:999px; }
-    #bkReplyOv .rsSeg button.on{ background:var(--bkAccentSoft) !important; box-shadow:inset 0 0 0 1px rgba(59,130,246,.4); color:var(--text) !important; }
-    #bkReplyOv .rsBtn{ border:0 !important; border-radius:999px !important; background:var(--bkSurf2) !important; }
+    /* p158 범근님 '개인 업무 누르면 나오는 창디자인도 수정': 예시 2 답장 안 시트 모양(제목 태그·꽉 찬 분할 단추·받은 글 상자·카드·아래 [다시][닫기]) */
+    #bkReplyOv{ background:rgba(0,0,0,.6) !important; }
+    #bkReplyOv .rs{ background:#141417 !important; border-radius:22px 22px 0 0 !important; box-shadow:0 -1px 0 var(--bkLine), 0 -16px 40px rgba(0,0,0,.6) !important;
+      max-height:86% !important; padding:8px 16px calc(14px + env(safe-area-inset-bottom)) !important; gap:12px; box-sizing:border-box; }
+    #bkReplyOv .rsTop{ padding:0 !important; border:0 !important; display:flex; flex-direction:column; gap:12px; touch-action:none; }
+    #bkReplyOv .rsGrab{ width:38px !important; height:5px !important; border-radius:999px !important; background:var(--bkSurf3) !important; margin:2px auto 0 !important; }
+    #bkReplyOv .rsHead{ margin:0 !important; min-height:0 !important; align-items:center !important; }
+    #bkReplyOv .rsTtl{ font-size:17px !important; line-height:1.3 !important; height:auto !important; color:var(--text) !important; display:flex; align-items:center; gap:8px; }
+    #bkReplyOv .bkTag{ font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px; line-height:1.3; }
+    #bkReplyOv .bkTag.p{ background:rgba(249,168,192,.16); color:#f9a8c0; }
+    #bkReplyOv .bkTag.w{ background:rgba(147,197,253,.16); color:#93c5fd; }
+    #bkReplyOv .bkRsSegs{ display:flex; gap:8px; }
+    #bkReplyOv .rsSeg{ flex:1 1 0 !important; position:relative; height:40px !important; border:0 !important; border-radius:999px !important; background:var(--bkSurf2) !important; padding:3px !important; overflow:hidden; box-sizing:border-box; }
+    #bkReplyOv .rsSeg::before{ content:''; position:absolute; top:3px; bottom:3px; left:0; width:var(--hw, 0px); transform:translateX(var(--hx, 0px)); border-radius:999px;
+      background:var(--bkSurf3); box-shadow:0 0 0 1px var(--bkLine);
+      transition:transform var(--sp-pop-d, .3s) var(--sp-pop-e, ease), width var(--sp-pop-d, .3s) var(--sp-pop-e, ease); }
+    #bkReplyOv .rsSeg.bkNoAnim::before{ transition:none; }
+    #bkReplyOv .rsSeg.rel::before{ background:rgba(249,168,192,.2); box-shadow:0 0 0 1px rgba(249,168,192,.32); }
+    #bkReplyOv .rsSeg button{ flex:1 1 0; width:auto !important; border:0 !important; border-radius:999px; background:transparent !important; color:var(--bkMuted) !important;
+      font-size:14.5px !important; font-weight:600 !important; position:relative; z-index:1; transition:color .2s; }
+    #bkReplyOv .rsSeg button+button{ border-left:0 !important; }
+    #bkReplyOv .rsSeg button.on{ color:var(--text) !important; box-shadow:none !important; }
+    #bkReplyOv .rsSrc{ padding:11px 13px; border-radius:12px; background:var(--bkSurf2); font-size:13px !important; line-height:1.55 !important; color:var(--bkMuted) !important; -webkit-line-clamp:4 !important; }
+    #bkReplyOv .rsSrc small{ display:block; color:var(--bkFaint); font-size:11.5px; margin-bottom:3px; }
+    #bkReplyOv .rsSrc b{ font-weight:500 !important; color:var(--bkMuted) !important; }
+    #bkReplyOv .rsCards{ padding:0 !important; display:flex; flex-direction:column; gap:10px; scrollbar-width:none; }
+    #bkReplyOv .rsCards::-webkit-scrollbar{ display:none; }
+    #bkReplyOv .rsCard{ margin:0 !important; background:var(--bkSurf2) !important; border-radius:14px !important; padding:12px 40px 12px 14px !important; gap:4px !important; position:relative; cursor:pointer; flex:none; }
+    #bkReplyOv .rsCard:not(.item){ padding:0 !important; height:64px; box-sizing:border-box; cursor:default;
+      background:linear-gradient(90deg, var(--bkSurf2) 30%, var(--bkSurf3) 50%, var(--bkSurf2) 70%) 0 0/200% 100% !important; animation:bkShine 1.2s linear infinite; }
+    #bkReplyOv .rsCard:not(.item) .rsSkel{ display:none; }
+    @keyframes bkShine{ to{ background-position:-200% 0; } }
+    #bkReplyOv .rsCard.item:active{ transform:scale(.98); transition:transform .07s ease-out; }
+    #bkReplyOv .rsKo{ font-size:15px !important; line-height:1.5 !important; color:var(--text) !important; }
+    #bkReplyOv .rsZh{ font-size:14.5px !important; line-height:1.5 !important; font-weight:500 !important; color:var(--bkMuted) !important; min-height:0 !important; }
+    #bkReplyOv .rsZh:active{ background:transparent !important; }
+    #bkReplyOv .bkCpIc{ position:absolute; right:13px; top:13px; width:17px; height:17px; color:var(--bkFaint); pointer-events:none; }
+    #bkReplyOv .bkCpIc svg{ width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; display:block; }
+    #bkReplyOv .rsMsg{ font-size:13px !important; color:var(--bkFaint) !important; padding:2px 0 0 !important; }
+    #bkReplyOv .rsMsg.err{ color:#ff8a8a !important; padding:14px 0 6px !important; }
+    #bkReplyOv .rsStat{ font-size:13px !important; color:#ff8a8a !important; }
+    #bkReplyOv .bkRsFoot{ display:flex; gap:8px; flex:none; }
+    #bkReplyOv .rsBtn{ border:0 !important; border-radius:999px !important; background:var(--bkSurf2) !important; color:var(--text) !important; }
+    #bkReplyOv .bkRsFoot .rsBtn{ flex:1; height:46px !important; font-size:14.5px !important; font-weight:600; display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+    #bkReplyOv .bkRsFoot .rsBtn svg{ width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    #bkReplyOv .rsMsg.err + .rsBtn{ height:40px !important; padding:0 18px !important; }
 
     /* ---------- 누름 튐 ---------- */
     .copyPill, .ttsBtn, .retryPill, .copyBarBtn, #inputActRow button, #composerModelBtn, #bkSend, header #topMenuBtn, #bkReloadTop, .btn, #bkArm button{
@@ -11714,6 +11760,13 @@ label[for="maxTokens"], #maxTokens,
     }
     var conn = $('connBtn');
     if(conn && !$('bkConnTxt')){ var ct = document.createElement('span'); ct.id = 'bkConnTxt'; ct.textContent = '연결 확인 중'; conn.appendChild(ct); }
+    // p158: 연결됨 옆 휴지통 = 대화기록 삭제(기존 tbClear → clearChatOnly, 확인 창 그대로)
+    if(rb && !$('bkClearTop')){
+      var cl = document.createElement('button'); cl.id = 'bkClearTop'; cl.type = 'button'; cl.setAttribute('aria-label', '대화기록 삭제'); cl.title = '대화기록 삭제';
+      cl.innerHTML = SVG('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>');
+      cl.addEventListener('click', function(e){ e.stopPropagation(); var c = $('tbClear'); if(c) c.click(); });
+      rb.appendChild(cl);
+    }
     // 왼쪽 끝 'Translate': Scramble Text(원본 값 그대로: 깜빡임 0.055초, 자리 잡는 시각 0.18 + 글자당 0.035 + 무작위 0.28초)
     var bar0 = document.querySelector('header .topbar');
     if(bar0 && !$('bkBrand')){
@@ -12229,11 +12282,81 @@ label[for="maxTokens"], #maxTokens,
         });
       }).observe(chatEl, { childList: true });
     }
+    // p158: 개인·업무 답장 안 시트를 예시 2 모양으로(요소는 옮기기만 해서 기존 핸들러·복사·앱 이동 그대로)
+    function rsSegHl(sg){
+      function place(anim){
+        var on = sg.querySelector('button.on'); if(!on) return;
+        if(!anim) sg.classList.add('bkNoAnim');
+        sg.style.setProperty('--hw', on.offsetWidth + 'px'); sg.style.setProperty('--hx', on.offsetLeft + 'px');
+        if(!anim){ void sg.offsetWidth; sg.classList.remove('bkNoAnim'); }
+      }
+      sg.addEventListener('click', function(){ requestAnimationFrame(function(){ place(true); }); });
+      requestAnimationFrame(function(){ place(false); });
+    }
+    function restyleReply(ov){
+      var sh = ov.querySelector('.rs'); if(!sh || sh._bk) return; sh._bk = true;
+      var top = sh.querySelector('.rsTop'), ttl = sh.querySelector('.rsTtl'), grp = sh.querySelector('.rsGrp'), src = sh.querySelector('.rsSrc'), cards = sh.querySelector('.rsCards');
+      if(!top || !ttl || !grp || !cards) return;
+      var isW = ttl.classList.contains('w');
+      ttl.innerHTML = '<span class="bkTag ' + (isW ? 'w' : 'p') + '">' + (isW ? '업무' : '개인') + '</span>답장 안';
+      var row = document.createElement('div'); row.className = 'bkRsSegs';
+      Array.prototype.slice.call(grp.querySelectorAll('.rsSeg')).forEach(function(sg){ row.appendChild(sg); rsSegHl(sg); });
+      top.insertBefore(row, src || null);
+      var foot = document.createElement('div'); foot.className = 'bkRsFoot';
+      Array.prototype.slice.call(grp.querySelectorAll('.rsBtn')).forEach(function(b){
+        if(b.textContent === '다시') b.innerHTML = IC.retry + '<span>다시</span>';
+        foot.appendChild(b);
+      });
+      grp.style.display = 'none';
+      sh.appendChild(foot);
+      if(src && src.firstChild && src.firstChild.nodeType === 3){ var sm = document.createElement('small'); sm.textContent = '받은 글'; src.replaceChild(sm, src.firstChild); }
+      // 카드: 복사 아이콘, 카드 아무 데나 눌러도 중국어 줄 누름과 같게(복사 → 닫기 → 앱 이동), 차례 등장(240 22)
+      var deco = function(){
+        var k = 0;
+        Array.prototype.forEach.call(cards.children, function(c){
+          if(!c.classList.contains('rsCard')) return;
+          var i = k++;
+          if(c._bk) return; c._bk = true;
+          if(c.classList.contains('item')){
+            var ic = document.createElement('span'); ic.className = 'bkCpIc'; ic.innerHTML = IC.copy; c.appendChild(ic);
+            c.addEventListener('click', function(e){
+              if(e.target.closest('.rsZh')) return;
+              try{ var sel = getSelection(); if(sel && String(sel).length) return; }catch(_){}
+              var z = c.querySelector('.rsZh'); if(z) z.click();
+            });
+          }
+          appear(c, 'translateY(14px) scale(.97)', P.item, { delay: 60 + i * 60, fadeMs: 200 });
+        });
+      };
+      new MutationObserver(deco).observe(cards, { childList: true });
+      deco();
+      // 위쪽(손잡이·제목·단추 줄)을 아래로 끌면 닫힘(90px), 덜 끌면 제자리(260 26)
+      var sy = null, dy = 0;
+      top.addEventListener('pointerdown', function(e){ if(e.target.closest('button')) return; sy = e.clientY; dy = 0; try{ top.setPointerCapture(e.pointerId); }catch(_){} });
+      top.addEventListener('pointermove', function(e){ if(sy == null) return; dy = Math.max(0, e.clientY - sy); sh.style.transform = 'translateY(' + dy + 'px)'; });
+      var up = function(){
+        if(sy == null) return; sy = null;
+        if(dy > 90){ ov.dispatchEvent(new MouseEvent('click', { bubbles: true })); return; }
+        if(dy > 0){ var from = 'translateY(' + dy + 'px)'; sh.style.transform = ''; appear(sh, from, P.sheet, { fade: false }); }
+      };
+      top.addEventListener('pointerup', up); top.addEventListener('pointercancel', up);
+    }
     // 바닥 시트들(답장 안·모델 고르기): 아래에서 밀려 올라옴
     new MutationObserver(function(muts){
       muts.forEach(function(mu){
+        Array.prototype.forEach.call(mu.removedNodes, function(n){
+          // 답장 안 시트 닫힘: 지운 요소를 잠깐 되붙여 아래로 내려가며 사라지게(누를 수 없음)
+          if(n.id !== 'bkReplyOv' || !n.dataset || n.dataset.ghost || reduce || !n.animate || n.isConnected) return;
+          n.dataset.ghost = '1'; document.body.appendChild(n);
+          var rsx = n.querySelector('.rs'), cur = rsx ? (rsx.style.transform || 'none') : 'none';
+          if(rsx) rsx.animate([{ transform: cur }, { transform: 'translateY(105%)' }], { duration: 220, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+          var a = n.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: 'ease-in', fill: 'forwards' });
+          a.onfinish = a.oncancel = function(){ if(n.parentNode) n.parentNode.removeChild(n); };
+        });
         Array.prototype.forEach.call(mu.addedNodes, function(n){
           if(n.id === 'bkReplyOv'){
+            if(n.dataset && n.dataset.ghost) return;
+            restyleReply(n);
             if(!reduce && n.animate) n.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
             appear(n.querySelector('.rs'), 'translateY(100%)', P.sheet, { fade: false });
           } else if(n.id === 'composerModelPickerOverlay'){
