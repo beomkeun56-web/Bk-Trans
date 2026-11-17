@@ -551,6 +551,15 @@
       max-width: 80%;
     }
 
+    /* p153 스트리밍 효과(261118): 말풍선 크기·낱말은 JS 스프링(BKSR), 여기는 모양만 */
+    .bubble.srAnim{position:relative;overflow:hidden;padding:0 !important;max-width:none !important;white-space:normal}
+    .bubble.srAnim .srThink{position:absolute;left:14px;top:12px;white-space:nowrap;
+      background:linear-gradient(90deg,#5b6675 20%,#e6edf3 50%,#5b6675 80%) 0 0/200% 100%;
+      -webkit-background-clip:text;background-clip:text;color:transparent;animation:srShine 1.4s linear infinite}
+    @keyframes srShine{to{background-position:-200% 0}}
+    .bubble.srAnim .srText{position:absolute;left:14px;top:12px;margin:0;white-space:pre-wrap;word-break:break-word}
+    .bubble.srAnim .srText .wd{display:inline-block;opacity:0;will-change:transform,opacity,filter}
+
     .msg.assistant .bubble{
       background: var(--assistantBubbleBg);
       color: #e6edf3;
@@ -1974,7 +1983,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p152';   // p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
+    const APP_VERSION = 'v20.57p153';   // p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
 
     // p151: 기기 표식 공용 함수. 아이폰 듀오 모드 켜짐이면 'iphone', 아니면 기존식 그대로('phone'/'pc').
     function _bkDev(){
@@ -4613,6 +4622,106 @@ label[for="maxTokens"], #maxTokens,
     });
     window.addEventListener('focus', function(){ _warmConnections(true); });
     _warmConnections(true); _acquireWakeLock();
+    // ★p153 스트리밍 효과(261118 범근님 '적용해줘'): designbookmark 'Streaming Reply' 를 앱에 맞춰 다시 만든 것.
+    //   스프링(강도 감쇠)은 원본 그대로: 말풍선 크기 260 26, '번역 중' 300 30, 낱말 340 26, 낱말 간격 0.07초.
+    //   응답은 한 번에 오므로(진짜 스트리밍 아님) 도착한 번역문을 낱말 단위로 풀어 보여 준다. 직접 입력 번역에만 쓴다.
+    var BKSR = (function(){
+      var reduce = false;
+      try{ reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(_){}
+      function S(x, k, c){ return { x:x, v:0, t:x, k:k, c:c }; }
+      function step(s, dt){ var a = -s.k * (s.x - s.t) - s.c * s.v; s.v += a * dt; s.x += s.v * dt; }
+      function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+      var seg = null;
+      try{ if(typeof Intl !== 'undefined' && Intl.Segmenter) seg = new Intl.Segmenter('zh', { granularity:'word' }); }catch(_){}
+      function pieces(t){
+        if(/[一-鿿]/.test(t)){
+          var out = [];
+          String(t).split(/(\s+)/).forEach(function(part){
+            if(!part) return;
+            if(/^\s+$/.test(part)) { out.push(part); return; }
+            if(seg){ Array.from(seg.segment(part)).forEach(function(x){ out.push(x.segment); }); }
+            else Array.from(part).forEach(function(ch){ out.push(ch); });
+          });
+          return out;
+        }
+        return String(t).split(/(\s+)/).filter(Boolean);
+      }
+      var PAD_X = 14, PAD_Y = 12;
+      function _plain(b, text){
+        b.classList.remove('srAnim');
+        b.style.width = ''; b.style.height = '';
+        b.textContent = text;
+        delete b._sr;
+      }
+      function pill(b){
+        if(reduce || !b) return false;
+        b.classList.add('srAnim');
+        b.innerHTML = '';
+        var th = document.createElement('span'); th.className = 'srThink'; th.textContent = '번역 중';
+        b.appendChild(th);
+        b.style.opacity = '1';
+        b.style.width = (th.offsetWidth + PAD_X * 2) + 'px';
+        b.style.height = (th.offsetHeight + PAD_Y * 2) + 'px';
+        b._sr = { th: th };
+        return true;
+      }
+      function reveal(b, text, done){
+        if(reduce || !b || !b._sr || !b.parentNode){ if(b) _plain(b, text); if(done) done(); return; }
+        var row = b.parentNode, th = b._sr.th;
+        // 최종 크기 재기: 같은 줄에 보이지 않는 말풍선을 잠깐 넣어 잰다(max-width 92% 그대로)
+        var probe = document.createElement('div');
+        probe.className = b.className.replace(/\bsrAnim\b/, '');
+        probe.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;';
+        probe.textContent = text;
+        row.appendChild(probe);
+        var fw = probe.offsetWidth, fh = probe.offsetHeight;
+        row.removeChild(probe);
+        var tx = document.createElement('p'); tx.className = 'srText';
+        tx.style.width = Math.max(10, fw - PAD_X * 2) + 'px';
+        var words = [];
+        pieces(text).forEach(function(p){
+          if(/^\s+$/.test(p)){ tx.appendChild(document.createTextNode(p)); return; }
+          var w = document.createElement('span'); w.className = 'wd'; w.textContent = p;
+          tx.appendChild(w); words.push({ el:w, s:S(0, 340, 26), on:false });
+        });
+        b.appendChild(tx);
+        var W = S(b.offsetWidth, 260, 26), H = S(b.offsetHeight, 260, 26), T = S(1, 300, 30);
+        W.t = fw; T.t = 0;
+        var t = 0, last = performance.now(), finished = false;
+        var endAt = words.length * 0.07 + 0.9;
+        function frame(now){
+          if(finished) return;
+          if(!b.isConnected){ finished = true; if(done) done(); return; }
+          var dt = Math.min((now - last) / 1000, 1 / 30); last = now; t += dt;
+          for(var i = 0; i < words.length; i++){
+            var w = words[i];
+            if(!w.on && t >= i * 0.07){
+              w.on = true; w.s.t = 1;
+              H.t = Math.min(fh, tx.offsetTop + w.el.offsetTop + w.el.offsetHeight + PAD_Y);
+            }
+          }
+          for(var k = 0; k < 4; k++){
+            step(W, dt / 4); step(H, dt / 4); step(T, dt / 4);
+            words.forEach(function(w){ if(w.on) step(w.s, dt / 4); });
+          }
+          b.style.width = W.x.toFixed(2) + 'px';
+          b.style.height = H.x.toFixed(2) + 'px';
+          th.style.opacity = clamp(T.x, 0, 1).toFixed(3);
+          words.forEach(function(w){
+            if(!w.on) return;
+            var v = clamp(w.s.x, 0, 1.2);
+            w.el.style.opacity = clamp(v, 0, 1).toFixed(3);
+            w.el.style.transform = 'translateY(' + ((1 - w.s.x) * 6).toFixed(2) + 'px)';
+            w.el.style.filter = v < .98 ? 'blur(' + ((1 - clamp(v, 0, 1)) * 4).toFixed(2) + 'px)' : 'none';
+          });
+          if(t >= endAt){ finished = true; _plain(b, text); if(done) done(); return; }
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+      return { pill:pill, reveal:reveal, isOn:function(b){ return !!(b && b._sr); } };
+    })();
+
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
       const google = isGoogleProvider();
       const anthropic = isAnthropicProvider();
@@ -7111,6 +7220,8 @@ label[for="maxTokens"], #maxTokens,
       streamBubble.style.opacity = '0.5';
       streamRow.appendChild(streamBubble);
       if(!_targetObj) el.chat.insertBefore(streamRow, el.bottomAnchor);
+      // ★p153: 직접 입력 번역만 스트리밍 효과('번역 중' 알약). URL·클립·재번역은 종전 그대로
+      var _srOn = (!_targetObj && !_fastUrl && _src === 'typing') ? BKSR.pill(streamBubble) : false;
 
       let _scrollRaf = 0;
       function scrollThrottled(){
@@ -7150,6 +7261,7 @@ label[for="maxTokens"], #maxTokens,
         let _pipelineInfo = null;
         // ★ v20.0t — 단일 호출 + TM 자동 예시 주입 (Agent 모드 모두 제거)
         translatedRaw = await callOpenRouterStream(userText, (partial) => {
+          if(_srOn && BKSR.isOn(streamBubble)) return;   // ★p153: 알약 유지, 다 받은 뒤 낱말 단위로 보여 준다
           streamBubble.style.opacity = '1';
           streamBubble.textContent = partial;
           scrollThrottled();
@@ -7353,7 +7465,8 @@ label[for="maxTokens"], #maxTokens,
           return { ok: true, usr: userObj, asst: asstObj };
         }
 
-        streamBubble.textContent = translated;   // 대화이력은 병음 미표시(전체화면 클릭 시에만 병음)
+        var _srPlay = _srOn && BKSR.isOn(streamBubble);   // ★p153: 효과 중이면 글은 BKSR.reveal 이 채운다
+        if(!_srPlay) streamBubble.textContent = translated;   // 대화이력은 병음 미표시(전체화면 클릭 시에만 병음)
         streamBubble.style.background = srcBubbleColor(_src);   // 출처별 말풍선 색
         streamBubble.style.opacity = '1';
         streamBubble.style.cursor = 'pointer';
@@ -7419,6 +7532,14 @@ label[for="maxTokens"], #maxTokens,
         setConnState('ok');
         // 스트리밍 직후엔 병음(ruby)이 늦게 로드돼 말풍선 폭이 좁게 잡혀 줄바꿈됨(새로고침하면 정상).
         // → 두 프레임 뒤 renderChat으로 다시 그려 새로고침과 동일한 폭으로 맞춤.
+        if(_srPlay){
+          // ★p153: 효과가 끝난 뒤 다시 그린다(바로 그리면 효과가 지워진다). 말풍선이 자라는 동안 아래로 따라 내려간다
+          var _srScroll = setInterval(scrollThrottled, 120);
+          BKSR.reveal(streamBubble, translated, function(){
+            clearInterval(_srScroll);
+            requestAnimationFrame(function(){ requestAnimationFrame(function(){ try{ renderChat(); }catch(_){} }); });
+          });
+        } else
         requestAnimationFrame(function(){ requestAnimationFrame(function(){ try{ renderChat(); }catch(_){} }); });
         return { ok: true, usr: userObj, asst: asstObj };
       } catch(err){
