@@ -2006,7 +2006,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p156';   // p156: 예시 2 와 다른 곳 모두 맞춤(범근님 261118 '예시안과 다른부분 다시 다 확인해서 수정진행'·'말풍선 아래 개인 업무도 삭제'·'상단바 … 좌측끝 영어로 번역 그리고 우측끝은 연결됨 버튼 새로고침버튼 매뉴버튼'): 상단바 왼쪽 'Translate'(Scramble Text)·오른쪽 [연결됨][새로고침][메뉴], 메뉴가 단추 자리에서 판으로 커짐, 알림이 오면 연결 상태가 넓어져 내용 표시, 입력창 판 안에 M·보내기, 입력창 위 W·F·A 뺌(답장 모드일 때만 '○○으로 답장' 알약), [복사][삭제] 예시 모양, 말풍선 아래 개인·업무 뺌, '다시 번역' 알약, 아래쪽 흰 토스트, 색상·글꼴·레이아웃 화면 묶음 카드(말풍선 색 줄 펼침 색판·스위치·값 말풍선 슬라이더), 창·모델 고르기·크게 보기 모션. p155: 모션 디자인 예시 2 적용(범근님 261118 '좋아 수정 배포'·'진행'): 검은 바탕, 상단바 1층(왼쪽 메뉴·가운데 연결 상태·오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음), 오른쪽 아래 단추 줄 뺌(W·F·A 답장 대상은 입력창 위 왼쪽, 대화 지우기는 메뉴), 말풍선 아래 단추 아이콘만·한 단계 작게, 메뉴·창·시트·복사·입력창 스프링 모션. 그리고 스트리밍 끝 낱말·물음표가 늦게 보이던 것 수정(낱말을 inline 으로 해 완성 글과 줄바꿈을 같게, 높이는 실제 배치로). p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
+    const APP_VERSION = 'v20.57p157';   // p157: 말풍선 아래 개인·업무 단추 다시(예시 모양 작은 알약), 메뉴를 설정 화면과 같은 묶음 카드(화면 · 대화·설정 · 삭제)로, 상단바 왼쪽 글자 옆 깜빡이는 막대 뺌(범근님 261118 '개인 업무 버튼다시만들고 매뉴디자인도 이번디자인처럼'). p156: 예시 2 와 다른 곳 모두 맞춤(범근님 261118 '예시안과 다른부분 다시 다 확인해서 수정진행'·'말풍선 아래 개인 업무도 삭제'·'상단바 … 좌측끝 영어로 번역 그리고 우측끝은 연결됨 버튼 새로고침버튼 매뉴버튼'): 상단바 왼쪽 'Translate'(Scramble Text)·오른쪽 [연결됨][새로고침][메뉴], 메뉴가 단추 자리에서 판으로 커짐, 알림이 오면 연결 상태가 넓어져 내용 표시, 입력창 판 안에 M·보내기, 입력창 위 W·F·A 뺌(답장 모드일 때만 '○○으로 답장' 알약), [복사][삭제] 예시 모양, 말풍선 아래 개인·업무 뺌, '다시 번역' 알약, 아래쪽 흰 토스트, 색상·글꼴·레이아웃 화면 묶음 카드(말풍선 색 줄 펼침 색판·스위치·값 말풍선 슬라이더), 창·모델 고르기·크게 보기 모션. p155: 모션 디자인 예시 2 적용(범근님 261118 '좋아 수정 배포'·'진행'): 검은 바탕, 상단바 1층(왼쪽 메뉴·가운데 연결 상태·오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음), 오른쪽 아래 단추 줄 뺌(W·F·A 답장 대상은 입력창 위 왼쪽, 대화 지우기는 메뉴), 말풍선 아래 단추 아이콘만·한 단계 작게, 메뉴·창·시트·복사·입력창 스프링 모션. 그리고 스트리밍 끝 낱말·물음표가 늦게 보이던 것 수정(낱말을 inline 으로 해 완성 글과 줄바꿈을 같게, 높이는 실제 배치로). p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
 
     // p151: 기기 표식 공용 함수. 아이폰 듀오 모드 켜짐이면 'iphone', 아니면 기존식 그대로('phone'/'pc').
     function _bkDev(){
@@ -11466,7 +11466,8 @@ label[for="maxTokens"], #maxTokens,
       font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:19px; font-weight:500; letter-spacing:-.01em; line-height:1.3; color:var(--text); }
     #bkBrand .c{ color:#5c5c66; }
     #bkBrand .c.ok{ color:var(--text); }
-    #bkBrand .caret{ display:inline-block; width:.56em; height:1.08em; margin-left:.1em; vertical-align:-.18em; background:var(--text); border-radius:2px; }
+    #bkBrand .caret{ display:none !important;   /* p157 범근님 '글자옆 깜빡이는거 삭제' */ }
+    #bkBrand .caretOld{ display:inline-block; width:.56em; height:1.08em; margin-left:.1em; vertical-align:-.18em; background:var(--text); border-radius:2px; }
     header #topMenuBtn, #bkReloadTop{ width:40px; height:40px; border-radius:999px; display:grid; place-items:center;
       background:var(--bkSurf2); box-shadow:0 0 0 1px var(--bkLine); color:var(--text); padding:0; border:0; cursor:pointer; position:relative; z-index:52; }
     header #topMenuBtn{ z-index:61; }
@@ -11489,9 +11490,17 @@ label[for="maxTokens"], #maxTokens,
       box-shadow:0 0 0 1px var(--bkLine), 0 18px 44px rgba(0,0,0,.75) !important; transform-origin:calc(100% - 28px) 28px; z-index:60 !important; }
     header .menuDropdown .bkMenuTitle{ position:absolute; left:18px; top:17px; font-weight:650; font-size:15px; color:var(--text); white-space:nowrap; }
     header .menuDropdown .bkMenuTitle small{ color:var(--bkFaint); font-weight:500; font-size:12px; margin-left:6px; }
-    header .menuDropdownItem{ height:46px; padding:0 12px !important; border-radius:12px !important; font-size:15px !important; gap:12px !important; }
-    header .menuDropdownItem svg{ width:19px !important; height:19px !important; flex-basis:19px !important; color:var(--bkMuted) !important; }
-    header .menuDropdownItem:hover{ background:var(--bkSurf3) !important; }
+    /* p157: 메뉴도 설정 화면과 같은 묶음 카드(범근님 '매뉴디자인도 이번디자인처럼') */
+    header .menuDropdown{ background:#141417 !important; padding:56px 12px 12px !important; }
+    header .bkMenuGroup{ font-size:12px; color:var(--bkFaint); font-weight:600; padding:10px 6px 6px; }
+    header .bkMenuCard{ background:var(--bkSurf); border-radius:16px; box-shadow:0 0 0 1px var(--bkLine); padding:0 12px; }
+    header .bkMenuCard .menuDropdownItem{ height:52px; padding:0 !important; border-radius:0 !important; font-size:15px !important; gap:12px !important; background:none !important; }
+    header .bkMenuCard .menuDropdownItem.bkDiv{ border-top:1px solid var(--bkLine); }
+    header .bkMenuCard .menuDropdownItem svg{ width:17px !important; height:17px !important; flex:0 0 17px !important; color:var(--text) !important;
+      box-sizing:content-box; padding:7px; border-radius:10px; background:var(--bkSurf2); }
+    header .bkMenuCard .menuDropdownItem.danger svg{ color:#f87171 !important; background:rgba(248,113,113,.14); }
+    header .bkMenuCard .menuDropdownItem::after{ content:''; margin-left:auto; width:7px; height:7px; border-right:2px solid var(--bkFaint); border-top:2px solid var(--bkFaint); transform:rotate(45deg); margin-right:4px; flex:none; }
+    header .bkMenuCard .menuDropdownItem:active{ background:none !important; opacity:.7; }
     #bkScrim{ position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:65; opacity:0; pointer-events:none; transition:opacity .2s ease; }
     #bkScrim.on{ opacity:1; pointer-events:auto; }
     /* 가운데 알림 섬(Morph Island): 알림이 오면 넓어졌다 돌아옴 */
@@ -11535,7 +11544,11 @@ label[for="maxTokens"], #maxTokens,
 
     /* ---------- 말풍선 아래: 아이콘만, 개인·업무 뺌 ---------- */
     .actionsRow{ gap:5px !important; }
-    .actionsRow .replyPill{ display:none !important; }
+    /* p157: 개인·업무 다시(범근님 '개인 업무 버튼다시만들고'), 예시 모양: 작은 알약·면 + 테두리 */
+    .actionsRow .replyPill{ height:24px; padding:0 10px !important; border-radius:999px !important; font-size:calc(11.5px * var(--textScale)) !important; font-weight:600 !important;
+      background:var(--copyBtnBg) !important; box-shadow:0 0 0 1px var(--bkLine); min-width:0 !important; line-height:24px; }
+    .actionsRow .replyPill.replyPers{ color:#f9a8c0 !important; }
+    .actionsRow .replyPill.replyWork{ color:#93c5fd !important; }
     .actionsRow .ttsBtn, .actionsRow .copyPill.bkIco{ width:28px; height:28px; min-width:0 !important; padding:0 !important; border-radius:999px !important;
       display:inline-grid !important; place-items:center; position:relative; box-shadow:0 0 0 1px var(--bkLine); }
     .actionsRow .ttsBtn svg, .actionsRow .copyPill.bkIco svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
@@ -11717,7 +11730,6 @@ label[for="maxTokens"], #maxTokens,
           if(now >= c.at){ c.done = true; if(c.to === ''){ c.el.remove(); } else { c.el.textContent = c.to; c.el.classList.add('ok'); } }
           else { left++; if(c.to === ' '){ c.el.textContent = ' '; c.el.classList.add('ok'); } else if(now >= c.tk){ c.el.textContent = GLY[(Math.random() * GLY.length) | 0]; c.tk = now + .055; } }
         });
-        caret.style.opacity = (running || (now * 1.8) % 2 < 1) ? 1 : 0;
         if(!left && running){ cells = cells.filter(function(c){ return c.to !== ''; }); running = false; }
         raf = requestAnimationFrame(tick);
       };
@@ -11786,6 +11798,30 @@ label[for="maxTokens"], #maxTokens,
         menuDd.appendChild(it);
       }
     }
+    // p157: 메뉴 항목을 설정 화면처럼 묶음 카드로(요소는 옮기기만 해서 기존 핸들러 그대로)
+    function menuCards(){
+      if(!menuDd || menuDd._bkCards) return; menuDd._bkCards = true;
+      var items = Array.prototype.filter.call(menuDd.querySelectorAll('.menuDropdownItem'), function(b){ return b.id !== 'bkMenuClear'; });
+      var G = [['화면', ['layoutToggleBtn', 'settingsToggleBtn', 'iduoModeBtn']], ['대화 · 설정', null]];
+      var used = {};
+      G.forEach(function(g){
+        var lab = document.createElement('div'); lab.className = 'bkMenuGroup'; lab.textContent = g[0];
+        var card = document.createElement('div'); card.className = 'bkMenuCard';
+        var list = g[1] ? g[1].map(function(id){ return $(id); }).filter(Boolean) : items.filter(function(b){ return !used[b.id]; });
+        list.forEach(function(b){ used[b.id] = 1; card.appendChild(b); });
+        menuDd.appendChild(lab); menuDd.appendChild(card);
+      });
+      var clr2 = $('bkMenuClear');
+      if(clr2){ var c3 = document.createElement('div'); c3.className = 'bkMenuCard'; c3.style.marginTop = '12px'; c3.appendChild(clr2); menuDd.appendChild(c3); }
+    }
+    function menuDividers(){
+      if(!menuDd) return;
+      Array.prototype.forEach.call(menuDd.querySelectorAll('.bkMenuCard'), function(card){
+        var first = true;
+        Array.prototype.forEach.call(card.children, function(b){ var vis = b.offsetParent !== null; b.classList.toggle('bkDiv', vis && !first); if(vis) first = false; });
+      });
+    }
+    try{ menuCards(); }catch(_){}
     var scrim = document.createElement('div'); scrim.id = 'bkScrim'; document.body.appendChild(scrim);
     scrim.addEventListener('click', function(){ if(menuBtn && menuDd && menuDd.classList.contains('show')) menuBtn.click(); });
 
@@ -12124,13 +12160,13 @@ label[for="maxTokens"], #maxTokens,
       var m = $(id);
       onClass(m, 'show', function(el2){
         if(el2._lv){ el2._lv.cancel(); el2._lv = null; }
-        if(id === 'topMenuDropdown'){ setBar(true); scrim.classList.add('on'); }
+        if(id === 'topMenuDropdown'){ setBar(true); scrim.classList.add('on'); try{ menuDividers(); }catch(_){} }
         if(!reduce && el2.animate){
           el2.animate([{ clipPath: 'inset(0 0 calc(100% - 56px) calc(100% - 56px) round 20px)' }, { clipPath: 'inset(0 0 0 0 round 22px)' }], { duration: P.menu.dur, easing: P.menu.easing });
           el2.animate([{ opacity: .6 }, { opacity: 1 }], { duration: 120, easing: 'ease-out' });
         }
-        var items = Array.prototype.filter.call(el2.children, function(c){ return c.offsetParent !== null; });
-        items.slice(0, 18).forEach(function(it2, i){ appear(it2, 'translateY(14px)', P.item, { delay: 60 + i * 40, fadeMs: 180 }); });
+        var items = Array.prototype.filter.call(el2.querySelectorAll('.bkMenuGroup, .bkMenuCard > .menuDropdownItem, :scope > .menuDropdownItem'), function(c){ return c.offsetParent !== null; });
+        items.slice(0, 18).forEach(function(it2, i){ appear(it2, 'translateY(14px)', P.item, { delay: 60 + i * 35, fadeMs: 180 }); });
       }, function(el2){
         if(id === 'topMenuDropdown') scrim.classList.remove('on');
         if(reduce || !el2.animate) return;
