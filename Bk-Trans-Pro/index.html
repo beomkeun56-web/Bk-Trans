@@ -1983,7 +1983,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p153';   // p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
+    const APP_VERSION = 'v20.57p154';   // p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
 
     // p151: 기기 표식 공용 함수. 아이폰 듀오 모드 켜짐이면 'iphone', 아니면 기존식 그대로('phone'/'pc').
     function _bkDev(){
@@ -4646,6 +4646,16 @@ label[for="maxTokens"], #maxTokens,
         }
         return String(t).split(/(\s+)/).filter(Boolean);
       }
+      // ★p154: 문장부호·기호만인 조각(？ 。 ! … " ) 등)은 앞 낱말에 붙인다. 따로 두면 혼자 다음 줄로 넘어가 늦게 올라온다
+      var PUNCT = /^[\s]*[\u3000-\u303f\uff01-\uff0f\uff1a-\uff20\uff3b-\uff40\uff5b-\uff65!-\/:-@\[-`{-~\u2018-\u201f\u2026]+$/;
+      function glue(list){
+        var out = [];
+        list.forEach(function(p){
+          if(out.length && PUNCT.test(p) && !/^\s+$/.test(p) && !/^\s+$/.test(out[out.length - 1])) out[out.length - 1] += p;
+          else out.push(p);
+        });
+        return out;
+      }
       var PAD_X = 14, PAD_Y = 12;
       function _plain(b, text){
         b.classList.remove('srAnim');
@@ -4679,7 +4689,7 @@ label[for="maxTokens"], #maxTokens,
         var tx = document.createElement('p'); tx.className = 'srText';
         tx.style.width = Math.max(10, fw - PAD_X * 2) + 'px';
         var words = [];
-        pieces(text).forEach(function(p){
+        glue(pieces(text)).forEach(function(p){
           if(/^\s+$/.test(p)){ tx.appendChild(document.createTextNode(p)); return; }
           var w = document.createElement('span'); w.className = 'wd'; w.textContent = p;
           tx.appendChild(w); words.push({ el:w, s:S(0, 340, 26), on:false });
@@ -4687,12 +4697,15 @@ label[for="maxTokens"], #maxTokens,
         b.appendChild(tx);
         var W = S(b.offsetWidth, 260, 26), H = S(b.offsetHeight, 260, 26), T = S(1, 300, 30);
         W.t = fw; T.t = 0;
-        var t = 0, last = performance.now(), finished = false;
+        var t0 = performance.now(), t = 0, last = t0, finished = false;
         var endAt = words.length * 0.07 + 0.9;
+        function finish(){ if(finished) return; finished = true; if(b.isConnected) _plain(b, text); if(done) done(); }
+        // ★p154: 시계는 실제 경과 시간. 화면 갱신이 느리거나 멈춰도(앱이 뒤로 감 등) 정해진 시간 뒤엔 반드시 마무리
+        setTimeout(finish, Math.round((endAt + 0.6) * 1000));
         function frame(now){
           if(finished) return;
           if(!b.isConnected){ finished = true; if(done) done(); return; }
-          var dt = Math.min((now - last) / 1000, 1 / 30); last = now; t += dt;
+          var dt = Math.min((now - last) / 1000, 1 / 30); last = now; t = (now - t0) / 1000;
           for(var i = 0; i < words.length; i++){
             var w = words[i];
             if(!w.on && t >= i * 0.07){
@@ -4714,12 +4727,15 @@ label[for="maxTokens"], #maxTokens,
             w.el.style.transform = 'translateY(' + ((1 - w.s.x) * 6).toFixed(2) + 'px)';
             w.el.style.filter = v < .98 ? 'blur(' + ((1 - clamp(v, 0, 1)) * 4).toFixed(2) + 'px)' : 'none';
           });
-          if(t >= endAt){ finished = true; _plain(b, text); if(done) done(); return; }
+          if(t >= endAt){ finish(); return; }
           requestAnimationFrame(frame);
         }
         requestAnimationFrame(frame);
       }
-      return { pill:pill, reveal:reveal, isOn:function(b){ return !!(b && b._sr); } };
+      // ★p154: renderChat 이 다시 그릴 때 효과를 줄 말풍선(messageId). 앱이 떠 있는 동안 막 도착한 결과만 넣는다
+      var queue = new Set();
+      function play(b, text){ if(pill(b)) reveal(b, text); }
+      return { pill:pill, reveal:reveal, play:play, queue:queue, isOn:function(b){ return !!(b && b._sr); } };
     })();
 
     async function callOpenRouterStreamOnce(userText, onChunk, timeoutMs){
@@ -6617,6 +6633,15 @@ label[for="maxTokens"], #maxTokens,
           bubble.addEventListener('click', () => showFocusOverlay(dispText));
         }
         row.appendChild(bubble);
+        // ★p154: 알림 '번역 중' 자리표시는 알약 모양, 막 도착한 결과는 낱말 단위 효과(그린 뒤에 시작)
+        if(m.role === 'assistant'){
+          if(m.status === 'pending' && /^번역 중/.test(String(m.text || ''))){
+            (function(b){ queueMicrotask(function(){ if(b.isConnected) BKSR.pill(b); }); })(bubble);
+          } else if(m.messageId && BKSR.queue.has(m.messageId) && !_isErrorMessage(m)){
+            BKSR.queue.delete(m.messageId);
+            (function(b, t){ queueMicrotask(function(){ if(b.isConnected) BKSR.play(b, t); }); })(bubble, dispText);
+          }
+        }
 
         const actions = document.createElement('div');
         actions.className = 'actionsRow';
@@ -7220,8 +7245,8 @@ label[for="maxTokens"], #maxTokens,
       streamBubble.style.opacity = '0.5';
       streamRow.appendChild(streamBubble);
       if(!_targetObj) el.chat.insertBefore(streamRow, el.bottomAnchor);
-      // ★p153: 직접 입력 번역만 스트리밍 효과('번역 중' 알약). URL·클립·재번역은 종전 그대로
-      var _srOn = (!_targetObj && !_fastUrl && _src === 'typing') ? BKSR.pill(streamBubble) : false;
+      // ★p153→p154: 직접 입력·붙여넣기·URL 번역 모두 스트리밍 효과('번역 중' 알약). 오류 재번역(_targetObj)만 종전대로
+      var _srOn = (!_targetObj) ? BKSR.pill(streamBubble) : false;
 
       let _scrollRaf = 0;
       function scrollThrottled(){
@@ -7448,7 +7473,8 @@ label[for="maxTokens"], #maxTokens,
         saveChatHistory();
 
         if(_fastUrl){
-          streamBubble.textContent = translated;   // 대화이력은 병음 미표시(전체화면 클릭 시에만 병음)
+          var _srFast = _srOn && BKSR.isOn(streamBubble);   // ★p154
+          if(!_srFast) streamBubble.textContent = translated;   // 대화이력은 병음 미표시(전체화면 클릭 시에만 병음)
           streamBubble.style.background = srcBubbleColor(_src);
           streamBubble.style.opacity = '1';
           streamBubble.style.cursor = 'pointer';
@@ -7461,6 +7487,10 @@ label[for="maxTokens"], #maxTokens,
           setConnState('ok');
           scrollThrottled();
           try{ _completeUrlQueueJob(_jobId, asstObj.messageId); }catch(_){}
+          if(_srFast){
+            var _srScrollF = setInterval(scrollThrottled, 120);
+            BKSR.reveal(streamBubble, translated, function(){ clearInterval(_srScrollF); _scheduleIdleRenderChat(100); });
+          } else
           _scheduleIdleRenderChat(100);
           return { ok: true, usr: userObj, asst: asstObj };
         }
@@ -9761,10 +9791,12 @@ label[for="maxTokens"], #maxTokens,
         })(app);
       }
     })();
-    function _renderPopupResult(it){
+    function _renderPopupResult(it, live){
       try{
         var src = _normAppId(it.app || '') || 'url';
         var jobId = _newStableId('job');
+        var _amid = _newStableId('msg');
+        if(live && !it.err) BKSR.queue.add(_amid);   // ★p154: 앱이 떠 있을 때 막 온 완료본만 효과
         chat.push({ role:'user', text: it.text, ts: Date.now(), popupId: it.id,
                     messageId:_newStableId('usr'), jobId: jobId });
         chat.push({ role:'assistant',
@@ -9772,7 +9804,7 @@ label[for="maxTokens"], #maxTokens,
                     ts: Date.now(), model: it.model || 'server',
                     ms: (it.secs ? Math.round(it.secs * 1000) : null),
                     source: src, sender: (it.title || ''), popupId: it.id,
-                    messageId:_newStableId('msg'), jobId: jobId,
+                    messageId:_amid, jobId: jobId,
                     status: 'done' });
         saveChatHistory();
         renderChat();
@@ -9895,12 +9927,12 @@ label[for="maxTokens"], #maxTokens,
       document.addEventListener('visibilitychange', function(){ _popupState('vis'); });
       setTimeout(function(){ _popupState('load'); }, 2000);
     }catch(_){}
-    function _popupFinalize(it){
+    function _popupFinalize(it, live){   // ★p154 live = 앱이 떠 있는 동안 받은 결과(부팅 대조는 아님) → 스트리밍 효과
       try{
         var asst = _popupFindByPid(it.id, 'assistant');
         if(!asst){
           try{ _popupMetric({ stage: 'fin_new', id: it.id }); }catch(_){}
-          _renderPopupResult(it); return;                  // 자리표시 없이 완료본이 먼저 온 경우
+          _renderPopupResult(it, live); return;                  // 자리표시 없이 완료본이 먼저 온 경우
         }
         if(asst.status === 'done' && asst.text !== '번역 중 ...'){
           try{ _popupMetric({ stage: 'fin_skip_done', id: it.id }); }catch(_){}
@@ -9914,6 +9946,7 @@ label[for="maxTokens"], #maxTokens,
         asst.source = _normAppId(it.app || '') || 'url';
         if(it.title) asst.sender = it.title;
         asst.status = 'done';
+        if(live && !it.err && asst.messageId) BKSR.queue.add(asst.messageId);   // ★p154
         var _t0 = performance.now();
         saveChatHistory();
         var _t1 = performance.now();
@@ -10043,7 +10076,7 @@ label[for="maxTokens"], #maxTokens,
               if(!it || !it.text) continue;
               if(_popupAdoptAppItem(it)){ if(prefixOk) lastFinal = it.id; continue; }   // 폰 URL 경로 말풍선 입양
               if(it.tgt || it.err){
-                _popupFinalize(it);
+                _popupFinalize(it, true);
                 if(prefixOk) lastFinal = it.id;
               } else {
                 _popupPlaceholder(it);
