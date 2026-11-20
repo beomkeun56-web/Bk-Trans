@@ -1981,7 +1981,7 @@ label[for="maxTokens"], #maxTokens,
   <input type="file" id="importPromptFile" accept="text/plain,.txt" style="display:none" />
 
   <script>
-    const APP_VERSION = 'v20.57p163';   // p159: 대화 이력 서버 저장(번역 끝난 쌍을 /chat_log 로, 알림분은 서버가 직접) + 개인·업무 답변안이 서버 이력(그 상대와의 최근 대화 10개, 내 답 포함)을 맥락으로(범근님 261118 '번역웹앱 대화기록을 서버에저장하면 되자나 그럼 그이력을 보면 대자나'·'진행'). p158: 개인·업무 답장 안 창을 예시 2 모양으로(제목 태그·꽉 찬 분할 단추·받은 글 상자·카드 차례 등장·아래 [다시][닫기]·끌어 닫기), 상단바 연결됨 옆 휴지통(대화기록 삭제) 추가(범근님 261118 '개인 업무 누르면 나오는 창디자인도 수정하라니까 그리고 연결됨 옆에 휴지통 대화기록 삭제버튼추가'). p157: 말풍선 아래 개인·업무 단추 다시(예시 모양 작은 알약), 메뉴를 설정 화면과 같은 묶음 카드(화면 · 대화·설정 · 삭제)로, 상단바 왼쪽 글자 옆 깜빡이는 막대 뺌(범근님 261118 '개인 업무 버튼다시만들고 매뉴디자인도 이번디자인처럼'). p156: 예시 2 와 다른 곳 모두 맞춤(범근님 261118 '예시안과 다른부분 다시 다 확인해서 수정진행'·'말풍선 아래 개인 업무도 삭제'·'상단바 … 좌측끝 영어로 번역 그리고 우측끝은 연결됨 버튼 새로고침버튼 매뉴버튼'): 상단바 왼쪽 'Translate'(Scramble Text)·오른쪽 [연결됨][새로고침][메뉴], 메뉴가 단추 자리에서 판으로 커짐, 알림이 오면 연결 상태가 넓어져 내용 표시, 입력창 판 안에 M·보내기, 입력창 위 W·F·A 뺌(답장 모드일 때만 '○○으로 답장' 알약), [복사][삭제] 예시 모양, 말풍선 아래 개인·업무 뺌, '다시 번역' 알약, 아래쪽 흰 토스트, 색상·글꼴·레이아웃 화면 묶음 카드(말풍선 색 줄 펼침 색판·스위치·값 말풍선 슬라이더), 창·모델 고르기·크게 보기 모션. p155: 모션 디자인 예시 2 적용(범근님 261118 '좋아 수정 배포'·'진행'): 검은 바탕, 상단바 1층(왼쪽 메뉴·가운데 연결 상태·오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음), 오른쪽 아래 단추 줄 뺌(W·F·A 답장 대상은 입력창 위 왼쪽, 대화 지우기는 메뉴), 말풍선 아래 단추 아이콘만·한 단계 작게, 메뉴·창·시트·복사·입력창 스프링 모션. 그리고 스트리밍 끝 낱말·물음표가 늦게 보이던 것 수정(낱말을 inline 으로 해 완성 글과 줄바꿈을 같게, 높이는 실제 배치로). p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
+    const APP_VERSION = 'v20.57p164';   // p159: 대화 이력 서버 저장(번역 끝난 쌍을 /chat_log 로, 알림분은 서버가 직접) + 개인·업무 답변안이 서버 이력(그 상대와의 최근 대화 10개, 내 답 포함)을 맥락으로(범근님 261118 '번역웹앱 대화기록을 서버에저장하면 되자나 그럼 그이력을 보면 대자나'·'진행'). p158: 개인·업무 답장 안 창을 예시 2 모양으로(제목 태그·꽉 찬 분할 단추·받은 글 상자·카드 차례 등장·아래 [다시][닫기]·끌어 닫기), 상단바 연결됨 옆 휴지통(대화기록 삭제) 추가(범근님 261118 '개인 업무 누르면 나오는 창디자인도 수정하라니까 그리고 연결됨 옆에 휴지통 대화기록 삭제버튼추가'). p157: 말풍선 아래 개인·업무 단추 다시(예시 모양 작은 알약), 메뉴를 설정 화면과 같은 묶음 카드(화면 · 대화·설정 · 삭제)로, 상단바 왼쪽 글자 옆 깜빡이는 막대 뺌(범근님 261118 '개인 업무 버튼다시만들고 매뉴디자인도 이번디자인처럼'). p156: 예시 2 와 다른 곳 모두 맞춤(범근님 261118 '예시안과 다른부분 다시 다 확인해서 수정진행'·'말풍선 아래 개인 업무도 삭제'·'상단바 … 좌측끝 영어로 번역 그리고 우측끝은 연결됨 버튼 새로고침버튼 매뉴버튼'): 상단바 왼쪽 'Translate'(Scramble Text)·오른쪽 [연결됨][새로고침][메뉴], 메뉴가 단추 자리에서 판으로 커짐, 알림이 오면 연결 상태가 넓어져 내용 표시, 입력창 판 안에 M·보내기, 입력창 위 W·F·A 뺌(답장 모드일 때만 '○○으로 답장' 알약), [복사][삭제] 예시 모양, 말풍선 아래 개인·업무 뺌, '다시 번역' 알약, 아래쪽 흰 토스트, 색상·글꼴·레이아웃 화면 묶음 카드(말풍선 색 줄 펼침 색판·스위치·값 말풍선 슬라이더), 창·모델 고르기·크게 보기 모션. p155: 모션 디자인 예시 2 적용(범근님 261118 '좋아 수정 배포'·'진행'): 검은 바탕, 상단바 1층(왼쪽 메뉴·가운데 연결 상태·오른쪽 새로고침, 손으로 아래로 스크롤하면 숨음), 오른쪽 아래 단추 줄 뺌(W·F·A 답장 대상은 입력창 위 왼쪽, 대화 지우기는 메뉴), 말풍선 아래 단추 아이콘만·한 단계 작게, 메뉴·창·시트·복사·입력창 스프링 모션. 그리고 스트리밍 끝 낱말·물음표가 늦게 보이던 것 수정(낱말을 inline 으로 해 완성 글과 줄바꿈을 같게, 높이는 실제 배치로). p154: 스트리밍 효과를 붙여넣기·URL·알림(팝업) 번역까지 같게(앱을 새로 열 때 받아 온 완료본은 효과 없이), '번역 중' 자리표시도 알약 모양. 그리고 스트리밍 효과에서 문장부호(？。! 등)가 따로 떨어져 다음 줄로 늦게 올라오던 것 수정(앞 낱말에 붙임, 범근님 261118). p153: 직접 입력 번역 출력에 스트리밍 효과('번역 중' 알약 → 말풍선 스프링 확장 → 낱말 단위 등장, 범근님 261118 '적용해줘', designbookmark Streaming Reply 스프링 값 그대로). p152: 아이폰 듀오 모드 붙여넣기 번역 버튼 제거(범근님 261103, 번역은 단축어로) + 듀오 전용 여백 보정(접힘 전체 폭·펼침 세로 상하·키보드 간격, 스타일 끝 iduo 블록)
 
     // p151: 기기 표식 공용 함수. 아이폰 듀오 모드 켜짐이면 'iphone', 아니면 기존식 그대로('phone'/'pc').
     function _bkDev(){
@@ -3547,7 +3547,7 @@ label[for="maxTokens"], #maxTokens,
 
     function saveChatHistory(){
       try{ localStorage.setItem(LS.chatHistory, JSON.stringify(chat)); } catch{}
-      try{ _clSchedule(); }catch(_){}   // ★p159: 대화 이력 서버 저장(답변안 맥락용)
+      try{ _clSync(); }catch(_){}   // Persist a completed pair while the panel is still visible.
     }
     function loadChatHistory(){
       try{
@@ -3836,13 +3836,22 @@ label[for="maxTokens"], #maxTokens,
       var mid = ((el.model && el.model.value) || '').trim().toLowerCase();
       return mid.indexOf('qwen-mt-') === 0;
     }
+    function _duoWebKey(){
+      const s = window.__duoTranslationSession;
+      return location.origin === 'https://beomkeun56-web.github.io' && s && typeof s.token === 'string' &&
+        s.expires_at > Date.now() / 1000 && s.token.startsWith('duow1.') ? s.token : '';
+    }
+    function _brainWebKey(){
+      return _duoWebKey() || localStorage.getItem(LS.apiKey) || '';
+    }
     function getActiveApiKey(){
       const p = getProvider();
       if(p === 'google') return ((el.googleApiKey && el.googleApiKey.value) || '').trim();
       if(p === 'anthropic') return ((el.anthropicApiKey && el.anthropicApiKey.value) || '').trim();
       if(p === 'qwen') return ((el.qwenApiKey && el.qwenApiKey.value) || '').trim();
       if(p === 'zai') return ((el.zaiApiKey && el.zaiApiKey.value) || '').trim();
-      return ((el.apiKey && el.apiKey.value) || '').trim();
+      const configured = ((el.apiKey && el.apiKey.value) || '').trim();
+      return configured || (getApiUrl() === DEFAULT_API_URL ? _duoWebKey() : '');
     }
     function toRequestModelId(id){
       const m = String(id || '').trim();
@@ -5142,7 +5151,7 @@ label[for="maxTokens"], #maxTokens,
       var done = function(){ if(btn){ btn.classList.remove('speaking'); btn.style.background='rgba(255,255,255,.06)'; } };
       fetch(FISH_TTS_URL, {
         method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
+        headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _brainWebKey()},
         body: JSON.stringify({text:'你好，今天的生产情况怎么样？我们下午讨论质量改善方案。',
                               voice: voiceId, speed: fishSpeed(), volume: vol || 0})
       }).then(function(r){ if(!r.ok) throw new Error('fish ' + r.status); return r.blob(); })
@@ -5159,7 +5168,7 @@ label[for="maxTokens"], #maxTokens,
       var chunk = _ttsChunks[_ttsChunkIdx++];
       fetch(FISH_TTS_URL, {
         method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
+        headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _brainWebKey()},
         body: JSON.stringify({text: chunk, voice: fishVoiceEntry(_fishLang)[1],
                               speed: fishSpeed(), volume: fishVolume(_fishLang)})
       }).then(function(r){
@@ -5436,7 +5445,7 @@ label[for="maxTokens"], #maxTokens,
           sBt.textContent = '검색 중…';
           fetch(FISH_TTS_URL.replace('/tts','/voices'), {
             method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':'Bearer ' + (localStorage.getItem('bk_tr_pro_apiKey')||'')},
+            headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _brainWebKey()},
             body: JSON.stringify({q: sQuery, page: sPage, female: true, lang: _vLang})
           }).then(function(r){ return r.json(); })
           .then(function(d){
@@ -6807,15 +6816,18 @@ label[for="maxTokens"], #maxTokens,
     var _clTimer = 0, _clBusy = false;
     function _clSchedule(){ if(_clTimer) clearTimeout(_clTimer); _clTimer = setTimeout(_clSync, 2500); }
     function _clPost(items){
+      if(_apiOrigin() !== new URL(DEFAULT_API_URL).origin || !getActiveApiKey()) return Promise.resolve(null);
+      const payload = JSON.stringify({ items: items });
       return fetch(_apiOrigin() + '/chat_log', {
-        method: 'POST',
+        method: 'POST', keepalive: new Blob([payload]).size <= 60000,
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getActiveApiKey() },
-        body: JSON.stringify({ items: items })
+        body: payload
       }).then(function(r){ return r.ok ? r.json() : null; });
     }
     function _clSync(){
       _clTimer = 0;
-      if(_clBusy){ _clSchedule(); return; }
+      if(_clBusy){ _clSchedule(); return true; }
+      if(!getActiveApiKey() || _apiOrigin() !== new URL(DEFAULT_API_URL).origin) return false;
       var items = [], marks = [];
       try{
         for(var k = Math.max(1, chat.length - 400); k < chat.length; k++){
@@ -6826,11 +6838,11 @@ label[for="maxTokens"], #maxTokens,
           if(a.status && a.status !== 'done') continue;
           if(_isErrorMessage(a)) continue;
           var orig = String(u.text || '').replace(/^#\s*/, '').trim(), tr = String(a.text || '').trim();
-          if(!orig || !tr || /^번역 중/.test(tr) || /^\[/.test(orig)) continue;
+          if(!orig || !tr || /^번역 중/.test(tr) || orig === '[품질강화 분석 결과]') continue;
           var isIn = pid ? true : _replyIsZh(orig);
           var it = { cid: pid ? ('p' + pid) : ('a' + (a.messageId || (k + '_' + (a.ts || 0)))), ts: a.ts || u.ts || Date.now(),
                      src: a.source || u.source || '', who: a.sender || u.sender || '', dir: isIn ? 'in' : 'out',
-                     orig: orig.slice(0, 1000), tr: tr.slice(0, 1000) };
+                     orig: orig.slice(0, 12000), tr: tr.slice(0, 24000) };
           if(!isIn){
             for(var j = k - 2; j >= 1 && j >= k - 20; j--){
               var aa = chat[j], uu = chat[j - 1];
@@ -6851,7 +6863,74 @@ label[for="maxTokens"], #maxTokens,
           if(items.length >= 200) _clSchedule();
         }
       }).catch(function(){}).then(function(){ _clBusy = false; });
+      return true;
     }
+    // The WebKit panel and regular browsers display the same successful pairs.
+    // Restore whole pairs. Never insert past a pending input or re-upload imported rows.
+    var _clReading = false, _clRev = '';
+    function _clMerge(rows){
+      var floor = Number(localStorage.getItem('bk_history_cleared_at')) || 0;
+      var ids = new Set();
+      for(var m of chat){
+        if(!m || m.role !== 'assistant') continue;
+        if(m.historyCid) ids.add(m.historyCid);
+        if(m.popupId) ids.add('p' + m.popupId);
+        if(m.messageId) ids.add('a' + m.messageId);
+      }
+      var changed = false;
+      for(var row of rows){
+        if(!row || !row.cid || !row.orig || !row.tr || ids.has(row.cid)) continue;
+        var ts = Math.round(Number(row.ts) * 1000);
+        if(!Number.isFinite(ts) || ts <= floor) continue;
+        // Already visible URL notifications can have an app and server cid; correlate
+        // only a matching URL/notification pair, never two independent typed repeats.
+        if(/^p[0-9]+$/.test(row.cid) && chat.some(function(m, i){
+          return m && m.role === 'assistant' && m.source === 'url' && m.text === row.tr &&
+            Math.abs((m.ts || 0) - ts) < 90000 && chat[i-1] && chat[i-1].text === row.orig;
+        })) continue;
+        var meta = {ts:ts, jobId:'shared:' + row.cid, historyCid:row.cid, source:row.src || 'typing', sender:row.who || ''};
+        if(/^p[0-9]+$/.test(row.cid)) meta.popupId = Number(row.cid.slice(1));
+        var pair = [
+          Object.assign({}, meta, {role:'user', text:row.orig, messageId:'shared-u:' + row.cid}),
+          Object.assign({}, meta, {role:'assistant', text:row.tr, messageId:'shared-a:' + row.cid, status:'done', clSent:1})
+        ];
+        var next = chat.findIndex(function(m, i){
+          return m.role === 'user' && ((chat[i+1] && chat[i+1].role === 'assistant' ? chat[i+1].ts : m.ts) || 0) > ts;
+        });
+        if(next < 0) next = chat.length;
+        chat.splice(next, 0, pair[0], pair[1]);
+        ids.add(row.cid); changed = true;
+      }
+      if(changed){
+        trimChatToMaxInputs();
+        saveChatHistory();
+        renderChat();
+      }
+    }
+    async function _clRead(){
+      if(document.hidden || _clReading || _isBusy || _clBusy || !getActiveApiKey() ||
+         _apiOrigin() !== new URL(DEFAULT_API_URL).origin) return;
+      _clReading = true;
+      try {
+        var rev = _clRev;
+        var r = await fetch(_apiOrigin() + '/chat_history', {
+          method:'POST', cache:'no-store', headers:{'Content-Type':'application/json', Authorization:'Bearer ' + getActiveApiKey()},
+          body:JSON.stringify({limit:MAX_INPUTS_PER_PAGE, known:rev})
+        });
+        if(!r.ok) return;
+        var page = await r.json();
+        if(!page.ok || rev !== _clRev || _isBusy) return;
+        if(!page.unchanged) _clMerge(page.items || []);
+        _clRev = page.revision || '';
+      }catch(_){ /* The local history stays usable offline. */ }
+      finally{ _clReading = false; }
+    }
+    function _clResume(){ if(!document.hidden && !_clSync()) _clRead(); }
+    document.addEventListener('visibilitychange', _clResume);
+    window.addEventListener('online', _clResume);
+    window.addEventListener('duotranslationsession', _clResume);
+    setTimeout(_clResume, 350);
+    setInterval(_clResume, 8000);
     function _replyCss(){
       if(document.getElementById('bkReplyCss')) return;
       var st = document.createElement('style');
@@ -7059,6 +7138,7 @@ label[for="maxTokens"], #maxTokens,
       if(src === 'feishu') return '페이수';
       if(src === 'url') return 'URL';
       if(src === 'clip') return 'Clip';
+      if(src === 'keyboard') return 'Keyboard';
       return 'Typing';
     }
     // ★ 입력 초안 보존: 입력 중 새 알림(URL 재실행)으로 리로드돼도 쓰던 글이 안 사라지게.
@@ -9055,6 +9135,8 @@ label[for="maxTokens"], #maxTokens,
 
     function clearChatOnly(){
       if(!confirm('대화를 삭제합니다. 계속할까요?')) return;
+      localStorage.setItem('bk_history_cleared_at', String(Date.now()));
+      _clRev = '';
       chat = [];
       saveChatHistory();
       hideCopyBar();
